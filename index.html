@@ -932,9 +932,9 @@
                     <strong>لیست به روز محصولات رافونه:</strong> تمامی قیمت‌ها بر اساس نرخ تحویل درب منزل محاسبه گردیده است.
                 </div>
             </div>
-            <button onclick="openExcelSyncModal()" style="background: #16a34a; color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-file-excel"></i> همگام‌سازی فایل اکسل جدید
-            </button>
+            <div style="display: flex; align-items: center; gap: 6px; background: #e0f2f1; color: #00695c; padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: bold;">
+                <i class="fa-solid fa-rotate fa-spin" style="animation-duration: 4s;"></i> همگام‌سازی خودکار با فایل اکسل (سفارش 1405)
+            </div>
         </div>
 
         <!-- Products Grid -->
@@ -1031,37 +1031,6 @@
     </div>
 
     <!-- Modal Bank Gateway (شاپرک / زرین‌پال) -->
-    <!-- Excel Sync Modal -->
-    <div class="modal-overlay" id="excelSyncModal" style="display: none;">
-        <div class="checkout-card" style="max-width: 500px;">
-            <div class="checkout-header">
-                <div>
-                    <i class="fa-solid fa-file-excel" style="color: #16a34a; font-size: 1.5rem;"></i>
-                    <strong style="margin-right: 8px;">به‌روزرسانی محصولات از فایل اکسل</strong>
-                </div>
-                <button class="btn-close-modal" onclick="closeExcelSyncModal()">&times;</button>
-            </div>
-
-            <div style="padding: 15px 0;">
-                <p style="font-size: 0.85rem; color: #475569; margin-bottom: 15px; line-height: 1.6;">
-                    شما می‌توانید فایل اکسل جدید یا ویرایش‌شده (مانند <code>سفارش 1405.xlsx</code>) را انتخاب یا آپلود کنید. سیستم به صورت خودکار قیمت‌های جدید («قیمت تحویل») و تمامی کالاهای جدید را استخراج و در سایت به‌روزرسانی می‌کند.
-                </p>
-
-                <form id="excelUploadForm" onsubmit="uploadExcelFile(event)">
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-cloud-arrow-up"></i> انتخاب فایل اکسل جدید:</label>
-                        <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="form-control" required style="padding: 8px;">
-                    </div>
-
-                    <div id="uploadStatusMessage" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-size: 0.85rem;"></div>
-
-                    <button type="submit" class="btn-submit-order" id="btnUploadExcel" style="background: #16a34a;">
-                        <i class="fa-solid fa-sync"></i> آپلود و اعمال تغییرات جدید در سایت
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <div class="modal-overlay" id="bankGatewayModal" style="display: none;">
         <div class="gateway-card">
@@ -1208,7 +1177,7 @@
     <script src="products_data.js"></script>
     <script>
         // Products Dataset from Excel and Rafooneh Catalog
-        const products = typeof productsData !== 'undefined' ? productsData : [];
+        let products = typeof productsData !== 'undefined' ? productsData : [];
 
         let cart = {};
         let currentCategory = 'all';
@@ -1668,66 +1637,30 @@
             document.getElementById('paymentReceiptModal').style.display = 'none';
         }
 
-        // Excel Upload & Sync Functions
-        function openExcelSyncModal() {
-            document.getElementById('excelSyncModal').style.display = 'flex';
-        }
+        // Live Excel Auto-Sync: Load products from /api/products
+        let lastProductsHash = '';
 
-        function closeExcelSyncModal() {
-            document.getElementById('excelSyncModal').style.display = 'none';
-        }
-
-        async function uploadExcelFile(e) {
-            e.preventDefault();
-            const fileInput = document.getElementById('excelFileInput');
-            if (!fileInput.files || fileInput.files.length === 0) return;
-
-            const file = fileInput.files[0];
-            const formData = new FormData();
-            formData.append('excelFile', file);
-
-            const btn = document.getElementById('btnUploadExcel');
-            const statusMsg = document.getElementById('uploadStatusMessage');
-
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال پردازش فایل اکسل و بروزرسانی قیمت‌ها...`;
-            statusMsg.style.display = 'none';
-
+        async function loadProductsFromApi() {
             try {
-                const res = await fetch('/api/upload-excel', {
-                    method: 'POST',
-                    body: formData
-                });
+                const res = await fetch('/api/products');
                 const data = await res.json();
-
-                if (data.success) {
-                    statusMsg.style.display = 'block';
-                    statusMsg.style.background = '#dcfce7';
-                    statusMsg.style.color = '#15803d';
-                    statusMsg.innerText = data.message;
-
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1200);
-                } else {
-                    statusMsg.style.display = 'block';
-                    statusMsg.style.background = '#fee2e2';
-                    statusMsg.style.color = '#b91c1c';
-                    statusMsg.innerText = data.message || 'خطایی در پردازش فایل رخ داد.';
-                    btn.disabled = false;
-                    btn.innerHTML = `<i class="fa-solid fa-sync"></i> آپلود و اعمال تغییرات جدید در سایت`;
+                if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+                    const currentHash = JSON.stringify(data.products.map(p => ({ id: p.id, price: p.price, name: p.name })));
+                    if (currentHash !== lastProductsHash) {
+                        lastProductsHash = currentHash;
+                        products = data.products;
+                        renderProducts(currentCategory);
+                    }
                 }
             } catch (err) {
-                statusMsg.style.display = 'block';
-                statusMsg.style.background = '#fee2e2';
-                statusMsg.style.color = '#b91c1c';
-                statusMsg.innerText = 'ارتباط با سرور برقرار نشد.';
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-sync"></i> آپلود و اعمال تغییرات جدید در سایت`;
+                console.log('Error auto-syncing products:', err);
             }
         }
 
         renderProducts();
+        loadProductsFromApi();
+        // Check for Excel changes every 3 seconds automatically
+        setInterval(loadProductsFromApi, 3000);
     </script>
 </body>
 </html>
