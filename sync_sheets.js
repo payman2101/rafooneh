@@ -136,6 +136,24 @@ async function syncGoogleSheets() {
         bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
       }
 
+      // Badge only if quantity/packing is less than 5
+      const badge = packing < 5 ? `تعداد محدود (${packing} عدد)` : null;
+
+      // Rich product description without generic tags
+      const categoryDescriptions = {
+        handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
+        dishwash: 'مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست.',
+        laundry: 'شوینده لباس رافونه محافظ بافت و رنگ پارچه، مانع از بور شدن و کدری لباس‌ها با رایحه ماندگار و قدرت لکه‌بری عالی.',
+        cleaners: 'پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب.',
+        sanitary: 'جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی.',
+        home: 'شامپو فرش و موکت رافونه تمیزکننده عمقی الیاف فرش و مبلمان، احیاکننده رنگ و بدون آسیب به بافت فرش.',
+        cellulosic: 'محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه.',
+        car: 'شوینده خودرو رافونه ایجادکننده لایه محافظ و براق‌کننده بدنه خودرو، چربی‌زدای قوی بدون آسیب به رنگ بدنه.',
+        other: 'محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی.'
+      };
+
+      const desc = categoryDescriptions[cat.id] || categoryDescriptions.other;
+
       products.push({
         id: code,
         name: name,
@@ -145,8 +163,8 @@ async function syncGoogleSheets() {
         consumerPrice: consumerPrice,
         packing: packing,
         image: bestImg,
-        badge: packing > 1 ? `کارتن ${packing} تایی` : 'تحویل مستقیم',
-        description: `محصول اصلی رافونه - ${name}. دریافت مستقیم از گوگل شیت.`
+        badge: badge,
+        description: desc
       });
     }
 
