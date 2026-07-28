@@ -41,6 +41,50 @@ const categoryDefaultImages = {
   other: 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg'
 };
 
+function parseNum(val) {
+  if (val === null || val === undefined || val === '') return 0;
+  if (typeof val === 'number') return val;
+  const cleaned = String(val)
+    .replace(/,/g, '')
+    .replace(/[\u0660-\u0669]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x0660 + 0x0030))
+    .replace(/[\u06f0-\u06f9]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x06f0 + 0x0030))
+    .trim();
+  const num = Number(cleaned);
+  return isNaN(num) ? 0 : num;
+}
+
+function findColumnIndices(headerRow) {
+  const headers = (headerRow || []).map(h => String(h || '').trim());
+
+  let codeIdx = headers.findIndex(h => h === 'کد کالا' || h === 'کد');
+  if (codeIdx === -1) codeIdx = headers.findIndex(h => h.includes('کد'));
+
+  let nameIdx = headers.findIndex(h => h === 'شرح کالا' || h === 'نام کالا' || h === 'نام');
+  if (nameIdx === -1) nameIdx = headers.findIndex(h => h.includes('شرح') || h.includes('نام') || h.includes('عنوان'));
+
+  // Exact match for 'قیمت تحویل' (e.g., column 10) prioritized over 'قیمت تحویل جدید' (column 8)
+  let deliveryPriceIdx = headers.findIndex(h => h === 'قیمت تحویل' || h === 'قیمت تحویل (ریال)' || h === 'قیمت تحویل(ریال)' || h === 'نرخ تحویل');
+  if (deliveryPriceIdx === -1) {
+    deliveryPriceIdx = headers.findIndex(h => h.includes('قیمت تحویل') || h.includes('نرخ تحویل'));
+  }
+
+  let consumerPriceIdx = headers.findIndex(h => h === 'قیمت مصرف' || h === 'قیمت مصرف کننده');
+  if (consumerPriceIdx === -1) {
+    consumerPriceIdx = headers.findIndex(h => h.includes('مصرف'));
+  }
+
+  let packingIdx = headers.findIndex(h => h.includes('کارتن') || h.includes('بسته') || h.includes('تعداد در'));
+
+  // Fallbacks if header labels are missing
+  if (codeIdx === -1) codeIdx = 0;
+  if (nameIdx === -1) nameIdx = 1;
+  if (deliveryPriceIdx === -1) deliveryPriceIdx = 10;
+  if (consumerPriceIdx === -1) consumerPriceIdx = 9;
+  if (packingIdx === -1) packingIdx = 5;
+
+  return { codeIdx, nameIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx };
+}
+
 function parseExcelAndBuildProducts() {
   try {
     const excelPath = path.join(__dirname, 'سفارش 1405.xlsx');
@@ -54,16 +98,25 @@ function parseExcelAndBuildProducts() {
     const sheet = workbook.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
+    if (rows.length < 2) return null;
+
+    const { codeIdx, nameIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+
     const excelProducts = [];
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
-      if (!r || !r[0] || !r[1]) continue;
+      if (!r || r[codeIdx] === undefined || !r[nameIdx]) continue;
+
+      const delPrice = parseNum(r[deliveryPriceIdx]) || parseNum(r[8]) || parseNum(r[9]) || 0;
+      const consPrice = parseNum(r[consumerPriceIdx]) || 0;
+      const pack = parseNum(r[packingIdx]) || 1;
+
       excelProducts.push({
-        code: r[0],
-        name: String(r[1]).trim(),
-        deliveryPrice: Number(r[10] || r[8] || r[9] || 0),
-        consumerPrice: Number(r[9] || 0),
-        packing: Number(r[5] || 1)
+        code: r[codeIdx],
+        name: String(r[nameIdx]).trim(),
+        deliveryPrice: delPrice,
+        consumerPrice: consPrice,
+        packing: pack
       });
     }
 
@@ -167,16 +220,20 @@ function processRowsToProducts(rows) {
     } catch (e) {}
   }
 
+  if (!rows || rows.length < 2) return [];
+
+  const { codeIdx, nameIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+
   const sheetProducts = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
-    if (!r || !r[0] || !r[1]) continue;
+    if (!r || r[codeIdx] === undefined || !r[nameIdx]) continue;
 
-    const code = String(r[0]).trim();
-    const name = String(r[1]).trim();
-    const deliveryPrice = Number(r[10] || r[8] || r[9] || r[2] || 0);
-    const consumerPrice = Number(r[9] || r[3] || 0);
-    const packing = Number(r[5] || r[4] || 1);
+    const code = String(r[codeIdx]).trim();
+    const name = String(r[nameIdx]).trim();
+    const deliveryPrice = parseNum(r[deliveryPriceIdx]) || parseNum(r[10]) || parseNum(r[8]) || parseNum(r[2]) || 0;
+    const consumerPrice = parseNum(r[consumerPriceIdx]) || parseNum(r[9]) || parseNum(r[3]) || 0;
+    const packing = parseNum(r[packingIdx]) || parseNum(r[5]) || 1;
 
     const cat = categorize(name);
     const cleanName = name.replace(/[0-9]/g, '');
