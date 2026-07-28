@@ -54,6 +54,9 @@ function findColumnIndices(headerRow) {
   let nameIdx = headers.findIndex(h => h === 'شرح کالا' || h === 'نام کالا' || h === 'نام');
   if (nameIdx === -1) nameIdx = headers.findIndex(h => h.includes('شرح') || h.includes('نام') || h.includes('عنوان'));
 
+  let stockIdx = headers.findIndex(h => h === 'موجودی' || h === 'موجودی انبار' || h === 'موجودی فعلی');
+  if (stockIdx === -1) stockIdx = headers.findIndex(h => h.includes('موجودی') && !h.includes('قبلی'));
+
   let deliveryPriceIdx = headers.findIndex(h => h === 'قیمت تحویل' || h === 'قیمت تحویل (ریال)' || h === 'قیمت تحویل(ریال)' || h === 'نرخ تحویل');
   if (deliveryPriceIdx === -1) deliveryPriceIdx = headers.findIndex(h => h.includes('قیمت تحویل') || h.includes('نرخ تحویل'));
 
@@ -64,11 +67,12 @@ function findColumnIndices(headerRow) {
 
   if (codeIdx === -1) codeIdx = 0;
   if (nameIdx === -1) nameIdx = 1;
+  if (stockIdx === -1) stockIdx = 4; // Column E (index 4)
   if (deliveryPriceIdx === -1) deliveryPriceIdx = 10;
   if (consumerPriceIdx === -1) consumerPriceIdx = 9;
   if (packingIdx === -1) packingIdx = 5;
 
-  return { codeIdx, nameIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx };
+  return { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx };
 }
 
 async function syncGoogleSheets() {
@@ -98,7 +102,7 @@ async function syncGoogleSheets() {
       scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8'));
     }
 
-    const { codeIdx, nameIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+    const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
 
     const products = [];
     for (let i = 1; i < rows.length; i++) {
@@ -107,6 +111,7 @@ async function syncGoogleSheets() {
 
       const code = String(r[codeIdx]).trim();
       const name = String(r[nameIdx]).trim();
+      const stock = parseNum(r[stockIdx]) || parseNum(r[4]) || 0;
       const deliveryPrice = parseNum(r[deliveryPriceIdx]) || parseNum(r[10]) || parseNum(r[8]) || parseNum(r[2]) || 0;
       const consumerPrice = parseNum(r[consumerPriceIdx]) || parseNum(r[9]) || parseNum(r[3]) || 0;
       const packing = parseNum(r[packingIdx]) || parseNum(r[5]) || 1;
@@ -136,10 +141,8 @@ async function syncGoogleSheets() {
         bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
       }
 
-      // Badge only if quantity/packing is less than 5
-      const badge = packing < 5 ? `تعداد محدود (${packing} عدد)` : null;
+      const badge = stock <= 0 ? 'ناموجود' : (packing < 5 ? `تعداد محدود (${packing} عدد)` : null);
 
-      // Rich product description without generic tags
       const categoryDescriptions = {
         handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
         dishwash: 'مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست.',
@@ -162,6 +165,7 @@ async function syncGoogleSheets() {
         price: deliveryPrice,
         consumerPrice: consumerPrice,
         packing: packing,
+        stock: stock,
         image: bestImg,
         badge: badge,
         description: desc

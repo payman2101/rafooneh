@@ -176,6 +176,10 @@
             z-index: 2;
         }
 
+        .product-tag.out-of-stock-tag {
+            background: #ef4444 !important;
+        }
+
         .product-img-wrapper {
             width: 100%;
             height: 180px;
@@ -1285,10 +1289,14 @@
                         <p id="detailModalDesc" style="font-size: 0.88rem; line-height: 1.7; color: var(--text-main); background: #f8fafc; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); margin:0;"></p>
                     </div>
 
-                    <div style="margin-bottom: 16px; display:flex; gap:16px; align-items:center;">
+                    <div style="margin-bottom: 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                         <div style="background:#f1f5f9; padding:6px 12px; border-radius:8px; font-size:0.82rem; color:var(--text-main);">
                             <span style="color:var(--text-muted);">بسته‌بندی:</span>
                             <span id="detailModalPacking" style="font-weight:bold; margin-right:4px;"></span>
+                        </div>
+                        <div style="background:#f1f5f9; padding:6px 12px; border-radius:8px; font-size:0.82rem; color:var(--text-main);">
+                            <span style="color:var(--text-muted);">موجودی:</span>
+                            <span id="detailModalStock" style="font-weight:bold; margin-right:4px;"></span>
                         </div>
                     </div>
 
@@ -1356,12 +1364,16 @@
 
             filtered.forEach(p => {
                 const qty = cart[p.id] || 0;
+                const isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
                 const card = document.createElement('div');
-                card.className = 'product-card';
+                card.className = `product-card ${isOutOfStock ? 'out-of-stock-card' : ''}`;
                 card.onclick = () => openProductDetailModal(p.id);
 
+                const badgeText = isOutOfStock ? 'ناموجود' : p.badge;
+                const badgeClass = isOutOfStock ? 'product-tag out-of-stock-tag' : 'product-tag';
+
                 card.innerHTML = `
-                    ${p.badge ? `<div class="product-tag">${p.badge}</div>` : ''}
+                    ${badgeText ? `<div class="${badgeClass}">${badgeText}</div>` : ''}
                     <div class="product-img-wrapper">
                         <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg'">
                     </div>
@@ -1375,16 +1387,27 @@
                             <div>
                                 <div class="product-price">${p.price.toLocaleString('fa-IR')} <span>تومان</span></div>
                                 ${p.consumerPrice && p.consumerPrice > p.price ? `<div class="product-consumer-price">قیمت مصرف: ${p.consumerPrice.toLocaleString('fa-IR')} تومان</div>` : ''}
+                                ${p.stock !== undefined && p.stock !== null ? `
+                                    <div style="font-size: 0.75rem; margin-top: 3px; color: ${p.stock > 0 ? '#16a34a' : '#ef4444'}; font-weight: 600;">
+                                        ${p.stock > 0 ? `موجودی: ${p.stock.toLocaleString('fa-IR')} عدد` : 'ناموجود در انبار'}
+                                    </div>
+                                ` : ''}
                             </div>
                             <div class="cart-controls" onclick="event.stopPropagation();">
-                                <button class="btn-add" id="addBtn-${p.id}" onclick="event.stopPropagation(); updateQty('${p.id}', 1)" style="${qty > 0 ? 'display:none;' : 'display:flex;'}">
-                                    <i class="fa-solid fa-plus"></i> افزودن
-                                </button>
-                                <div class="qty-picker ${qty > 0 ? 'active' : ''}" id="picker-${p.id}" onclick="event.stopPropagation();">
-                                    <button class="qty-btn" onclick="event.stopPropagation(); updateQty('${p.id}', 1)">+</button>
-                                    <span class="qty-val" id="qtyVal-${p.id}">${qty.toLocaleString('fa-IR')}</span>
-                                    <button class="qty-btn" onclick="event.stopPropagation(); updateQty('${p.id}', -1)">-</button>
-                                </div>
+                                ${isOutOfStock ? `
+                                    <button class="btn-add" disabled style="background:#cbd5e1; border-color:#cbd5e1; color:#64748b; cursor:not-allowed;">
+                                        ناموجود
+                                    </button>
+                                ` : `
+                                    <button class="btn-add" id="addBtn-${p.id}" onclick="event.stopPropagation(); updateQty('${p.id}', 1)" style="${qty > 0 ? 'display:none;' : 'display:flex;'}">
+                                        <i class="fa-solid fa-plus"></i> افزودن
+                                    </button>
+                                    <div class="qty-picker ${qty > 0 ? 'active' : ''}" id="picker-${p.id}" onclick="event.stopPropagation();">
+                                        <button class="qty-btn" onclick="event.stopPropagation(); updateQty('${p.id}', 1)">+</button>
+                                        <span class="qty-val" id="qtyVal-${p.id}">${qty.toLocaleString('fa-IR')}</span>
+                                        <button class="qty-btn" onclick="event.stopPropagation(); updateQty('${p.id}', -1)">-</button>
+                                    </div>
+                                `}
                             </div>
                         </div>
                     </div>
@@ -1406,15 +1429,35 @@
             document.getElementById('detailModalTitle').innerText = p.name;
             document.getElementById('detailModalDesc').innerText = p.description || 'توضیحات و مشخصات کامل برای این محصول ثبت نشده است.';
             
+            const isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
             const badgeEl = document.getElementById('detailModalBadge');
-            if (p.badge) {
-                badgeEl.innerText = p.badge;
+            const badgeText = isOutOfStock ? 'ناموجود' : p.badge;
+            if (badgeText) {
+                badgeEl.innerText = badgeText;
+                badgeEl.className = isOutOfStock ? 'product-tag out-of-stock-tag' : 'product-tag';
                 badgeEl.style.display = 'block';
             } else {
                 badgeEl.style.display = 'none';
             }
 
             document.getElementById('detailModalPacking').innerText = p.packing > 1 ? `${p.packing.toLocaleString('fa-IR')} عدد در کارتن` : 'تک عددی';
+            
+            const stockEl = document.getElementById('detailModalStock');
+            if (stockEl) {
+                if (p.stock !== undefined && p.stock !== null) {
+                    if (p.stock <= 0) {
+                        stockEl.innerText = 'ناموجود (۰ عدد)';
+                        stockEl.style.color = '#ef4444';
+                    } else {
+                        stockEl.innerText = `${p.stock.toLocaleString('fa-IR')} عدد`;
+                        stockEl.style.color = '#16a34a';
+                    }
+                } else {
+                    stockEl.innerText = 'موجود در انبار';
+                    stockEl.style.color = '#16a34a';
+                }
+            }
+
             document.getElementById('detailModalPrice').innerHTML = `${p.price.toLocaleString('fa-IR')} <span style="font-size:0.8rem; font-weight:normal;">تومان</span>`;
 
             const consEl = document.getElementById('detailModalConsumerPrice');
@@ -1437,7 +1480,17 @@
 
         function renderModalCartControls(productId) {
             const container = document.getElementById('detailModalCartControls');
+            const p = products.find(prod => prod.id == productId);
             const qty = cart[productId] || 0;
+
+            if (p && p.stock !== undefined && p.stock !== null && p.stock <= 0) {
+                container.innerHTML = `
+                    <button class="btn-add" disabled style="background:#cbd5e1; border-color:#cbd5e1; color:#64748b; cursor:not-allowed;">
+                        محصول ناموجود است
+                    </button>
+                `;
+                return;
+            }
             
             container.innerHTML = `
                 <button class="btn-add" style="${qty > 0 ? 'display:none;' : 'display:flex;'}" onclick="updateQty('${productId}', 1);">
@@ -1452,6 +1505,19 @@
         }
 
         function updateQty(id, change) {
+            const p = products.find(prod => prod.id == id);
+            if (change > 0 && p && p.stock !== undefined && p.stock !== null) {
+                if (p.stock <= 0) {
+                    alert('این محصول در حال حاضر موجود نیست.');
+                    return;
+                }
+                const currentQty = cart[id] || 0;
+                if (currentQty + change > p.stock) {
+                    alert(`حداکثر موجودی انبار برای این محصول ${p.stock.toLocaleString('fa-IR')} عدد است.`);
+                    return;
+                }
+            }
+
             const current = cart[id] || 0;
             const updated = current + change;
 
@@ -1949,18 +2015,21 @@
                 const headers = lines[0].map(h => h.trim());
                 let codeIdx = headers.findIndex(h => h === 'کد کالا' || h === 'کد' || h.includes('کد'));
                 let nameIdx = headers.findIndex(h => h === 'شرح کالا' || h === 'نام کالا' || h === 'نام' || h.includes('شرح') || h.includes('عنوان'));
+                let stockIdx = headers.findIndex(h => h === 'موجودی' || h === 'موجودی انبار' || h === 'موجودی فعلی');
+                if (stockIdx === -1) stockIdx = headers.findIndex(h => h.includes('موجودی') && !h.includes('قبلی'));
                 let delPriceIdx = headers.findIndex(h => h === 'قیمت تحویل' || h.includes('تحویل'));
                 let consPriceIdx = headers.findIndex(h => h === 'قیمت مصرف' || h.includes('مصرف'));
                 let packIdx = headers.findIndex(h => h.includes('کارتن') || h.includes('بسته'));
 
                 if (codeIdx === -1) codeIdx = 0;
                 if (nameIdx === -1) nameIdx = 1;
+                if (stockIdx === -1) stockIdx = 4; // Column E
                 if (delPriceIdx === -1) delPriceIdx = 10;
                 if (consPriceIdx === -1) consPriceIdx = 9;
                 if (packIdx === -1) packIdx = 5;
 
                 const parseN = (val) => {
-                    if (!val) return 0;
+                    if (!val && val !== 0) return 0;
                     const cleaned = String(val).replace(/,/g, '').trim();
                     const n = Number(cleaned);
                     return isNaN(n) ? 0 : n;
@@ -1973,12 +2042,13 @@
 
                     const code = r[codeIdx].trim();
                     const name = r[nameIdx].trim();
+                    const stock = parseN(r[stockIdx]) || parseN(r[4]) || 0;
                     const delPrice = parseN(r[delPriceIdx]) || parseN(r[10]) || parseN(r[8]) || 0;
                     const consPrice = parseN(r[consPriceIdx]) || parseN(r[9]) || 0;
                     const pack = parseN(r[packIdx]) || 1;
 
                     const existing = products.find(p => p.id == code);
-                    const badge = pack < 5 ? `تعداد محدود (${pack} عدد)` : null;
+                    const badge = stock <= 0 ? 'ناموجود' : (pack < 5 ? `تعداد محدود (${pack} عدد)` : null);
                     const catDescMap = {
                         handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
                         dishwash: 'مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست.',
@@ -1991,7 +2061,7 @@
                         other: 'محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی.'
                     };
                     const catId = existing ? existing.category : 'other';
-                    const desc = existing && existing.description ? existing.description : (catDescMap[catId] || catDescMap.other);
+                    const desc = catDescMap[catId] || catDescMap.other;
 
                     sheetProducts.push({
                         id: code,
@@ -2001,6 +2071,7 @@
                         price: delPrice,
                         consumerPrice: consPrice,
                         packing: pack,
+                        stock: stock,
                         image: existing ? existing.image : 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg',
                         badge: badge,
                         description: desc
