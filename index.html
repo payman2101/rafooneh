@@ -2008,7 +2008,7 @@
                 }
 
                 if (sheetProducts.length > 0) {
-                    const currentHash = JSON.stringify(sheetProducts.map(p => ({ id: p.id, price: p.price, name: p.name })));
+                    const currentHash = JSON.stringify(sheetProducts.map(p => ({ id: p.id, price: p.price, name: p.name, badge: p.badge, desc: p.description })));
                     if (currentHash !== lastProductsHash) {
                         lastProductsHash = currentHash;
                         products = sheetProducts;
@@ -2026,7 +2026,7 @@
                 if (!res.ok) throw new Error('API not available');
                 const data = await res.json();
                 if (data.success && Array.isArray(data.products) && data.products.length > 0) {
-                    const currentHash = JSON.stringify(data.products.map(p => ({ id: p.id, price: p.price, name: p.name })));
+                    const currentHash = JSON.stringify(data.products.map(p => ({ id: p.id, price: p.price, name: p.name, badge: p.badge, desc: p.description })));
                     if (currentHash !== lastProductsHash) {
                         lastProductsHash = currentHash;
                         products = data.products;
