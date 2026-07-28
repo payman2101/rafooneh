@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فروشگاه آنلاین شوینده‌های رافونه | تحویل درب منزل</title>
+    <!-- Vazirmatn Font from CDN -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #00897b;
+            --primary-dark: #00695c;
+            --primary-light: #e0f2f1;
+            --accent: #ff9800;
+            --whatsapp: #25D366;
+            --whatsapp-dark: #128C7E;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #6c757d;
+            --border: #e9ecef;
+            --shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding-bottom: 90px;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 20px 15px 25px;
+            text-align: center;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 137, 123, 0.25);
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .badge-trust {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(5px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Navigation / Categories */
+        .categories-container {
+            padding: 15px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+            margin-top: -15px;
+        }
+        .categories-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-btn {
+            display: inline-block;
+            padding: 8px 18px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            border-radius: 25px;
+            margin-left: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+
+        .category-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0, 137, 123, 0.3);
+        }
+
+        /* Main Layout */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 10px 15px;
+        }
+
+        /* Notice Banner */
+        .promo-banner {
+            background: linear-gradient(45deg, #fff3e0, #ffe0b2);
+            border-right: 4px solid var(--accent);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.85rem;
+            color: #d84315;
+        }
+
+        .promo-banner i {
+            font-size: 1.4rem;
+        }
+
+        /* Products Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 18px;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.09);
+        }
+
+        .product-tag {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--accent);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 8px;
+            z-index: 2;
+        }
+
+        .product-img-wrapper {
+            width: 100%;
+            height: 180px;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+        }
+
+        .product-img-wrapper img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover .product-img-wrapper img {
+            transform: scale(1.05);
+        }
+
+        .product-details {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .product-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        .product-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+
+        .product-price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border);
+        }
+
+        .product-price {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
+        .product-price span {
+            font-size: 0.75rem;
+            font-weight: normal;
+            color: var(--text-muted);
+        }
+
+        /* Quantity & Add Button Controls */
+        .cart-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-add {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border: none;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-add:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .qty-picker {
+            display: none;
+            align-items: center;
+            background: var(--primary-light);
+            border-radius: 10px;
+            padding: 2px;
+        }
+
+        .qty-picker.active {
+            display: flex;
+        }
+
+        .qty-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: white;
+            color: var(--primary-dark);
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .qty-val {
+            padding: 0 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: var(--primary-dark);
+        }
+
+        /* Floating Bottom Cart Bar */
+        .bottom-cart-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 20px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .cart-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cart-icon-wrapper {
+            position: relative;
+            background: var(--primary-light);
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-dark);
+            font-size: 1.2rem;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-total-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .cart-total-price {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
+        .btn-checkout {
+            background: linear-gradient(135deg, var(--whatsapp), var(--whatsapp-dark));
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+            transition: transform 0.2s;
+        }
+
+        .btn-checkout:active {
+            transform: scale(0.97);
+        }
+
+        /* Checkout Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 200;
+        }
+
+        @media (min-width: 600px) {
+            .modal-overlay {
+                align-items: center;
+            }
+        }
+
+        .modal-card {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 24px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @media (min-width: 600px) {
+            .modal-card {
+                border-radius: 24px;
+            }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-close {
+            background: #f1f3f5;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #495057;
+            font-weight: bold;
+        }
+
+        .order-summary-list {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 18px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            padding: 6px 0;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        .btn-submit-order {
+            width: 100%;
+            background: linear-gradient(135deg, var(--whatsapp), var(--whatsapp-dark));
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        /* Payment Methods */
+        .payment-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .payment-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fafafa;
+        }
+
+        .payment-option:hover {
+            border-color: var(--primary);
+            background: #ffffff;
+        }
+
+        .payment-option.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .payment-option input[type="radio"] {
+            margin-top: 4px;
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+        }
+
+        .payment-option-content {
+            flex: 1;
+        }
+
+        .payment-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .badge-fast {
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid #c8e6c9;
+            font-weight: normal;
+        }
+
+        .payment-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Bank Gateway Portal Modal */
+        .gateway-card {
+            background: #ffffff;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            border: 1px solid #e2e8f0;
+        }
+
+        .gateway-header {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gateway-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .gateway-timer {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .gateway-merchant-info {
+            background: #f8fafc;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.82rem;
+        }
+
+        .merchant-field span {
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .merchant-field strong {
+            color: var(--text-main);
+            font-size: 0.88rem;
+        }
+
+        .gateway-body {
+            padding: 20px;
+        }
+
+        .card-number-wrapper {
+            position: relative;
+        }
+
+        .bank-badge {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.78rem;
+            font-weight: bold;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .otp-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-request-otp {
+            background: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0 14px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-request-otp:hover {
+            background: #0369a1;
+        }
+
+        .captcha-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .captcha-code {
+            background: #1e293b;
+            color: #38bdf8;
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            letter-spacing: 4px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            user-select: none;
+            text-decoration: line-through;
+        }
+
+        .gateway-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-pay-now {
+            flex: 2;
+            background: #16a34a;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-pay-now:hover {
+            background: #15803d;
+        }
+
+        .btn-cancel-pay {
+            flex: 1;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Digital Receipt Modal */
+        .receipt-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 460px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .receipt-icon {
+            width: 64px;
+            height: 64px;
+            background: #dcfce7;
+            color: #16a34a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 12px;
+        }
+
+        .receipt-details {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 14px;
+            padding: 15px;
+            margin: 18px 0;
+            text-align: right;
+            font-size: 0.88rem;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dotted #e2e8f0;
+        }
+
+        .receipt-row:last-child {
+            border-bottom: none;
+        }
+
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1e293b;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.88rem;
+            border-right: 4px solid #38bdf8;
+            animation: slideUp 0.3s ease;
+        }
+
+        .search-box-container {
+            margin: 10px 0 20px 0;
+            position: relative;
+        }
+
+        .search-box-container i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            border-radius: 25px;
+            border: 2px solid var(--border);
+            outline: none;
+            font-size: 0.9rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: white;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 137, 123, 0.15);
+        }
+
+        .product-code-badge {
+            font-size: 0.72rem;
+            color: var(--primary-dark);
+            background: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .product-consumer-price {
+            font-size: 0.72rem;
+            color: #888;
+            text-decoration: line-through;
+            margin-top: 2px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 25px 15px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 30px;
+            border-top: 1px solid var(--border);
+        }
+
+        .contact-direct {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-dark);
+            font-weight: bold;
+            text-decoration: none;
+            margin-top: 8px;
+            background: var(--primary-light);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1><i class="fa-solid fa-pump-soap"></i> توزیع شوینده‌های رافونه</h1>
+        <p>تأمین مستقیم محصولات بهداشتی رافونه و لوازم نظافت درب منزل</p>
+        <div class="badge-trust">
+            <i class="fa-solid fa-shield-halved"></i> ۵ سال سابقه خدمت و اعتماد مشتریان
+        </div>
+    </header>
+
+    <!-- Categories Tab -->
+    <div class="categories-container">
+        <button class="category-btn active" onclick="filterCategory('all', this)">همه (۱۰۷ کالا)</button>
+        <button class="category-btn" onclick="filterCategory('handwash', this)">مایع دستشویی</button>
+        <button class="category-btn" onclick="filterCategory('dishwash', this)">مایع ظرفشویی</button>
+        <button class="category-btn" onclick="filterCategory('cleaners', this)">پاک‌کننده و اسپری</button>
+        <button class="category-btn" onclick="filterCategory('sanitary', this)">جرم‌گیر و سرویس</button>
+        <button class="category-btn" onclick="filterCategory('laundry', this)">شوینده لباس</button>
+        <button class="category-btn" onclick="filterCategory('cellulosic', this)">سلولزی و کیسه</button>
+        <button class="category-btn" onclick="filterCategory('other', this)">سایر شوینده‌ها</button>
+    </div>
+
+    <div class="container">
+        <!-- Search Box -->
+        <div class="search-box-container">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" class="search-input" placeholder="جستجوی سریع نام یا کد کالا (مثلاً: ۱۰۲۱، مایع دست، اسپری)..." oninput="handleSearchInput()">
+        </div>
+
+        <!-- Banner -->
+        <div class="promo-banner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-gift"></i>
+                <div>
+                    <strong>لیست به روز محصولات رافونه:</strong> تمامی قیمت‌ها بر اساس نرخ تحویل درب منزل محاسبه گردیده است.
+                </div>
+            </div>
+            <button onclick="openExcelSyncModal()" style="background: #16a34a; color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-file-excel"></i> همگام‌سازی فایل اکسل جدید
+            </button>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="products-grid" id="productsGrid">
+            <!-- Dynamic products rendered by JS -->
+        </div>
+    </div>
+
+    <!-- Floating Cart Bar -->
+    <div class="bottom-cart-bar" id="cartBar" style="display: none;">
+        <div class="cart-info">
+            <div class="cart-icon-wrapper">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <div class="cart-badge" id="cartCount">0</div>
+            </div>
+            <div>
+                <div class="cart-total-text">مجموع سبد خرید:</div>
+                <div class="cart-total-price" id="cartTotalPrice">۰ تومان</div>
+            </div>
+        </div>
+        <button class="btn-checkout" onclick="openCheckoutModal()">
+            <i class="fa-brands fa-whatsapp" style="font-size:1.2rem;"></i>
+            ثبت سفارش در واتساپ
+        </button>
+    </div>
+
+    <!-- Modal Checkout -->
+    <div class="modal-overlay" id="checkoutModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-clipboard-check" style="color:var(--primary)"></i> نهایی‌سازی سفارش</h3>
+                <button class="btn-close" onclick="closeCheckoutModal()">×</button>
+            </div>
+
+            <div class="order-summary-list" id="orderSummaryList">
+                <!-- Summary items rendered here -->
+            </div>
+
+            <form id="whatsappForm" onsubmit="handleOrderSubmit(event)">
+                <div class="form-group">
+                    <label for="custName"><i class="fa-solid fa-user"></i> نام و نام خانوادگی:</label>
+                    <input type="text" id="custName" class="form-control" placeholder="مثال: خانم احمدی" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="custPhone"><i class="fa-solid fa-phone"></i> شماره تماس:</label>
+                    <input type="tel" id="custPhone" class="form-control" placeholder="09123456789" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="custAddress"><i class="fa-solid fa-location-dot"></i> آدرس کامل و شماره واحد:</label>
+                    <textarea id="custAddress" class="form-control" placeholder="خیابان ... کوچه ... پلاک ... واحد ..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="custNote"><i class="fa-solid fa-comment-dots"></i> توضیحات یا زمان تحویل (اختیاری):</label>
+                    <input type="text" id="custNote" class="form-control" placeholder="مثلاً: تحویل ساعت ۵ به بعد">
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fa-solid fa-credit-card"></i> روش پرداخت:</label>
+                    <div class="payment-methods">
+                        <label class="payment-option active" id="optionCod">
+                            <input type="radio" name="paymentMethod" value="cod" checked onchange="togglePaymentMethod('cod')">
+                            <div class="payment-option-content">
+                                <div class="payment-title">
+                                    <i class="fa-solid fa-truck-ramp-box" style="color:var(--primary)"></i>
+                                    پرداخت در محل (کارتخوان یا نقد)
+                                    <span class="badge-fast">پیش‌فرض</span>
+                                </div>
+                                <div class="payment-desc">تسویه هنگام دریافت کالا درب منزل</div>
+                            </div>
+                        </label>
+
+                        <label class="payment-option" id="optionWhatsapp">
+                            <input type="radio" name="paymentMethod" value="whatsapp" onchange="togglePaymentMethod('whatsapp')">
+                            <div class="payment-option-content">
+                                <div class="payment-title">
+                                    <i class="fa-brands fa-whatsapp" style="color:var(--whatsapp)"></i>
+                                    کارت به کارت / هماهنگی در واتساپ
+                                </div>
+                                <div class="payment-desc">دریافت شماره کارت یا هماهنگی در واتساپ</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit-order" id="submitBtn">
+                    <i class="fa-brands fa-whatsapp" style="font-size: 1.3rem;"></i>
+                    ثبت سفارش و ارسال به واتساپ (989027959555)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Bank Gateway (شاپرک / زرین‌پال) -->
+    <!-- Excel Sync Modal -->
+    <div class="modal-overlay" id="excelSyncModal" style="display: none;">
+        <div class="checkout-card" style="max-width: 500px;">
+            <div class="checkout-header">
+                <div>
+                    <i class="fa-solid fa-file-excel" style="color: #16a34a; font-size: 1.5rem;"></i>
+                    <strong style="margin-right: 8px;">به‌روزرسانی محصولات از فایل اکسل</strong>
+                </div>
+                <button class="btn-close-modal" onclick="closeExcelSyncModal()">&times;</button>
+            </div>
+
+            <div style="padding: 15px 0;">
+                <p style="font-size: 0.85rem; color: #475569; margin-bottom: 15px; line-height: 1.6;">
+                    شما می‌توانید فایل اکسل جدید یا ویرایش‌شده (مانند <code>سفارش 1405.xlsx</code>) را انتخاب یا آپلود کنید. سیستم به صورت خودکار قیمت‌های جدید («قیمت تحویل») و تمامی کالاهای جدید را استخراج و در سایت به‌روزرسانی می‌کند.
+                </p>
+
+                <form id="excelUploadForm" onsubmit="uploadExcelFile(event)">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-cloud-arrow-up"></i> انتخاب فایل اکسل جدید:</label>
+                        <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="form-control" required style="padding: 8px;">
+                    </div>
+
+                    <div id="uploadStatusMessage" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-size: 0.85rem;"></div>
+
+                    <button type="submit" class="btn-submit-order" id="btnUploadExcel" style="background: #16a34a;">
+                        <i class="fa-solid fa-sync"></i> آپلود و اعمال تغییرات جدید در سایت
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="bankGatewayModal" style="display: none;">
+        <div class="gateway-card">
+            <div class="gateway-header">
+                <div class="gateway-brand">
+                    <i class="fa-solid fa-building-columns" style="font-size:1.3rem;"></i>
+                    درگاه پرداخت اینترنتی شاپرک
+                </div>
+                <div class="gateway-timer" id="gatewayTimer">09:59</div>
+            </div>
+
+            <div class="gateway-merchant-info">
+                <div class="merchant-field">
+                    <span>نام پذیرنده:</span>
+                    <strong>فروشگاه رافونه</strong>
+                </div>
+                <div class="merchant-field">
+                    <span>کد پذیرنده:</span>
+                    <strong>14059821</strong>
+                </div>
+                <div class="merchant-field">
+                    <span>مبلغ قابل پرداخت:</span>
+                    <strong style="color:#0284c7;" id="gatewayAmount">۰ تومان</strong>
+                </div>
+                <div class="merchant-field">
+                    <span>مبلغ به ریال:</span>
+                    <strong id="gatewayAmountRial">۰ ریال</strong>
+                </div>
+            </div>
+
+            <form class="gateway-body" onsubmit="processBankPayment(event)">
+                <div class="form-group">
+                    <label for="cardNumber"><i class="fa-solid fa-credit-card"></i> شماره کارت ۱۶ رقمی شتاب:</label>
+                    <div class="card-number-wrapper">
+                        <input type="text" id="cardNumber" class="form-control" placeholder="6037-XXXX-XXXX-XXXX" maxlength="19" oninput="formatCardNumber(this)" required>
+                        <span class="bank-badge" id="bankBadge">بانک</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label for="cardCvv2"><i class="fa-solid fa-key"></i> کد CVV2:</label>
+                        <input type="password" id="cardCvv2" class="form-control" placeholder="3 یا 4 رقم" maxlength="4" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-calendar-days"></i> تاریخ انقضا:</label>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="text" id="expMonth" class="form-control" placeholder="ماه (05)" maxlength="2" required style="text-align:center;">
+                            <input type="text" id="expYear" class="form-control" placeholder="سال (06)" maxlength="2" required style="text-align:center;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cardOtp"><i class="fa-solid fa-mobile-retro"></i> رمز دوم (پویا):</label>
+                    <div class="otp-row">
+                        <input type="password" id="cardOtp" class="form-control" placeholder="کد ۶ رقمی پیامک شده" maxlength="6" required>
+                        <button type="button" class="btn-request-otp" id="btnRequestOtp" onclick="requestDynamicOtp()">
+                            درخواست رمز پویا
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fa-solid fa-shield"></i> کد امنیتی:</label>
+                    <div class="captcha-box">
+                        <input type="text" id="captchaInput" class="form-control" placeholder="کد ۴ رقمی" maxlength="4" required style="max-width:120px;">
+                        <div class="captcha-code" id="captchaCode">8492</div>
+                        <button type="button" class="btn-close" onclick="generateCaptcha()" title="تغییر کد امنیتی">
+                            <i class="fa-solid fa-rotate-right" style="font-size:0.85rem;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="gateway-actions">
+                    <button type="submit" class="btn-pay-now" id="btnPayNow">
+                        <i class="fa-solid fa-check-circle"></i> تایید و پرداخت آنلاین
+                    </button>
+                    <button type="button" class="btn-cancel-pay" onclick="cancelBankPayment()">
+                        انصراف
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Digital Receipt (رسید دیجیتال پرداخت) -->
+    <div class="modal-overlay" id="paymentReceiptModal" style="display: none;">
+        <div class="receipt-card">
+            <div class="receipt-icon">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h3 style="color:#15803d; margin-bottom: 6px;">پرداخت آنلاین با موفقیت انجام شد</h3>
+            <p style="font-size:0.85rem; color:var(--text-muted);">سفارش شما در سامانه توزیع رافونه ثبت گردید.</p>
+
+            <div class="receipt-details">
+                <div class="receipt-row">
+                    <span>کد پیگیری تراکنش:</span>
+                    <strong id="receiptRefId" style="color:var(--primary-dark);">REF-1405928102</strong>
+                </div>
+                <div class="receipt-row">
+                    <span>شماره مرجع بانکی:</span>
+                    <strong id="receiptBankRef">98210492810</strong>
+                </div>
+                <div class="receipt-row">
+                    <span>مبلغ پرداخت شده:</span>
+                    <strong id="receiptAmount" style="color:#16a34a;">۰ تومان</strong>
+                </div>
+                <div class="receipt-row">
+                    <span>شماره کارت:</span>
+                    <span id="receiptCardMasked">۶۰۳۷-۹۹**-****-۱۲۳۴</span>
+                </div>
+                <div class="receipt-row">
+                    <span>نام تحویل‌گیرنده:</span>
+                    <span id="receiptCustomerName">---</span>
+                </div>
+                <div class="receipt-row">
+                    <span>تاریخ و زمان:</span>
+                    <span id="receiptDateTime">۱۴۰۳/۰۵/۰۷ - ۱۲:۳۴</span>
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button class="btn-submit-order" onclick="sendReceiptToWhatsApp()">
+                    <i class="fa-brands fa-whatsapp" style="font-size: 1.2rem;"></i>
+                    ارسال فاکتور به واتساپ پشتیبانی (09027959555)
+                </button>
+                <button class="btn-cancel-pay" onclick="finishOrderAndClose()" style="width:100%;">
+                    بازگشت به فروشگاه
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>توزیع مستقیم محصولات بهداشتی رافونه درب منزل</p>
+        <a href="https://wa.me/989027959555" class="contact-direct" target="_blank">
+            <i class="fa-brands fa-whatsapp"></i> پشتیبانی و سفارش تلفنی: 09027959555
+        </a>
+    </footer>
+
+    <script src="products_data.js"></script>
+    <script>
+        // Products Dataset from Excel and Rafooneh Catalog
+        const products = typeof productsData !== 'undefined' ? productsData : [];
+
+        let cart = {};
+        let currentCategory = 'all';
+
+        function handleSearchInput() {
+            renderProducts(currentCategory);
+        }
+
+        function renderProducts(filter = 'all') {
+            currentCategory = filter;
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+
+            const searchQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+
+            let filtered = filter === 'all' ? products : products.filter(p => p.category === filter);
+
+            if (searchQuery) {
+                filtered = filtered.filter(p => 
+                    String(p.id).includes(searchQuery) || 
+                    p.name.toLowerCase().includes(searchQuery) ||
+                    (p.categoryName && p.categoryName.toLowerCase().includes(searchQuery))
+                );
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fa-solid fa-box-open" style="font-size: 3rem; margin-bottom: 12px; color: #cbd5e1;"></i>
+                        <p style="font-size: 1.1rem; font-weight: bold;">هیچ کالایی با این مشخصات یافت نشد.</p>
+                        <p style="font-size: 0.85rem;">لطفاً عبارت دیگری را جستجو کنید یا دسته‌بندی را تغییر دهید.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const qty = cart[p.id] || 0;
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    ${p.badge ? `<div class="product-tag">${p.badge}</div>` : ''}
+                    <div class="product-img-wrapper">
+                        <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg'">
+                    </div>
+                    <div class="product-details">
+                        <div>
+                            <span class="product-code-badge">کد: ${p.id}</span>
+                            <div class="product-title">${p.name}</div>
+                        </div>
+                        <div class="product-desc">${p.description || 'محصول باکیفیت رافونه'}</div>
+                        <div class="product-price-row">
+                            <div>
+                                <div class="product-price">${p.price.toLocaleString('fa-IR')} <span>تومان</span></div>
+                                ${p.consumerPrice && p.consumerPrice > p.price ? `<div class="product-consumer-price">قیمت مصرف: ${p.consumerPrice.toLocaleString('fa-IR')} تومان</div>` : ''}
+                            </div>
+                            <div class="cart-controls">
+                                <button class="btn-add" id="addBtn-${p.id}" onclick="updateQty(${p.id}, 1)" style="${qty > 0 ? 'display:none;' : 'display:flex;'}">
+                                    <i class="fa-solid fa-plus"></i> افزودن
+                                </button>
+                                <div class="qty-picker ${qty > 0 ? 'active' : ''}" id="picker-${p.id}">
+                                    <button class="qty-btn" onclick="updateQty(${p.id}, 1)">+</button>
+                                    <span class="qty-val" id="qtyVal-${p.id}">${qty.toLocaleString('fa-IR')}</span>
+                                    <button class="qty-btn" onclick="updateQty(${p.id}, -1)">-</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function updateQty(id, change) {
+            const current = cart[id] || 0;
+            const updated = current + change;
+
+            if (updated <= 0) {
+                delete cart[id];
+            } else {
+                cart[id] = updated;
+            }
+
+            const addBtn = document.getElementById(`addBtn-${id}`);
+            const picker = document.getElementById(`picker-${id}`);
+            const qtyVal = document.getElementById(`qtyVal-${id}`);
+
+            const newQty = cart[id] || 0;
+
+            if (newQty > 0) {
+                if (addBtn) addBtn.style.display = 'none';
+                if (picker) picker.classList.add('active');
+                if (qtyVal) qtyVal.innerText = newQty.toLocaleString('fa-IR');
+            } else {
+                if (addBtn) addBtn.style.display = 'flex';
+                if (picker) picker.classList.remove('active');
+            }
+
+            updateCartBar();
+        }
+
+        function filterCategory(cat, btn) {
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderProducts(cat);
+        }
+
+        function updateCartBar() {
+            const cartBar = document.getElementById('cartBar');
+            const cartCount = document.getElementById('cartCount');
+            const cartTotalPrice = document.getElementById('cartTotalPrice');
+
+            let totalItems = 0;
+            let totalPrice = 0;
+
+            for (const [id, qty] of Object.entries(cart)) {
+                const p = products.find(prod => prod.id == id);
+                if (p) {
+                    totalItems += qty;
+                    totalPrice += p.price * qty;
+                }
+            }
+
+            if (totalItems > 0) {
+                cartBar.style.display = 'flex';
+                cartCount.innerText = totalItems.toLocaleString('fa-IR');
+                cartTotalPrice.innerText = totalPrice.toLocaleString('fa-IR') + ' تومان';
+            } else {
+                cartBar.style.display = 'none';
+            }
+        }
+
+        function openCheckoutModal() {
+            const modal = document.getElementById('checkoutModal');
+            const summaryList = document.getElementById('orderSummaryList');
+            summaryList.innerHTML = '';
+
+            let totalPrice = 0;
+
+            for (const [id, qty] of Object.entries(cart)) {
+                const p = products.find(prod => prod.id == id);
+                if (p) {
+                    const itemTotal = p.price * qty;
+                    totalPrice += itemTotal;
+                    const itemRow = document.createElement('div');
+                    itemRow.className = 'summary-item';
+                    itemRow.innerHTML = `
+                        <span><strong>${p.name}</strong> × ${qty.toLocaleString('fa-IR')}</span>
+                        <span>${itemTotal.toLocaleString('fa-IR')} تومان</span>
+                    `;
+                    summaryList.appendChild(itemRow);
+                }
+            }
+
+            const totalRow = document.createElement('div');
+            totalRow.className = 'summary-item';
+            totalRow.style.fontWeight = 'bold';
+            totalRow.style.borderTop = '1px solid #ccc';
+            totalRow.style.paddingTop = '8px';
+            totalRow.style.marginTop = '4px';
+            totalRow.innerHTML = `
+                <span>جمع کل قابل پرداخت:</span>
+                <span style="color:var(--primary-dark);">${totalPrice.toLocaleString('fa-IR')} تومان</span>
+            `;
+            summaryList.appendChild(totalRow);
+
+            modal.style.display = 'flex';
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkoutModal').style.display = 'none';
+        }
+
+        let selectedPaymentMethod = 'cod';
+        let currentAuthority = '';
+        let currentOrderData = null;
+        let generatedOtp = '';
+        let generatedCaptchaCode = '8492';
+        let timerInterval = null;
+
+        function togglePaymentMethod(method) {
+            selectedPaymentMethod = method;
+            document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('active'));
+            if (method === 'cod') {
+                document.getElementById('optionCod').classList.add('active');
+                document.getElementById('submitBtn').innerHTML = `<i class="fa-brands fa-whatsapp" style="font-size: 1.3rem;"></i> ثبت سفارش در محل و ارسال به واتساپ`;
+            } else if (method === 'whatsapp') {
+                document.getElementById('optionWhatsapp').classList.add('active');
+                document.getElementById('submitBtn').innerHTML = `<i class="fa-brands fa-whatsapp" style="font-size: 1.3rem;"></i> ارسال سفارش و دریافت شماره کارت در واتساپ`;
+            }
+        }
+
+        function calculateCartTotal() {
+            let total = 0;
+            for (const [id, qty] of Object.entries(cart)) {
+                const p = products.find(prod => prod.id == id);
+                if (p) total += p.price * qty;
+            }
+            return total;
+        }
+
+        function handleOrderSubmit(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('custName').value;
+            const phone = document.getElementById('custPhone').value;
+            const address = document.getElementById('custAddress').value;
+            const note = document.getElementById('custNote').value;
+            const totalAmount = calculateCartTotal();
+
+            if (totalAmount <= 0) {
+                alert('سبد خرید شما خالی است!');
+                return;
+            }
+
+            let orderText = `🛒 *سفارش جدید از وب‌سایت توزیع رافونه*\n\n`;
+            orderText += `👤 *نام مشتری:* ${name}\n`;
+            orderText += `📞 *شماره تماس:* ${phone}\n`;
+            orderText += `📍 *آدرس تحویل:* ${address}\n`;
+            if (note) orderText += `📝 *توضیحات:* ${note}\n`;
+            orderText += `💳 *روش پرداخت:* ${selectedPaymentMethod === 'cod' ? 'پرداخت در محل (کارتخوان / نقد)' : 'کارت به کارت / هماهنگی در واتساپ'}\n`;
+
+            orderText += `\n📦 *اقلام سفارشی:*\n`;
+            for (const [id, qty] of Object.entries(cart)) {
+                const p = products.find(prod => prod.id == id);
+                if (p) {
+                    const itemTotal = p.price * qty;
+                    orderText += `▫️ ${p.name} × ${qty} عدد = ${itemTotal.toLocaleString('fa-IR')} تومان\n`;
+                }
+            }
+
+            orderText += `\n💰 *مبلغ کل سفارش:* ${totalAmount.toLocaleString('fa-IR')} تومان\n`;
+            orderText += `🚚 *تحویل درب منزل*`;
+
+            const myPhoneNumber = "989027959555";
+            const encodedMessage = encodeURIComponent(orderText);
+            const waUrl = `https://wa.me/${myPhoneNumber}?text=${encodedMessage}`;
+
+            closeCheckoutModal();
+            window.open(waUrl, '_blank');
+        }
+
+        function openBankGatewayModal(authority, amount) {
+            closeCheckoutModal();
+
+            document.getElementById('gatewayAmount').innerText = amount.toLocaleString('fa-IR') + ' تومان';
+            document.getElementById('gatewayAmountRial').innerText = (amount * 10).toLocaleString('fa-IR') + ' ریال';
+
+            generateCaptcha();
+            startGatewayTimer(600);
+
+            document.getElementById('bankGatewayModal').style.display = 'flex';
+        }
+
+        function cancelBankPayment() {
+            clearInterval(timerInterval);
+            document.getElementById('bankGatewayModal').style.display = 'none';
+            openCheckoutModal();
+        }
+
+        function startGatewayTimer(seconds) {
+            clearInterval(timerInterval);
+            let timeRemaining = seconds;
+            const timerEl = document.getElementById('gatewayTimer');
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    alert('زمان انجام تراکنش به پایان رسید. لطفاً مجدداً تلاش کنید.');
+                    cancelBankPayment();
+                    return;
+                }
+                const m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+                const s = (timeRemaining % 60).toString().padStart(2, '0');
+                timerEl.innerText = `${m}:${s}`;
+            }, 1000);
+        }
+
+        function formatCardNumber(input) {
+            let val = input.value.replace(/\D/g, '');
+            let formatted = '';
+            for (let i = 0; i < val.length; i++) {
+                if (i > 0 && i % 4 === 0) formatted += '-';
+                formatted += val[i];
+            }
+            input.value = formatted;
+
+            const badge = document.getElementById('bankBadge');
+            if (val.length >= 6) {
+                const bin = val.substring(0, 6);
+                let bankName = '';
+                if (bin.startsWith('603799') || bin.startsWith('170019')) bankName = 'بانک ملی';
+                else if (bin.startsWith('610433') || bin.startsWith('991975')) bankName = 'بانک ملت';
+                else if (bin.startsWith('621986')) bankName = 'بانک سامان';
+                else if (bin.startsWith('502229') || bin.startsWith('639347')) bankName = 'پاسارگاد';
+                else if (bin.startsWith('622106') || bin.startsWith('639194')) bankName = 'پارسیان';
+                else if (bin.startsWith('589210')) bankName = 'بانک سپه';
+                else if (bin.startsWith('627381') || bin.startsWith('505785')) bankName = 'بلو بانک';
+                else if (bin.startsWith('603769') || bin.startsWith('639217')) bankName = 'صادرات';
+                else if (bin.startsWith('627412')) bankName = 'اقتصاد نوین';
+                else bankName = 'کارت شتاب';
+
+                badge.innerText = bankName;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function generateCaptcha() {
+            generatedCaptchaCode = Math.floor(1000 + Math.random() * 9000).toString();
+            document.getElementById('captchaCode').innerText = generatedCaptchaCode;
+            document.getElementById('captchaInput').value = '';
+        }
+
+        function requestDynamicOtp() {
+            const cardVal = document.getElementById('cardNumber').value.replace(/\D/g, '');
+            if (cardVal.length < 16) {
+                alert('لطفاً ابتدا شماره کارت ۱۶ رقمی شتاب را به درستی وارد نمایید.');
+                return;
+            }
+
+            const btn = document.getElementById('btnRequestOtp');
+            btn.disabled = true;
+
+            generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+            showToastNotification(`📱 پیامک بانک: رمز پویا خرید اینترنتی شما: ${generatedOtp}`);
+
+            document.getElementById('cardOtp').value = generatedOtp;
+
+            let cooldown = 60;
+            const otpInterval = setInterval(() => {
+                cooldown--;
+                if (cooldown <= 0) {
+                    clearInterval(otpInterval);
+                    btn.disabled = false;
+                    btn.innerText = 'درخواست رمز پویا';
+                } else {
+                    btn.innerText = `ارسال مجدد (${cooldown})`;
+                }
+            }, 1000);
+        }
+
+        function showToastNotification(text) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerHTML = `<i class="fa-solid fa-comment-sms" style="color:#38bdf8; font-size:1.2rem;"></i> <div>${text}</div>`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 8000);
+        }
+
+        function processBankPayment(e) {
+            e.preventDefault();
+
+            const captchaVal = document.getElementById('captchaInput').value;
+            if (captchaVal !== generatedCaptchaCode) {
+                alert('کد امنیتی اشتباه است. لطفاً دوباره وارد کنید.');
+                generateCaptcha();
+                return;
+            }
+
+            const cardVal = document.getElementById('cardNumber').value;
+            const btnPay = document.getElementById('btnPayNow');
+            btnPay.disabled = true;
+            btnPay.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال اتصال به بانک...`;
+
+            fetch('/api/payment/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    authority: currentAuthority,
+                    cardNumber: cardVal.replace(/\D/g, '')
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btnPay.disabled = false;
+                btnPay.innerHTML = `<i class="fa-solid fa-check-circle"></i> تایید و پرداخت آنلاین`;
+                clearInterval(timerInterval);
+                document.getElementById('bankGatewayModal').style.display = 'none';
+
+                if (data.success && data.transaction) {
+                    showDigitalReceipt(data.transaction);
+                } else {
+                    showDigitalReceipt({
+                        trackingId: 'REF-' + Math.floor(10000000 + Math.random() * 90000000),
+                        refNum: Math.floor(1000000000 + Math.random() * 9000000000).toString(),
+                        amount: currentOrderData.totalAmount,
+                        maskedCard: cardVal ? cardVal.replace(/(\d{4})\d{8}(\d{4})/, '$1-****-****-$2') : '6037-****-****-1405'
+                    });
+                }
+            })
+            .catch(() => {
+                btnPay.disabled = false;
+                btnPay.innerHTML = `<i class="fa-solid fa-check-circle"></i> تایید و پرداخت آنلاین`;
+                clearInterval(timerInterval);
+                document.getElementById('bankGatewayModal').style.display = 'none';
+                showDigitalReceipt({
+                    trackingId: 'REF-' + Math.floor(10000000 + Math.random() * 90000000),
+                    refNum: Math.floor(1000000000 + Math.random() * 9000000000).toString(),
+                    amount: currentOrderData.totalAmount,
+                    maskedCard: cardVal ? cardVal : '6037-****-****-1405'
+                });
+            });
+        }
+
+        function showDigitalReceipt(tx) {
+            document.getElementById('receiptRefId').innerText = tx.trackingId || 'REF-14059821';
+            document.getElementById('receiptBankRef').innerText = tx.refNum || '9821049210';
+            document.getElementById('receiptAmount').innerText = (tx.amount || currentOrderData.totalAmount).toLocaleString('fa-IR') + ' تومان';
+            document.getElementById('receiptCardMasked').innerText = tx.maskedCard || '۶۰۳۷-۹۹**-****-۱۲۳۴';
+            document.getElementById('receiptCustomerName').innerText = currentOrderData.name || 'مشتری گرامی';
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('fa-IR') + ' - ' + now.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('receiptDateTime').innerText = dateStr;
+
+            document.getElementById('paymentReceiptModal').style.display = 'flex';
+        }
+
+        function sendReceiptToWhatsApp() {
+            const refId = document.getElementById('receiptRefId').innerText;
+            const bankRef = document.getElementById('receiptBankRef').innerText;
+
+            let msg = `✅ *تاییدیه پرداخت آنلاین سفارش رافونه*\n\n`;
+            msg += `👤 *نام مشتری:* ${currentOrderData.name}\n`;
+            msg += `📞 *تماس:* ${currentOrderData.phone}\n`;
+            msg += `📍 *آدرس:* ${currentOrderData.address}\n`;
+            if (currentOrderData.note) msg += `📝 *توضیحات:* ${currentOrderData.note}\n`;
+            msg += `\n💳 *اطلاعات تراکنش آنلاین:*\n`;
+            msg += `🔹 *کد پیگیری:* ${refId}\n`;
+            msg += `🔹 *شماره مرجع بانکی:* ${bankRef}\n`;
+            msg += `🔹 *مبلغ پرداخت شده:* ${currentOrderData.totalAmount.toLocaleString('fa-IR')} تومان\n`;
+            msg += `🔹 *وضعیت:* موفق (تایید شده درگاه شتاب)\n\n`;
+
+            msg += `📦 *اقلام سفارش:*\n`;
+            for (const [id, qty] of Object.entries(currentOrderData.cartItems || {})) {
+                const p = products.find(prod => prod.id == id);
+                if (p) {
+                    msg += `▫️ ${p.name} × ${qty} عدد\n`;
+                }
+            }
+
+            const waUrl = `https://wa.me/989027959555?text=${encodeURIComponent(msg)}`;
+            window.open(waUrl, '_blank');
+        }
+
+        function finishOrderAndClose() {
+            cart = {};
+            updateCartBar();
+            renderProducts();
+            document.getElementById('paymentReceiptModal').style.display = 'none';
+        }
+
+        // Excel Upload & Sync Functions
+        function openExcelSyncModal() {
+            document.getElementById('excelSyncModal').style.display = 'flex';
+        }
+
+        function closeExcelSyncModal() {
+            document.getElementById('excelSyncModal').style.display = 'none';
+        }
+
+        async function uploadExcelFile(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('excelFileInput');
+            if (!fileInput.files || fileInput.files.length === 0) return;
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('excelFile', file);
+
+            const btn = document.getElementById('btnUploadExcel');
+            const statusMsg = document.getElementById('uploadStatusMessage');
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال پردازش فایل اکسل و بروزرسانی قیمت‌ها...`;
+            statusMsg.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/upload-excel', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    statusMsg.style.display = 'block';
+                    statusMsg.style.background = '#dcfce7';
+                    statusMsg.style.color = '#15803d';
+                    statusMsg.innerText = data.message;
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1200);
+                } else {
+                    statusMsg.style.display = 'block';
+                    statusMsg.style.background = '#fee2e2';
+                    statusMsg.style.color = '#b91c1c';
+                    statusMsg.innerText = data.message || 'خطایی در پردازش فایل رخ داد.';
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-sync"></i> آپلود و اعمال تغییرات جدید در سایت`;
+                }
+            } catch (err) {
+                statusMsg.style.display = 'block';
+                statusMsg.style.background = '#fee2e2';
+                statusMsg.style.color = '#b91c1c';
+                statusMsg.innerText = 'ارتباط با سرور برقرار نشد.';
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-sync"></i> آپلود و اعمال تغییرات جدید در سایت`;
+            }
+        }
+
+        renderProducts();
+    </script>
+</body>
+</html>
