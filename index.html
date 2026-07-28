@@ -1748,12 +1748,101 @@
             }
         }
 
-        // Live Excel Auto-Sync: Load products from /api/products
+        // Live Excel Auto-Sync: Load products from /api/products or direct Google Sheets CSV
         let lastProductsHash = '';
+
+        async function loadProductsFromGSheetsCsvDirect() {
+            try {
+                const csvUrl = 'https://docs.google.com/spreadsheets/d/1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8/gviz/tq?tqx=out:csv';
+                const response = await fetch(csvUrl);
+                if (!response.ok) return;
+                const csvText = await response.text();
+                if (csvText.includes('<!DOCTYPE html>') || csvText.includes('show-login-page')) return;
+                
+                const lines = csvText.split('\n').map(line => {
+                    const row = [];
+                    let insideQuote = false;
+                    let currentCell = '';
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        if (char === '"') {
+                            insideQuote = !insideQuote;
+                        } else if (char === ',' && !insideQuote) {
+                            row.push(currentCell.trim().replace(/^"|"$/g, ''));
+                            currentCell = '';
+                        } else {
+                            currentCell += char;
+                        }
+                    }
+                    row.push(currentCell.trim().replace(/^"|"$/g, ''));
+                    return row;
+                });
+
+                if (lines.length < 2) return;
+
+                const headers = lines[0].map(h => h.trim());
+                let codeIdx = headers.findIndex(h => h === 'کد کالا' || h === 'کد' || h.includes('کد'));
+                let nameIdx = headers.findIndex(h => h === 'شرح کالا' || h === 'نام کالا' || h === 'نام' || h.includes('شرح') || h.includes('عنوان'));
+                let delPriceIdx = headers.findIndex(h => h === 'قیمت تحویل' || h.includes('تحویل'));
+                let consPriceIdx = headers.findIndex(h => h === 'قیمت مصرف' || h.includes('مصرف'));
+                let packIdx = headers.findIndex(h => h.includes('کارتن') || h.includes('بسته'));
+
+                if (codeIdx === -1) codeIdx = 0;
+                if (nameIdx === -1) nameIdx = 1;
+                if (delPriceIdx === -1) delPriceIdx = 10;
+                if (consPriceIdx === -1) consPriceIdx = 9;
+                if (packIdx === -1) packIdx = 5;
+
+                const parseN = (val) => {
+                    if (!val) return 0;
+                    const cleaned = String(val).replace(/,/g, '').trim();
+                    const n = Number(cleaned);
+                    return isNaN(n) ? 0 : n;
+                };
+
+                const sheetProducts = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const r = lines[i];
+                    if (!r || !r[codeIdx] || !r[nameIdx]) continue;
+
+                    const code = r[codeIdx].trim();
+                    const name = r[nameIdx].trim();
+                    const delPrice = parseN(r[delPriceIdx]) || parseN(r[10]) || parseN(r[8]) || 0;
+                    const consPrice = parseN(r[consPriceIdx]) || parseN(r[9]) || 0;
+                    const pack = parseN(r[packIdx]) || 1;
+
+                    const existing = products.find(p => p.id == code);
+                    sheetProducts.push({
+                        id: code,
+                        name: name,
+                        category: existing ? existing.category : 'other',
+                        categoryName: existing ? existing.categoryName : 'سایر',
+                        price: delPrice,
+                        consumerPrice: consPrice,
+                        packing: pack,
+                        image: existing ? existing.image : 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg',
+                        badge: pack > 1 ? `کارتن ${pack} تایی` : 'تحویل مستقیم',
+                        description: `محصول اصلی رافونه - ${name}`
+                    });
+                }
+
+                if (sheetProducts.length > 0) {
+                    const currentHash = JSON.stringify(sheetProducts.map(p => ({ id: p.id, price: p.price, name: p.name })));
+                    if (currentHash !== lastProductsHash) {
+                        lastProductsHash = currentHash;
+                        products = sheetProducts;
+                        renderProducts(currentCategory);
+                    }
+                }
+            } catch (e) {
+                console.log('Direct GSheets CSV fetch error:', e);
+            }
+        }
 
         async function loadProductsFromApi() {
             try {
                 const res = await fetch('/api/products');
+                if (!res.ok) throw new Error('API not available');
                 const data = await res.json();
                 if (data.success && Array.isArray(data.products) && data.products.length > 0) {
                     const currentHash = JSON.stringify(data.products.map(p => ({ id: p.id, price: p.price, name: p.name })));
@@ -1762,15 +1851,16 @@
                         products = data.products;
                         renderProducts(currentCategory);
                     }
+                } else {
+                    loadProductsFromGSheetsCsvDirect();
                 }
             } catch (err) {
-                console.log('Error auto-syncing products:', err);
+                loadProductsFromGSheetsCsvDirect();
             }
         }
 
         renderProducts();
         loadProductsFromApi();
-        // Check for Excel changes every 3 seconds automatically
         setInterval(loadProductsFromApi, 3000);
     </script>
 </body>
