@@ -4,12 +4,12 @@ const productsData = [
     "name": "مایع دستشویی سبز 10 لیتری",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
-    "price": 1914400,
+    "price": 10000,
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - مایع دستشویی سبز 10 لیتری. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "905",
@@ -20,8 +20,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-orange_2.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - مایع دستشویی نارنجی 10 لیتری. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1004",
@@ -32,8 +32,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg",
-    "badge": "تعداد محدود (4 عدد)",
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 4 تایی",
+    "description": "محصول اصلی رافونه - مایع دست سبز 2 کیلویی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1005",
@@ -44,8 +44,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-orange_2.jpg",
-    "badge": "تعداد محدود (4 عدد)",
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 4 تایی",
+    "description": "محصول اصلی رافونه - مایع دست نارنجی 2 کیلویی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1006",
@@ -56,8 +56,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washin-pink_2.jpg",
-    "badge": "تعداد محدود (4 عدد)",
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 4 تایی",
+    "description": "محصول اصلی رافونه - مایع دست صورتی 2 کیلویی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1007",
@@ -68,8 +68,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-purple_2.jpg",
-    "badge": "تعداد محدود (4 عدد)",
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 4 تایی",
+    "description": "محصول اصلی رافونه - مایع دست بنفش 2 کیلویی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1008",
@@ -80,8 +80,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg",
-    "badge": null,
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - مایع دست سبز 500 گرمی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1009",
@@ -92,8 +92,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-orange_2.jpg",
-    "badge": null,
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - مایع دست نارنجی 500 گرمی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1010",
@@ -104,8 +104,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washin-pink_2.jpg",
-    "badge": null,
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - مایع دست صورتی 500 گرمی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1011",
@@ -116,8 +116,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-purple_2.jpg",
-    "badge": null,
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - مایع دست بنفش 500 گرمی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1018",
@@ -128,8 +128,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": null,
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - مایع دست کرمی 1 لیتری. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1019",
@@ -140,8 +140,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": null,
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - مایع دست کرمی 350 گرمی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1021",
@@ -152,8 +152,8 @@ const productsData = [
     "consumerPrice": 11,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-yellow-2700-gr_1.png",
-    "badge": null,
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - مایع ظرف 750 گرمی زرد. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1022",
@@ -164,8 +164,8 @@ const productsData = [
     "consumerPrice": 11,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": null,
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - مایع ظرف 750 گرمی سبز. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1026",
@@ -176,8 +176,8 @@ const productsData = [
     "consumerPrice": 4,
     "packing": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-yellow-2700-gr_1.png",
-    "badge": "تعداد محدود (4 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "کارتن 4 تایی",
+    "description": "محصول اصلی رافونه - مایع ظرف 2700 گرمی زرد. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1027",
@@ -188,8 +188,8 @@ const productsData = [
     "consumerPrice": 5,
     "packing": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (4 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "کارتن 4 تایی",
+    "description": "محصول اصلی رافونه - مایع ظرف 2700 گرمی سبز. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1030",
@@ -200,8 +200,8 @@ const productsData = [
     "consumerPrice": 10,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/g/l/glass-blue-800_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - شیشه شوی 800 آبی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1031",
@@ -212,8 +212,8 @@ const productsData = [
     "consumerPrice": 10,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washin-pink_2.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - شیشه شوی 800 صورتی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1032",
@@ -224,8 +224,8 @@ const productsData = [
     "consumerPrice": 12,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/g/l/glass-blue-800_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - شیشه شوی 500 آبی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1033",
@@ -236,8 +236,8 @@ const productsData = [
     "consumerPrice": 10,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washin-pink_2.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - شیشه شوی 500 صورتی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1034",
@@ -248,8 +248,8 @@ const productsData = [
     "consumerPrice": 12,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/t/steam_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - شیشه شوی ضد بخار 500. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1035",
@@ -260,8 +260,8 @@ const productsData = [
     "consumerPrice": 10,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/t/steam_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - شیشه شوی ضد بخار 800. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1041",
@@ -272,8 +272,8 @@ const productsData = [
     "consumerPrice": 14,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/4/24.jpg",
-    "badge": null,
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - اسیدی سرویس بهداشتی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1046",
@@ -284,8 +284,8 @@ const productsData = [
     "consumerPrice": 8,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/1/4/14_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - پاک کننده سطوح چوبی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1048",
@@ -296,8 +296,8 @@ const productsData = [
     "consumerPrice": 10,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-yellow-2700-gr_1.png",
-    "badge": null,
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - سرویس بهداشتی سرکج زرد. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1049",
@@ -308,8 +308,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 9,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/4/24.jpg",
-    "badge": null,
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "کارتن 9 تایی",
+    "description": "محصول اصلی رافونه - ژل سرکج ویسکوز سرویس بهداشتی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1050",
@@ -320,8 +320,8 @@ const productsData = [
     "consumerPrice": 8,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg",
-    "badge": null,
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - اسپری شیرآلات و سینک ظرفشویی 500. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1051",
@@ -332,8 +332,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg",
-    "badge": null,
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - اسپری شیرآلات و سینک ظرفشویی 800. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1057",
@@ -344,8 +344,8 @@ const productsData = [
     "consumerPrice": 11,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/r/a/rafooneh-products-2_1_1.jpg",
-    "badge": null,
-    "description": "شامپو فرش و موکت رافونه تمیزکننده عمقی الیاف فرش و مبلمان، احیاکننده رنگ و بدون آسیب به بافت فرش."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - فوم لکه بر مبل و فرش. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1058",
@@ -356,8 +356,8 @@ const productsData = [
     "consumerPrice": 5,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/6/26.jpg",
-    "badge": null,
-    "description": "شوینده لباس رافونه محافظ بافت و رنگ پارچه، مانع از بور شدن و کدری لباس‌ها با رایحه ماندگار و قدرت لکه‌بری عالی."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - کف لکه بر مخصوص لباس و سرآستین. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1059",
@@ -368,8 +368,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205563-1_1_1.jpg",
-    "badge": null,
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - چندمنظوره آنتی باکتریال. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1060",
@@ -380,8 +380,8 @@ const productsData = [
     "consumerPrice": 15,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/g/l/glass-pink-800_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - اسپری همه کاره 500. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1061",
@@ -392,8 +392,8 @@ const productsData = [
     "consumerPrice": 8,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/g/l/glass-pink-800_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - اسپری همه کاره 800. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1064",
@@ -404,8 +404,8 @@ const productsData = [
     "consumerPrice": 7,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": null,
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - سفیدکننده 1 لیتری. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1065",
@@ -416,8 +416,8 @@ const productsData = [
     "consumerPrice": 5,
     "packing": 6,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": null,
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "کارتن 6 تایی",
+    "description": "محصول اصلی رافونه - سفیدکننده 2 لیتری. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1066",
@@ -428,8 +428,8 @@ const productsData = [
     "consumerPrice": 9,
     "packing": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": "تعداد محدود (4 عدد)",
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "کارتن 4 تایی",
+    "description": "محصول اصلی رافونه - سفیدکننده 4 لیتری. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1068",
@@ -440,8 +440,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/3/23_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - پاک کننده سنگ و سرامیک 1000 گرمی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1070",
@@ -452,8 +452,8 @@ const productsData = [
     "consumerPrice": 3,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/1/0/10_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - اسپری گاز 500. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1071",
@@ -464,8 +464,8 @@ const productsData = [
     "consumerPrice": 12,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/1/0/10_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - اسپری گاز 800. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1072",
@@ -476,8 +476,8 @@ const productsData = [
     "consumerPrice": 4,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/1/0/10_1.jpg",
-    "badge": null,
-    "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - اسپری گاز شیشه ای. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1079",
@@ -488,8 +488,8 @@ const productsData = [
     "consumerPrice": 11,
     "packing": 9,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/p/i/pipes.png",
-    "badge": null,
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "کارتن 9 تایی",
+    "description": "محصول اصلی رافونه - لوله بازکن دوقلو 1500 گرمی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1080",
@@ -500,8 +500,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 6,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/b/l/black-wash-1-liter.jpg",
-    "badge": null,
-    "description": "شوینده لباس رافونه محافظ بافت و رنگ پارچه، مانع از بور شدن و کدری لباس‌ها با رایحه ماندگار و قدرت لکه‌بری عالی."
+    "badge": "کارتن 6 تایی",
+    "description": "محصول اصلی رافونه - مشکین شوی 1 لیتری. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1082",
@@ -512,8 +512,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/3/_/3_1_1_1.jpg",
-    "badge": "تعداد محدود (4 عدد)",
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 4 تایی",
+    "description": "محصول اصلی رافونه - مایع لباسشویی ماشینی و دستی 3 لیتری. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1084",
@@ -524,8 +524,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 6,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/3/_/3_1_1_1.jpg",
-    "badge": null,
-    "description": "شوینده لباس رافونه محافظ بافت و رنگ پارچه، مانع از بور شدن و کدری لباس‌ها با رایحه ماندگار و قدرت لکه‌بری عالی."
+    "badge": "کارتن 6 تایی",
+    "description": "محصول اصلی رافونه - مایع لباسشویی 2 لیتری. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1085",
@@ -536,8 +536,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 6,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-laundry-2-liters_1_1.png",
-    "badge": null,
-    "description": "شوینده لباس رافونه محافظ بافت و رنگ پارچه، مانع از بور شدن و کدری لباس‌ها با رایحه ماندگار و قدرت لکه‌بری عالی."
+    "badge": "کارتن 6 تایی",
+    "description": "محصول اصلی رافونه - مایع لباسشویی 2 لیتری آنزیم دار. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1111",
@@ -548,8 +548,8 @@ const productsData = [
     "consumerPrice": 27,
     "packing": 50,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460201039-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 50 تایی",
+    "description": "محصول اصلی رافونه - کیسه فریزر 100 عددی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1112",
@@ -560,8 +560,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 40,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205259-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 40 تایی",
+    "description": "محصول اصلی رافونه - کیسه فریزر تقویمی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1113",
@@ -572,8 +572,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 36,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460201039-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 36 تایی",
+    "description": "محصول اصلی رافونه - کیسه فریزر جعبه ای 120 عددی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1114",
@@ -584,8 +584,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 40,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460201039-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 40 تایی",
+    "description": "محصول اصلی رافونه - کیسه فریزر رولی 120 عددی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1115",
@@ -596,8 +596,8 @@ const productsData = [
     "consumerPrice": 5,
     "packing": 15,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460204214-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 15 تایی",
+    "description": "محصول اصلی رافونه - کیسه فریزر رولی ضخیم 250 عددی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1117",
@@ -608,8 +608,8 @@ const productsData = [
     "consumerPrice": 22,
     "packing": 24,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/d/o/double-lock-bag-30_2_1.jpg",
-    "badge": null,
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "کارتن 24 تایی",
+    "description": "محصول اصلی رافونه - زیپ 18*20 تعداد 40 عدد. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1118",
@@ -620,8 +620,8 @@ const productsData = [
     "consumerPrice": 7,
     "packing": 24,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/d/o/double-lock-bag-30_2_1.jpg",
-    "badge": null,
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "کارتن 24 تایی",
+    "description": "محصول اصلی رافونه - زیپ 20*25 تعداد 30 عدد. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1119",
@@ -632,8 +632,8 @@ const productsData = [
     "consumerPrice": 11,
     "packing": 24,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/d/o/double-lock-bag-30_2_1.jpg",
-    "badge": null,
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "کارتن 24 تایی",
+    "description": "محصول اصلی رافونه - زیپ 25*35 تعداد 15 عدد. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1120",
@@ -644,8 +644,8 @@ const productsData = [
     "consumerPrice": 13,
     "packing": 24,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/f/o/foil.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 24 تایی",
+    "description": "محصول اصلی رافونه - فویل آلومینیومی 30 سانتی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1122",
@@ -656,8 +656,8 @@ const productsData = [
     "consumerPrice": 14,
     "packing": 25,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460203859-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 25 تایی",
+    "description": "محصول اصلی رافونه - محافظ غذای 40 سانتی 25 متر. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1123",
@@ -668,8 +668,8 @@ const productsData = [
     "consumerPrice": 10,
     "packing": 24,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460203859-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 24 تایی",
+    "description": "محصول اصلی رافونه - محافظ غذای 40 سانتی 20 متر. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1124",
@@ -680,8 +680,8 @@ const productsData = [
     "consumerPrice": 9,
     "packing": 24,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460203514-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 24 تایی",
+    "description": "محصول اصلی رافونه - سفره 50 متری طرح دار. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1127",
@@ -692,8 +692,8 @@ const productsData = [
     "consumerPrice": 8,
     "packing": 24,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460204849-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 24 تایی",
+    "description": "محصول اصلی رافونه - سفره 50 متری ساده. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1128",
@@ -704,8 +704,8 @@ const productsData = [
     "consumerPrice": 9,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460204580-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - سفره یکبار مصرف مجلسی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1131",
@@ -716,8 +716,8 @@ const productsData = [
     "consumerPrice": 5,
     "packing": 6,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460204740-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 6 تایی",
+    "description": "محصول اصلی رافونه - کیسه زباله ضخیم یک کیلویی (130*90) 20 عدد. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1132",
@@ -728,8 +728,8 @@ const productsData = [
     "consumerPrice": 23,
     "packing": 36,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460202906-1.jpg",
-    "badge": null,
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 36 تایی",
+    "description": "محصول اصلی رافونه - دستکش یکبار مصرف. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1133",
@@ -740,8 +740,8 @@ const productsData = [
     "consumerPrice": 14,
     "packing": 20,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460204696-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 20 تایی",
+    "description": "محصول اصلی رافونه - کیسه زباله سه رول متوسط سبز 42 عدد. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1134",
@@ -752,8 +752,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 20,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460204672-1.jpg",
-    "badge": null,
-    "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
+    "badge": "کارتن 20 تایی",
+    "description": "محصول اصلی رافونه - کیسه زباله سه رول بزرگ آبی 30 عدد. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1254",
@@ -764,8 +764,8 @@ const productsData = [
     "consumerPrice": 54,
     "packing": 26,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/626239650098-1.jpg",
-    "badge": null,
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "کارتن 26 تایی",
+    "description": "محصول اصلی رافونه - اسکاچ آفتابگردان. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1255",
@@ -776,8 +776,8 @@ const productsData = [
     "consumerPrice": 57,
     "packing": 39,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/g/l/glass-blue-800_1.jpg",
-    "badge": null,
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "کارتن 39 تایی",
+    "description": "محصول اصلی رافونه - اسکاچ یک زر شیرینگ آبی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1256",
@@ -788,8 +788,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 39,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/626239650098-1.jpg",
-    "badge": null,
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "کارتن 39 تایی",
+    "description": "محصول اصلی رافونه - اسکاچ دو زر شیرینگ قرمز. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1257",
@@ -800,8 +800,8 @@ const productsData = [
     "consumerPrice": 8,
     "packing": 39,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg",
-    "badge": null,
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "کارتن 39 تایی",
+    "description": "محصول اصلی رافونه - اسکاچ طرح دار شیرینگ سبز. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1263",
@@ -812,8 +812,8 @@ const productsData = [
     "consumerPrice": 13,
     "packing": 36,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6262396500050-1.jpg",
-    "badge": null,
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "کارتن 36 تایی",
+    "description": "محصول اصلی رافونه - سیم ظرفشویی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "1280",
@@ -824,8 +824,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6262396500111-1.jpg",
-    "badge": null,
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "badge": "کارتن 12 تایی",
+    "description": "محصول اصلی رافونه - دستمال چند منظوره آشپزخانه. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2161",
@@ -836,8 +836,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/1/21_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - شامپو head & shoulders MENTHOL FRESH. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2162",
@@ -848,8 +848,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/1/21_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - شامپو head & shoulders CLASSIC CLEAN. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2163",
@@ -860,8 +860,8 @@ const productsData = [
     "consumerPrice": 1,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/1/21_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - شامپو head & shoulders DRY SCALP. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2164",
@@ -872,8 +872,8 @@ const productsData = [
     "consumerPrice": 3,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/1/21_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - شامپو head & shoulders SMOOTH & SILKY. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2201",
@@ -884,8 +884,8 @@ const productsData = [
     "consumerPrice": 2,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ماشین ظرفشوییfairy 60. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2202",
@@ -896,8 +896,8 @@ const productsData = [
     "consumerPrice": 1,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ماشین ظرفشوییfairy 70. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2203",
@@ -908,8 +908,8 @@ const productsData = [
     "consumerPrice": 7,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ماشین ظرفشوییfairy 100. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2206",
@@ -920,8 +920,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ماشین ظرفشوییfairy 90. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2207",
@@ -932,8 +932,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ماشین ظرفشویی fairy platinum 96. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2208",
@@ -944,8 +944,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ماشین ظرفشویی fairy platinum 72. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2211",
@@ -956,8 +956,8 @@ const productsData = [
     "consumerPrice": 1,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ماشین ظرفشوییfinish quantum 72. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2213",
@@ -968,8 +968,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ظرفشوییfinish Ultimate 60. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2214",
@@ -980,8 +980,8 @@ const productsData = [
     "consumerPrice": 1,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ظرفشوییfinish Ultimate 65. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2215",
@@ -992,8 +992,8 @@ const productsData = [
     "consumerPrice": 1,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - قرص ظرفشوییfinish Ultimate 85. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2216",
@@ -1004,8 +1004,8 @@ const productsData = [
     "consumerPrice": 3,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - ژل ماشین ظرفشویی finish. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2217",
@@ -1016,8 +1016,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - جرم گیر ماشین ظرفشویی BOSCH. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2218",
@@ -1028,8 +1028,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/1/1/11_1_.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - جرم گیر فینیش. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2221",
@@ -1040,8 +1040,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - بوگیر ماشین ظرفشویی Prill. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2222",
@@ -1052,8 +1052,8 @@ const productsData = [
     "consumerPrice": 2,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - بوگیر ماشین ظرفشویی finish. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2231",
@@ -1064,8 +1064,8 @@ const productsData = [
     "consumerPrice": 2,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - جلادهنده 800 ظرفشویی finish اصل ترک. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2232",
@@ -1076,8 +1076,8 @@ const productsData = [
     "consumerPrice": 8,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - نمک ماشین ظرفشویی finish اصل ترک. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2301",
@@ -1088,8 +1088,8 @@ const productsData = [
     "consumerPrice": 4,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - خمیر دندان colgate triple. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2302",
@@ -1100,8 +1100,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - خمیر دندان colgate family. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2303",
@@ -1112,8 +1112,8 @@ const productsData = [
     "consumerPrice": 5,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - خمیر دندان Colgate سفیدکننده دوقلو. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2354",
@@ -1124,8 +1124,8 @@ const productsData = [
     "consumerPrice": 9,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460202906-1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - مسواک Oral-B سه عددی. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2355",
@@ -1136,8 +1136,8 @@ const productsData = [
     "consumerPrice": 11,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - مسواک سیگنال. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2359",
@@ -1148,8 +1148,8 @@ const productsData = [
     "consumerPrice": 12,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/1/21_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "شامپو فرش و موکت رافونه تمیزکننده عمقی الیاف فرش و مبلمان، احیاکننده رنگ و بدون آسیب به بافت فرش."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - مسواک کلگیت مکس فرش. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2360",
@@ -1160,8 +1160,8 @@ const productsData = [
     "consumerPrice": 24,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - مسواک پرکینز. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2362",
@@ -1172,8 +1172,8 @@ const productsData = [
     "consumerPrice": 1,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - مسواک بچگانه 5 تا 7 سال HiDent. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2363",
@@ -1184,8 +1184,8 @@ const productsData = [
     "consumerPrice": 9,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - مسواک بچگانه 7 تا 10 سال HiDent. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2411",
@@ -1196,8 +1196,8 @@ const productsData = [
     "consumerPrice": 4,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - صابون لوکس گل رز. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2412",
@@ -1208,8 +1208,8 @@ const productsData = [
     "consumerPrice": 5,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - صابون لوکس یاسمین. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2413",
@@ -1220,8 +1220,8 @@ const productsData = [
     "consumerPrice": 3,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - صابون لوکس رمانتیک. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2414",
@@ -1232,8 +1232,8 @@ const productsData = [
     "consumerPrice": 5,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - صابون لوکس گاردنیا. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2415",
@@ -1244,8 +1244,8 @@ const productsData = [
     "consumerPrice": 3,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - صابون لوکس زنبق. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2416",
@@ -1256,8 +1256,8 @@ const productsData = [
     "consumerPrice": 5,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - صابون لوکس رز سفید. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2611",
@@ -1268,8 +1268,8 @@ const productsData = [
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - مام NIVEA Black & White. دریافت مستقیم از گوگل شیت."
   },
   {
     "id": "2621",
@@ -1280,7 +1280,7 @@ const productsData = [
     "consumerPrice": 2,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
-    "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
+    "badge": "تحویل مستقیم",
+    "description": "محصول اصلی رافونه - نخ دندان اورال بی. دریافت مستقیم از گوگل شیت."
   }
 ];
