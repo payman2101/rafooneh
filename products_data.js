@@ -4,7 +4,7 @@ const productsData = [
     "name": "مایع دستشویی سبز 10 لیتری",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
-    "price": 191000,
+    "price": 1910500,
     "consumerPrice": 0,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg",
