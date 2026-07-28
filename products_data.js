@@ -1,19 +1,19 @@
 const productsData = [
   {
     "id": 904,
-    "name": "مایع دستشویی سبز",
+    "name": "مایع دستشویی سبز 10 لیتری",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
-    "price": 1914400,
+    "price": 1900000,
     "consumerPrice": 1522600,
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg",
     "badge": "تحویل مستقیم",
-    "description": "محصول اصلی رافونه با کیفیت عالی - مایع دستشویی سبز. تحویل درب منزل با قیمت اختصاصی تحویل."
+    "description": "محصول اصلی رافونه با کیفیت عالی - مایع دستشویی سبز 10 لیتری. تحویل درب منزل با قیمت اختصاصی تحویل."
   },
   {
     "id": 905,
-    "name": "مایع دستشویی نارنجی",
+    "name": "مایع دستشویی نارنجی 10 لیتری",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 1914400,
@@ -21,7 +21,7 @@ const productsData = [
     "packing": 1,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-orange_2.jpg",
     "badge": "تحویل مستقیم",
-    "description": "محصول اصلی رافونه با کیفیت عالی - مایع دستشویی نارنجی. تحویل درب منزل با قیمت اختصاصی تحویل."
+    "description": "محصول اصلی رافونه با کیفیت عالی - مایع دستشویی نارنجی 10 لیتری. تحویل درب منزل با قیمت اختصاصی تحویل."
   },
   {
     "id": 1004,

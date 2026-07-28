@@ -157,6 +157,112 @@ app.get('/api/products', (req, res) => {
   }
 });
 
+// API: Google Sheets Sync - Parse spreadsheet data and update products catalog
+app.post('/api/gsheets/sync', async (req, res) => {
+  try {
+    const { spreadsheetId, accessToken, range = 'Sheet1!A1:Z100' } = req.body;
+    if (!spreadsheetId) {
+      return res.status(400).json({ success: false, message: 'آیدی گوگل شیت (Spreadsheet ID) ارسال نشده است.' });
+    }
+
+    // Call Google Sheets API v4
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
+    const headers = {};
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({
+        success: false,
+        message: 'خطا در دریافت اطلاعات از گوگل شیت. لطفا دسترسی و آیدی شیت را بررسی کنید.',
+        details: errText
+      });
+    }
+
+    const data = await response.json();
+    const rows = data.values || [];
+    if (rows.length < 2) {
+      return res.status(400).json({ success: false, message: 'گوگل شیت موردنظر اطلاعات کافی یا ردیف محصول ندارد.' });
+    }
+
+    // Process rows into products format
+    let scraped = [];
+    const scrapedPath = path.join(__dirname, 'scraped_rafooneh.json');
+    if (fs.existsSync(scrapedPath)) {
+      scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8'));
+    }
+
+    const sheetProducts = [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || !r[0] || !r[1]) continue;
+
+      const code = String(r[0]).trim();
+      const name = String(r[1]).trim();
+      const deliveryPrice = Number(r[10] || r[8] || r[9] || r[2] || 0);
+      const consumerPrice = Number(r[9] || r[3] || 0);
+      const packing = Number(r[5] || r[4] || 1);
+
+      const cat = categorize(name);
+      const cleanName = name.replace(/[0-9]/g, '');
+      const words = cleanName.split(' ').filter(w => w.length >= 3 && !['مایع', 'کیلویی', 'گرمی', 'لیتری', 'عدد', 'برند'].includes(w));
+
+      let bestImg = null;
+      let maxScore = 0;
+      for (const s of scraped) {
+        let score = 0;
+        for (const w of words) {
+          if (s.title.includes(w)) score += 2;
+        }
+        const colors = ['سبز', 'نارنجی', 'صورتی', 'بنفش', 'آبی', 'زرد', 'کرمی', 'قرمز', 'سفید'];
+        for (const c of colors) {
+          if (name.includes(c) && s.title.includes(c)) score += 3;
+        }
+        if (score > maxScore) {
+          maxScore = score;
+          bestImg = s.src;
+        }
+      }
+
+      if (!bestImg || maxScore < 2) {
+        bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
+      }
+
+      sheetProducts.push({
+        id: code,
+        name: name,
+        category: cat.id,
+        categoryName: cat.name,
+        price: deliveryPrice,
+        consumerPrice: consumerPrice,
+        packing: packing,
+        image: bestImg,
+        badge: packing > 1 ? `کارتن ${packing} تایی` : 'تحویل مستقیم',
+        description: `محصول اصلی رافونه - ${name}. دریافت مستقیم از گوگل شیت.`
+      });
+    }
+
+    if (sheetProducts.length > 0) {
+      fs.writeFileSync(path.join(__dirname, 'products_data.json'), JSON.stringify(sheetProducts, null, 2));
+      fs.writeFileSync(path.join(__dirname, 'products_data.js'), `const productsData = ${JSON.stringify(sheetProducts, null, 2)};\n`);
+      return res.json({
+        success: true,
+        message: `موفقیت‌آمیز! ${sheetProducts.length} محصول با موفقیت از گوگل شیت همگام‌سازی شد.`,
+        count: sheetProducts.length,
+        products: sheetProducts
+      });
+    }
+
+    res.status(400).json({ success: false, message: 'هیچ ردیف معتبری در فایل گوگل شیت یافت نشد.' });
+  } catch (err) {
+    console.error('Google Sheets sync error:', err);
+    res.status(500).json({ success: false, message: 'خطای داخلی در همگام‌سازی گوگل شیت' });
+  }
+});
+
 // API: Upload Excel and refresh product database
 app.post('/api/upload-excel', (req, res) => {
   try {
