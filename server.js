@@ -160,7 +160,7 @@ function parseExcelAndBuildProducts() {
         bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
       }
 
-      const badge = p.stock <= 0 ? 'ناموجود' : (p.packing < 5 ? `تعداد محدود (${p.packing} عدد)` : null);
+      const badge = p.stock <= 0 ? 'ناموجود' : (p.stock <= 5 ? `تعداد محدود (${p.stock} عدد)` : (p.packing > 1 ? `کارتن ${p.packing} تایی` : null));
       const categoryDescriptions = {
         handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
         dishwash: 'مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست.',
@@ -294,7 +294,7 @@ function processRowsToProducts(rows) {
       bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
     }
 
-    const badge = stock <= 0 ? 'ناموجود' : (packing < 5 ? `تعداد محدود (${packing} عدد)` : null);
+    const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : (packing > 1 ? `کارتن ${packing} تایی` : null));
     const desc = categoryDescriptions[cat.id] || categoryDescriptions.other;
 
     sheetProducts.push({

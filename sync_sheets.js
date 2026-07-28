@@ -141,7 +141,7 @@ async function syncGoogleSheets() {
         bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
       }
 
-      const badge = stock <= 0 ? 'ناموجود' : (packing < 5 ? `تعداد محدود (${packing} عدد)` : null);
+      const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : (packing > 1 ? `کارتن ${packing} تایی` : null));
 
       const categoryDescriptions = {
         handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',

@@ -233,6 +233,12 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
+            cursor: pointer;
+            transition: color 0.15s ease;
+        }
+
+        .product-desc:hover {
+            color: var(--primary);
         }
 
         /* Product Detail Modal */
@@ -1365,31 +1371,41 @@
             filtered.forEach(p => {
                 const qty = cart[p.id] || 0;
                 const isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
+                const isLimitedStock = p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 5;
+
                 const card = document.createElement('div');
                 card.className = `product-card ${isOutOfStock ? 'out-of-stock-card' : ''}`;
-                card.onclick = () => openProductDetailModal(p.id);
+                card.onclick = (e) => {
+                    openProductDetailModal(p.id);
+                };
 
-                const badgeText = isOutOfStock ? 'ناموجود' : p.badge;
+                let badgeText = p.badge;
+                if (isOutOfStock) {
+                    badgeText = 'ناموجود';
+                } else if (isLimitedStock) {
+                    badgeText = `تعداد محدود (${p.stock.toLocaleString('fa-IR')} عدد)`;
+                }
+
                 const badgeClass = isOutOfStock ? 'product-tag out-of-stock-tag' : 'product-tag';
 
                 card.innerHTML = `
                     ${badgeText ? `<div class="${badgeClass}">${badgeText}</div>` : ''}
-                    <div class="product-img-wrapper">
+                    <div class="product-img-wrapper" onclick="openProductDetailModal('${p.id}')">
                         <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg'">
                     </div>
-                    <div class="product-details">
+                    <div class="product-details" onclick="openProductDetailModal('${p.id}')">
                         <div>
                             <span class="product-code-badge">کد: ${p.id}</span>
-                            <div class="product-title">${p.name}</div>
+                            <div class="product-title" onclick="openProductDetailModal('${p.id}')">${p.name}</div>
                         </div>
-                        <div class="product-desc" title="کلیک کنید تا مشخصات کامل را ببینید">${p.description || 'توضیحات محصول رافونه'}</div>
+                        <div class="product-desc" onclick="openProductDetailModal('${p.id}')" title="کلیک کنید تا مشخصات کامل را ببینید">${p.description || 'توضیحات محصول رافونه'}</div>
                         <div class="product-price-row">
                             <div>
                                 <div class="product-price">${p.price.toLocaleString('fa-IR')} <span>تومان</span></div>
                                 ${p.consumerPrice && p.consumerPrice > p.price ? `<div class="product-consumer-price">قیمت مصرف: ${p.consumerPrice.toLocaleString('fa-IR')} تومان</div>` : ''}
-                                ${p.stock !== undefined && p.stock !== null ? `
-                                    <div style="font-size: 0.75rem; margin-top: 3px; color: ${p.stock > 0 ? '#16a34a' : '#ef4444'}; font-weight: 600;">
-                                        ${p.stock > 0 ? `موجودی: ${p.stock.toLocaleString('fa-IR')} عدد` : 'ناموجود در انبار'}
+                                ${isOutOfStock ? `
+                                    <div style="font-size: 0.75rem; margin-top: 3px; color: #ef4444; font-weight: 600;">
+                                        ناموجود در انبار
                                     </div>
                                 ` : ''}
                             </div>
@@ -1430,8 +1446,16 @@
             document.getElementById('detailModalDesc').innerText = p.description || 'توضیحات و مشخصات کامل برای این محصول ثبت نشده است.';
             
             const isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
+            const isLimitedStock = p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 5;
+
             const badgeEl = document.getElementById('detailModalBadge');
-            const badgeText = isOutOfStock ? 'ناموجود' : p.badge;
+            let badgeText = p.badge;
+            if (isOutOfStock) {
+                badgeText = 'ناموجود';
+            } else if (isLimitedStock) {
+                badgeText = `تعداد محدود (${p.stock.toLocaleString('fa-IR')} عدد)`;
+            }
+
             if (badgeText) {
                 badgeEl.innerText = badgeText;
                 badgeEl.className = isOutOfStock ? 'product-tag out-of-stock-tag' : 'product-tag';
@@ -1448,8 +1472,11 @@
                     if (p.stock <= 0) {
                         stockEl.innerText = 'ناموجود (۰ عدد)';
                         stockEl.style.color = '#ef4444';
+                    } else if (p.stock <= 5) {
+                        stockEl.innerText = `تعداد محدود (${p.stock.toLocaleString('fa-IR')} عدد)`;
+                        stockEl.style.color = '#d97706';
                     } else {
-                        stockEl.innerText = `${p.stock.toLocaleString('fa-IR')} عدد`;
+                        stockEl.innerText = 'موجود در انبار';
                         stockEl.style.color = '#16a34a';
                     }
                 } else {
@@ -2048,7 +2075,7 @@
                     const pack = parseN(r[packIdx]) || 1;
 
                     const existing = products.find(p => p.id == code);
-                    const badge = stock <= 0 ? 'ناموجود' : (pack < 5 ? `تعداد محدود (${pack} عدد)` : null);
+                    const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : (pack > 1 ? `کارتن ${pack} تایی` : null));
                     const catDescMap = {
                         handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
                         dishwash: 'مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست.',

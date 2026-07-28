@@ -86,7 +86,7 @@ const result = excel.map(p => {
     packing: p.packing,
     stock: p.stock || 0,
     image: bestImg,
-    badge: (p.stock || 0) <= 0 ? 'ناموجود' : (p.packing > 1 ? `کارتن ${p.packing} تایی` : null),
+    badge: (p.stock || 0) <= 0 ? 'ناموجود' : ((p.stock || 0) <= 5 ? `تعداد محدود (${p.stock} عدد)` : (p.packing > 1 ? `کارتن ${p.packing} تایی` : null)),
     description: desc
   };
 });
