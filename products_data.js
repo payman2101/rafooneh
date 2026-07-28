@@ -9,7 +9,7 @@ const productsData = [
     "packing": 1,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (5 عدد)",
     "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
   },
   {
@@ -22,7 +22,7 @@ const productsData = [
     "packing": 1,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-orange_2.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (5 عدد)",
     "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
   },
   {
@@ -35,7 +35,7 @@ const productsData = [
     "packing": 4,
     "stock": 8,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg",
-    "badge": "تعداد محدود (4 عدد)",
+    "badge": null,
     "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
   },
   {
@@ -48,7 +48,7 @@ const productsData = [
     "packing": 4,
     "stock": 8,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-orange_2.jpg",
-    "badge": "تعداد محدود (4 عدد)",
+    "badge": null,
     "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
   },
   {
@@ -61,7 +61,7 @@ const productsData = [
     "packing": 4,
     "stock": 8,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washin-pink_2.jpg",
-    "badge": "تعداد محدود (4 عدد)",
+    "badge": null,
     "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
   },
   {
@@ -74,7 +74,7 @@ const productsData = [
     "packing": 4,
     "stock": 8,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-purple_2.jpg",
-    "badge": "تعداد محدود (4 عدد)",
+    "badge": null,
     "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
   },
   {
@@ -191,7 +191,7 @@ const productsData = [
     "packing": 4,
     "stock": 24,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-yellow-2700-gr_1.png",
-    "badge": "تعداد محدود (4 عدد)",
+    "badge": null,
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -204,7 +204,7 @@ const productsData = [
     "packing": 4,
     "stock": 25,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (4 عدد)",
+    "badge": null,
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -451,7 +451,7 @@ const productsData = [
     "packing": 6,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": null,
+    "badge": "تعداد محدود (5 عدد)",
     "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
   },
   {
@@ -464,7 +464,7 @@ const productsData = [
     "packing": 4,
     "stock": 9,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": "تعداد محدود (4 عدد)",
+    "badge": null,
     "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
   },
   {
@@ -490,7 +490,7 @@ const productsData = [
     "packing": 12,
     "stock": 3,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/1/0/10_1.jpg",
-    "badge": null,
+    "badge": "تعداد محدود (3 عدد)",
     "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
   },
   {
@@ -516,7 +516,7 @@ const productsData = [
     "packing": 12,
     "stock": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/1/0/10_1.jpg",
-    "badge": null,
+    "badge": "تعداد محدود (4 عدد)",
     "description": "پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب."
   },
   {
@@ -555,7 +555,7 @@ const productsData = [
     "packing": 4,
     "stock": 100,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/3/_/3_1_1_1.jpg",
-    "badge": "تعداد محدود (4 عدد)",
+    "badge": null,
     "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
   },
   {
@@ -646,7 +646,7 @@ const productsData = [
     "packing": 15,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460204214-1.jpg",
-    "badge": null,
+    "badge": "تعداد محدود (5 عدد)",
     "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
   },
   {
@@ -776,7 +776,7 @@ const productsData = [
     "packing": 6,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460204740-1.jpg",
-    "badge": null,
+    "badge": "تعداد محدود (5 عدد)",
     "description": "محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه."
   },
   {
@@ -945,7 +945,7 @@ const productsData = [
     "packing": 1,
     "stock": 3,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/1/21_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (3 عدد)",
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -958,7 +958,7 @@ const productsData = [
     "packing": 1,
     "stock": 2,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (2 عدد)",
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -984,7 +984,7 @@ const productsData = [
     "packing": 1,
     "stock": 7,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": null,
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -1023,7 +1023,7 @@ const productsData = [
     "packing": 1,
     "stock": 2,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (2 عدد)",
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -1036,7 +1036,7 @@ const productsData = [
     "packing": 1,
     "stock": 3,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (3 عدد)",
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -1088,7 +1088,7 @@ const productsData = [
     "packing": 1,
     "stock": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (4 عدد)",
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -1140,7 +1140,7 @@ const productsData = [
     "packing": 1,
     "stock": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (4 عدد)",
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -1153,7 +1153,7 @@ const productsData = [
     "packing": 1,
     "stock": 6,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": null,
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -1166,7 +1166,7 @@ const productsData = [
     "packing": 1,
     "stock": 8,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": null,
     "description": "مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست."
   },
   {
@@ -1179,7 +1179,7 @@ const productsData = [
     "packing": 1,
     "stock": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (4 عدد)",
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1205,7 +1205,7 @@ const productsData = [
     "packing": 1,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (5 عدد)",
     "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
   },
   {
@@ -1218,7 +1218,7 @@ const productsData = [
     "packing": 1,
     "stock": 9,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460202906-1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": null,
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1231,7 +1231,7 @@ const productsData = [
     "packing": 1,
     "stock": 11,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": null,
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1244,7 +1244,7 @@ const productsData = [
     "packing": 1,
     "stock": 12,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/2/1/21_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": null,
     "description": "شامپو فرش و موکت رافونه تمیزکننده عمقی الیاف فرش و مبلمان، احیاکننده رنگ و بدون آسیب به بافت فرش."
   },
   {
@@ -1257,7 +1257,7 @@ const productsData = [
     "packing": 1,
     "stock": 24,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": null,
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1283,7 +1283,7 @@ const productsData = [
     "packing": 1,
     "stock": 9,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": null,
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1296,7 +1296,7 @@ const productsData = [
     "packing": 1,
     "stock": 4,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (4 عدد)",
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1309,7 +1309,7 @@ const productsData = [
     "packing": 1,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (5 عدد)",
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1322,7 +1322,7 @@ const productsData = [
     "packing": 1,
     "stock": 3,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (3 عدد)",
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1335,7 +1335,7 @@ const productsData = [
     "packing": 1,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (5 عدد)",
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1348,7 +1348,7 @@ const productsData = [
     "packing": 1,
     "stock": 3,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (3 عدد)",
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   },
   {
@@ -1361,7 +1361,7 @@ const productsData = [
     "packing": 1,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/c/r/creamy-hand-wash_1_1.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (5 عدد)",
     "description": "جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی."
   },
   {
@@ -1387,7 +1387,7 @@ const productsData = [
     "packing": 1,
     "stock": 2,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg",
-    "badge": "تعداد محدود (1 عدد)",
+    "badge": "تعداد محدود (2 عدد)",
     "description": "محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی."
   }
 ];
