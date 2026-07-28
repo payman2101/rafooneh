@@ -157,6 +157,111 @@ app.get('/api/products', (req, res) => {
   }
 });
 
+// Function to parse Google Sheet rows into product format
+function processRowsToProducts(rows) {
+  let scraped = [];
+  const scrapedPath = path.join(__dirname, 'scraped_rafooneh.json');
+  if (fs.existsSync(scrapedPath)) {
+    try {
+      scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8'));
+    } catch (e) {}
+  }
+
+  const sheetProducts = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !r[0] || !r[1]) continue;
+
+    const code = String(r[0]).trim();
+    const name = String(r[1]).trim();
+    const deliveryPrice = Number(r[10] || r[8] || r[9] || r[2] || 0);
+    const consumerPrice = Number(r[9] || r[3] || 0);
+    const packing = Number(r[5] || r[4] || 1);
+
+    const cat = categorize(name);
+    const cleanName = name.replace(/[0-9]/g, '');
+    const words = cleanName.split(' ').filter(w => w.length >= 3 && !['مایع', 'کیلویی', 'گرمی', 'لیتری', 'عدد', 'برند'].includes(w));
+
+    let bestImg = null;
+    let maxScore = 0;
+    for (const s of scraped) {
+      let score = 0;
+      for (const w of words) {
+        if (s.title.includes(w)) score += 2;
+      }
+      const colors = ['سبز', 'نارنجی', 'صورتی', 'بنفش', 'آبی', 'زرد', 'کرمی', 'قرمز', 'سفید'];
+      for (const c of colors) {
+        if (name.includes(c) && s.title.includes(c)) score += 3;
+      }
+      if (score > maxScore) {
+        maxScore = score;
+        bestImg = s.src;
+      }
+    }
+
+    if (!bestImg || maxScore < 2) {
+      bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
+    }
+
+    sheetProducts.push({
+      id: code,
+      name: name,
+      category: cat.id,
+      categoryName: cat.name,
+      price: deliveryPrice,
+      consumerPrice: consumerPrice,
+      packing: packing,
+      image: bestImg,
+      badge: packing > 1 ? `کارتن ${packing} تایی` : 'تحویل مستقیم',
+      description: `محصول اصلی رافونه - ${name}. دریافت مستقیم از گوگل شیت.`
+    });
+  }
+  return sheetProducts;
+}
+
+// Function to sync directly from a Google Sheet ID
+async function syncFromGSheetsId(spreadsheetId) {
+  try {
+    // 1. Try public CSV export endpoint first
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv`;
+    const response = await fetch(csvUrl);
+    
+    if (response.ok) {
+      const csvText = await response.text();
+      // Check if returned valid CSV or login HTML page
+      if (!csvText.includes('<!DOCTYPE html>') && !csvText.includes('show-login-page')) {
+        const wb = XLSX.read(csvText, { type: 'string' });
+        const sheetName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 });
+        const products = processRowsToProducts(rows);
+        if (products.length > 0) {
+          fs.writeFileSync(path.join(__dirname, 'products_data.json'), JSON.stringify(products, null, 2));
+          fs.writeFileSync(path.join(__dirname, 'products_data.js'), `const productsData = ${JSON.stringify(products, null, 2)};\n`);
+          console.log(`[Google Sheets Auto-Sync] Successfully updated ${products.length} products from sheet ${spreadsheetId}`);
+          return { success: true, products, count: products.length };
+        }
+      }
+    }
+    return { success: false, reason: 'SHEET_NOT_PUBLIC' };
+  } catch (err) {
+    console.error('Error syncing from Google Sheets ID:', err);
+    return { success: false, reason: 'FETCH_ERROR', error: err.message };
+  }
+}
+
+// Default target Google Sheet ID from user request
+let activeGSheetId = '1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8';
+
+// Sync from default Google Sheet on server startup
+syncFromGSheetsId(activeGSheetId);
+
+// Periodically check Google Sheet every 10 seconds for online changes
+setInterval(() => {
+  if (activeGSheetId) {
+    syncFromGSheetsId(activeGSheetId);
+  }
+}, 10000);
+
 // API: Google Sheets Sync - Parse spreadsheet data and update products catalog
 app.post('/api/gsheets/sync', async (req, res) => {
   try {
@@ -165,7 +270,27 @@ app.post('/api/gsheets/sync', async (req, res) => {
       return res.status(400).json({ success: false, message: 'آیدی گوگل شیت (Spreadsheet ID) ارسال نشده است.' });
     }
 
-    // Call Google Sheets API v4
+    activeGSheetId = spreadsheetId;
+
+    // Try CSV fetch first
+    const csvResult = await syncFromGSheetsId(spreadsheetId);
+    if (csvResult.success) {
+      return res.json({
+        success: true,
+        message: `موفقیت‌آمیز! ${csvResult.count} محصول با موفقیت از گوگل شیت همگام‌سازی شد.`,
+        count: csvResult.count,
+        products: csvResult.products
+      });
+    }
+
+    if (csvResult.reason === 'SHEET_NOT_PUBLIC') {
+      return res.status(403).json({
+        success: false,
+        message: 'دسترسی گوگل شیت روی حالت عمومی (Anyone with link) تنظیم نشده است. لطفا در گوگل شیت دکمه Share را بزنید و دسترسی را روی Anyone with link قرار دهید.'
+      });
+    }
+
+    // Fallback to API v4 if accessToken provided
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
     const headers = {};
     if (accessToken) {
@@ -177,7 +302,7 @@ app.post('/api/gsheets/sync', async (req, res) => {
       const errText = await response.text();
       return res.status(response.status).json({
         success: false,
-        message: 'خطا در دریافت اطلاعات از گوگل شیت. لطفا دسترسی و آیدی شیت را بررسی کنید.',
+        message: 'خطا در دریافت اطلاعات از گوگل شیت. لطفا دسترسی فایل را روی «Anyone with the link can view» قرار دهید.',
         details: errText
       });
     }
@@ -188,63 +313,7 @@ app.post('/api/gsheets/sync', async (req, res) => {
       return res.status(400).json({ success: false, message: 'گوگل شیت موردنظر اطلاعات کافی یا ردیف محصول ندارد.' });
     }
 
-    // Process rows into products format
-    let scraped = [];
-    const scrapedPath = path.join(__dirname, 'scraped_rafooneh.json');
-    if (fs.existsSync(scrapedPath)) {
-      scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8'));
-    }
-
-    const sheetProducts = [];
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      if (!r || !r[0] || !r[1]) continue;
-
-      const code = String(r[0]).trim();
-      const name = String(r[1]).trim();
-      const deliveryPrice = Number(r[10] || r[8] || r[9] || r[2] || 0);
-      const consumerPrice = Number(r[9] || r[3] || 0);
-      const packing = Number(r[5] || r[4] || 1);
-
-      const cat = categorize(name);
-      const cleanName = name.replace(/[0-9]/g, '');
-      const words = cleanName.split(' ').filter(w => w.length >= 3 && !['مایع', 'کیلویی', 'گرمی', 'لیتری', 'عدد', 'برند'].includes(w));
-
-      let bestImg = null;
-      let maxScore = 0;
-      for (const s of scraped) {
-        let score = 0;
-        for (const w of words) {
-          if (s.title.includes(w)) score += 2;
-        }
-        const colors = ['سبز', 'نارنجی', 'صورتی', 'بنفش', 'آبی', 'زرد', 'کرمی', 'قرمز', 'سفید'];
-        for (const c of colors) {
-          if (name.includes(c) && s.title.includes(c)) score += 3;
-        }
-        if (score > maxScore) {
-          maxScore = score;
-          bestImg = s.src;
-        }
-      }
-
-      if (!bestImg || maxScore < 2) {
-        bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
-      }
-
-      sheetProducts.push({
-        id: code,
-        name: name,
-        category: cat.id,
-        categoryName: cat.name,
-        price: deliveryPrice,
-        consumerPrice: consumerPrice,
-        packing: packing,
-        image: bestImg,
-        badge: packing > 1 ? `کارتن ${packing} تایی` : 'تحویل مستقیم',
-        description: `محصول اصلی رافونه - ${name}. دریافت مستقیم از گوگل شیت.`
-      });
-    }
-
+    const sheetProducts = processRowsToProducts(rows);
     if (sheetProducts.length > 0) {
       fs.writeFileSync(path.join(__dirname, 'products_data.json'), JSON.stringify(sheetProducts, null, 2));
       fs.writeFileSync(path.join(__dirname, 'products_data.js'), `const productsData = ${JSON.stringify(sheetProducts, null, 2)};\n`);
