@@ -1690,6 +1690,35 @@
                 return;
             }
 
+            const orderItems = [];
+            for (const [id, qty] of Object.entries(cart)) {
+                const p = products.find(prod => prod.id == id);
+                if (p) {
+                    orderItems.push({
+                        productId: p.id,
+                        name: p.name,
+                        qty,
+                        price: p.price,
+                        total: p.price * qty
+                    });
+                }
+            }
+
+            // Save order to CRM
+            fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customerName: name,
+                    phone,
+                    address,
+                    note,
+                    items: orderItems,
+                    totalAmount,
+                    paymentMethod: selectedPaymentMethod
+                })
+            }).catch(err => console.log('CRM save error:', err));
+
             let orderText = `🛒 *سفارش جدید از وب‌سایت توزیع رافونه*\n\n`;
             orderText += `👤 *نام مشتری:* ${name}\n`;
             orderText += `📞 *شماره تماس:* ${phone}\n`;
