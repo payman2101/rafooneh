@@ -4,6 +4,19 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
+import {
+  createOrder,
+  getDashboardStats,
+  getOrderById,
+  getCustomerById,
+  listCustomers,
+  listOrders,
+  updateCustomer,
+  updateOrder,
+  getAllStatuses,
+  getStatusLabel
+} from './crm/store.js';
+import { authMiddleware, login, logout } from './crm/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -416,6 +429,126 @@ app.post('/api/upload-excel', (req, res) => {
     console.error('Upload endpoint error:', err);
     res.status(500).json({ success: false, message: 'خطای سرور در آپلود فایل' });
   }
+});
+
+// CRM: Public order submission from website
+app.post('/api/orders', (req, res) => {
+  try {
+    const { customerName, phone, address, note, items, totalAmount, paymentMethod } = req.body || {};
+
+    if (!customerName || !phone || !address) {
+      return res.status(400).json({ success: false, message: 'نام، تلفن و آدرس الزامی است' });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'سبد خرید خالی است' });
+    }
+
+    const order = createOrder({
+      customerName,
+      phone,
+      address,
+      note,
+      items,
+      totalAmount,
+      paymentMethod,
+      source: 'website'
+    });
+
+    res.json({ success: true, order });
+  } catch (err) {
+    console.error('Create order error:', err);
+    res.status(500).json({ success: false, message: 'خطا در ثبت سفارش' });
+  }
+});
+
+// CRM: Admin authentication
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body || {};
+  const result = login(password);
+  if (!result.success) {
+    return res.status(401).json(result);
+  }
+  res.json(result);
+});
+
+app.post('/api/admin/logout', authMiddleware, (req, res) => {
+  logout(req.adminToken);
+  res.json({ success: true });
+});
+
+// CRM: Admin dashboard & data
+app.get('/api/admin/stats', authMiddleware, (req, res) => {
+  res.json({ success: true, stats: getDashboardStats() });
+});
+
+app.get('/api/admin/orders', authMiddleware, (req, res) => {
+  const { status, search, from, to } = req.query;
+  const orders = listOrders({ status, search, from, to }).map(o => ({
+    ...o,
+    statusLabel: getStatusLabel(o.status)
+  }));
+  res.json({ success: true, orders, statuses: getAllStatuses() });
+});
+
+app.get('/api/admin/orders/:id', authMiddleware, (req, res) => {
+  const order = getOrderById(req.params.id);
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'سفارش یافت نشد' });
+  }
+  res.json({
+    success: true,
+    order: { ...order, statusLabel: getStatusLabel(order.status) },
+    statuses: getAllStatuses()
+  });
+});
+
+app.patch('/api/admin/orders/:id', authMiddleware, (req, res) => {
+  try {
+    const { status, adminNotes } = req.body || {};
+    const order = updateOrder(req.params.id, { status, adminNotes });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'سفارش یافت نشد' });
+    }
+    res.json({
+      success: true,
+      order: { ...order, statusLabel: getStatusLabel(order.status) }
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/admin/customers', authMiddleware, (req, res) => {
+  const { search } = req.query;
+  res.json({ success: true, customers: listCustomers({ search }) });
+});
+
+app.get('/api/admin/customers/:id', authMiddleware, (req, res) => {
+  const customer = getCustomerById(req.params.id);
+  if (!customer) {
+    return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
+  }
+  res.json({
+    success: true,
+    customer: {
+      ...customer,
+      orders: customer.orders.map(o => ({ ...o, statusLabel: getStatusLabel(o.status) }))
+    }
+  });
+});
+
+app.patch('/api/admin/customers/:id', authMiddleware, (req, res) => {
+  const { notes, name, address } = req.body || {};
+  const customer = updateCustomer(req.params.id, { notes, name, address });
+  if (!customer) {
+    return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
+  }
+  res.json({ success: true, customer });
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
 // Store active transactions in memory
