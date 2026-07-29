@@ -75,6 +75,9 @@ function findColumnIndices(headerRow) {
   let nameIdx = headers.findIndex(h => h === 'شرح کالا' || h === 'نام کالا' || h === 'نام');
   if (nameIdx === -1) nameIdx = headers.findIndex(h => h.includes('شرح') || h.includes('نام') || h.includes('عنوان'));
 
+  let stockIdx = headers.findIndex(h => h === 'موجودی' || h === 'موجودی انبار' || h === 'موجودی فعلی');
+  if (stockIdx === -1) stockIdx = headers.findIndex(h => h.includes('موجودی') && !h.includes('قبلی'));
+
   // Exact match for 'قیمت تحویل' (e.g., column 10) prioritized over 'قیمت تحویل جدید' (column 8)
   let deliveryPriceIdx = headers.findIndex(h => h === 'قیمت تحویل' || h === 'قیمت تحویل (ریال)' || h === 'قیمت تحویل(ریال)' || h === 'نرخ تحویل');
   if (deliveryPriceIdx === -1) {
@@ -91,11 +94,12 @@ function findColumnIndices(headerRow) {
   // Fallbacks if header labels are missing
   if (codeIdx === -1) codeIdx = 0;
   if (nameIdx === -1) nameIdx = 1;
+  if (stockIdx === -1) stockIdx = 4; // Column E (index 4)
   if (deliveryPriceIdx === -1) deliveryPriceIdx = 10;
   if (consumerPriceIdx === -1) consumerPriceIdx = 9;
   if (packingIdx === -1) packingIdx = 5;
 
-  return { codeIdx, nameIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx };
+  return { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx };
 }
 
 function parseExcelAndBuildProducts() {
@@ -113,7 +117,7 @@ function parseExcelAndBuildProducts() {
 
     if (rows.length < 2) return null;
 
-    const { codeIdx, nameIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+    const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
 
     const excelProducts = [];
     for (let i = 1; i < rows.length; i++) {
@@ -123,13 +127,15 @@ function parseExcelAndBuildProducts() {
       const delPrice = parseNum(r[deliveryPriceIdx]) || parseNum(r[8]) || parseNum(r[9]) || 0;
       const consPrice = parseNum(r[consumerPriceIdx]) || 0;
       const pack = parseNum(r[packingIdx]) || 1;
+      const stock = parseNum(r[stockIdx]) || parseNum(r[4]) || 0;
 
       excelProducts.push({
         code: r[codeIdx],
         name: String(r[nameIdx]).trim(),
         deliveryPrice: delPrice,
         consumerPrice: consPrice,
-        packing: pack
+        packing: pack,
+        stock: stock
       });
     }
 
@@ -167,6 +173,20 @@ function parseExcelAndBuildProducts() {
         bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
       }
 
+      const badge = p.stock <= 0 ? 'ناموجود' : (p.stock <= 5 ? `تعداد محدود (${p.stock} عدد)` : null);
+      const categoryDescriptions = {
+        handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
+        dishwash: 'مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست.',
+        laundry: 'شوینده لباس رافونه محافظ بافت و رنگ پارچه، مانع از بور شدن و کدری لباس‌ها با رایحه ماندگار و قدرت لکه‌بری عالی.',
+        cleaners: 'پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب.',
+        sanitary: 'جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی.',
+        home: 'شامپو فرش و موکت رافونه تمیزکننده عمقی الیاف فرش و مبلمان، احیاکننده رنگ و بدون آسیب به بافت فرش.',
+        cellulosic: 'محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه.',
+        car: 'شوینده خودرو رافونه ایجادکننده لایه محافظ و براق‌کننده بدنه خودرو، چربی‌زدای قوی بدون آسیب به رنگ بدنه.',
+        other: 'محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی.'
+      };
+      const desc = categoryDescriptions[cat.id] || categoryDescriptions.other;
+
       return {
         id: p.code,
         name: p.name,
@@ -175,9 +195,10 @@ function parseExcelAndBuildProducts() {
         price: p.deliveryPrice,
         consumerPrice: p.consumerPrice,
         packing: p.packing,
+        stock: p.stock,
         image: bestImg,
-        badge: p.packing > 1 ? `کارتن ${p.packing} تایی` : 'تحویل مستقیم',
-        description: `محصول اصلی رافونه با کیفیت عالی - ${p.name}. تحویل درب منزل با قیمت اختصاصی تحویل.`
+        badge: badge,
+        description: desc
       };
     });
 
@@ -235,7 +256,19 @@ function processRowsToProducts(rows) {
 
   if (!rows || rows.length < 2) return [];
 
-  const { codeIdx, nameIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+  const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+
+  const categoryDescriptions = {
+    handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
+    dishwash: 'مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست.',
+    laundry: 'شوینده لباس رافونه محافظ بافت و رنگ پارچه، مانع از بور شدن و کدری لباس‌ها با رایحه ماندگار و قدرت لکه‌بری عالی.',
+    cleaners: 'پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب.',
+    sanitary: 'جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی.',
+    home: 'شامپو فرش و موکت رافونه تمیزکننده عمقی الیاف فرش و مبلمان، احیاکننده رنگ و بدون آسیب به بافت فرش.',
+    cellulosic: 'محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه.',
+    car: 'شوینده خودرو رافونه ایجادکننده لایه محافظ و براق‌کننده بدنه خودرو، چربی‌زدای قوی بدون آسیب به رنگ بدنه.',
+    other: 'محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی.'
+  };
 
   const sheetProducts = [];
   for (let i = 1; i < rows.length; i++) {
@@ -244,6 +277,7 @@ function processRowsToProducts(rows) {
 
     const code = String(r[codeIdx]).trim();
     const name = String(r[nameIdx]).trim();
+    const stock = parseNum(r[stockIdx]) || parseNum(r[4]) || 0;
     const deliveryPrice = parseNum(r[deliveryPriceIdx]) || parseNum(r[10]) || parseNum(r[8]) || parseNum(r[2]) || 0;
     const consumerPrice = parseNum(r[consumerPriceIdx]) || parseNum(r[9]) || parseNum(r[3]) || 0;
     const packing = parseNum(r[packingIdx]) || parseNum(r[5]) || 1;
@@ -273,6 +307,9 @@ function processRowsToProducts(rows) {
       bestImg = categoryDefaultImages[cat.id] || categoryDefaultImages.other;
     }
 
+    const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
+    const desc = categoryDescriptions[cat.id] || categoryDescriptions.other;
+
     sheetProducts.push({
       id: code,
       name: name,
@@ -281,9 +318,10 @@ function processRowsToProducts(rows) {
       price: deliveryPrice,
       consumerPrice: consumerPrice,
       packing: packing,
+      stock: stock,
       image: bestImg,
-      badge: packing > 1 ? `کارتن ${packing} تایی` : 'تحویل مستقیم',
-      description: `محصول اصلی رافونه - ${name}. دریافت مستقیم از گوگل شیت.`
+      badge: badge,
+      description: desc
     });
   }
   return sheetProducts;

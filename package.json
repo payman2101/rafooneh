@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node server.js",
-    "build": "echo 'Ready'",
+    "dev": "node sync_sheets.js && node server.js",
+    "sync": "node sync_sheets.js",
+    "build": "node sync_sheets.js",
     "start": "node server.js"
   },
   "dependencies": {

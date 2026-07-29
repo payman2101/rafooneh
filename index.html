@@ -176,6 +176,10 @@
             z-index: 2;
         }
 
+        .product-tag.out-of-stock-tag {
+            background: #ef4444 !important;
+        }
+
         .product-img-wrapper {
             width: 100%;
             height: 180px;
@@ -214,12 +218,78 @@
             line-height: 1.4;
         }
 
+        .product-card {
+            cursor: pointer;
+        }
+
         .product-desc {
             font-size: 0.78rem;
             color: var(--text-muted);
             margin-bottom: 12px;
             line-height: 1.5;
             flex-grow: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: color 0.15s ease;
+        }
+
+        .product-desc:hover {
+            color: var(--primary);
+        }
+
+        /* Product Detail Modal */
+        .product-detail-modal {
+            max-width: 650px;
+            width: 90%;
+            border-radius: 20px;
+            padding: 24px;
+            position: relative;
+        }
+
+        .detail-modal-grid {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 640px) {
+            .detail-modal-grid {
+                grid-template-columns: 1fr;
+            }
+            .detail-modal-img-wrap {
+                height: 200px;
+            }
+        }
+
+        .detail-modal-img-wrap {
+            width: 100%;
+            height: 220px;
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            position: relative;
+        }
+
+        .detail-modal-img-wrap img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .detail-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
         }
 
         .product-price-row {
@@ -1204,6 +1274,52 @@
         </div>
     </div>
 
+    <!-- Product Detail Modal -->
+    <div id="productDetailModal" class="modal-backdrop" onclick="closeProductDetailModal(event)">
+        <div class="modal-content product-detail-modal" onclick="event.stopPropagation()">
+            <button class="modal-close-btn" onclick="closeProductDetailModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="detail-modal-grid">
+                <div class="detail-modal-img-wrap">
+                    <img id="detailModalImg" src="" alt="" onerror="this.src='https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg'">
+                    <div id="detailModalBadge" class="product-tag" style="display:none; position:absolute; top:12px; right:12px;"></div>
+                </div>
+                <div class="detail-modal-info">
+                    <div class="detail-modal-header">
+                        <span id="detailModalCode" class="product-code-badge"></span>
+                        <span id="detailModalCategory" style="background:#e0f2fe; color:#0369a1; padding:3px 10px; border-radius:8px; font-size:0.75rem; font-weight:bold;"></span>
+                    </div>
+                    <h2 id="detailModalTitle" style="font-size: 1.25rem; font-weight: 800; margin: 8px 0 14px 0; color: var(--text-main); line-height: 1.4;"></h2>
+                    
+                    <div style="margin-bottom: 14px;">
+                        <h4 style="font-size:0.82rem; font-weight:bold; color:var(--text-muted); margin-bottom:6px;"><i class="fa-solid fa-align-right" style="margin-left:4px;"></i> توضیحات کامل محصول:</h4>
+                        <p id="detailModalDesc" style="font-size: 0.88rem; line-height: 1.7; color: var(--text-main); background: #f8fafc; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); margin:0;"></p>
+                    </div>
+
+                    <div style="margin-bottom: 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                        <div style="background:#f1f5f9; padding:6px 12px; border-radius:8px; font-size:0.82rem; color:var(--text-main);">
+                            <span style="color:var(--text-muted);">بسته‌بندی:</span>
+                            <span id="detailModalPacking" style="font-weight:bold; margin-right:4px;"></span>
+                        </div>
+                        <div style="background:#f1f5f9; padding:6px 12px; border-radius:8px; font-size:0.82rem; color:var(--text-main);">
+                            <span style="color:var(--text-muted);">موجودی:</span>
+                            <span id="detailModalStock" style="font-weight:bold; margin-right:4px;"></span>
+                        </div>
+                    </div>
+
+                    <div style="padding-top: 14px; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; gap:12px; flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">قیمت تحویل توزیع:</div>
+                            <div id="detailModalPrice" style="font-size: 1.25rem; font-weight: 900; color: var(--primary-dark);"></div>
+                            <div id="detailModalConsumerPrice" style="font-size:0.82rem; color:#94a3b8; text-decoration:line-through; margin-top:2px;"></div>
+                        </div>
+                        <div id="detailModalCartControls" class="cart-controls">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer>
         <p>توزیع مستقیم محصولات بهداشتی رافونه درب منزل</p>
@@ -1254,33 +1370,60 @@
 
             filtered.forEach(p => {
                 const qty = cart[p.id] || 0;
+                const isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
+                const isLimitedStock = p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 5;
+
                 const card = document.createElement('div');
-                card.className = 'product-card';
+                card.className = `product-card ${isOutOfStock ? 'out-of-stock-card' : ''}`;
+                card.onclick = (e) => {
+                    openProductDetailModal(p.id);
+                };
+
+                let badgeText = p.badge;
+                if (isOutOfStock) {
+                    badgeText = 'ناموجود';
+                } else if (isLimitedStock) {
+                    badgeText = `تعداد محدود (${p.stock.toLocaleString('fa-IR')} عدد)`;
+                }
+
+                const badgeClass = isOutOfStock ? 'product-tag out-of-stock-tag' : 'product-tag';
+
                 card.innerHTML = `
-                    ${p.badge ? `<div class="product-tag">${p.badge}</div>` : ''}
-                    <div class="product-img-wrapper">
+                    ${badgeText ? `<div class="${badgeClass}">${badgeText}</div>` : ''}
+                    <div class="product-img-wrapper" onclick="openProductDetailModal('${p.id}')">
                         <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg'">
                     </div>
-                    <div class="product-details">
+                    <div class="product-details" onclick="openProductDetailModal('${p.id}')">
                         <div>
                             <span class="product-code-badge">کد: ${p.id}</span>
-                            <div class="product-title">${p.name}</div>
+                            <div class="product-title" onclick="openProductDetailModal('${p.id}')">${p.name}</div>
                         </div>
-                        <div class="product-desc">${p.description || 'محصول باکیفیت رافونه'}</div>
+                        <div class="product-desc" onclick="openProductDetailModal('${p.id}')" title="کلیک کنید تا مشخصات کامل را ببینید">${p.description || 'توضیحات محصول رافونه'}</div>
                         <div class="product-price-row">
                             <div>
                                 <div class="product-price">${p.price.toLocaleString('fa-IR')} <span>تومان</span></div>
                                 ${p.consumerPrice && p.consumerPrice > p.price ? `<div class="product-consumer-price">قیمت مصرف: ${p.consumerPrice.toLocaleString('fa-IR')} تومان</div>` : ''}
+                                ${isOutOfStock ? `
+                                    <div style="font-size: 0.75rem; margin-top: 3px; color: #ef4444; font-weight: 600;">
+                                        ناموجود در انبار
+                                    </div>
+                                ` : ''}
                             </div>
-                            <div class="cart-controls">
-                                <button class="btn-add" id="addBtn-${p.id}" onclick="updateQty(${p.id}, 1)" style="${qty > 0 ? 'display:none;' : 'display:flex;'}">
-                                    <i class="fa-solid fa-plus"></i> افزودن
-                                </button>
-                                <div class="qty-picker ${qty > 0 ? 'active' : ''}" id="picker-${p.id}">
-                                    <button class="qty-btn" onclick="updateQty(${p.id}, 1)">+</button>
-                                    <span class="qty-val" id="qtyVal-${p.id}">${qty.toLocaleString('fa-IR')}</span>
-                                    <button class="qty-btn" onclick="updateQty(${p.id}, -1)">-</button>
-                                </div>
+                            <div class="cart-controls" onclick="event.stopPropagation();">
+                                ${isOutOfStock ? `
+                                    <button class="btn-add" disabled style="background:#cbd5e1; border-color:#cbd5e1; color:#64748b; cursor:not-allowed;">
+                                        ناموجود
+                                    </button>
+                                ` : `
+                                    <button class="btn-add" id="addBtn-${p.id}" onclick="event.stopPropagation(); updateQty('${p.id}', 1)" style="${qty > 0 ? 'display:none;' : 'display:flex;'}">
+                                        <i class="fa-solid fa-plus"></i> افزودن
+                                    </button>
+                                    <div class="qty-picker ${qty > 0 ? 'active' : ''}" id="picker-${p.id}" onclick="event.stopPropagation();">
+                                        <button class="qty-btn" onclick="event.stopPropagation(); updateQty('${p.id}', 1)">+</button>
+                                        <span class="qty-val" id="qtyVal-${p.id}">${qty.toLocaleString('fa-IR')}</span>
+                                        <button class="qty-btn" onclick="event.stopPropagation(); updateQty('${p.id}', -1)">-</button>
+                                    </div>
+                                `}
                             </div>
                         </div>
                     </div>
@@ -1289,7 +1432,119 @@
             });
         }
 
+        let currentDetailProductId = null;
+
+        function openProductDetailModal(productId) {
+            const p = products.find(prod => prod.id == productId);
+            if (!p) return;
+            currentDetailProductId = productId;
+
+            document.getElementById('detailModalImg').src = p.image;
+            document.getElementById('detailModalCode').innerText = `کد کالا: ${p.id}`;
+            document.getElementById('detailModalCategory').innerText = p.categoryName || 'محصولات رافونه';
+            document.getElementById('detailModalTitle').innerText = p.name;
+            document.getElementById('detailModalDesc').innerText = p.description || 'توضیحات و مشخصات کامل برای این محصول ثبت نشده است.';
+            
+            const isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
+            const isLimitedStock = p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 5;
+
+            const badgeEl = document.getElementById('detailModalBadge');
+            let badgeText = p.badge;
+            if (isOutOfStock) {
+                badgeText = 'ناموجود';
+            } else if (isLimitedStock) {
+                badgeText = `تعداد محدود (${p.stock.toLocaleString('fa-IR')} عدد)`;
+            }
+
+            if (badgeText) {
+                badgeEl.innerText = badgeText;
+                badgeEl.className = isOutOfStock ? 'product-tag out-of-stock-tag' : 'product-tag';
+                badgeEl.style.display = 'block';
+            } else {
+                badgeEl.style.display = 'none';
+            }
+
+            document.getElementById('detailModalPacking').innerText = p.packing > 1 ? `${p.packing.toLocaleString('fa-IR')} عدد در کارتن` : 'تک عددی';
+            
+            const stockEl = document.getElementById('detailModalStock');
+            if (stockEl) {
+                if (p.stock !== undefined && p.stock !== null) {
+                    if (p.stock <= 0) {
+                        stockEl.innerText = 'ناموجود (۰ عدد)';
+                        stockEl.style.color = '#ef4444';
+                    } else if (p.stock <= 5) {
+                        stockEl.innerText = `تعداد محدود (${p.stock.toLocaleString('fa-IR')} عدد)`;
+                        stockEl.style.color = '#d97706';
+                    } else {
+                        stockEl.innerText = 'موجود در انبار';
+                        stockEl.style.color = '#16a34a';
+                    }
+                } else {
+                    stockEl.innerText = 'موجود در انبار';
+                    stockEl.style.color = '#16a34a';
+                }
+            }
+
+            document.getElementById('detailModalPrice').innerHTML = `${p.price.toLocaleString('fa-IR')} <span style="font-size:0.8rem; font-weight:normal;">تومان</span>`;
+
+            const consEl = document.getElementById('detailModalConsumerPrice');
+            if (p.consumerPrice && p.consumerPrice > p.price) {
+                consEl.innerText = `قیمت روی جلد (مصرف کننده): ${p.consumerPrice.toLocaleString('fa-IR')} تومان`;
+                consEl.style.display = 'block';
+            } else {
+                consEl.style.display = 'none';
+            }
+
+            renderModalCartControls(p.id);
+            document.getElementById('productDetailModal').style.display = 'flex';
+        }
+
+        function closeProductDetailModal(e) {
+            if (!e || e.target.id === 'productDetailModal' || e.currentTarget.classList.contains('modal-close-btn')) {
+                document.getElementById('productDetailModal').style.display = 'none';
+            }
+        }
+
+        function renderModalCartControls(productId) {
+            const container = document.getElementById('detailModalCartControls');
+            const p = products.find(prod => prod.id == productId);
+            const qty = cart[productId] || 0;
+
+            if (p && p.stock !== undefined && p.stock !== null && p.stock <= 0) {
+                container.innerHTML = `
+                    <button class="btn-add" disabled style="background:#cbd5e1; border-color:#cbd5e1; color:#64748b; cursor:not-allowed;">
+                        محصول ناموجود است
+                    </button>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <button class="btn-add" style="${qty > 0 ? 'display:none;' : 'display:flex;'}" onclick="updateQty('${productId}', 1);">
+                    <i class="fa-solid fa-plus"></i> افزودن به سبد خرید
+                </button>
+                <div class="qty-picker ${qty > 0 ? 'active' : ''}">
+                    <button class="qty-btn" onclick="updateQty('${productId}', 1);">+</button>
+                    <span class="qty-val">${qty.toLocaleString('fa-IR')}</span>
+                    <button class="qty-btn" onclick="updateQty('${productId}', -1);">-</button>
+                </div>
+            `;
+        }
+
         function updateQty(id, change) {
+            const p = products.find(prod => prod.id == id);
+            if (change > 0 && p && p.stock !== undefined && p.stock !== null) {
+                if (p.stock <= 0) {
+                    alert('این محصول در حال حاضر موجود نیست.');
+                    return;
+                }
+                const currentQty = cart[id] || 0;
+                if (currentQty + change > p.stock) {
+                    alert(`حداکثر موجودی انبار برای این محصول ${p.stock.toLocaleString('fa-IR')} عدد است.`);
+                    return;
+                }
+            }
+
             const current = cart[id] || 0;
             const updated = current + change;
 
@@ -1312,6 +1567,10 @@
             } else {
                 if (addBtn) addBtn.style.display = 'flex';
                 if (picker) picker.classList.remove('active');
+            }
+
+            if (currentDetailProductId == id) {
+                renderModalCartControls(id);
             }
 
             updateCartBar();
@@ -1777,29 +2036,139 @@
             }
         }
 
-        // Live Excel Auto-Sync: Load products from /api/products
+        // Live Excel Auto-Sync: Load products from /api/products or direct Google Sheets CSV
         let lastProductsHash = '';
+
+        async function loadProductsFromGSheetsCsvDirect() {
+            try {
+                const csvUrl = 'https://docs.google.com/spreadsheets/d/1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8/gviz/tq?tqx=out:csv';
+                const response = await fetch(csvUrl);
+                if (!response.ok) return;
+                const csvText = await response.text();
+                if (csvText.includes('<!DOCTYPE html>') || csvText.includes('show-login-page')) return;
+                
+                const lines = csvText.split('\n').map(line => {
+                    const row = [];
+                    let insideQuote = false;
+                    let currentCell = '';
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        if (char === '"') {
+                            insideQuote = !insideQuote;
+                        } else if (char === ',' && !insideQuote) {
+                            row.push(currentCell.trim().replace(/^"|"$/g, ''));
+                            currentCell = '';
+                        } else {
+                            currentCell += char;
+                        }
+                    }
+                    row.push(currentCell.trim().replace(/^"|"$/g, ''));
+                    return row;
+                });
+
+                if (lines.length < 2) return;
+
+                const headers = lines[0].map(h => h.trim());
+                let codeIdx = headers.findIndex(h => h === 'کد کالا' || h === 'کد' || h.includes('کد'));
+                let nameIdx = headers.findIndex(h => h === 'شرح کالا' || h === 'نام کالا' || h === 'نام' || h.includes('شرح') || h.includes('عنوان'));
+                let stockIdx = headers.findIndex(h => h === 'موجودی' || h === 'موجودی انبار' || h === 'موجودی فعلی');
+                if (stockIdx === -1) stockIdx = headers.findIndex(h => h.includes('موجودی') && !h.includes('قبلی'));
+                let delPriceIdx = headers.findIndex(h => h === 'قیمت تحویل' || h.includes('تحویل'));
+                let consPriceIdx = headers.findIndex(h => h === 'قیمت مصرف' || h.includes('مصرف'));
+                let packIdx = headers.findIndex(h => h.includes('کارتن') || h.includes('بسته'));
+
+                if (codeIdx === -1) codeIdx = 0;
+                if (nameIdx === -1) nameIdx = 1;
+                if (stockIdx === -1) stockIdx = 4; // Column E
+                if (delPriceIdx === -1) delPriceIdx = 10;
+                if (consPriceIdx === -1) consPriceIdx = 9;
+                if (packIdx === -1) packIdx = 5;
+
+                const parseN = (val) => {
+                    if (!val && val !== 0) return 0;
+                    const cleaned = String(val).replace(/,/g, '').trim();
+                    const n = Number(cleaned);
+                    return isNaN(n) ? 0 : n;
+                };
+
+                const sheetProducts = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const r = lines[i];
+                    if (!r || !r[codeIdx] || !r[nameIdx]) continue;
+
+                    const code = r[codeIdx].trim();
+                    const name = r[nameIdx].trim();
+                    const stock = parseN(r[stockIdx]) || parseN(r[4]) || 0;
+                    const delPrice = parseN(r[delPriceIdx]) || parseN(r[10]) || parseN(r[8]) || 0;
+                    const consPrice = parseN(r[consPriceIdx]) || parseN(r[9]) || 0;
+                    const pack = parseN(r[packIdx]) || 1;
+
+                    const existing = products.find(p => p.id == code);
+                    const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
+                    const catDescMap = {
+                        handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
+                        dishwash: 'مایع ظرفشویی رافونه غلیظ و با قدرت چربی‌زدایی فوق‌العاده بالا، درخشان‌کننده ظروف، دارای گلیسیرین جهت محافظت از پوست دست.',
+                        laundry: 'شوینده لباس رافونه محافظ بافت و رنگ پارچه، مانع از بور شدن و کدری لباس‌ها با رایحه ماندگار و قدرت لکه‌بری عالی.',
+                        cleaners: 'پاک‌کننده و اسپری چندمنظوره رافونه تمیزکننده سریع و آسان سطوح، چربی‌زدای قوی بدون برجا گذاشتن لکه و رد آب.',
+                        sanitary: 'جرم‌گیر و ضدعفونی‌کننده رافونه از بین برنده ۹۹.۹٪ باکتری‌ها و جرم‌های سرسخت، درخشان‌کننده سرویس بهداشتی و کاشی.',
+                        home: 'شامپو فرش و موکت رافونه تمیزکننده عمقی الیاف فرش و مبلمان، احیاکننده رنگ و بدون آسیب به بافت فرش.',
+                        cellulosic: 'محصولات مصرفی و سلولزی رافونه تهیه شده از مواد اولیه مرغوب و بهداشتی، مقاوم و با دوام بالا برای مصارف روزمره خانه.',
+                        car: 'شوینده خودرو رافونه ایجادکننده لایه محافظ و براق‌کننده بدنه خودرو، چربی‌زدای قوی بدون آسیب به رنگ بدنه.',
+                        other: 'محصول باکیفیت و استاندارد رافونه تولید شده با بهترین مواد اولیه و فرمولاسیون تخصصی.'
+                    };
+                    const catId = existing ? existing.category : 'other';
+                    const desc = catDescMap[catId] || catDescMap.other;
+
+                    sheetProducts.push({
+                        id: code,
+                        name: name,
+                        category: catId,
+                        categoryName: existing ? existing.categoryName : 'سایر',
+                        price: delPrice,
+                        consumerPrice: consPrice,
+                        packing: pack,
+                        stock: stock,
+                        image: existing ? existing.image : 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg',
+                        badge: badge,
+                        description: desc
+                    });
+                }
+
+                if (sheetProducts.length > 0) {
+                    const currentHash = JSON.stringify(sheetProducts.map(p => ({ id: p.id, price: p.price, name: p.name, badge: p.badge, desc: p.description })));
+                    if (currentHash !== lastProductsHash) {
+                        lastProductsHash = currentHash;
+                        products = sheetProducts;
+                        renderProducts(currentCategory);
+                    }
+                }
+            } catch (e) {
+                console.log('Direct GSheets CSV fetch error:', e);
+            }
+        }
 
         async function loadProductsFromApi() {
             try {
                 const res = await fetch('/api/products');
+                if (!res.ok) throw new Error('API not available');
                 const data = await res.json();
                 if (data.success && Array.isArray(data.products) && data.products.length > 0) {
-                    const currentHash = JSON.stringify(data.products.map(p => ({ id: p.id, price: p.price, name: p.name })));
+                    const currentHash = JSON.stringify(data.products.map(p => ({ id: p.id, price: p.price, name: p.name, badge: p.badge, desc: p.description })));
                     if (currentHash !== lastProductsHash) {
                         lastProductsHash = currentHash;
                         products = data.products;
                         renderProducts(currentCategory);
                     }
+                } else {
+                    loadProductsFromGSheetsCsvDirect();
                 }
             } catch (err) {
-                console.log('Error auto-syncing products:', err);
+                loadProductsFromGSheetsCsvDirect();
             }
         }
 
         renderProducts();
         loadProductsFromApi();
-        // Check for Excel changes every 3 seconds automatically
         setInterval(loadProductsFromApi, 3000);
     </script>
 </body>
