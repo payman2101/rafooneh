@@ -1507,13 +1507,13 @@
                 <td>${brandBadges[p.brand] || `<span class="badge badge-preparing">${p.brandName || p.brand || '—'}</span>`}</td>
                 <td>${p.categoryName || p.category || '—'}</td>
                 <td>
-                    <input type="number" id="inpStock-${p.id}" class="form-control" value="${p.stock}" min="0" style="width:70px; padding:4px 6px; text-align:center;">
+                    <input type="number" id="inpStock-${p.id}" class="form-control" value="${p.stock}" min="0" style="width:70px; padding:4px 6px; text-align:center;" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
                 </td>
                 <td>
-                    <input type="number" id="inpPrice-${p.id}" class="form-control" value="${p.price}" min="0" style="width:100px; padding:4px 6px; text-align:center;" title="قیمت فروش قدیم">
+                    <input type="number" id="inpPrice-${p.id}" class="form-control" value="${p.price}" min="0" style="width:100px; padding:4px 6px; text-align:center;" title="قیمت فروش قدیم" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
                 </td>
                 <td>
-                    <input type="number" id="inpNewPrice-${p.id}" class="form-control" value="${newPrice}" min="0" style="width:100px; padding:4px 6px; text-align:center;" placeholder="0" title="قیمت جدید بازار">
+                    <input type="number" id="inpNewPrice-${p.id}" class="form-control" value="${newPrice}" min="0" style="width:100px; padding:4px 6px; text-align:center;" placeholder="0" title="قیمت جدید بازار" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
                 </td>
                 <td>
                     ${hasDiscount 
@@ -1522,7 +1522,7 @@
                     }
                 </td>
                 <td>
-                    <input type="number" id="inpBuyPrice-${p.id}" class="form-control" value="${p.buyPrice || 0}" min="0" style="width:100px; padding:4px 6px; text-align:center;">
+                    <input type="number" id="inpBuyPrice-${p.id}" class="form-control" value="${p.buyPrice || 0}" min="0" style="width:100px; padding:4px 6px; text-align:center;" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
                 </td>
                 <td>
                     <div style="display:flex; gap:4px; flex-wrap:nowrap;">
