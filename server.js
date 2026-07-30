@@ -14,7 +14,9 @@ import {
   updateCustomer,
   updateOrder,
   getAllStatuses,
-  getStatusLabel
+  getStatusLabel,
+  getProfitStats,
+  getAdminAlerts
 } from './crm/store.js';
 import { authMiddleware, login, logout } from './crm/auth.js';
 
@@ -23,6 +25,16 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -78,10 +90,14 @@ function findColumnIndices(headerRow) {
   let stockIdx = headers.findIndex(h => h === 'موجودی' || h === 'موجودی انبار' || h === 'موجودی فعلی');
   if (stockIdx === -1) stockIdx = headers.findIndex(h => h.includes('موجودی') && !h.includes('قبلی'));
 
-  // Exact match for 'قیمت تحویل' (e.g., column 10) prioritized over 'قیمت تحویل جدید' (column 8)
   let deliveryPriceIdx = headers.findIndex(h => h === 'قیمت تحویل' || h === 'قیمت تحویل (ریال)' || h === 'قیمت تحویل(ریال)' || h === 'نرخ تحویل');
   if (deliveryPriceIdx === -1) {
     deliveryPriceIdx = headers.findIndex(h => h.includes('قیمت تحویل') || h.includes('نرخ تحویل'));
+  }
+
+  let buyPriceIdx = headers.findIndex(h => h === 'قیمت خرید' || h === 'قیمت خرید (ریال)' || h === 'قیمت خرید(ریال)' || h === 'نرخ خرید');
+  if (buyPriceIdx === -1) {
+    buyPriceIdx = headers.findIndex(h => h.includes('خرید'));
   }
 
   let consumerPriceIdx = headers.findIndex(h => h === 'قیمت مصرف' || h === 'قیمت مصرف کننده');
@@ -95,11 +111,12 @@ function findColumnIndices(headerRow) {
   if (codeIdx === -1) codeIdx = 0;
   if (nameIdx === -1) nameIdx = 1;
   if (stockIdx === -1) stockIdx = 4; // Column E (index 4)
-  if (deliveryPriceIdx === -1) deliveryPriceIdx = 10;
+  if (deliveryPriceIdx === -1) deliveryPriceIdx = 7;
+  if (buyPriceIdx === -1) buyPriceIdx = 6;
   if (consumerPriceIdx === -1) consumerPriceIdx = 9;
   if (packingIdx === -1) packingIdx = 5;
 
-  return { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx };
+  return { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx };
 }
 
 function parseExcelAndBuildProducts() {
@@ -117,15 +134,16 @@ function parseExcelAndBuildProducts() {
 
     if (rows.length < 2) return null;
 
-    const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+    const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
 
     const excelProducts = [];
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
       if (!r || r[codeIdx] === undefined || !r[nameIdx]) continue;
 
-      const delPrice = parseNum(r[deliveryPriceIdx]) || parseNum(r[8]) || parseNum(r[9]) || 0;
-      const consPrice = parseNum(r[consumerPriceIdx]) || 0;
+      const delPrice = Math.round(parseNum(r[deliveryPriceIdx]) || parseNum(r[7]) || parseNum(r[8]) || parseNum(r[9]) || 0);
+      const buyPrice = Math.round(parseNum(r[buyPriceIdx]) || parseNum(r[6]) || 0);
+      const consPrice = Math.round(parseNum(r[consumerPriceIdx]) || 0);
       const pack = parseNum(r[packingIdx]) || 1;
       const stock = parseNum(r[stockIdx]) || parseNum(r[4]) || 0;
 
@@ -133,6 +151,7 @@ function parseExcelAndBuildProducts() {
         code: r[codeIdx],
         name: String(r[nameIdx]).trim(),
         deliveryPrice: delPrice,
+        buyPrice: buyPrice,
         consumerPrice: consPrice,
         packing: pack,
         stock: stock
@@ -194,6 +213,7 @@ function parseExcelAndBuildProducts() {
         categoryName: cat.name,
         price: p.deliveryPrice,
         consumerPrice: p.consumerPrice,
+        buyPrice: p.buyPrice || 0,
         packing: p.packing,
         stock: p.stock,
         image: bestImg,
@@ -256,7 +276,7 @@ function processRowsToProducts(rows) {
 
   if (!rows || rows.length < 2) return [];
 
-  const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+  const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
 
   const categoryDescriptions = {
     handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
@@ -278,8 +298,9 @@ function processRowsToProducts(rows) {
     const code = String(r[codeIdx]).trim();
     const name = String(r[nameIdx]).trim();
     const stock = parseNum(r[stockIdx]) || parseNum(r[4]) || 0;
-    const deliveryPrice = parseNum(r[deliveryPriceIdx]) || parseNum(r[10]) || parseNum(r[8]) || parseNum(r[2]) || 0;
-    const consumerPrice = parseNum(r[consumerPriceIdx]) || parseNum(r[9]) || parseNum(r[3]) || 0;
+    const deliveryPrice = Math.round(parseNum(r[deliveryPriceIdx]) || parseNum(r[7]) || parseNum(r[10]) || parseNum(r[8]) || parseNum(r[2]) || 0);
+    const buyPrice = Math.round(parseNum(r[buyPriceIdx]) || parseNum(r[6]) || 0);
+    const consumerPrice = Math.round(parseNum(r[consumerPriceIdx]) || parseNum(r[9]) || parseNum(r[3]) || 0);
     const packing = parseNum(r[packingIdx]) || parseNum(r[5]) || 1;
 
     const cat = categorize(name);
@@ -317,6 +338,7 @@ function processRowsToProducts(rows) {
       categoryName: cat.name,
       price: deliveryPrice,
       consumerPrice: consumerPrice,
+      buyPrice: buyPrice,
       packing: packing,
       stock: stock,
       image: bestImg,
@@ -518,6 +540,15 @@ app.post('/api/admin/logout', authMiddleware, (req, res) => {
 // CRM: Admin dashboard & data
 app.get('/api/admin/stats', authMiddleware, (req, res) => {
   res.json({ success: true, stats: getDashboardStats() });
+});
+
+app.get('/api/admin/profit', authMiddleware, (req, res) => {
+  const { timeframe } = req.query;
+  res.json({ success: true, profitStats: getProfitStats({ timeframe }) });
+});
+
+app.get('/api/admin/alerts', authMiddleware, (req, res) => {
+  res.json({ success: true, alerts: getAdminAlerts() });
 });
 
 app.get('/api/admin/orders', authMiddleware, (req, res) => {

@@ -60,6 +60,9 @@ function findColumnIndices(headerRow) {
   let deliveryPriceIdx = headers.findIndex(h => h === 'قیمت تحویل' || h === 'قیمت تحویل (ریال)' || h === 'قیمت تحویل(ریال)' || h === 'نرخ تحویل');
   if (deliveryPriceIdx === -1) deliveryPriceIdx = headers.findIndex(h => h.includes('قیمت تحویل') || h.includes('نرخ تحویل'));
 
+  let buyPriceIdx = headers.findIndex(h => h === 'قیمت خرید' || h === 'قیمت خرید (ریال)' || h === 'قیمت خرید(ریال)' || h === 'نرخ خرید');
+  if (buyPriceIdx === -1) buyPriceIdx = headers.findIndex(h => h.includes('خرید'));
+
   let consumerPriceIdx = headers.findIndex(h => h === 'قیمت مصرف' || h === 'قیمت مصرف کننده');
   if (consumerPriceIdx === -1) consumerPriceIdx = headers.findIndex(h => h.includes('مصرف'));
 
@@ -68,11 +71,12 @@ function findColumnIndices(headerRow) {
   if (codeIdx === -1) codeIdx = 0;
   if (nameIdx === -1) nameIdx = 1;
   if (stockIdx === -1) stockIdx = 4; // Column E (index 4)
-  if (deliveryPriceIdx === -1) deliveryPriceIdx = 10;
+  if (deliveryPriceIdx === -1) deliveryPriceIdx = 7;
+  if (buyPriceIdx === -1) buyPriceIdx = 6;
   if (consumerPriceIdx === -1) consumerPriceIdx = 9;
   if (packingIdx === -1) packingIdx = 5;
 
-  return { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx };
+  return { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx };
 }
 
 async function syncGoogleSheets() {
@@ -102,7 +106,7 @@ async function syncGoogleSheets() {
       scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8'));
     }
 
-    const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+    const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
 
     const products = [];
     for (let i = 1; i < rows.length; i++) {
@@ -112,8 +116,9 @@ async function syncGoogleSheets() {
       const code = String(r[codeIdx]).trim();
       const name = String(r[nameIdx]).trim();
       const stock = parseNum(r[stockIdx]) || parseNum(r[4]) || 0;
-      const deliveryPrice = parseNum(r[deliveryPriceIdx]) || parseNum(r[10]) || parseNum(r[8]) || parseNum(r[2]) || 0;
-      const consumerPrice = parseNum(r[consumerPriceIdx]) || parseNum(r[9]) || parseNum(r[3]) || 0;
+      const deliveryPrice = Math.round(parseNum(r[deliveryPriceIdx]) || parseNum(r[7]) || parseNum(r[10]) || parseNum(r[8]) || parseNum(r[2]) || 0);
+      const buyPrice = Math.round(parseNum(r[buyPriceIdx]) || parseNum(r[6]) || 0);
+      const consumerPrice = Math.round(parseNum(r[consumerPriceIdx]) || parseNum(r[9]) || parseNum(r[3]) || 0);
       const packing = parseNum(r[packingIdx]) || parseNum(r[5]) || 1;
 
       const cat = categorize(name);
@@ -164,6 +169,7 @@ async function syncGoogleSheets() {
         categoryName: cat.name,
         price: deliveryPrice,
         consumerPrice: consumerPrice,
+        buyPrice: buyPrice,
         packing: packing,
         stock: stock,
         image: bestImg,

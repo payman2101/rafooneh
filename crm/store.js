@@ -57,38 +57,6 @@ export function getAllStatuses() {
   return ORDER_STATUSES.map(id => ({ id, label: STATUS_LABELS[id] }));
 }
 
-export function listOrders(filters = {}) {
-  let orders = readJson(ORDERS_FILE, []);
-
-  if (filters.status && filters.status !== 'all') {
-    orders = orders.filter(o => o.status === filters.status);
-  }
-
-  if (filters.search) {
-    const q = filters.search.toLowerCase();
-    orders = orders.filter(o =>
-      o.customerName?.toLowerCase().includes(q) ||
-      o.phone?.includes(q) ||
-      o.id?.toLowerCase().includes(q)
-    );
-  }
-
-  if (filters.from) {
-    orders = orders.filter(o => o.createdAt >= filters.from);
-  }
-
-  if (filters.to) {
-    orders = orders.filter(o => o.createdAt <= filters.to);
-  }
-
-  return orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-}
-
-export function getOrderById(id) {
-  const orders = readJson(ORDERS_FILE, []);
-  return orders.find(o => o.id === id) || null;
-}
-
 export function upsertCustomer({ name, phone, address }) {
   const customers = readJson(CUSTOMERS_FILE, []);
   const normalizedPhone = normalizePhone(phone);
@@ -118,13 +86,81 @@ export function upsertCustomer({ name, phone, address }) {
   return customer;
 }
 
+function getProductsMap() {
+  try {
+    const productsPath = path.join(process.cwd(), 'products_data.json');
+    if (fs.existsSync(productsPath)) {
+      const list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+      const map = {};
+      list.forEach(p => {
+        if (p.id) map[String(p.id)] = p;
+        if (p.code) map[String(p.code)] = p;
+      });
+      return { map, list };
+    }
+  } catch (e) {}
+  return { map: {}, list: [] };
+}
+
+export function enrichOrderWithProfit(order, productsMap) {
+  if (!order) return null;
+  const pMap = productsMap || getProductsMap().map;
+  let totalCost = 0;
+
+  const enrichedItems = (order.items || []).map(item => {
+    const pid = String(item.id || item.code || '');
+    const prod = pMap[pid] || {};
+    const itemPrice = Number(item.price) || 0;
+    const qty = Number(item.qty) || 1;
+    const buyPrice = Number(item.buyPrice) !== undefined && item.buyPrice !== null && !isNaN(Number(item.buyPrice)) && Number(item.buyPrice) > 0
+      ? Number(item.buyPrice)
+      : (Number(prod.buyPrice) || Math.round(itemPrice * 0.7));
+
+    const itemTotalRevenue = Number(item.total) || (itemPrice * qty);
+    const itemTotalCost = buyPrice * qty;
+    const itemProfit = itemTotalRevenue - itemTotalCost;
+
+    totalCost += itemTotalCost;
+
+    return {
+      ...item,
+      buyPrice,
+      totalCost: itemTotalCost,
+      profit: itemProfit
+    };
+  });
+
+  const totalAmount = Number(order.totalAmount) || 0;
+  const totalProfit = totalAmount - totalCost;
+  const profitMargin = totalAmount > 0 ? Math.round((totalProfit / totalAmount) * 1000) / 10 : 0;
+
+  return {
+    ...order,
+    items: enrichedItems,
+    totalCost,
+    totalProfit,
+    profitMargin
+  };
+}
+
 export function createOrder(orderData) {
   const orders = readJson(ORDERS_FILE, []);
+  const { map: pMap } = getProductsMap();
 
   const customer = upsertCustomer({
     name: orderData.customerName,
     phone: orderData.phone,
     address: orderData.address
+  });
+
+  const items = (orderData.items || []).map(item => {
+    const pid = String(item.id || item.code || '');
+    const prod = pMap[pid] || {};
+    const buyPrice = Number(item.buyPrice) || Number(prod.buyPrice) || Math.round((Number(item.price) || 0) * 0.7);
+    return {
+      ...item,
+      buyPrice
+    };
   });
 
   const order = {
@@ -134,7 +170,7 @@ export function createOrder(orderData) {
     phone: normalizePhone(orderData.phone),
     address: orderData.address,
     note: orderData.note || '',
-    items: orderData.items || [],
+    items,
     totalAmount: Number(orderData.totalAmount) || 0,
     paymentMethod: orderData.paymentMethod || 'cod',
     status: 'new',
@@ -160,7 +196,166 @@ export function createOrder(orderData) {
   writeJson(ORDERS_FILE, orders);
   writeJson(CUSTOMERS_FILE, customers);
 
-  return order;
+  return enrichOrderWithProfit(order, pMap);
+}
+
+export function listOrders(filters = {}) {
+  let orders = readJson(ORDERS_FILE, []);
+  const { map: pMap } = getProductsMap();
+
+  if (filters.status && filters.status !== 'all') {
+    orders = orders.filter(o => o.status === filters.status);
+  }
+
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    orders = orders.filter(o =>
+      o.customerName?.toLowerCase().includes(q) ||
+      o.phone?.includes(q) ||
+      o.id?.toLowerCase().includes(q)
+    );
+  }
+
+  if (filters.from) {
+    orders = orders.filter(o => o.createdAt >= filters.from);
+  }
+
+  if (filters.to) {
+    orders = orders.filter(o => o.createdAt <= filters.to);
+  }
+
+  return orders
+    .map(o => enrichOrderWithProfit(o, pMap))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export function getOrderById(id) {
+  const orders = readJson(ORDERS_FILE, []);
+  const order = orders.find(o => o.id === id);
+  if (!order) return null;
+  const { map: pMap } = getProductsMap();
+  return enrichOrderWithProfit(order, pMap);
+}
+
+export function getAdminAlerts() {
+  const { list: products } = getProductsMap();
+  const orders = readJson(ORDERS_FILE, []);
+
+  // 1. Low stock products (stock < 5)
+  const lowStockProducts = products
+    .filter(p => Number(p.stock) < 5)
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      categoryName: p.categoryName || '',
+      price: p.price,
+      buyPrice: p.buyPrice || 0,
+      stock: Number(p.stock),
+      badge: Number(p.stock) <= 0 ? 'ناموجود' : `تعداد محدود (${p.stock} عدد)`
+    }))
+    .sort((a, b) => a.stock - b.stock);
+
+  // 2. Delayed delivery orders (> 7 days since createdAt and not delivered/cancelled)
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  const delayedOrders = orders
+    .filter(o => !['delivered', 'cancelled'].includes(o.status))
+    .map(o => {
+      const createdTime = new Date(o.createdAt).getTime();
+      const elapsedMs = now - createdTime;
+      const delayDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+      return {
+        ...o,
+        delayDays,
+        elapsedMs,
+        isDelayed: elapsedMs >= SEVEN_DAYS_MS
+      };
+    })
+    .filter(o => o.isDelayed)
+    .sort((a, b) => b.elapsedMs - a.elapsedMs);
+
+  return {
+    lowStockCount: lowStockProducts.length,
+    lowStockProducts,
+    delayedOrdersCount: delayedOrders.length,
+    delayedOrders,
+    totalAlertsCount: lowStockProducts.length + delayedOrders.length
+  };
+}
+
+export function getProfitStats(filters = {}) {
+  const orders = readJson(ORDERS_FILE, []);
+  const { map: pMap } = getProductsMap();
+
+  let filteredOrders = orders.filter(o => o.status !== 'cancelled');
+
+  const now = Date.now();
+  if (filters.timeframe === 'today') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    filteredOrders = filteredOrders.filter(o => new Date(o.createdAt) >= today);
+  } else if (filters.timeframe === '7days') {
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    filteredOrders = filteredOrders.filter(o => new Date(o.createdAt).getTime() >= weekAgo);
+  } else if (filters.timeframe === '30days') {
+    const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
+    filteredOrders = filteredOrders.filter(o => new Date(o.createdAt).getTime() >= monthAgo);
+  }
+
+  let totalRevenue = 0;
+  let totalCost = 0;
+  const productStatsMap = {};
+
+  const enrichedOrders = filteredOrders.map(o => {
+    const enriched = enrichOrderWithProfit(o, pMap);
+    totalRevenue += enriched.totalAmount;
+    totalCost += enriched.totalCost;
+
+    (enriched.items || []).forEach(item => {
+      const pid = String(item.id || item.code || item.name);
+      if (!productStatsMap[pid]) {
+        productStatsMap[pid] = {
+          id: pid,
+          name: item.name,
+          unitsSold: 0,
+          totalRevenue: 0,
+          totalCost: 0,
+          totalProfit: 0,
+          profitMargin: 0
+        };
+      }
+      const qty = Number(item.qty) || 1;
+      const rev = Number(item.total) || ((Number(item.price) || 0) * qty);
+      const cost = (Number(item.buyPrice) || 0) * qty;
+
+      productStatsMap[pid].unitsSold += qty;
+      productStatsMap[pid].totalRevenue += rev;
+      productStatsMap[pid].totalCost += cost;
+      productStatsMap[pid].totalProfit += (rev - cost);
+    });
+
+    return enriched;
+  });
+
+  const totalProfit = totalRevenue - totalCost;
+  const profitMargin = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 1000) / 10 : 0;
+
+  const productList = Object.values(productStatsMap).map(p => ({
+    ...p,
+    profitMargin: p.totalRevenue > 0 ? Math.round((p.totalProfit / p.totalRevenue) * 1000) / 10 : 0
+  })).sort((a, b) => b.totalProfit - a.totalProfit);
+
+  return {
+    timeframe: filters.timeframe || 'all',
+    totalRevenue,
+    totalCost,
+    totalProfit,
+    profitMargin,
+    ordersCount: filteredOrders.length,
+    orders: enrichedOrders,
+    products: productList
+  };
 }
 
 export function updateOrder(id, updates) {
@@ -224,6 +419,7 @@ export function updateCustomer(id, updates) {
 export function getDashboardStats() {
   const orders = readJson(ORDERS_FILE, []);
   const customers = readJson(CUSTOMERS_FILE, []);
+  const { map: pMap } = getProductsMap();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -233,18 +429,33 @@ export function getDashboardStats() {
   const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.status));
   const deliveredOrders = orders.filter(o => o.status === 'delivered');
 
-  const revenueToday = todayOrders
+  const enrichedOrders = orders.map(o => enrichOrderWithProfit(o, pMap));
+  const enrichedTodayOrders = todayOrders.map(o => enrichOrderWithProfit(o, pMap));
+  const enrichedDeliveredOrders = deliveredOrders.map(o => enrichOrderWithProfit(o, pMap));
+
+  const revenueToday = enrichedTodayOrders
     .filter(o => o.status !== 'cancelled')
     .reduce((sum, o) => sum + o.totalAmount, 0);
 
-  const revenueTotal = deliveredOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const costToday = enrichedTodayOrders
+    .filter(o => o.status !== 'cancelled')
+    .reduce((sum, o) => sum + o.totalCost, 0);
+
+  const profitToday = revenueToday - costToday;
+
+  const revenueTotal = enrichedDeliveredOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const costTotal = enrichedDeliveredOrders.reduce((sum, o) => sum + o.totalCost, 0);
+  const profitTotal = revenueTotal - costTotal;
+  const profitMarginTotal = revenueTotal > 0 ? Math.round((profitTotal / revenueTotal) * 1000) / 10 : 0;
+
+  const alerts = getAdminAlerts();
 
   const byStatus = ORDER_STATUSES.reduce((acc, status) => {
     acc[status] = orders.filter(o => o.status === status).length;
     return acc;
   }, {});
 
-  const recentOrders = [...orders]
+  const recentOrders = [...enrichedOrders]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 8);
 
@@ -254,7 +465,13 @@ export function getDashboardStats() {
     todayOrders: todayOrders.length,
     activeOrders: activeOrders.length,
     revenueToday,
+    costToday,
+    profitToday,
     revenueTotal,
+    costTotal,
+    profitTotal,
+    profitMarginTotal,
+    alerts,
     byStatus,
     recentOrders
   };
