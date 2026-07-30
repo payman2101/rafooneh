@@ -57,38 +57,6 @@ export function getAllStatuses() {
   return ORDER_STATUSES.map(id => ({ id, label: STATUS_LABELS[id] }));
 }
 
-export function listOrders(filters = {}) {
-  let orders = readJson(ORDERS_FILE, []);
-
-  if (filters.status && filters.status !== 'all') {
-    orders = orders.filter(o => o.status === filters.status);
-  }
-
-  if (filters.search) {
-    const q = filters.search.toLowerCase();
-    orders = orders.filter(o =>
-      o.customerName?.toLowerCase().includes(q) ||
-      o.phone?.includes(q) ||
-      o.id?.toLowerCase().includes(q)
-    );
-  }
-
-  if (filters.from) {
-    orders = orders.filter(o => o.createdAt >= filters.from);
-  }
-
-  if (filters.to) {
-    orders = orders.filter(o => o.createdAt <= filters.to);
-  }
-
-  return orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-}
-
-export function getOrderById(id) {
-  const orders = readJson(ORDERS_FILE, []);
-  return orders.find(o => o.id === id) || null;
-}
-
 export function upsertCustomer({ name, phone, address }) {
   const customers = readJson(CUSTOMERS_FILE, []);
   const normalizedPhone = normalizePhone(phone);
