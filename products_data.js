@@ -6,14 +6,16 @@ const productsData = [
     "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
-    "price": 19002,
+    "price": 1914400,
     "consumerPrice": 0,
     "buyPrice": 1146682,
     "packing": 1,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg",
     "badge": "تعداد محدود (5 عدد)",
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.",
+    "newPrice": 0,
+    "updatedAt": "2026-07-30T12:30:49.126Z"
   },
   {
     "id": "905",
@@ -22,14 +24,16 @@ const productsData = [
     "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
-    "price": 1914400,
+    "price": 19,
     "consumerPrice": 0,
     "buyPrice": 1146682,
     "packing": 1,
     "stock": 5,
     "image": "https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-orange_2.jpg",
     "badge": "تعداد محدود (5 عدد)",
-    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت."
+    "description": "مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.",
+    "newPrice": 0,
+    "updatedAt": "2026-07-30T12:32:43.633Z"
   },
   {
     "id": "1004",
