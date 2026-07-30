@@ -16,7 +16,11 @@ import {
   getAllStatuses,
   getStatusLabel,
   getProfitStats,
-  getAdminAlerts
+  getAdminAlerts,
+  listProducts,
+  updateProduct,
+  addProduct,
+  deleteProduct
 } from './crm/store.js';
 import { authMiddleware, login, logout } from './crm/auth.js';
 
@@ -54,6 +58,26 @@ function categorize(name) {
   return { id: 'other', name: 'سایر شوینده‌ها' };
 }
 
+function determineBrand(name, rawBrand = '') {
+  if (rawBrand && String(rawBrand).trim()) {
+    const b = String(rawBrand).trim();
+    const bLower = b.toLowerCase();
+    if (b.includes('خارج') || b.includes('وارد') || bLower.includes('foreign') || bLower.includes('import')) {
+      return { id: 'foreign', name: 'محصولات خارجی' };
+    }
+    if (b.includes('رافونه') || bLower.includes('rafooneh')) {
+      return { id: 'rafooneh', name: 'رافونه' };
+    }
+    return { id: 'foreign', name: 'محصولات خارجی' };
+  }
+
+  const n = String(name || '').toLowerCase();
+  if (n.includes('خارجی') || n.includes('وارداتی') || n.includes('فینیش') || n.includes('پریمیوم') || n.includes('آلمانی') || n.includes('ترک') || n.includes('امپریال') || n.includes('فرانسوی') || n.includes('ایتالیایی')) {
+    return { id: 'foreign', name: 'محصولات خارجی' };
+  }
+  return { id: 'rafooneh', name: 'رافونه' };
+}
+
 const categoryDefaultImages = {
   handwash: 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg',
   dishwash: 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png',
@@ -87,6 +111,8 @@ function findColumnIndices(headerRow) {
   let nameIdx = headers.findIndex(h => h === 'شرح کالا' || h === 'نام کالا' || h === 'نام');
   if (nameIdx === -1) nameIdx = headers.findIndex(h => h.includes('شرح') || h.includes('نام') || h.includes('عنوان'));
 
+  let brandIdx = headers.findIndex(h => h === 'برند' || h === 'سازنده' || h === 'مارک' || h === 'برند کالا' || h.toLowerCase() === 'brand');
+
   let stockIdx = headers.findIndex(h => h === 'موجودی' || h === 'موجودی انبار' || h === 'موجودی فعلی');
   if (stockIdx === -1) stockIdx = headers.findIndex(h => h.includes('موجودی') && !h.includes('قبلی'));
 
@@ -116,7 +142,7 @@ function findColumnIndices(headerRow) {
   if (consumerPriceIdx === -1) consumerPriceIdx = 9;
   if (packingIdx === -1) packingIdx = 5;
 
-  return { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx };
+  return { codeIdx, nameIdx, brandIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx };
 }
 
 function parseExcelAndBuildProducts() {
@@ -206,9 +232,14 @@ function parseExcelAndBuildProducts() {
       };
       const desc = categoryDescriptions[cat.id] || categoryDescriptions.other;
 
+      const rawBrand = p.brand || '';
+      const brandObj = determineBrand(p.name, rawBrand);
+
       return {
         id: p.code,
         name: p.name,
+        brand: brandObj.id,
+        brandName: brandObj.name,
         category: cat.id,
         categoryName: cat.name,
         price: p.deliveryPrice,
@@ -276,7 +307,7 @@ function processRowsToProducts(rows) {
 
   if (!rows || rows.length < 2) return [];
 
-  const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+  const { codeIdx, nameIdx, brandIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
 
   const categoryDescriptions = {
     handwash: 'مایع دستشویی رافونه با فرمولاسیون نرم‌کننده و مرطوب‌کننده پوست دست، دارای رایحه مطبوع و سازگار با انواع پوست بدون ایجاد خشکی و حساسیت.',
@@ -297,6 +328,8 @@ function processRowsToProducts(rows) {
 
     const code = String(r[codeIdx]).trim();
     const name = String(r[nameIdx]).trim();
+    const rawBrand = brandIdx !== -1 && r[brandIdx] ? String(r[brandIdx]).trim() : '';
+    const brandObj = determineBrand(name, rawBrand);
     const stock = parseNum(r[stockIdx]) || parseNum(r[4]) || 0;
     const deliveryPrice = Math.round(parseNum(r[deliveryPriceIdx]) || parseNum(r[7]) || parseNum(r[10]) || parseNum(r[8]) || parseNum(r[2]) || 0);
     const buyPrice = Math.round(parseNum(r[buyPriceIdx]) || parseNum(r[6]) || 0);
@@ -334,6 +367,8 @@ function processRowsToProducts(rows) {
     sheetProducts.push({
       id: code,
       name: name,
+      brand: brandObj.id,
+      brandName: brandObj.name,
       category: cat.id,
       categoryName: cat.name,
       price: deliveryPrice,
@@ -379,18 +414,8 @@ async function syncFromGSheetsId(spreadsheetId) {
   }
 }
 
-// Default target Google Sheet ID from user request
+// Default target Google Sheet ID from user request (manual sync option)
 let activeGSheetId = '1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8';
-
-// Sync from default Google Sheet on server startup
-syncFromGSheetsId(activeGSheetId);
-
-// Periodically check Google Sheet every 10 seconds for online changes
-setInterval(() => {
-  if (activeGSheetId) {
-    syncFromGSheetsId(activeGSheetId);
-  }
-}, 10000);
 
 // API: Google Sheets Sync - Parse spreadsheet data and update products catalog
 app.post('/api/gsheets/sync', async (req, res) => {
@@ -614,6 +639,82 @@ app.patch('/api/admin/customers/:id', authMiddleware, (req, res) => {
     return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
   }
   res.json({ success: true, customer });
+});
+
+// API: Admin Inventory & Brand Products Management
+app.get('/api/admin/products', authMiddleware, (req, res) => {
+  const { brand, category, search } = req.query;
+  const products = listProducts({ brand, category, search });
+  const allProducts = listProducts({});
+
+  const brandCounts = {
+    rafooneh: allProducts.filter(p => p.brand === 'rafooneh').length,
+    foreign: allProducts.filter(p => p.brand === 'foreign' || p.brand !== 'rafooneh').length
+  };
+
+  res.json({
+    success: true,
+    count: products.length,
+    total: allProducts.length,
+    brandCounts,
+    products
+  });
+});
+
+app.post('/api/admin/products', authMiddleware, (req, res) => {
+  try {
+    const product = addProduct(req.body);
+    res.json({ success: true, message: 'محصول جدید با موفقیت اضافه شد', product });
+  } catch (err) {
+    res.status(400).json({ success: false, message: 'خطا در ثبت محصول جدید' });
+  }
+});
+
+app.patch('/api/admin/products/:id', authMiddleware, (req, res) => {
+  try {
+    const product = updateProduct(req.params.id, req.body);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'محصول یافت نشد' });
+    }
+    res.json({ success: true, message: 'اطلاعات محصول با موفقیت به روزرسانی شد', product });
+  } catch (err) {
+    res.status(400).json({ success: false, message: 'خطا در ویرایش محصول' });
+  }
+});
+
+app.delete('/api/admin/products/:id', authMiddleware, (req, res) => {
+  try {
+    const success = deleteProduct(req.params.id);
+    if (!success) {
+      return res.status(404).json({ success: false, message: 'محصول یافت نشد' });
+    }
+    res.json({ success: true, message: 'محصول با موفقیت حذف شد' });
+  } catch (err) {
+    res.status(400).json({ success: false, message: 'خطا در حذف محصول' });
+  }
+});
+
+// API: Google Sheets CRM Status
+app.get('/api/admin/gsheets/status', authMiddleware, (req, res) => {
+  const productsPath = path.join(__dirname, 'products_data.json');
+  let productCount = 0;
+  let lastSyncTime = null;
+  if (fs.existsSync(productsPath)) {
+    const stat = fs.statSync(productsPath);
+    lastSyncTime = stat.mtime;
+    try {
+      const data = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+      productCount = data.length;
+    } catch(e) {}
+  }
+
+  res.json({
+    success: true,
+    spreadsheetId: activeGSheetId,
+    csvUrl: activeGSheetId ? `https://docs.google.com/spreadsheets/d/${activeGSheetId}/gviz/tq?tqx=out:csv` : null,
+    productCount,
+    lastSyncTime
+  });
 });
 
 app.get('/admin', (req, res) => {

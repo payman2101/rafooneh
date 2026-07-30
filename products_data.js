@@ -2,9 +2,11 @@ const productsData = [
   {
     "id": "904",
     "name": "مایع دستشویی سبز 10 لیتری",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
-    "price": 1914400,
+    "price": 19002,
     "consumerPrice": 0,
     "buyPrice": 1146682,
     "packing": 1,
@@ -16,6 +18,8 @@ const productsData = [
   {
     "id": "905",
     "name": "مایع دستشویی نارنجی 10 لیتری",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 1914400,
@@ -30,6 +34,8 @@ const productsData = [
   {
     "id": "1004",
     "name": "مایع دست سبز 2 کیلویی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 510500,
@@ -44,6 +50,8 @@ const productsData = [
   {
     "id": "1005",
     "name": "مایع دست نارنجی 2 کیلویی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 510500,
@@ -58,6 +66,8 @@ const productsData = [
   {
     "id": "1006",
     "name": "مایع دست صورتی 2 کیلویی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 510500,
@@ -72,6 +82,8 @@ const productsData = [
   {
     "id": "1007",
     "name": "مایع دست بنفش 2 کیلویی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 510500,
@@ -86,6 +98,8 @@ const productsData = [
   {
     "id": "1008",
     "name": "مایع دست سبز 500 گرمی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 167400,
@@ -100,6 +114,8 @@ const productsData = [
   {
     "id": "1009",
     "name": "مایع دست نارنجی 500 گرمی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 167400,
@@ -114,6 +130,8 @@ const productsData = [
   {
     "id": "1010",
     "name": "مایع دست صورتی 500 گرمی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 167400,
@@ -128,6 +146,8 @@ const productsData = [
   {
     "id": "1011",
     "name": "مایع دست بنفش 500 گرمی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 167400,
@@ -142,6 +162,8 @@ const productsData = [
   {
     "id": "1018",
     "name": "مایع دست کرمی 1 لیتری",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 150000,
@@ -156,6 +178,8 @@ const productsData = [
   {
     "id": "1019",
     "name": "مایع دست کرمی 350 گرمی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 61600,
@@ -170,6 +194,8 @@ const productsData = [
   {
     "id": "1021",
     "name": "مایع ظرف 750 گرمی زرد",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 96600,
@@ -184,6 +210,8 @@ const productsData = [
   {
     "id": "1022",
     "name": "مایع ظرف 750 گرمی سبز",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 96600,
@@ -198,6 +226,8 @@ const productsData = [
   {
     "id": "1026",
     "name": "مایع ظرف 2700 گرمی زرد",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 439600,
@@ -212,6 +242,8 @@ const productsData = [
   {
     "id": "1027",
     "name": "مایع ظرف 2700 گرمی سبز",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 439600,
@@ -226,6 +258,8 @@ const productsData = [
   {
     "id": "1030",
     "name": "شیشه شوی 800 آبی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 150000,
@@ -240,6 +274,8 @@ const productsData = [
   {
     "id": "1031",
     "name": "شیشه شوی 800 صورتی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 150000,
@@ -254,6 +290,8 @@ const productsData = [
   {
     "id": "1032",
     "name": "شیشه شوی 500 آبی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 75700,
@@ -268,6 +306,8 @@ const productsData = [
   {
     "id": "1033",
     "name": "شیشه شوی 500 صورتی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 75700,
@@ -282,6 +322,8 @@ const productsData = [
   {
     "id": "1034",
     "name": "شیشه شوی ضد بخار 500",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 88700,
@@ -296,6 +338,8 @@ const productsData = [
   {
     "id": "1035",
     "name": "شیشه شوی ضد بخار 800",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 120700,
@@ -310,6 +354,8 @@ const productsData = [
   {
     "id": "1041",
     "name": "اسیدی سرویس بهداشتی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 87200,
@@ -324,6 +370,8 @@ const productsData = [
   {
     "id": "1046",
     "name": "پاک کننده سطوح چوبی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 112100,
@@ -338,6 +386,8 @@ const productsData = [
   {
     "id": "1048",
     "name": "سرویس بهداشتی سرکج زرد",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 125100,
@@ -352,6 +402,8 @@ const productsData = [
   {
     "id": "1049",
     "name": "ژل سرکج ویسکوز سرویس بهداشتی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 145600,
@@ -366,6 +418,8 @@ const productsData = [
   {
     "id": "1050",
     "name": "اسپری شیرآلات و سینک ظرفشویی 500",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 87800,
@@ -380,6 +434,8 @@ const productsData = [
   {
     "id": "1051",
     "name": "اسپری شیرآلات و سینک ظرفشویی 800",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 97000,
@@ -394,6 +450,8 @@ const productsData = [
   {
     "id": "1057",
     "name": "فوم لکه بر مبل و فرش",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "home",
     "categoryName": "شستشوی خانه و فرش",
     "price": 104600,
@@ -408,6 +466,8 @@ const productsData = [
   {
     "id": "1058",
     "name": "کف لکه بر مخصوص لباس و سرآستین",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "laundry",
     "categoryName": "شوینده لباس",
     "price": 171800,
@@ -422,6 +482,8 @@ const productsData = [
   {
     "id": "1059",
     "name": "چندمنظوره آنتی باکتریال",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 56300,
@@ -436,6 +498,8 @@ const productsData = [
   {
     "id": "1060",
     "name": "اسپری همه کاره 500",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 88600,
@@ -450,6 +514,8 @@ const productsData = [
   {
     "id": "1061",
     "name": "اسپری همه کاره 800",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 198100,
@@ -464,6 +530,8 @@ const productsData = [
   {
     "id": "1064",
     "name": "سفیدکننده 1 لیتری",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 37800,
@@ -478,6 +546,8 @@ const productsData = [
   {
     "id": "1065",
     "name": "سفیدکننده 2 لیتری",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 69500,
@@ -492,6 +562,8 @@ const productsData = [
   {
     "id": "1066",
     "name": "سفیدکننده 4 لیتری",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 165900,
@@ -506,6 +578,8 @@ const productsData = [
   {
     "id": "1068",
     "name": "پاک کننده سنگ و سرامیک 1000 گرمی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 120000,
@@ -520,6 +594,8 @@ const productsData = [
   {
     "id": "1070",
     "name": "اسپری گاز 500",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 83600,
@@ -534,6 +610,8 @@ const productsData = [
   {
     "id": "1071",
     "name": "اسپری گاز 800",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 180400,
@@ -548,6 +626,8 @@ const productsData = [
   {
     "id": "1072",
     "name": "اسپری گاز شیشه ای",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cleaners",
     "categoryName": "پاک‌کننده و اسپری",
     "price": 137400,
@@ -562,6 +642,8 @@ const productsData = [
   {
     "id": "1079",
     "name": "لوله بازکن دوقلو 1500 گرمی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 207700,
@@ -576,6 +658,8 @@ const productsData = [
   {
     "id": "1080",
     "name": "مشکین شوی 1 لیتری",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "laundry",
     "categoryName": "شوینده لباس",
     "price": 161400,
@@ -590,6 +674,8 @@ const productsData = [
   {
     "id": "1082",
     "name": "مایع لباسشویی ماشینی و دستی 3 لیتری",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 690200,
@@ -604,6 +690,8 @@ const productsData = [
   {
     "id": "1084",
     "name": "مایع لباسشویی 2 لیتری",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "laundry",
     "categoryName": "شوینده لباس",
     "price": 135900,
@@ -618,6 +706,8 @@ const productsData = [
   {
     "id": "1085",
     "name": "مایع لباسشویی 2 لیتری آنزیم دار",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "laundry",
     "categoryName": "شوینده لباس",
     "price": 253900,
@@ -632,6 +722,8 @@ const productsData = [
   {
     "id": "1111",
     "name": "کیسه فریزر 100 عددی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 45500,
@@ -646,6 +738,8 @@ const productsData = [
   {
     "id": "1112",
     "name": "کیسه فریزر تقویمی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 70200,
@@ -660,6 +754,8 @@ const productsData = [
   {
     "id": "1113",
     "name": "کیسه فریزر جعبه ای 120 عددی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 48000,
@@ -674,6 +770,8 @@ const productsData = [
   {
     "id": "1114",
     "name": "کیسه فریزر رولی 120 عددی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 90000,
@@ -688,6 +786,8 @@ const productsData = [
   {
     "id": "1115",
     "name": "کیسه فریزر رولی ضخیم 250 عددی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 149000,
@@ -702,6 +802,8 @@ const productsData = [
   {
     "id": "1117",
     "name": "زیپ 18*20 تعداد 40 عدد",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 137000,
@@ -716,6 +818,8 @@ const productsData = [
   {
     "id": "1118",
     "name": "زیپ 20*25 تعداد 30 عدد",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 137000,
@@ -730,6 +834,8 @@ const productsData = [
   {
     "id": "1119",
     "name": "زیپ 25*35 تعداد 15 عدد",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 137000,
@@ -744,6 +850,8 @@ const productsData = [
   {
     "id": "1120",
     "name": "فویل آلومینیومی 30 سانتی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 220000,
@@ -758,6 +866,8 @@ const productsData = [
   {
     "id": "1122",
     "name": "محافظ غذای 40 سانتی 25 متر",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 120000,
@@ -772,6 +882,8 @@ const productsData = [
   {
     "id": "1123",
     "name": "محافظ غذای 40 سانتی 20 متر",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 110000,
@@ -786,6 +898,8 @@ const productsData = [
   {
     "id": "1124",
     "name": "سفره 50 متری طرح دار",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 195000,
@@ -800,6 +914,8 @@ const productsData = [
   {
     "id": "1127",
     "name": "سفره 50 متری ساده",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 175000,
@@ -814,6 +930,8 @@ const productsData = [
   {
     "id": "1128",
     "name": "سفره یکبار مصرف مجلسی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 169000,
@@ -828,6 +946,8 @@ const productsData = [
   {
     "id": "1131",
     "name": "کیسه زباله ضخیم یک کیلویی (130*90) 20 عدد",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 330000,
@@ -842,6 +962,8 @@ const productsData = [
   {
     "id": "1132",
     "name": "دستکش یکبار مصرف",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 99000,
@@ -856,6 +978,8 @@ const productsData = [
   {
     "id": "1133",
     "name": "کیسه زباله سه رول متوسط سبز 42 عدد",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 240000,
@@ -870,6 +994,8 @@ const productsData = [
   {
     "id": "1134",
     "name": "کیسه زباله سه رول بزرگ آبی 30 عدد",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "cellulosic",
     "categoryName": "لوازم مصرفی و سلولزی",
     "price": 190000,
@@ -884,6 +1010,8 @@ const productsData = [
   {
     "id": "1254",
     "name": "اسکاچ آفتابگردان",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 30000,
@@ -898,6 +1026,8 @@ const productsData = [
   {
     "id": "1255",
     "name": "اسکاچ یک زر شیرینگ آبی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 25000,
@@ -912,6 +1042,8 @@ const productsData = [
   {
     "id": "1256",
     "name": "اسکاچ دو زر شیرینگ قرمز",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 25000,
@@ -926,6 +1058,8 @@ const productsData = [
   {
     "id": "1257",
     "name": "اسکاچ طرح دار شیرینگ سبز",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 25000,
@@ -940,6 +1074,8 @@ const productsData = [
   {
     "id": "1263",
     "name": "سیم ظرفشویی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 30000,
@@ -954,6 +1090,8 @@ const productsData = [
   {
     "id": "1280",
     "name": "دستمال چند منظوره آشپزخانه",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
     "price": 52200,
@@ -968,6 +1106,8 @@ const productsData = [
   {
     "id": "2161",
     "name": "شامپو head & shoulders MENTHOL FRESH",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 500000,
@@ -982,6 +1122,8 @@ const productsData = [
   {
     "id": "2162",
     "name": "شامپو head & shoulders CLASSIC CLEAN",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 500000,
@@ -996,6 +1138,8 @@ const productsData = [
   {
     "id": "2163",
     "name": "شامپو head & shoulders DRY SCALP",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 500000,
@@ -1010,6 +1154,8 @@ const productsData = [
   {
     "id": "2164",
     "name": "شامپو head & shoulders SMOOTH & SILKY",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 500000,
@@ -1024,6 +1170,8 @@ const productsData = [
   {
     "id": "2201",
     "name": "قرص ماشین ظرفشوییfairy 60",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 1900000,
@@ -1038,6 +1186,8 @@ const productsData = [
   {
     "id": "2202",
     "name": "قرص ماشین ظرفشوییfairy 70",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 2200000,
@@ -1052,6 +1202,8 @@ const productsData = [
   {
     "id": "2203",
     "name": "قرص ماشین ظرفشوییfairy 100",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 3100000,
@@ -1066,6 +1218,8 @@ const productsData = [
   {
     "id": "2206",
     "name": "قرص ماشین ظرفشوییfairy 90",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 460000,
@@ -1080,6 +1234,8 @@ const productsData = [
   {
     "id": "2207",
     "name": "قرص ماشین ظرفشویی fairy platinum 96",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 3200000,
@@ -1094,6 +1250,8 @@ const productsData = [
   {
     "id": "2208",
     "name": "قرص ماشین ظرفشویی fairy platinum 72",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 2700000,
@@ -1108,6 +1266,8 @@ const productsData = [
   {
     "id": "2211",
     "name": "قرص ماشین ظرفشوییfinish quantum 72",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 1800000,
@@ -1122,6 +1282,8 @@ const productsData = [
   {
     "id": "2213",
     "name": "قرص ظرفشوییfinish Ultimate 60",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 1600000,
@@ -1136,6 +1298,8 @@ const productsData = [
   {
     "id": "2214",
     "name": "قرص ظرفشوییfinish Ultimate 65",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 1800000,
@@ -1150,6 +1314,8 @@ const productsData = [
   {
     "id": "2215",
     "name": "قرص ظرفشوییfinish Ultimate 85",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 2300000,
@@ -1164,6 +1330,8 @@ const productsData = [
   {
     "id": "2216",
     "name": "ژل ماشین ظرفشویی finish",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 1400000,
@@ -1178,6 +1346,8 @@ const productsData = [
   {
     "id": "2217",
     "name": "جرم گیر ماشین ظرفشویی BOSCH",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 100000,
@@ -1192,6 +1362,8 @@ const productsData = [
   {
     "id": "2218",
     "name": "جرم گیر فینیش",
+    "brand": "foreign",
+    "brandName": "محصولات خارجی",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 600000,
@@ -1206,6 +1378,8 @@ const productsData = [
   {
     "id": "2221",
     "name": "بوگیر ماشین ظرفشویی Prill",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 400000,
@@ -1220,6 +1394,8 @@ const productsData = [
   {
     "id": "2222",
     "name": "بوگیر ماشین ظرفشویی finish",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 500000,
@@ -1234,6 +1410,8 @@ const productsData = [
   {
     "id": "2231",
     "name": "جلادهنده 800 ظرفشویی finish اصل ترک",
+    "brand": "foreign",
+    "brandName": "محصولات خارجی",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 1000000,
@@ -1248,6 +1426,8 @@ const productsData = [
   {
     "id": "2232",
     "name": "نمک ماشین ظرفشویی finish اصل ترک",
+    "brand": "foreign",
+    "brandName": "محصولات خارجی",
     "category": "dishwash",
     "categoryName": "مایع ظرفشویی",
     "price": 600000,
@@ -1262,6 +1442,8 @@ const productsData = [
   {
     "id": "2301",
     "name": "خمیر دندان colgate triple",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 300000,
@@ -1276,6 +1458,8 @@ const productsData = [
   {
     "id": "2302",
     "name": "خمیر دندان colgate family",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 170000,
@@ -1290,6 +1474,8 @@ const productsData = [
   {
     "id": "2303",
     "name": "خمیر دندان Colgate سفیدکننده دوقلو",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 350000,
@@ -1304,6 +1490,8 @@ const productsData = [
   {
     "id": "2354",
     "name": "مسواک Oral-B سه عددی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 550000,
@@ -1318,6 +1506,8 @@ const productsData = [
   {
     "id": "2355",
     "name": "مسواک سیگنال",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 220000,
@@ -1332,6 +1522,8 @@ const productsData = [
   {
     "id": "2359",
     "name": "مسواک کلگیت مکس فرش",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "home",
     "categoryName": "شستشوی خانه و فرش",
     "price": 250000,
@@ -1346,6 +1538,8 @@ const productsData = [
   {
     "id": "2360",
     "name": "مسواک پرکینز",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 150000,
@@ -1360,6 +1554,8 @@ const productsData = [
   {
     "id": "2362",
     "name": "مسواک بچگانه 5 تا 7 سال HiDent",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 50000,
@@ -1374,6 +1570,8 @@ const productsData = [
   {
     "id": "2363",
     "name": "مسواک بچگانه 7 تا 10 سال HiDent",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 50000,
@@ -1388,6 +1586,8 @@ const productsData = [
   {
     "id": "2411",
     "name": "صابون لوکس گل رز",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 200000,
@@ -1402,6 +1602,8 @@ const productsData = [
   {
     "id": "2412",
     "name": "صابون لوکس یاسمین",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 200000,
@@ -1416,6 +1618,8 @@ const productsData = [
   {
     "id": "2413",
     "name": "صابون لوکس رمانتیک",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 200000,
@@ -1430,6 +1634,8 @@ const productsData = [
   {
     "id": "2414",
     "name": "صابون لوکس گاردنیا",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 200000,
@@ -1444,6 +1650,8 @@ const productsData = [
   {
     "id": "2415",
     "name": "صابون لوکس زنبق",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 200000,
@@ -1458,6 +1666,8 @@ const productsData = [
   {
     "id": "2416",
     "name": "صابون لوکس رز سفید",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "sanitary",
     "categoryName": "جرم‌گیر و ضدعفونی‌کننده",
     "price": 200000,
@@ -1472,6 +1682,8 @@ const productsData = [
   {
     "id": "2611",
     "name": "مام NIVEA Black & White",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 300000,
@@ -1486,6 +1698,8 @@ const productsData = [
   {
     "id": "2621",
     "name": "نخ دندان اورال بی",
+    "brand": "rafooneh",
+    "brandName": "برند رافونه",
     "category": "other",
     "categoryName": "سایر شوینده‌ها",
     "price": 450000,
