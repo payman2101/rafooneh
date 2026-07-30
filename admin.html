@@ -367,6 +367,8 @@
     <div class="mobile-tabs" id="mobileTabs">
         <button class="active" onclick="showSection('dashboard', this)">داشبورد</button>
         <button onclick="showSection('orders', this)">سفارشات</button>
+        <button onclick="showSection('products', this)">انبار و برندها</button>
+        <button onclick="showSection('gsheets', this)">گوگل شیت</button>
         <button onclick="showSection('profit', this)">تحلیل سود</button>
         <button onclick="showSection('alerts', this)">هشدارها <span class="badge badge-cancelled" id="alertBadgeMobile" style="display:none; padding:2px 6px; font-size:0.7rem;">0</span></button>
         <button onclick="showSection('customers', this)">مشتریان</button>
@@ -379,6 +381,12 @@
             </button>
             <button class="nav-item" data-section="orders" onclick="showSection('orders', this)">
                 <i class="fa-solid fa-box"></i> سفارشات
+            </button>
+            <button class="nav-item" data-section="products" onclick="showSection('products', this)">
+                <i class="fa-solid fa-boxes-stacked"></i> مدیریت انبار و برندها
+            </button>
+            <button class="nav-item" data-section="gsheets" onclick="showSection('gsheets', this)">
+                <i class="fa-solid fa-file-csv"></i> اتصال گوگل شیت
             </button>
             <button class="nav-item" data-section="profit" onclick="showSection('profit', this)">
                 <i class="fa-solid fa-chart-pie"></i> محاسبه سود
@@ -564,6 +572,135 @@
                 </div>
             </section>
 
+            <!-- Inventory & Brands Management -->
+            <section class="section" id="section-products">
+                <div class="stats-grid" id="productStatsGrid" style="margin-bottom:20px;">
+                    <div class="stat-card">
+                        <div class="label">کل محصولات انبار</div>
+                        <div class="value" id="statTotalProducts">0</div>
+                        <div class="sub">تنوع اقلام</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">برند رافونه</div>
+                        <div class="value" id="statRafoonehProducts" style="color:var(--primary);">0</div>
+                        <div class="sub">محصولات اصلی</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">برند اختصاصی من</div>
+                        <div class="value" id="statOwnProducts" style="color:var(--accent);">0</div>
+                        <div class="sub">برند شخصی</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">محصولات خارجی / وارداتی</div>
+                        <div class="value" id="statForeignProducts" style="color:#0284c7;">0</div>
+                        <div class="sub">برندهای بین‌المللی</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-boxes-stacked"></i> مدیریت اقلام انبار، موجودی و قیمت‌ها</h2>
+                        <div class="filters" style="gap:10px; align-items:center;">
+                            <select id="productBrandFilter" onchange="loadAdminProducts()">
+                                <option value="all">همه برندها</option>
+                                <option value="rafooneh">برند رافونه</option>
+                                <option value="own">برند اختصاصی من</option>
+                                <option value="foreign">محصولات خارجی / وارداتی</option>
+                            </select>
+                            <select id="productCategoryFilter" onchange="loadAdminProducts()">
+                                <option value="all">همه دسته‌بندی‌ها</option>
+                                <option value="handwash">مایع دستشویی</option>
+                                <option value="dishwash">مایع ظرفشویی</option>
+                                <option value="laundry">شوینده لباس</option>
+                                <option value="cleaners">پاک‌کننده و اسپری</option>
+                                <option value="sanitary">جرم‌گیر و ضدعفونی</option>
+                                <option value="home">خانه و فرش</option>
+                                <option value="cellulosic">سلولزی و مصرفی</option>
+                                <option value="car">خودرو</option>
+                                <option value="other">سایر</option>
+                            </select>
+                            <input type="text" id="productSearch" placeholder="جستجو نام / کد / برند..." oninput="debounceProducts()">
+                            <button class="btn btn-primary" onclick="openAddProductModal()">
+                                <i class="fa-solid fa-plus"></i> افزودن محصول جدید
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد / تصویر</th>
+                                    <th>نام محصول</th>
+                                    <th>برند</th>
+                                    <th>دسته‌بندی</th>
+                                    <th>موجودی انبار</th>
+                                    <th>قیمت فروش (تومان)</th>
+                                    <th>قیمت خرید (تومان)</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsAdminBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Google Sheets CRM Control -->
+            <section class="section" id="section-gsheets">
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-file-excel" style="color:var(--success);"></i> مدیریت اتصال فایل گوگل شیت (Google Sheets)</h2>
+                        <span class="badge badge-delivered" id="gsheetsConnStatus"><i class="fa-solid fa-circle-check"></i> متصل به گوگل شیت</span>
+                    </div>
+                    <div style="padding:20px;">
+                        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:16px; line-height:1.6;">
+                            ادمین عزیز، شما می‌توانید فایل گوگل شیت حاوی قیمت‌ها و اقلام را مستقیماً از اینجا مدیریت کنید. اطلاعات کالاهای انبار هم به‌صورت آنلاین همگام می‌شوند و هم با هر ثبت سفارش، موجودی در CRM به‌روزرسانی می‌گردد.
+                        </p>
+                        
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:20px;">
+                            <div style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:16px;">
+                                <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:6px;">شناسه شیت گوگل (Spreadsheet ID):</label>
+                                <input type="text" class="form-control" id="gsheetIdInput" value="1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8" style="margin-bottom:10px; font-family:monospace; font-size:0.85rem;">
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-primary" onclick="syncGSheetsNow()" id="btnSyncGSheets">
+                                        <i class="fa-solid fa-rotate"></i> ذخیره و همگام‌سازی آنلاین
+                                    </button>
+                                    <a id="btnGsheetCsvLink" href="#" target="_blank" class="btn btn-secondary" style="text-decoration:none;">
+                                        <i class="fa-solid fa-external-link"></i> مشاهده لینک CSV
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:16px;">
+                                <div style="font-size:0.85rem; font-weight:bold; margin-bottom:8px;">وضعیت همگام‌سازی انبار:</div>
+                                <div style="font-size:0.85rem; color:var(--muted); margin-bottom:6px;">تعداد کل اقلام همگام‌شده: <strong id="gsheetProductCount" style="color:var(--primary-dark);">0</strong> کالا</div>
+                                <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">آخرین زمان بروزرسانی: <strong id="gsheetLastSyncTime">—</strong></div>
+                                <div style="background:#e0f2fe; color:#0369a1; padding:8px 12px; border-radius:8px; font-size:0.8rem;">
+                                    <i class="fa-solid fa-info-circle"></i> تغییرات سفارشات به طور خودکار رو کاتالوگ و انبار اعمال می‌شود.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-cloud-arrow-up"></i> آپلود یا جایگزینی فایل اکسل سفارشات (سفارش 1405.xlsx)</h2>
+                    </div>
+                    <div style="padding:20px;">
+                        <p style="color:var(--muted); font-size:0.88rem; margin-bottom:12px;">
+                            اگر فایل جدید <strong>سفارش 1405.xlsx</strong> روی سیستم خود دارید، می‌توانید مستقیم آن را آپلود کنید تا سیستم CRM جدول کالاها را بازخوانی کند:
+                        </p>
+                        <form id="excelUploadForm" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                            <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="form-control" style="max-width:350px;">
+                            <button type="button" class="btn btn-primary" onclick="uploadExcelFile()">
+                                <i class="fa-solid fa-upload"></i> آپلود فایل اکسل
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
             <!-- Customers -->
             <section class="section" id="section-customers">
                 <div class="panel">
@@ -634,6 +771,82 @@
             </button>
             <button class="btn btn-secondary" onclick="closeCustomerModal()">بستن</button>
         </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal-overlay" id="addProductModal">
+    <div class="modal" style="max-width:550px;">
+        <h3><i class="fa-solid fa-box"></i> افزودن محصول جدید به انبار / برند اختصاصی</h3>
+        <form id="addProductForm" onsubmit="submitAddProduct(event)" style="margin-top:16px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="newProdCode">کد محصول (کد کالا)</label>
+                    <input type="text" id="newProdCode" class="form-control" placeholder="مثلاً: 2005" required>
+                </div>
+                <div class="form-group">
+                    <label for="newProdName">نام محصول</label>
+                    <input type="text" id="newProdName" class="form-control" placeholder="نام کالا..." required>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="newProdBrand">انتخاب برند</label>
+                    <select id="newProdBrand" class="form-control">
+                        <option value="own">برند اختصاصی من</option>
+                        <option value="foreign">محصولات خارجی / وارداتی</option>
+                        <option value="rafooneh">برند رافونه</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newProdCategory">دسته‌بندی</label>
+                    <select id="newProdCategory" class="form-control">
+                        <option value="handwash">مایع دستشویی</option>
+                        <option value="dishwash">مایع ظرفشویی</option>
+                        <option value="laundry">شوینده لباس</option>
+                        <option value="cleaners">پاک‌کننده و اسپری</option>
+                        <option value="sanitary">جرم‌گیر و ضدعفونی</option>
+                        <option value="home">خانه و فرش</option>
+                        <option value="cellulosic">سلولزی و مصرفی</option>
+                        <option value="car">خودرو</option>
+                        <option value="other" selected>سایر</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="newProdStock">موجودی اولیه (عدد)</label>
+                    <input type="number" id="newProdStock" class="form-control" value="10" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="newProdPrice">قیمت فروش (تومان)</label>
+                    <input type="number" id="newProdPrice" class="form-control" placeholder="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="newProdBuyPrice">قیمت خرید (تومان)</label>
+                    <input type="number" id="newProdBuyPrice" class="form-control" placeholder="0" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="newProdImage">لینک تصویر (اختیاری)</label>
+                <input type="url" id="newProdImage" class="form-control" placeholder="https://...">
+            </div>
+
+            <div class="form-group">
+                <label for="newProdDescription">توضیحات کالا</label>
+                <textarea id="newProdDescription" class="form-control" placeholder="توضیحات مختصر..." rows="2"></textarea>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:16px; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-check"></i> ثبت و ذخیره در انبار
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddProductModal()">انصراف</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -754,10 +967,20 @@
             document.querySelectorAll('.mobile-tabs button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
+        if (name === 'products') loadAdminProducts();
+        if (name === 'gsheets') loadGSheetsStatus();
     }
 
     async function refreshAll() {
-        await Promise.all([loadStats(), loadOrders(), loadCustomers(), loadProfitStats(), loadAlerts()]);
+        await Promise.all([
+            loadStats(),
+            loadOrders(),
+            loadCustomers(),
+            loadProfitStats(),
+            loadAlerts(),
+            loadAdminProducts(),
+            loadGSheetsStatus()
+        ]);
     }
 
     async function loadStats() {
@@ -1136,11 +1359,235 @@
         currentCustomerId = null;
     }
 
+    // Products & Inventory Management
+    async function loadAdminProducts() {
+        const brand = document.getElementById('productBrandFilter')?.value || 'all';
+        const category = document.getElementById('productCategoryFilter')?.value || 'all';
+        const search = document.getElementById('productSearch')?.value || '';
+
+        const res = await api(`/api/admin/products?brand=${brand}&category=${category}&search=${encodeURIComponent(search)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const products = data.products || [];
+
+        // Update Stats
+        const statTotal = document.getElementById('statTotalProducts');
+        if (statTotal) statTotal.textContent = (data.total || products.length).toLocaleString('fa-IR');
+        const counts = data.brandCounts || {};
+        const statRaf = document.getElementById('statRafoonehProducts');
+        if (statRaf) statRaf.textContent = (counts.rafooneh || 0).toLocaleString('fa-IR');
+        const statOwn = document.getElementById('statOwnProducts');
+        if (statOwn) statOwn.textContent = (counts.own || 0).toLocaleString('fa-IR');
+        const statFor = document.getElementById('statForeignProducts');
+        if (statFor) statFor.textContent = (counts.foreign || 0).toLocaleString('fa-IR');
+
+        const tbody = document.getElementById('productsAdminBody');
+        if (!tbody) return;
+        if (!products.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">محصولی با این مشخصات یافت نشد</td></tr>';
+            return;
+        }
+
+        const brandBadges = {
+            rafooneh: '<span class="badge badge-confirmed">برند رافونه</span>',
+            own: '<span class="badge" style="background:#fef3c7; color:#b45309;">برند اختصاصی من</span>',
+            foreign: '<span class="badge badge-new">خارجی / وارداتی</span>',
+            custom: '<span class="badge badge-preparing">برند سفارشی</span>'
+        };
+
+        tbody.innerHTML = products.map(p => `
+            <tr id="prodRow-${p.id}">
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${p.image || 'https://via.placeholder.com/40'}" alt="" style="width:36px; height:36px; object-fit:cover; border-radius:6px; background:#f1f5f9;">
+                        <span style="font-family:monospace; font-weight:bold;">${p.id}</span>
+                    </div>
+                </td>
+                <td><strong>${p.name}</strong></td>
+                <td>${brandBadges[p.brand] || `<span class="badge badge-preparing">${p.brandName || p.brand || '—'}</span>`}</td>
+                <td>${p.categoryName || p.category || '—'}</td>
+                <td>
+                    <input type="number" id="inpStock-${p.id}" class="form-control" value="${p.stock}" min="0" style="width:80px; padding:4px 8px; text-align:center;">
+                </td>
+                <td>
+                    <input type="number" id="inpPrice-${p.id}" class="form-control" value="${p.price}" min="0" style="width:110px; padding:4px 8px; text-align:center;">
+                </td>
+                <td>
+                    <input type="number" id="inpBuyPrice-${p.id}" class="form-control" value="${p.buyPrice || 0}" min="0" style="width:110px; padding:4px 8px; text-align:center;">
+                </td>
+                <td>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-primary" style="padding:4px 10px; font-size:0.8rem;" onclick="saveProductInline('${p.id}', this)">
+                            <i class="fa-solid fa-floppy-disk"></i> ذخیره
+                        </button>
+                        <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="deleteProductAdmin('${p.id}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function debounceProducts() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadAdminProducts, 300);
+    }
+
+    async function saveProductInline(id, btn) {
+        const stock = Number(document.getElementById(`inpStock-${id}`)?.value || 0);
+        const price = Number(document.getElementById(`inpPrice-${id}`)?.value || 0);
+        const buyPrice = Number(document.getElementById(`inpBuyPrice-${id}`)?.value || 0);
+
+        const res = await api(`/api/admin/products/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ stock, price, buyPrice })
+        });
+
+        if (res.ok) {
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> ثبت شد';
+            btn.style.background = 'var(--success)';
+            setTimeout(() => {
+                btn.innerHTML = origHtml;
+                btn.style.background = 'var(--primary)';
+            }, 1500);
+        } else {
+            alert('خطا در ذخیره‌سازی اطلاعات کالا');
+        }
+    }
+
+    function openAddProductModal() {
+        document.getElementById('addProductForm').reset();
+        document.getElementById('addProductModal').style.display = 'flex';
+    }
+
+    function closeAddProductModal() {
+        document.getElementById('addProductModal').style.display = 'none';
+    }
+
+    async function submitAddProduct(e) {
+        e.preventDefault();
+        const id = document.getElementById('newProdCode').value.trim();
+        const name = document.getElementById('newProdName').value.trim();
+        const brand = document.getElementById('newProdBrand').value;
+        const category = document.getElementById('newProdCategory').value;
+        const stock = Number(document.getElementById('newProdStock').value || 0);
+        const price = Number(document.getElementById('newProdPrice').value || 0);
+        const buyPrice = Number(document.getElementById('newProdBuyPrice').value || 0);
+        const image = document.getElementById('newProdImage').value.trim();
+        const description = document.getElementById('newProdDescription').value.trim();
+
+        const res = await api('/api/admin/products', {
+            method: 'POST',
+            body: JSON.stringify({ id, name, brand, category, stock, price, buyPrice, image, description })
+        });
+
+        if (res.ok) {
+            closeAddProductModal();
+            await loadAdminProducts();
+            alert('محصول جدید با موفقیت اضافه گردید.');
+        } else {
+            const data = await res.json().catch(() => ({}));
+            alert(data.message || 'خطا در افزودن کالا');
+        }
+    }
+
+    async function deleteProductAdmin(id) {
+        if (!confirm(`آیا از حذف کالا با کد ${id} اطمینان دارید؟`)) return;
+        const res = await api(`/api/admin/products/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            await loadAdminProducts();
+        } else {
+            alert('خطا در حذف کالا');
+        }
+    }
+
+    // Google Sheets Management
+    async function loadGSheetsStatus() {
+        const res = await api('/api/admin/gsheets/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.spreadsheetId) {
+            document.getElementById('gsheetIdInput').value = data.spreadsheetId;
+        }
+        document.getElementById('gsheetProductCount').textContent = (data.productCount || 0).toLocaleString('fa-IR');
+        document.getElementById('gsheetLastSyncTime').textContent = formatDate(data.lastSync);
+        
+        if (data.csvUrl) {
+            document.getElementById('btnGsheetCsvLink').href = data.csvUrl;
+        }
+    }
+
+    async function syncGSheetsNow() {
+        const spreadsheetId = document.getElementById('gsheetIdInput').value.trim();
+        const btn = document.getElementById('btnSyncGSheets');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال همگام‌سازی...';
+
+        try {
+            const res = await api('/api/gsheets/sync', {
+                method: 'POST',
+                body: JSON.stringify({ spreadsheetId })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                alert(`همگام‌سازی گوگل شیت با موفقیت انجام شد! ${data.count} کالا بروزرسانی گردید.`);
+                await loadGSheetsStatus();
+                await loadAdminProducts();
+            } else {
+                alert('خطا در همگام‌سازی: ' + (data.message || 'لطفا دسترسی عمومی گوگل شیت را بررسی کنید.'));
+            }
+        } catch (err) {
+            alert('خطا در ارتباط با سرور: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> ذخیره و همگام‌سازی آنلاین';
+        }
+    }
+
+    async function uploadExcelFile() {
+        const fileInput = document.getElementById('excelFileInput');
+        if (!fileInput.files || !fileInput.files[0]) {
+            alert('لطفاً ابتدا یک فایل اکسل انتخاب کنید.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('excelFile', fileInput.files[0]);
+
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const baseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/$/, '') : '';
+
+        try {
+            const res = await fetch(baseUrl + '/api/upload', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                alert('فایل اکسل با موفقیت آپلود و لیست اقلام بروزرسانی گردید.');
+                fileInput.value = '';
+                await loadAdminProducts();
+            } else {
+                alert('خطا در آپلود اکسل: ' + (data.message || 'فایل نامعتبر است'));
+            }
+        } catch (err) {
+            alert('خطا در آپلود: ' + err.message);
+        }
+    }
+
     document.getElementById('orderModal').addEventListener('click', e => {
         if (e.target.id === 'orderModal') closeOrderModal();
     });
     document.getElementById('customerModal').addEventListener('click', e => {
         if (e.target.id === 'customerModal') closeCustomerModal();
+    });
+    document.getElementById('addProductModal').addEventListener('click', e => {
+        if (e.target.id === 'addProductModal') closeAddProductModal();
     });
 
     if (token) {

@@ -143,6 +143,62 @@ export function enrichOrderWithProfit(order, productsMap) {
   };
 }
 
+export function reduceProductStock(items) {
+  try {
+    const productsPath = path.join(process.cwd(), 'products_data.json');
+    if (!fs.existsSync(productsPath)) return;
+    const list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+    let modified = false;
+
+    (items || []).forEach(item => {
+      const pid = String(item.id || item.code || '');
+      const qty = Number(item.qty) || 1;
+      const product = list.find(p => String(p.id) === pid || String(p.code) === pid);
+      if (product) {
+        product.stock = Math.max(0, (Number(product.stock) || 0) - qty);
+        product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
+        modified = true;
+      }
+    });
+
+    if (modified) {
+      fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
+      const jsPath = path.join(process.cwd(), 'products_data.js');
+      fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
+    }
+  } catch (e) {
+    console.error('Error reducing product stock:', e);
+  }
+}
+
+export function restoreProductStock(items) {
+  try {
+    const productsPath = path.join(process.cwd(), 'products_data.json');
+    if (!fs.existsSync(productsPath)) return;
+    const list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+    let modified = false;
+
+    (items || []).forEach(item => {
+      const pid = String(item.id || item.code || '');
+      const qty = Number(item.qty) || 1;
+      const product = list.find(p => String(p.id) === pid || String(p.code) === pid);
+      if (product) {
+        product.stock = (Number(product.stock) || 0) + qty;
+        product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
+        modified = true;
+      }
+    });
+
+    if (modified) {
+      fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
+      const jsPath = path.join(process.cwd(), 'products_data.js');
+      fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
+    }
+  } catch (e) {
+    console.error('Error restoring product stock:', e);
+  }
+}
+
 export function createOrder(orderData) {
   const orders = readJson(ORDERS_FILE, []);
   const { map: pMap } = getProductsMap();
@@ -195,6 +251,9 @@ export function createOrder(orderData) {
 
   writeJson(ORDERS_FILE, orders);
   writeJson(CUSTOMERS_FILE, customers);
+
+  // Automatically update stock in products dataset upon order creation!
+  reduceProductStock(items);
 
   return enrichOrderWithProfit(order, pMap);
 }
@@ -367,6 +426,9 @@ export function updateOrder(id, updates) {
     throw new Error('وضعیت سفارش نامعتبر است');
   }
 
+  const oldStatus = orders[idx].status;
+  const newStatus = updates.status;
+
   orders[idx] = {
     ...orders[idx],
     ...updates,
@@ -374,7 +436,128 @@ export function updateOrder(id, updates) {
   };
 
   writeJson(ORDERS_FILE, orders);
+
+  // If status changed to cancelled, restore stock!
+  if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
+    restoreProductStock(orders[idx].items);
+  } else if (oldStatus === 'cancelled' && newStatus && newStatus !== 'cancelled') {
+    reduceProductStock(orders[idx].items);
+  }
+
   return orders[idx];
+}
+
+export function listProducts(filters = {}) {
+  const { list } = getProductsMap();
+  let result = [...list];
+
+  if (filters.brand && filters.brand !== 'all') {
+    result = result.filter(p => p.brand === filters.brand);
+  }
+
+  if (filters.category && filters.category !== 'all') {
+    result = result.filter(p => p.category === filters.category);
+  }
+
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    result = result.filter(p =>
+      p.name?.toLowerCase().includes(q) ||
+      p.id?.toLowerCase().includes(q) ||
+      p.brandName?.toLowerCase().includes(q)
+    );
+  }
+
+  return result;
+}
+
+export function updateProduct(id, updates) {
+  const productsPath = path.join(process.cwd(), 'products_data.json');
+  if (!fs.existsSync(productsPath)) return null;
+  const list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+  const pid = String(id);
+  const idx = list.findIndex(p => String(p.id) === pid || String(p.code) === pid);
+
+  if (idx === -1) return null;
+
+  const stock = updates.stock !== undefined ? Number(updates.stock) : Number(list[idx].stock || 0);
+  const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
+
+  list[idx] = {
+    ...list[idx],
+    ...updates,
+    stock,
+    badge,
+    updatedAt: new Date().toISOString()
+  };
+
+  fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
+  const jsPath = path.join(process.cwd(), 'products_data.js');
+  fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
+
+  return list[idx];
+}
+
+export function addProduct(productData) {
+  const productsPath = path.join(process.cwd(), 'products_data.json');
+  const list = fs.existsSync(productsPath) ? JSON.parse(fs.readFileSync(productsPath, 'utf8')) : [];
+
+  const code = String(productData.id || productData.code || Date.now());
+  const stock = Number(productData.stock) || 0;
+  const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
+
+  const brandNames = {
+    rafooneh: 'رافونه',
+    own: 'برند اختصاصی',
+    foreign: 'محصولات خارجی'
+  };
+
+  const brand = productData.brand || 'own';
+  const brandName = productData.brandName || brandNames[brand] || 'برند اختصاصی';
+
+  const newProd = {
+    id: code,
+    code: code,
+    name: productData.name || 'محصول جدید',
+    brand,
+    brandName,
+    category: productData.category || 'other',
+    categoryName: productData.categoryName || 'سایر شوینده‌ها',
+    price: Number(productData.price) || 0,
+    consumerPrice: Number(productData.consumerPrice) || 0,
+    buyPrice: Number(productData.buyPrice) || 0,
+    packing: Number(productData.packing) || 1,
+    stock: stock,
+    image: productData.image || 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg',
+    badge: badge,
+    description: productData.description || 'محصول باکیفیت و استاندارد'
+  };
+
+  list.unshift(newProd);
+
+  fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
+  const jsPath = path.join(process.cwd(), 'products_data.js');
+  fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
+
+  return newProd;
+}
+
+export function deleteProduct(id) {
+  const productsPath = path.join(process.cwd(), 'products_data.json');
+  if (!fs.existsSync(productsPath)) return false;
+  let list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+  const pid = String(id);
+  const initialLength = list.length;
+
+  list = list.filter(p => String(p.id) !== pid && String(p.code) !== pid);
+
+  if (list.length !== initialLength) {
+    fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
+    const jsPath = path.join(process.cwd(), 'products_data.js');
+    fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
+    return true;
+  }
+  return false;
 }
 
 export function listCustomers(filters = {}) {

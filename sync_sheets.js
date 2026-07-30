@@ -21,6 +21,32 @@ function categorize(name) {
   return { id: 'other', name: 'سایر شوینده‌ها' };
 }
 
+function determineBrand(name, rawBrand = '') {
+  if (rawBrand && String(rawBrand).trim()) {
+    const b = String(rawBrand).trim();
+    const bLower = b.toLowerCase();
+    if (b.includes('خارج') || b.includes('وارد') || bLower.includes('foreign') || bLower.includes('import')) {
+      return { id: 'foreign', name: 'محصولات خارجی' };
+    }
+    if (b.includes('اختصاصی') || b.includes('من') || bLower.includes('own') || bLower.includes('custom') || b.includes('شخصی')) {
+      return { id: 'own', name: 'برند اختصاصی' };
+    }
+    if (b.includes('رافونه') || bLower.includes('rafooneh')) {
+      return { id: 'rafooneh', name: 'رافونه' };
+    }
+    return { id: 'custom', name: b };
+  }
+
+  const n = String(name || '').toLowerCase();
+  if (n.includes('خارجی') || n.includes('وارداتی') || n.includes('فینیش') || n.includes('پریمیوم') || n.includes('آلمانی') || n.includes('ترک') || n.includes('امپریال') || n.includes('فرانسوی') || n.includes('ایتالیایی')) {
+    return { id: 'foreign', name: 'محصولات خارجی' };
+  }
+  if (n.includes('اختصاصی') || n.includes('برند من') || n.includes('سفارشی') || n.includes('دست ساز')) {
+    return { id: 'own', name: 'برند اختصاصی' };
+  }
+  return { id: 'rafooneh', name: 'رافونه' };
+}
+
 const categoryDefaultImages = {
   handwash: 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/h/a/hand-washing-green_2.jpg',
   dishwash: 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/l/i/liquid-dishwashing-glycerin-green-2700-gr_1.png',
@@ -54,6 +80,8 @@ function findColumnIndices(headerRow) {
   let nameIdx = headers.findIndex(h => h === 'شرح کالا' || h === 'نام کالا' || h === 'نام');
   if (nameIdx === -1) nameIdx = headers.findIndex(h => h.includes('شرح') || h.includes('نام') || h.includes('عنوان'));
 
+  let brandIdx = headers.findIndex(h => h === 'برند' || h === 'سازنده' || h === 'مارک' || h === 'برند کالا' || h.toLowerCase() === 'brand');
+
   let stockIdx = headers.findIndex(h => h === 'موجودی' || h === 'موجودی انبار' || h === 'موجودی فعلی');
   if (stockIdx === -1) stockIdx = headers.findIndex(h => h.includes('موجودی') && !h.includes('قبلی'));
 
@@ -76,7 +104,7 @@ function findColumnIndices(headerRow) {
   if (consumerPriceIdx === -1) consumerPriceIdx = 9;
   if (packingIdx === -1) packingIdx = 5;
 
-  return { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx };
+  return { codeIdx, nameIdx, brandIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx };
 }
 
 async function syncGoogleSheets() {
@@ -106,7 +134,7 @@ async function syncGoogleSheets() {
       scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8'));
     }
 
-    const { codeIdx, nameIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
+    const { codeIdx, nameIdx, brandIdx, stockIdx, deliveryPriceIdx, buyPriceIdx, consumerPriceIdx, packingIdx } = findColumnIndices(rows[0]);
 
     const products = [];
     for (let i = 1; i < rows.length; i++) {
@@ -115,6 +143,8 @@ async function syncGoogleSheets() {
 
       const code = String(r[codeIdx]).trim();
       const name = String(r[nameIdx]).trim();
+      const rawBrand = brandIdx !== -1 && r[brandIdx] ? String(r[brandIdx]).trim() : '';
+      const brandObj = determineBrand(name, rawBrand);
       const stock = parseNum(r[stockIdx]) || parseNum(r[4]) || 0;
       const deliveryPrice = Math.round(parseNum(r[deliveryPriceIdx]) || parseNum(r[7]) || parseNum(r[10]) || parseNum(r[8]) || parseNum(r[2]) || 0);
       const buyPrice = Math.round(parseNum(r[buyPriceIdx]) || parseNum(r[6]) || 0);
@@ -165,6 +195,8 @@ async function syncGoogleSheets() {
       products.push({
         id: code,
         name: name,
+        brand: brandObj.id,
+        brandName: brandObj.name,
         category: cat.id,
         categoryName: cat.name,
         price: deliveryPrice,
