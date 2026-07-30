@@ -717,7 +717,7 @@ app.get('/api/admin/gsheets/status', authMiddleware, (req, res) => {
   });
 });
 
-app.get('/admin', (req, res) => {
+app.get(['/admin', '/admin.html'], (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
