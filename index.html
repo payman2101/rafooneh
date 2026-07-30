@@ -1767,7 +1767,7 @@
             }
 
             // Save order to CRM
-            fetch('/api/orders', {
+            fetch(getApiUrl('/api/orders'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1937,7 +1937,7 @@
             btnPay.disabled = true;
             btnPay.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال اتصال به بانک...`;
 
-            fetch('/api/payment/verify', {
+            fetch(getApiUrl('/api/payment/verify'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2059,7 +2059,7 @@
             statusMsg.style.display = 'none';
 
             try {
-                const res = await fetch('/api/gsheets/sync', {
+                const res = await fetch(getApiUrl('/api/gsheets/sync'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ spreadsheetId, range: rangeInput })
@@ -2098,12 +2098,22 @@
             }
         }
 
-        // Live Store Sync: Load products from /api/products
+        // Live Store Sync: Load products from API server
+        const DEFAULT_SERVER_URL = 'https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app';
+
+        function getApiUrl(path) {
+            const isDirectBackend = window.location.hostname.includes('run.app') || window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1';
+            if (isDirectBackend) return path;
+            const stored = localStorage.getItem('crm_api_base_url');
+            let baseUrl = (stored && stored.startsWith('https://ais-pre-')) ? stored : DEFAULT_SERVER_URL;
+            return baseUrl.trim().replace(/\/$/, '') + path;
+        }
+
         let lastProductsHash = '';
 
         async function loadProductsFromApi() {
             try {
-                const res = await fetch('/api/products');
+                const res = await fetch(getApiUrl('/api/products'));
                 if (!res.ok) return;
                 const contentType = res.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) return;
