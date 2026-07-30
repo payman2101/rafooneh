@@ -1070,12 +1070,16 @@
             localStorage.setItem('crm_token', token);
             showApp();
         } catch (err) {
-            errEl.innerHTML = 'خطا در ارتباط با سرور: ' + err.message + '<br>آدرس سرور به صورت خودکار تصحیح شد. لطفاً مجدداً روی دکمه «ورود به پنل» کلیک کنید.';
-            errEl.style.display = 'block';
             if (!isDirectBackend) {
-                resetDefaultServerUrl();
-                document.getElementById('serverUrlGroup').style.display = 'block';
+                errEl.innerHTML = '<strong>خطا در ارتباط با سرور بک‌اند (Failed to fetch):</strong><br>' +
+                    'سرورهای پیش‌نمایش Cloud Run اجازه درخواست‌های خارج از دامنه (Cross-Origin CORS) از گیت‌هاب پیجز را به دلایل امنیتی مسدود می‌کنند.<br><br>' +
+                    '<strong>راه حل فوری و بدون خطا:</strong><br>' +
+                    'لطفاً پنل مدیریت را مستقیماً روی سرور اصلی باز کنید:<br>' +
+                    '<a href="' + DEFAULT_SERVER_URL + '/admin.html" target="_blank" style="color:#0d9488; font-weight:bold; text-decoration:underline; dir:ltr; display:inline-block; margin-top:6px;">' + DEFAULT_SERVER_URL + '/admin.html</a>';
+            } else {
+                errEl.innerHTML = 'خطا در ارتباط با سرور: ' + err.message;
             }
+            errEl.style.display = 'block';
         }
     }
 
