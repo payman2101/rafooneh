@@ -65,21 +65,15 @@ function determineBrand(name, rawBrand = '') {
     if (b.includes('خارج') || b.includes('وارد') || bLower.includes('foreign') || bLower.includes('import')) {
       return { id: 'foreign', name: 'محصولات خارجی' };
     }
-    if (b.includes('اختصاصی') || b.includes('من') || bLower.includes('own') || bLower.includes('custom') || b.includes('شخصی')) {
-      return { id: 'own', name: 'برند اختصاصی' };
-    }
     if (b.includes('رافونه') || bLower.includes('rafooneh')) {
       return { id: 'rafooneh', name: 'رافونه' };
     }
-    return { id: 'custom', name: b };
+    return { id: 'foreign', name: 'محصولات خارجی' };
   }
 
   const n = String(name || '').toLowerCase();
   if (n.includes('خارجی') || n.includes('وارداتی') || n.includes('فینیش') || n.includes('پریمیوم') || n.includes('آلمانی') || n.includes('ترک') || n.includes('امپریال') || n.includes('فرانسوی') || n.includes('ایتالیایی')) {
     return { id: 'foreign', name: 'محصولات خارجی' };
-  }
-  if (n.includes('اختصاصی') || n.includes('برند من') || n.includes('سفارشی') || n.includes('دست ساز')) {
-    return { id: 'own', name: 'برند اختصاصی' };
   }
   return { id: 'rafooneh', name: 'رافونه' };
 }
@@ -420,18 +414,8 @@ async function syncFromGSheetsId(spreadsheetId) {
   }
 }
 
-// Default target Google Sheet ID from user request
+// Default target Google Sheet ID from user request (manual sync option)
 let activeGSheetId = '1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8';
-
-// Sync from default Google Sheet on server startup
-syncFromGSheetsId(activeGSheetId);
-
-// Periodically check Google Sheet every 10 seconds for online changes
-setInterval(() => {
-  if (activeGSheetId) {
-    syncFromGSheetsId(activeGSheetId);
-  }
-}, 10000);
 
 // API: Google Sheets Sync - Parse spreadsheet data and update products catalog
 app.post('/api/gsheets/sync', async (req, res) => {
@@ -661,7 +645,20 @@ app.patch('/api/admin/customers/:id', authMiddleware, (req, res) => {
 app.get('/api/admin/products', authMiddleware, (req, res) => {
   const { brand, category, search } = req.query;
   const products = listProducts({ brand, category, search });
-  res.json({ success: true, count: products.length, products });
+  const allProducts = listProducts({});
+
+  const brandCounts = {
+    rafooneh: allProducts.filter(p => p.brand === 'rafooneh').length,
+    foreign: allProducts.filter(p => p.brand === 'foreign' || p.brand !== 'rafooneh').length
+  };
+
+  res.json({
+    success: true,
+    count: products.length,
+    total: allProducts.length,
+    brandCounts,
+    products
+  });
 });
 
 app.post('/api/admin/products', authMiddleware, (req, res) => {

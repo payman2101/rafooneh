@@ -507,13 +507,12 @@ export function addProduct(productData) {
   const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
 
   const brandNames = {
-    rafooneh: 'رافونه',
-    own: 'برند اختصاصی',
+    rafooneh: 'برند رافونه',
     foreign: 'محصولات خارجی'
   };
 
-  const brand = productData.brand || 'own';
-  const brandName = productData.brandName || brandNames[brand] || 'برند اختصاصی';
+  const brand = productData.brand === 'foreign' ? 'foreign' : 'rafooneh';
+  const brandName = brandNames[brand];
 
   const newProd = {
     id: code,

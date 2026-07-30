@@ -28,23 +28,17 @@ function determineBrand(name, rawBrand = '') {
     if (b.includes('خارج') || b.includes('وارد') || bLower.includes('foreign') || bLower.includes('import')) {
       return { id: 'foreign', name: 'محصولات خارجی' };
     }
-    if (b.includes('اختصاصی') || b.includes('من') || bLower.includes('own') || bLower.includes('custom') || b.includes('شخصی')) {
-      return { id: 'own', name: 'برند اختصاصی' };
-    }
     if (b.includes('رافونه') || bLower.includes('rafooneh')) {
-      return { id: 'rafooneh', name: 'رافونه' };
+      return { id: 'rafooneh', name: 'برند رافونه' };
     }
-    return { id: 'custom', name: b };
+    return { id: 'foreign', name: 'محصولات خارجی' };
   }
 
   const n = String(name || '').toLowerCase();
   if (n.includes('خارجی') || n.includes('وارداتی') || n.includes('فینیش') || n.includes('پریمیوم') || n.includes('آلمانی') || n.includes('ترک') || n.includes('امپریال') || n.includes('فرانسوی') || n.includes('ایتالیایی')) {
     return { id: 'foreign', name: 'محصولات خارجی' };
   }
-  if (n.includes('اختصاصی') || n.includes('برند من') || n.includes('سفارشی') || n.includes('دست ساز')) {
-    return { id: 'own', name: 'برند اختصاصی' };
-  }
-  return { id: 'rafooneh', name: 'رافونه' };
+  return { id: 'rafooneh', name: 'برند رافونه' };
 }
 
 const categoryDefaultImages = {
