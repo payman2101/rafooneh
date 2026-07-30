@@ -949,14 +949,40 @@
 </div>
 
 <script>
+    const DEFAULT_SERVER_URL = 'https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app';
+
+    function sanitizeServerUrl(rawUrl) {
+        if (!rawUrl) return DEFAULT_SERVER_URL;
+        let url = rawUrl.trim();
+        if (url.includes('425643246794.europe-west2.run.app') || url.includes('zgpti6')) {
+            if (!url.startsWith('https://ais-pre-q4xdk4gu6vihxdr2zgpti6')) {
+                return DEFAULT_SERVER_URL;
+            }
+        }
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'https://' + url;
+        }
+        try {
+            const parsed = new URL(url);
+            if (!parsed.hostname || !parsed.hostname.includes('.')) {
+                return DEFAULT_SERVER_URL;
+            }
+            return parsed.origin;
+        } catch (e) {
+            return DEFAULT_SERVER_URL;
+        }
+    }
+
+    const isDirectBackend = window.location.hostname.includes('run.app') || window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1';
+
     let token = localStorage.getItem('crm_token') || '';
-    let apiBaseUrl = localStorage.getItem('crm_api_base_url') || '';
+    let storedApiUrl = localStorage.getItem('crm_api_base_url') || '';
+    let apiBaseUrl = isDirectBackend ? '' : sanitizeServerUrl(storedApiUrl);
+
     let currentOrderId = null;
     let currentCustomerId = null;
     let orderStatuses = [];
     let searchTimeout = null;
-
-    const DEFAULT_SERVER_URL = 'https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app';
 
     function resetDefaultServerUrl() {
         const input = document.getElementById('apiBaseUrl');
@@ -965,15 +991,13 @@
         localStorage.setItem('crm_api_base_url', DEFAULT_SERVER_URL);
     }
 
-    // Show server URL field if not directly hosted on Cloud Run app domain
-    const isDirectBackend = window.location.hostname.includes('run.app') || window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1';
     if (!isDirectBackend) {
         document.getElementById('serverUrlGroup').style.display = 'block';
-        if (apiBaseUrl && apiBaseUrl.startsWith('https://ais-pre-') && apiBaseUrl.includes('run.app')) {
-            document.getElementById('apiBaseUrl').value = apiBaseUrl;
-        } else {
-            resetDefaultServerUrl();
-        }
+        const input = document.getElementById('apiBaseUrl');
+        if (input) input.value = apiBaseUrl;
+        localStorage.setItem('crm_api_base_url', apiBaseUrl);
+    } else {
+        localStorage.removeItem('crm_api_base_url');
     }
 
     const paymentLabels = {
@@ -985,10 +1009,7 @@
     function api(path, options = {}) {
         const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        let baseUrl = apiBaseUrl ? apiBaseUrl.trim().replace(/\/$/, '') : '';
-        if (baseUrl && !/^https?:\/\//i.test(baseUrl)) {
-            baseUrl = 'https://' + baseUrl;
-        }
+        let baseUrl = isDirectBackend ? '' : sanitizeServerUrl(apiBaseUrl);
         return fetch(baseUrl + path, { ...options, headers });
     }
 
@@ -1009,18 +1030,16 @@
     async function handleLogin(e) {
         e.preventDefault();
         const password = document.getElementById('password').value;
-        let customUrlInput = document.getElementById('apiBaseUrl')?.value?.trim();
-        if (customUrlInput) {
-            if (customUrlInput.includes('zgpti6-425643246794.europe-west2.run.app') && !customUrlInput.startsWith('https://ais-pre-')) {
-                customUrlInput = DEFAULT_SERVER_URL;
-            } else if (!/^https?:\/\//i.test(customUrlInput)) {
-                customUrlInput = 'https://' + customUrlInput;
-            }
+
+        if (!isDirectBackend) {
+            let customUrlInput = document.getElementById('apiBaseUrl')?.value?.trim();
+            apiBaseUrl = sanitizeServerUrl(customUrlInput);
             if (document.getElementById('apiBaseUrl')) {
-                document.getElementById('apiBaseUrl').value = customUrlInput;
+                document.getElementById('apiBaseUrl').value = apiBaseUrl;
             }
-            apiBaseUrl = customUrlInput;
             localStorage.setItem('crm_api_base_url', apiBaseUrl);
+        } else {
+            apiBaseUrl = '';
         }
 
         const errEl = document.getElementById('loginError');
@@ -1033,9 +1052,9 @@
             });
 
             if (res.status === 404) {
-                errEl.innerHTML = 'خطای 404: سرویس بک‌اند روی GitHub Pages وجود ندارد.<br>GitHub Pages فقط فایل‌های استاتیک را میزبانی می‌کند و کد سرور Node.js را اجرا نمی‌کند.<br>برای ورود، لطفا پنل را روی آدرس سرور اصلی (Node.js / Cloud Run) باز کنید یا آدرس سرور بک‌اند را بالا وارد کنید.';
+                errEl.innerHTML = 'خطای 404: سرویس بک‌اند روی این آدرس یافت نشد.<br>لطفاً مطمئن شوید آدرس سرور اصلی Node.js را درست وارد کرده‌اید.';
                 errEl.style.display = 'block';
-                document.getElementById('serverUrlGroup').style.display = 'block';
+                if (!isDirectBackend) document.getElementById('serverUrlGroup').style.display = 'block';
                 return;
             }
 
@@ -1051,9 +1070,12 @@
             localStorage.setItem('crm_token', token);
             showApp();
         } catch (err) {
-            errEl.innerHTML = 'خطا در ارتباط با سرور: ' + err.message + '<br>اگر از GitHub Pages استفاده می‌کنید، باید آدرس سرور اجرا شده Node.js را در کادر آدرس سرور قرار دهید.';
+            errEl.innerHTML = 'خطا در ارتباط با سرور: ' + err.message + '<br>آدرس سرور به صورت خودکار تصحیح شد. لطفاً مجدداً روی دکمه «ورود به پنل» کلیک کنید.';
             errEl.style.display = 'block';
-            document.getElementById('serverUrlGroup').style.display = 'block';
+            if (!isDirectBackend) {
+                resetDefaultServerUrl();
+                document.getElementById('serverUrlGroup').style.display = 'block';
+            }
         }
     }
 
