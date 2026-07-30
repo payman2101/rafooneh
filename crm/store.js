@@ -483,9 +483,31 @@ export function updateProduct(id, updates) {
   const stock = updates.stock !== undefined ? Number(updates.stock) : Number(list[idx].stock || 0);
   const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
 
+  const brand = updates.brand || list[idx].brand || 'rafooneh';
+  const brandName = brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه';
+
+  const categoryNames = {
+    handwash: 'مایع دستشویی',
+    dishwash: 'مایع ظرفشویی',
+    laundry: 'شوینده لباس',
+    cleaners: 'پاک‌کننده و اسپری',
+    sanitary: 'جرم‌گیر و ضدعفونی',
+    home: 'خانه و فرش',
+    cellulosic: 'سلولزی و مصرفی',
+    car: 'خودرو',
+    other: 'سایر شوینده‌ها'
+  };
+
+  const category = updates.category || list[idx].category || 'other';
+  const categoryName = updates.categoryName || categoryNames[category] || list[idx].categoryName || 'سایر شوینده‌ها';
+
   list[idx] = {
     ...list[idx],
     ...updates,
+    brand,
+    brandName,
+    category,
+    categoryName,
     stock,
     badge,
     updatedAt: new Date().toISOString()
