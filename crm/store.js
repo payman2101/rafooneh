@@ -501,6 +501,8 @@ export function updateProduct(id, updates) {
   const category = updates.category || list[idx].category || 'other';
   const categoryName = updates.categoryName || categoryNames[category] || list[idx].categoryName || 'سایر شوینده‌ها';
 
+  const newPrice = updates.newPrice !== undefined ? Number(updates.newPrice) : (updates.consumerPrice !== undefined ? Number(updates.consumerPrice) : Number(list[idx].newPrice || list[idx].consumerPrice || 0));
+
   list[idx] = {
     ...list[idx],
     ...updates,
@@ -510,6 +512,8 @@ export function updateProduct(id, updates) {
     categoryName,
     stock,
     badge,
+    newPrice,
+    consumerPrice: newPrice,
     updatedAt: new Date().toISOString()
   };
 
@@ -535,6 +539,7 @@ export function addProduct(productData) {
 
   const brand = productData.brand === 'foreign' ? 'foreign' : 'rafooneh';
   const brandName = brandNames[brand];
+  const newPriceVal = Number(productData.newPrice || productData.consumerPrice) || 0;
 
   const newProd = {
     id: code,
@@ -545,7 +550,8 @@ export function addProduct(productData) {
     category: productData.category || 'other',
     categoryName: productData.categoryName || 'سایر شوینده‌ها',
     price: Number(productData.price) || 0,
-    consumerPrice: Number(productData.consumerPrice) || 0,
+    newPrice: newPriceVal,
+    consumerPrice: newPriceVal,
     buyPrice: Number(productData.buyPrice) || 0,
     packing: Number(productData.packing) || 1,
     stock: stock,

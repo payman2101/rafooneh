@@ -627,9 +627,11 @@
                                     <th>نام محصول</th>
                                     <th>برند</th>
                                     <th>دسته‌بندی</th>
-                                    <th>موجودی انبار</th>
-                                    <th>قیمت فروش (تومان)</th>
-                                    <th>قیمت خرید (تومان)</th>
+                                    <th>موجودی</th>
+                                    <th>قیمت قدیم (فروش)</th>
+                                    <th>قیمت جدید بازار</th>
+                                    <th>تخفیف خریدار</th>
+                                    <th>قیمت خرید</th>
                                     <th>عملیات</th>
                                 </tr>
                             </thead>
@@ -808,20 +810,29 @@
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div class="form-group">
                     <label for="newProdStock">موجودی اولیه (عدد)</label>
                     <input type="number" id="newProdStock" class="form-control" value="10" min="0" required>
                 </div>
                 <div class="form-group">
-                    <label for="newProdPrice">قیمت فروش (تومان)</label>
-                    <input type="number" id="newProdPrice" class="form-control" placeholder="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="newProdBuyPrice">قیمت خرید (تومان)</label>
+                    <label for="newProdBuyPrice">قیمت خرید انباردار (تومان)</label>
                     <input type="number" id="newProdBuyPrice" class="form-control" placeholder="0" required>
                 </div>
             </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="newProdPrice">قیمت فروش فعلی / قدیم (تومان)</label>
+                    <input type="number" id="newProdPrice" class="form-control" placeholder="0" required oninput="calcAddDiscount()">
+                </div>
+                <div class="form-group">
+                    <label for="newProdNewPrice">قیمت جدید بازار / مصرف‌کننده (تومان)</label>
+                    <input type="number" id="newProdNewPrice" class="form-control" placeholder="0 (اختیاری)" oninput="calcAddDiscount()">
+                </div>
+            </div>
+
+            <div id="addDiscountCalcNotice" style="background:#f0fdf4; border:1px solid #86efac; padding:8px 12px; border-radius:8px; font-size:0.82rem; color:#15803d; font-weight:bold; margin-bottom:12px; display:none;"></div>
 
             <div class="form-group">
                 <label for="newProdImage">لینک تصویر (اختیاری)</label>
@@ -884,20 +895,29 @@
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div class="form-group">
                     <label for="editProdStock">موجودی انبار</label>
                     <input type="number" id="editProdStock" class="form-control" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="editProdPrice">قیمت فروش (تومان)</label>
-                    <input type="number" id="editProdPrice" class="form-control" min="0" required>
                 </div>
                 <div class="form-group">
                     <label for="editProdBuyPrice">قیمت خرید (تومان)</label>
                     <input type="number" id="editProdBuyPrice" class="form-control" min="0" required>
                 </div>
             </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="editProdPrice">قیمت فروش فعلی / قدیم (تومان)</label>
+                    <input type="number" id="editProdPrice" class="form-control" min="0" required oninput="calcEditDiscount()">
+                </div>
+                <div class="form-group">
+                    <label for="editProdNewPrice">قیمت جدید بازار / روی جلد (تومان)</label>
+                    <input type="number" id="editProdNewPrice" class="form-control" min="0" placeholder="0 (اختیاری)" oninput="calcEditDiscount()">
+                </div>
+            </div>
+
+            <div id="editDiscountCalcNotice" style="background:#f0fdf4; border:1px solid #86efac; padding:8px 12px; border-radius:8px; font-size:0.82rem; color:#15803d; font-weight:bold; margin-bottom:12px; display:none;"></div>
 
             <div class="form-group">
                 <label for="editProdImage">لینک تصویر محصول (URL)</label>
@@ -1469,7 +1489,13 @@
             foreign: '<span class="badge badge-new">خارجی / وارداتی</span>'
         };
 
-        tbody.innerHTML = products.map(p => `
+        tbody.innerHTML = products.map(p => {
+            const price = Number(p.price || 0);
+            const newPrice = Number(p.newPrice || p.consumerPrice || 0);
+            const hasDiscount = newPrice > price && price > 0;
+            const discountPct = hasDiscount ? Math.round(((newPrice - price) / newPrice) * 100) : 0;
+
+            return `
             <tr id="prodRow-${p.id}">
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
@@ -1481,13 +1507,22 @@
                 <td>${brandBadges[p.brand] || `<span class="badge badge-preparing">${p.brandName || p.brand || '—'}</span>`}</td>
                 <td>${p.categoryName || p.category || '—'}</td>
                 <td>
-                    <input type="number" id="inpStock-${p.id}" class="form-control" value="${p.stock}" min="0" style="width:80px; padding:4px 8px; text-align:center;">
+                    <input type="number" id="inpStock-${p.id}" class="form-control" value="${p.stock}" min="0" style="width:70px; padding:4px 6px; text-align:center;">
                 </td>
                 <td>
-                    <input type="number" id="inpPrice-${p.id}" class="form-control" value="${p.price}" min="0" style="width:110px; padding:4px 8px; text-align:center;">
+                    <input type="number" id="inpPrice-${p.id}" class="form-control" value="${p.price}" min="0" style="width:100px; padding:4px 6px; text-align:center;" title="قیمت فروش قدیم">
                 </td>
                 <td>
-                    <input type="number" id="inpBuyPrice-${p.id}" class="form-control" value="${p.buyPrice || 0}" min="0" style="width:110px; padding:4px 8px; text-align:center;">
+                    <input type="number" id="inpNewPrice-${p.id}" class="form-control" value="${newPrice}" min="0" style="width:100px; padding:4px 6px; text-align:center;" placeholder="0" title="قیمت جدید بازار">
+                </td>
+                <td>
+                    ${hasDiscount 
+                        ? `<span class="badge badge-delivered" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-weight:bold; font-size:0.75rem;"><i class="fa-solid fa-percent"></i> ${discountPct.toLocaleString('fa-IR')}٪ تخفیف</span>`
+                        : `<span class="badge" style="background:#f1f5f9; color:#94a3b8; font-size:0.75rem;">—</span>`
+                    }
+                </td>
+                <td>
+                    <input type="number" id="inpBuyPrice-${p.id}" class="form-control" value="${p.buyPrice || 0}" min="0" style="width:100px; padding:4px 6px; text-align:center;">
                 </td>
                 <td>
                     <div style="display:flex; gap:4px; flex-wrap:nowrap;">
@@ -1503,7 +1538,8 @@
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
 
     function debounceProducts() {
@@ -1511,14 +1547,47 @@
         searchTimeout = setTimeout(loadAdminProducts, 300);
     }
 
+    function calcAddDiscount() {
+        const price = Number(document.getElementById('newProdPrice')?.value || 0);
+        const newPrice = Number(document.getElementById('newProdNewPrice')?.value || 0);
+        const notice = document.getElementById('addDiscountCalcNotice');
+        if (!notice) return;
+
+        if (newPrice > price && price > 0) {
+            const savings = newPrice - price;
+            const pct = Math.round((savings / newPrice) * 100);
+            notice.style.display = 'block';
+            notice.innerHTML = `<i class="fa-solid fa-fire"></i> تخفیف فعال خرید با قیمت قدیم: <strong>${pct.toLocaleString('fa-IR')}٪ سود خریدار</strong> (${savings.toLocaleString('fa-IR')} تومان صرفه‌جویی در هر عدد)`;
+        } else {
+            notice.style.display = 'none';
+        }
+    }
+
+    function calcEditDiscount() {
+        const price = Number(document.getElementById('editProdPrice')?.value || 0);
+        const newPrice = Number(document.getElementById('editProdNewPrice')?.value || 0);
+        const notice = document.getElementById('editDiscountCalcNotice');
+        if (!notice) return;
+
+        if (newPrice > price && price > 0) {
+            const savings = newPrice - price;
+            const pct = Math.round((savings / newPrice) * 100);
+            notice.style.display = 'block';
+            notice.innerHTML = `<i class="fa-solid fa-fire"></i> تخفیف فعال خرید با قیمت قدیم: <strong>${pct.toLocaleString('fa-IR')}٪ سود خریدار</strong> (${savings.toLocaleString('fa-IR')} تومان صرفه‌جویی به نفع مشتری)`;
+        } else {
+            notice.style.display = 'none';
+        }
+    }
+
     async function saveProductInline(id, btn) {
         const stock = Number(document.getElementById(`inpStock-${id}`)?.value || 0);
         const price = Number(document.getElementById(`inpPrice-${id}`)?.value || 0);
+        const newPrice = Number(document.getElementById(`inpNewPrice-${id}`)?.value || 0);
         const buyPrice = Number(document.getElementById(`inpBuyPrice-${id}`)?.value || 0);
 
         const res = await api(`/api/admin/products/${id}`, {
             method: 'PATCH',
-            body: JSON.stringify({ stock, price, buyPrice })
+            body: JSON.stringify({ stock, price, newPrice, consumerPrice: newPrice, buyPrice })
         });
 
         if (res.ok) {
@@ -1528,7 +1597,8 @@
             setTimeout(() => {
                 btn.innerHTML = origHtml;
                 btn.style.background = 'var(--primary)';
-            }, 1500);
+                loadAdminProducts();
+            }, 1000);
         } else {
             alert('خطا در ذخیره‌سازی اطلاعات کالا');
         }
@@ -1550,11 +1620,13 @@
         document.getElementById('editProdCategory').value = p.category || 'other';
         document.getElementById('editProdStock').value = p.stock || 0;
         document.getElementById('editProdPrice').value = p.price || 0;
+        document.getElementById('editProdNewPrice').value = p.newPrice || p.consumerPrice || '';
         document.getElementById('editProdBuyPrice').value = p.buyPrice || 0;
         document.getElementById('editProdImage').value = p.image || '';
         document.getElementById('editProdDescription').value = p.description || '';
 
         updateEditImagePreview(p.image);
+        calcEditDiscount();
         document.getElementById('editProductModal').style.display = 'flex';
     }
 
@@ -1570,13 +1642,14 @@
         const category = document.getElementById('editProdCategory').value;
         const stock = Number(document.getElementById('editProdStock').value || 0);
         const price = Number(document.getElementById('editProdPrice').value || 0);
+        const newPrice = Number(document.getElementById('editProdNewPrice').value || 0);
         const buyPrice = Number(document.getElementById('editProdBuyPrice').value || 0);
         const image = document.getElementById('editProdImage').value.trim();
         const description = document.getElementById('editProdDescription').value.trim();
 
         const res = await api(`/api/admin/products/${id}`, {
             method: 'PATCH',
-            body: JSON.stringify({ name, brand, category, stock, price, buyPrice, image, description })
+            body: JSON.stringify({ name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description })
         });
 
         if (res.ok) {
@@ -1589,6 +1662,7 @@
 
     function openAddProductModal() {
         document.getElementById('addProductForm').reset();
+        calcAddDiscount();
         document.getElementById('addProductModal').style.display = 'flex';
     }
 
@@ -1604,13 +1678,14 @@
         const category = document.getElementById('newProdCategory').value;
         const stock = Number(document.getElementById('newProdStock').value || 0);
         const price = Number(document.getElementById('newProdPrice').value || 0);
+        const newPrice = Number(document.getElementById('newProdNewPrice').value || 0);
         const buyPrice = Number(document.getElementById('newProdBuyPrice').value || 0);
         const image = document.getElementById('newProdImage').value.trim();
         const description = document.getElementById('newProdDescription').value.trim();
 
         const res = await api('/api/admin/products', {
             method: 'POST',
-            body: JSON.stringify({ id, name, brand, category, stock, price, buyPrice, image, description })
+            body: JSON.stringify({ id, code: id, name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description })
         });
 
         if (res.ok) {

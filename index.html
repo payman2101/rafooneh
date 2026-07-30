@@ -180,6 +180,14 @@
             background: #ef4444 !important;
         }
 
+        .product-tag.old-price-tag {
+            background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+            font-weight: 800;
+            padding: 4px 9px;
+        }
+
         .product-img-wrapper {
             width: 100%;
             height: 180px;
@@ -1373,6 +1381,12 @@
                 const isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
                 const isLimitedStock = p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 5;
 
+                const price = Number(p.price || 0);
+                const newPrice = Number(p.newPrice || p.consumerPrice || 0);
+                const hasOldPriceDiscount = newPrice > price && price > 0;
+                const discountPct = hasOldPriceDiscount ? Math.round(((newPrice - price) / newPrice) * 100) : 0;
+                const savingsAmount = hasOldPriceDiscount ? (newPrice - price) : 0;
+
                 const card = document.createElement('div');
                 card.className = `product-card ${isOutOfStock ? 'out-of-stock-card' : ''}`;
                 card.onclick = (e) => {
@@ -1380,13 +1394,18 @@
                 };
 
                 let badgeText = p.badge;
+                let badgeClass = 'product-tag';
+
                 if (isOutOfStock) {
                     badgeText = 'ناموجود';
+                    badgeClass = 'product-tag out-of-stock-tag';
+                } else if (hasOldPriceDiscount) {
+                    badgeText = `خرید با قیمت قدیم (${discountPct.toLocaleString('fa-IR')}٪ سود)`;
+                    badgeClass = 'product-tag old-price-tag';
                 } else if (isLimitedStock) {
                     badgeText = `تعداد محدود (${p.stock.toLocaleString('fa-IR')} عدد)`;
+                    badgeClass = 'product-tag';
                 }
-
-                const badgeClass = isOutOfStock ? 'product-tag out-of-stock-tag' : 'product-tag';
 
                 card.innerHTML = `
                     ${badgeText ? `<div class="${badgeClass}">${badgeText}</div>` : ''}
@@ -1401,8 +1420,25 @@
                         <div class="product-desc" onclick="openProductDetailModal('${p.id}')" title="کلیک کنید تا مشخصات کامل را ببینید">${p.description || 'توضیحات محصول رافونه'}</div>
                         <div class="product-price-row">
                             <div>
-                                <div class="product-price">${p.price.toLocaleString('fa-IR')} <span>تومان</span></div>
-                                ${p.consumerPrice && p.consumerPrice > p.price ? `<div class="product-consumer-price">قیمت مصرف: ${p.consumerPrice.toLocaleString('fa-IR')} تومان</div>` : ''}
+                                ${hasOldPriceDiscount ? `
+                                    <div style="display:flex; align-items:center; gap:5px; margin-bottom:2px;">
+                                        <span style="font-size:0.75rem; text-decoration:line-through; color:#94a3b8; font-weight:bold;">
+                                            ${newPrice.toLocaleString('fa-IR')} تومان
+                                        </span>
+                                        <span style="font-size:0.65rem; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:1px 5px; border-radius:5px; font-weight:800;">
+                                            قیمت جدید
+                                        </span>
+                                    </div>
+                                    <div class="product-price" style="color:#15803d; font-weight:900;">
+                                        ${price.toLocaleString('fa-IR')} <span style="font-size:0.75rem;">تومان (قیمت قدیم)</span>
+                                    </div>
+                                    <div style="font-size:0.72rem; color:#166534; font-weight:bold; margin-top:2px;">
+                                        <i class="fa-solid fa-circle-check"></i> سود شما: ${savingsAmount.toLocaleString('fa-IR')} تومان
+                                    </div>
+                                ` : `
+                                    <div class="product-price">${price.toLocaleString('fa-IR')} <span>تومان</span></div>
+                                    ${p.consumerPrice && p.consumerPrice > price ? `<div class="product-consumer-price">قیمت مصرف: ${p.consumerPrice.toLocaleString('fa-IR')} تومان</div>` : ''}
+                                `}
                                 ${isOutOfStock ? `
                                     <div style="font-size: 0.75rem; margin-top: 3px; color: #ef4444; font-weight: 600;">
                                         ناموجود در انبار
@@ -1448,17 +1484,30 @@
             const isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
             const isLimitedStock = p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 5;
 
+            const price = Number(p.price || 0);
+            const newPrice = Number(p.newPrice || p.consumerPrice || 0);
+            const hasOldPriceDiscount = newPrice > price && price > 0;
+            const discountPct = hasOldPriceDiscount ? Math.round(((newPrice - price) / newPrice) * 100) : 0;
+            const savingsAmount = hasOldPriceDiscount ? (newPrice - price) : 0;
+
             const badgeEl = document.getElementById('detailModalBadge');
             let badgeText = p.badge;
+            let badgeClass = 'product-tag';
+
             if (isOutOfStock) {
                 badgeText = 'ناموجود';
+                badgeClass = 'product-tag out-of-stock-tag';
+            } else if (hasOldPriceDiscount) {
+                badgeText = `خرید با قیمت قدیم (${discountPct.toLocaleString('fa-IR')}٪ سود)`;
+                badgeClass = 'product-tag old-price-tag';
             } else if (isLimitedStock) {
                 badgeText = `تعداد محدود (${p.stock.toLocaleString('fa-IR')} عدد)`;
+                badgeClass = 'product-tag';
             }
 
             if (badgeText) {
                 badgeEl.innerText = badgeText;
-                badgeEl.className = isOutOfStock ? 'product-tag out-of-stock-tag' : 'product-tag';
+                badgeEl.className = badgeClass;
                 badgeEl.style.display = 'block';
             } else {
                 badgeEl.style.display = 'none';
@@ -1485,14 +1534,27 @@
                 }
             }
 
-            document.getElementById('detailModalPrice').innerHTML = `${p.price.toLocaleString('fa-IR')} <span style="font-size:0.8rem; font-weight:normal;">تومان</span>`;
-
-            const consEl = document.getElementById('detailModalConsumerPrice');
-            if (p.consumerPrice && p.consumerPrice > p.price) {
-                consEl.innerText = `قیمت روی جلد (مصرف کننده): ${p.consumerPrice.toLocaleString('fa-IR')} تومان`;
+            if (hasOldPriceDiscount) {
+                document.getElementById('detailModalPrice').innerHTML = `${price.toLocaleString('fa-IR')} <span style="font-size:0.8rem; font-weight:bold; color:#15803d;">تومان (قیمت قدیم انبار)</span>`;
+                const consEl = document.getElementById('detailModalConsumerPrice');
+                consEl.innerHTML = `
+                    <div style="margin-top:4px;">
+                        <div style="color:#94a3b8; text-decoration:line-through;">قیمت جدید بازار: ${newPrice.toLocaleString('fa-IR')} تومان</div>
+                        <div style="color:#15803d; font-weight:bold; font-size:0.82rem; background:#dcfce7; border:1px solid #86efac; padding:4px 8px; border-radius:6px; margin-top:4px; display:inline-block;">
+                            <i class="fa-solid fa-fire" style="color:#dc2626;"></i> سود شما از این خرید: ${savingsAmount.toLocaleString('fa-IR')} تومان (${discountPct.toLocaleString('fa-IR')}٪ تخفیف)
+                        </div>
+                    </div>
+                `;
                 consEl.style.display = 'block';
             } else {
-                consEl.style.display = 'none';
+                document.getElementById('detailModalPrice').innerHTML = `${price.toLocaleString('fa-IR')} <span style="font-size:0.8rem; font-weight:normal;">تومان</span>`;
+                const consEl = document.getElementById('detailModalConsumerPrice');
+                if (p.consumerPrice && p.consumerPrice > p.price) {
+                    consEl.innerText = `قیمت روی جلد (مصرف کننده): ${p.consumerPrice.toLocaleString('fa-IR')} تومان`;
+                    consEl.style.display = 'block';
+                } else {
+                    consEl.style.display = 'none';
+                }
             }
 
             renderModalCartControls(p.id);
