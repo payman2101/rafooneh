@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM | مدیریت سفارشات رافونه</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00897b;
+            --primary-dark: #00695c;
+            --primary-light: #e0f2f1;
+            --accent: #ff9800;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --warning: #d97706;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', Tahoma, sans-serif; }
+
+        body { background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .login-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 32px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+        .login-card h1 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+        }
+
+        .login-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; }
+        .form-control {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        .form-control:focus { border-color: var(--primary); }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+        .btn-danger { background: #fee2e2; color: var(--danger); }
+        .btn-block { width: 100%; justify-content: center; }
+
+        .app { display: none; min-height: 100vh; }
+
+        .topbar {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .topbar h1 { font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+
+        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            min-height: calc(100vh - 64px);
+        }
+
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .mobile-tabs { display: flex !important; }
+        }
+
+        .sidebar {
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            padding: 16px 12px;
+        }
+
+        .nav-item {
+            width: 100%;
+            text-align: right;
+            padding: 12px 14px;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item.active, .nav-item:hover {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .mobile-tabs {
+            display: none;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            padding: 8px 12px;
+            gap: 8px;
+        }
+
+        .mobile-tabs button {
+            white-space: nowrap;
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+        }
+
+        .mobile-tabs button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .main { padding: 20px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+        .stat-card .value { font-size: 1.6rem; font-weight: 800; color: var(--primary-dark); }
+        .stat-card .sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+        .panel {
+            background: var(--card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .panel-header h2 { font-size: 1rem; }
+
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .filters input, .filters select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 12px 14px; text-align: right; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; color: var(--muted); font-weight: 600; }
+        tr:hover td { background: #fafafa; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .badge-new { background: #dbeafe; color: #1d4ed8; }
+        .badge-confirmed { background: #e0f2fe; color: #0369a1; }
+        .badge-preparing { background: #fef3c7; color: #b45309; }
+        .badge-delivering { background: #ffedd5; color: #c2410c; }
+        .badge-delivered { background: #dcfce7; color: #15803d; }
+        .badge-cancelled { background: #fee2e2; color: #b91c1c; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .modal h3 { margin-bottom: 16px; color: var(--primary-dark); }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+            font-size: 0.88rem;
+        }
+
+        .items-list {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.85rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--muted);
+        }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .status-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .status-pill {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .status-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        textarea.form-control { min-height: 80px; resize: vertical; }
+    </style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+    <div class="login-card">
+        <h1><i class="fa-solid fa-chart-line"></i> CRM رافونه</h1>
+        <p>مدیریت سفارشات، مشتریان و پیگیری تحویل</p>
+        <div class="error-msg" id="loginError"></div>
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="password">رمز عبور مدیریت</label>
+                <input type="password" id="password" class="form-control" placeholder="رمز عبور (پیش‌فرض: rafooneh1405)" required>
+            </div>
+            <div class="form-group" id="serverUrlGroup" style="display:none;">
+                <label for="apiBaseUrl">آدرس سرور بک‌اند (API Server)</label>
+                <input type="url" id="apiBaseUrl" class="form-control" placeholder="https://your-app.run.app">
+                <small style="color:var(--muted); font-size:0.75rem; display:block; margin-top:4px;">چون این صفحه روی GitHub Pages استاتیک اجرا می‌شود، آدرس سرور آنلاین را وارد کنید.</small>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+                <i class="fa-solid fa-right-to-bracket"></i> ورود به پنل
+            </button>
+        </form>
+        <p style="margin-top:16px; font-size:0.75rem; color:var(--muted); text-align:center;">
+            <a href="/" style="color:var(--primary-dark);">← بازگشت به فروشگاه</a>
+        </p>
+    </div>
+</div>
+
+<div class="app" id="app">
+    <header class="topbar">
+        <h1><i class="fa-solid fa-store"></i> پنل CRM توزیع رافونه</h1>
+        <div class="topbar-actions">
+            <a href="/" class="btn btn-secondary" style="text-decoration:none;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> فروشگاه
+            </a>
+            <button class="btn btn-secondary" onclick="refreshAll()">
+                <i class="fa-solid fa-rotate"></i> بروزرسانی
+            </button>
+            <button class="btn btn-danger" onclick="handleLogout()">
+                <i class="fa-solid fa-right-from-bracket"></i> خروج
+            </button>
+        </div>
+    </header>
+
+    <div class="mobile-tabs" id="mobileTabs">
+        <button class="active" onclick="showSection('dashboard', this)">داشبورد</button>
+        <button onclick="showSection('orders', this)">سفارشات</button>
+        <button onclick="showSection('profit', this)">تحلیل سود</button>
+        <button onclick="showSection('alerts', this)">هشدارها <span class="badge badge-cancelled" id="alertBadgeMobile" style="display:none; padding:2px 6px; font-size:0.7rem;">0</span></button>
+        <button onclick="showSection('customers', this)">مشتریان</button>
+    </div>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <button class="nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)">
+                <i class="fa-solid fa-gauge-high"></i> داشبورد
+            </button>
+            <button class="nav-item" data-section="orders" onclick="showSection('orders', this)">
+                <i class="fa-solid fa-box"></i> سفارشات
+            </button>
+            <button class="nav-item" data-section="profit" onclick="showSection('profit', this)">
+                <i class="fa-solid fa-chart-pie"></i> محاسبه سود
+            </button>
+            <button class="nav-item" data-section="alerts" onclick="showSection('alerts', this)">
+                <i class="fa-solid fa-triangle-exclamation"></i> هشدارها
+                <span class="badge badge-cancelled" id="alertBadgeSidebar" style="display:none; margin-right:auto; font-size:0.7rem;">0</span>
+            </button>
+            <button class="nav-item" data-section="customers" onclick="showSection('customers', this)">
+                <i class="fa-solid fa-users"></i> مشتریان
+            </button>
+        </aside>
+
+        <main class="main">
+            <!-- Dashboard -->
+            <section class="section active" id="section-dashboard">
+                <div id="dashboardAlertBanner"></div>
+                <div class="stats-grid" id="statsGrid"></div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>آخرین سفارشات</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد</th>
+                                    <th>مشتری</th>
+                                    <th>فروش</th>
+                                    <th>سود تخمینی</th>
+                                    <th>وضعیت</th>
+                                    <th>زمان</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrdersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Profit Analysis -->
+            <section class="section" id="section-profit">
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-chart-line"></i> محاسبه سود و گزارش مالی CRM</h2>
+                        <div class="filters">
+                            <select id="profitTimeframe" onchange="loadProfitStats()">
+                                <option value="all">کل دوره</option>
+                                <option value="today">امروز</option>
+                                <option value="7days">۷ روز گذشته</option>
+                                <option value="30days">۳۰ روز گذشته</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="padding:18px;">
+                        <div class="stats-grid" id="profitStatsGrid"></div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header">
+                        <h2>سودآوری به تفکیک محصولات</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد محصول</th>
+                                    <th>نام محصول</th>
+                                    <th>تعداد فروخته‌شده</th>
+                                    <th>مجموع فروش</th>
+                                    <th>مجموع قیمت خرید</th>
+                                    <th>سود کل</th>
+                                    <th>حاشیه سود٪</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productProfitBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>سود به تفکیک سفارشات</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد سفارش</th>
+                                    <th>مشتری</th>
+                                    <th>مبلغ فروش</th>
+                                    <th>هزینه خرید</th>
+                                    <th>سود سفارش</th>
+                                    <th>حاشیه سود٪</th>
+                                    <th>تاریخ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderProfitBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alerts -->
+            <section class="section" id="section-alerts">
+                <div class="panel" style="margin-bottom:20px; border-right: 4px solid var(--warning);">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);"></i> هشدار موجودی کالا (کمتر از ۵ عدد)</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد کالا</th>
+                                    <th>نام کالا</th>
+                                    <th>دسته</th>
+                                    <th>قیمت تحویل</th>
+                                    <th>قیمت خرید</th>
+                                    <th>موجودی فعلی</th>
+                                    <th>وضعیت</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowStockAlertsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel" style="border-right: 4px solid var(--danger);">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-clock-rotate-left" style="color:var(--danger);"></i> هشدار تأخیر تحویل سفارشات (بیش از یک هفته)</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد سفارش</th>
+                                    <th>نام مشتری</th>
+                                    <th>شماره تماس</th>
+                                    <th>مبلغ سفارش</th>
+                                    <th>تاریخ ثبت</th>
+                                    <th>مدت زمان گذشته</th>
+                                    <th>وضعیت فعلی</th>
+                                    <th>عمل</th>
+                                </tr>
+                            </thead>
+                            <tbody id="delayedOrdersAlertsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Orders -->
+            <section class="section" id="section-orders">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>لیست سفارشات</h2>
+                        <div class="filters">
+                            <select id="orderStatusFilter" onchange="loadOrders()">
+                                <option value="all">همه وضعیت‌ها</option>
+                            </select>
+                            <input type="text" id="orderSearch" placeholder="جستجو نام / تلفن / کد..." oninput="debounceOrders()">
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد سفارش</th>
+                                    <th>مشتری</th>
+                                    <th>تلفن</th>
+                                    <th>مبلغ</th>
+                                    <th>پرداخت</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Customers -->
+            <section class="section" id="section-customers">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>لیست مشتریان</h2>
+                        <div class="filters">
+                            <input type="text" id="customerSearch" placeholder="جستجو نام / تلفن / آدرس..." oninput="debounceCustomers()">
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>نام</th>
+                                    <th>تلفن</th>
+                                    <th>تعداد سفارش</th>
+                                    <th>مجموع خرید</th>
+                                    <th>آخرین سفارش</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal-overlay" id="orderModal">
+    <div class="modal">
+        <h3><i class="fa-solid fa-receipt"></i> جزئیات سفارش</h3>
+        <div id="orderDetailContent"></div>
+        <div class="form-group" style="margin-top:16px;">
+            <label>تغییر وضعیت</label>
+            <div class="status-pills" id="statusPills"></div>
+        </div>
+        <div class="form-group">
+            <label for="adminNotes">یادداشت داخلی</label>
+            <textarea id="adminNotes" class="form-control" placeholder="یادداشت برای پیگیری داخلی..."></textarea>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:12px;">
+            <button class="btn btn-primary" onclick="saveOrderChanges()">
+                <i class="fa-solid fa-floppy-disk"></i> ذخیره
+            </button>
+            <a id="whatsappOrderLink" href="#" target="_blank" class="btn btn-secondary" style="text-decoration:none;">
+                <i class="fa-brands fa-whatsapp"></i> واتساپ
+            </a>
+            <button class="btn btn-secondary" onclick="closeOrderModal()">بستن</button>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Detail Modal -->
+<div class="modal-overlay" id="customerModal">
+    <div class="modal">
+        <h3><i class="fa-solid fa-user"></i> پروفایل مشتری</h3>
+        <div id="customerDetailContent"></div>
+        <div class="form-group" style="margin-top:16px;">
+            <label for="customerNotes">یادداشت مشتری</label>
+            <textarea id="customerNotes" class="form-control"></textarea>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:12px;">
+            <button class="btn btn-primary" onclick="saveCustomerNotes()">
+                <i class="fa-solid fa-floppy-disk"></i> ذخیره یادداشت
+            </button>
+            <button class="btn btn-secondary" onclick="closeCustomerModal()">بستن</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let token = localStorage.getItem('crm_token') || '';
+    let apiBaseUrl = localStorage.getItem('crm_api_base_url') || '';
+    let currentOrderId = null;
+    let currentCustomerId = null;
+    let orderStatuses = [];
+    let searchTimeout = null;
+
+    // Check if hosted on GitHub Pages or custom domain static host
+    if (window.location.hostname.includes('github.io')) {
+        document.getElementById('serverUrlGroup').style.display = 'block';
+        if (apiBaseUrl) {
+            document.getElementById('apiBaseUrl').value = apiBaseUrl;
+        }
+    }
+
+    const paymentLabels = {
+        cod: 'پرداخت در محل',
+        whatsapp: 'کارت به کارت',
+        online: 'پرداخت آنلاین'
+    };
+
+    function api(path, options = {}) {
+        const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const baseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/$/, '') : '';
+        return fetch(baseUrl + path, { ...options, headers });
+    }
+
+    function formatPrice(n) {
+        return Number(n || 0).toLocaleString('fa-IR') + ' تومان';
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        return d.toLocaleDateString('fa-IR') + ' ' + d.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function statusBadge(status, label) {
+        return `<span class="badge badge-${status}">${label || status}</span>`;
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const password = document.getElementById('password').value;
+        const customUrlInput = document.getElementById('apiBaseUrl')?.value?.trim();
+        if (customUrlInput) {
+            apiBaseUrl = customUrlInput;
+            localStorage.setItem('crm_api_base_url', apiBaseUrl);
+        }
+
+        const errEl = document.getElementById('loginError');
+        errEl.style.display = 'none';
+
+        try {
+            const res = await api('/api/admin/login', {
+                method: 'POST',
+                body: JSON.stringify({ password })
+            });
+
+            if (res.status === 404) {
+                errEl.innerHTML = 'خطای 404: سرویس بک‌اند روی GitHub Pages وجود ندارد.<br>GitHub Pages فقط فایل‌های استاتیک را میزبانی می‌کند و کد سرور Node.js را اجرا نمی‌کند.<br>برای ورود، لطفا پنل را روی آدرس سرور اصلی (Node.js / Cloud Run) باز کنید یا آدرس سرور بک‌اند را بالا وارد کنید.';
+                errEl.style.display = 'block';
+                document.getElementById('serverUrlGroup').style.display = 'block';
+                return;
+            }
+
+            const data = await res.json();
+
+            if (!data.success) {
+                errEl.textContent = data.message || 'خطا در ورود';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            token = data.token;
+            localStorage.setItem('crm_token', token);
+            showApp();
+        } catch (err) {
+            errEl.innerHTML = 'خطا در ارتباط با سرور: ' + err.message + '<br>اگر از GitHub Pages استفاده می‌کنید، باید آدرس سرور اجرا شده Node.js را در کادر آدرس سرور قرار دهید.';
+            errEl.style.display = 'block';
+            document.getElementById('serverUrlGroup').style.display = 'block';
+        }
+    }
+
+    function handleLogout() {
+        if (token) {
+            api('/api/admin/logout', { method: 'POST' }).catch(() => {});
+        }
+        token = '';
+        localStorage.removeItem('crm_token');
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+    }
+
+    async function showApp() {
+        const test = await api('/api/admin/stats');
+        if (!test.ok) {
+            handleLogout();
+            return;
+        }
+
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        await refreshAll();
+    }
+
+    function showSection(name, btn) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('section-' + name).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.nav-item[data-section="' + name + '"]').forEach(n => n.classList.add('active'));
+        if (btn && btn.closest('.mobile-tabs')) {
+            document.querySelectorAll('.mobile-tabs button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    }
+
+    async function refreshAll() {
+        await Promise.all([loadStats(), loadOrders(), loadCustomers(), loadProfitStats(), loadAlerts()]);
+    }
+
+    async function loadStats() {
+        const res = await api('/api/admin/stats');
+        if (!res.ok) return;
+        const { stats } = await res.json();
+
+        // Banner for alerts on dashboard
+        const alertBanner = document.getElementById('dashboardAlertBanner');
+        if (stats.alerts && stats.alerts.totalAlertsCount > 0) {
+            alertBanner.innerHTML = `
+                <div style="background:#fff3cd; border:1px solid #ffeba2; color:#856404; padding:14px 18px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <strong><i class="fa-solid fa-bell"></i> هشدارهای نیازمند توجه:</strong>
+                        ${stats.alerts.lowStockCount > 0 ? `<span style="margin-right:10px;">• ${stats.alerts.lowStockCount.toLocaleString('fa-IR')} کالا با موجودی کم (کمتر از ۵ عدد)</span>` : ''}
+                        ${stats.alerts.delayedOrdersCount > 0 ? `<span style="margin-right:10px;">• ${stats.alerts.delayedOrdersCount.toLocaleString('fa-IR')} سفارش با تأخیر بیش از یک هفته در تحویل</span>` : ''}
+                    </div>
+                    <button class="btn btn-primary" onclick="showSection('alerts')" style="font-size:0.8rem; padding:6px 12px;">مشاهده هشدارها</button>
+                </div>
+            `;
+        } else {
+            alertBanner.innerHTML = '';
+        }
+
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card"><div class="label">سفارشات امروز</div><div class="value">${stats.todayOrders.toLocaleString('fa-IR')}</div></div>
+            <div class="stat-card"><div class="label">درآمد امروز</div><div class="value">${stats.revenueToday.toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
+            <div class="stat-card"><div class="label">سود امروز</div><div class="value" style="color:var(--success);">${(stats.profitToday || 0).toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
+            <div class="stat-card"><div class="label">سفارشات فعال</div><div class="value">${stats.activeOrders.toLocaleString('fa-IR')}</div><div class="sub">در انتظار تحویل</div></div>
+            <div class="stat-card"><div class="label">درآمد کل تحویل‌شده</div><div class="value">${stats.revenueTotal.toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
+            <div class="stat-card"><div class="label">سود کل تحویل‌شده</div><div class="value" style="color:var(--success);">${(stats.profitTotal || 0).toLocaleString('fa-IR')}</div><div class="sub">حاشیه سود: ${(stats.profitMarginTotal || 0).toLocaleString('fa-IR')}٪</div></div>
+        `;
+
+        const tbody = document.getElementById('recentOrdersBody');
+        if (!stats.recentOrders.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">هنوز سفارشی ثبت نشده</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = stats.recentOrders.map(o => `
+            <tr>
+                <td>${o.id.split('-')[1] || o.id}</td>
+                <td>${o.customerName}</td>
+                <td>${formatPrice(o.totalAmount)}</td>
+                <td style="color:var(--success); font-weight:bold;">${formatPrice(o.totalProfit || 0)}</td>
+                <td>${statusBadge(o.status, getStatusLabel(o.status))}</td>
+                <td>${formatDate(o.createdAt)}</td>
+                <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">مشاهده</button></td>
+            </tr>
+        `).join('');
+    }
+
+    async function loadProfitStats() {
+        const timeframe = document.getElementById('profitTimeframe')?.value || 'all';
+        const res = await api(`/api/admin/profit?timeframe=${timeframe}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const pStats = data.profitStats || {};
+
+        document.getElementById('profitStatsGrid').innerHTML = `
+            <div class="stat-card">
+                <div class="label">کل فروش (درآمد)</div>
+                <div class="value">${(pStats.totalRevenue || 0).toLocaleString('fa-IR')}</div>
+                <div class="sub">تومان</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">کل هزینه خرید کالا</div>
+                <div class="value" style="color:var(--warning);">${(pStats.totalCost || 0).toLocaleString('fa-IR')}</div>
+                <div class="sub">تومان</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">سود خالص کل</div>
+                <div class="value" style="color:var(--success);">${(pStats.totalProfit || 0).toLocaleString('fa-IR')}</div>
+                <div class="sub">تومان</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">حاشیه سود کل</div>
+                <div class="value" style="color:var(--primary-dark);">${(pStats.profitMargin || 0).toLocaleString('fa-IR')}٪</div>
+                <div class="sub">${pStats.ordersCount || 0} سفارش بررسی‌شده</div>
+            </div>
+        `;
+
+        // Product profitability table
+        const prodBody = document.getElementById('productProfitBody');
+        if (!pStats.products || !pStats.products.length) {
+            prodBody.innerHTML = '<tr><td colspan="7" class="empty-state">داده‌ای یافت نشد</td></tr>';
+        } else {
+            prodBody.innerHTML = pStats.products.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.unitsSold.toLocaleString('fa-IR')} عدد</td>
+                    <td>${formatPrice(p.totalRevenue)}</td>
+                    <td>${formatPrice(p.totalCost)}</td>
+                    <td style="color:var(--success); font-weight:bold;">${formatPrice(p.totalProfit)}</td>
+                    <td><span class="badge" style="background:#e0f2f1; color:#00695c;">${p.profitMargin.toLocaleString('fa-IR')}٪</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Order profitability table
+        const ordBody = document.getElementById('orderProfitBody');
+        if (!pStats.orders || !pStats.orders.length) {
+            ordBody.innerHTML = '<tr><td colspan="7" class="empty-state">سفارشی ثبت نشده</td></tr>';
+        } else {
+            ordBody.innerHTML = pStats.orders.map(o => `
+                <tr>
+                    <td>${o.id.split('-')[1] || o.id}</td>
+                    <td>${o.customerName}</td>
+                    <td>${formatPrice(o.totalAmount)}</td>
+                    <td>${formatPrice(o.totalCost)}</td>
+                    <td style="color:var(--success); font-weight:bold;">${formatPrice(o.totalProfit)}</td>
+                    <td><span class="badge" style="background:#e0f2f1; color:#00695c;">${(o.profitMargin || 0).toLocaleString('fa-IR')}٪</span></td>
+                    <td>${formatDate(o.createdAt)}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    async function loadAlerts() {
+        const res = await api('/api/admin/alerts');
+        if (!res.ok) return;
+        const data = await res.json();
+        const alerts = data.alerts || {};
+
+        // Badges
+        const totalAlerts = alerts.totalAlertsCount || 0;
+        const sbBadge = document.getElementById('alertBadgeSidebar');
+        const mbBadge = document.getElementById('alertBadgeMobile');
+
+        if (totalAlerts > 0) {
+            if (sbBadge) { sbBadge.textContent = totalAlerts.toLocaleString('fa-IR'); sbBadge.style.display = 'inline-block'; }
+            if (mbBadge) { mbBadge.textContent = totalAlerts.toLocaleString('fa-IR'); mbBadge.style.display = 'inline-block'; }
+        } else {
+            if (sbBadge) sbBadge.style.display = 'none';
+            if (mbBadge) mbBadge.style.display = 'none';
+        }
+
+        // Low stock products table
+        const lowStockBody = document.getElementById('lowStockAlertsBody');
+        if (!alerts.lowStockProducts || !alerts.lowStockProducts.length) {
+            lowStockBody.innerHTML = '<tr><td colspan="7" class="empty-state">هیچ کالایی کمتر از ۵ عدد موجودی ندارد ✅</td></tr>';
+        } else {
+            lowStockBody.innerHTML = alerts.lowStockProducts.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td><strong>${p.name}</strong></td>
+                    <td>${p.categoryName || '—'}</td>
+                    <td>${formatPrice(p.price)}</td>
+                    <td>${formatPrice(p.buyPrice)}</td>
+                    <td style="color:var(--danger); font-weight:bold; font-size:1.05rem;">${p.stock.toLocaleString('fa-IR')} عدد</td>
+                    <td><span class="badge badge-cancelled">${p.badge}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Delayed orders table
+        const delayedBody = document.getElementById('delayedOrdersAlertsBody');
+        if (!alerts.delayedOrders || !alerts.delayedOrders.length) {
+            delayedBody.innerHTML = '<tr><td colspan="8" class="empty-state">هیچ سفارش بدون تحویلی بیش از ۱ هفته تأخیر ندارد ✅</td></tr>';
+        } else {
+            delayedBody.innerHTML = alerts.delayedOrders.map(o => `
+                <tr>
+                    <td>${o.id.split('-')[1] || o.id}</td>
+                    <td>${o.customerName}</td>
+                    <td dir="ltr">${o.phone}</td>
+                    <td>${formatPrice(o.totalAmount)}</td>
+                    <td>${formatDate(o.createdAt)}</td>
+                    <td><span class="badge badge-cancelled"><i class="fa-solid fa-hourglass-half"></i> ${o.delayDays.toLocaleString('fa-IR')} روز تأخیر</span></td>
+                    <td>${statusBadge(o.status, getStatusLabel(o.status))}</td>
+                    <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">مدیریت سفارش</button></td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    function getStatusLabel(status) {
+        const found = orderStatuses.find(s => s.id === status);
+        const labels = { new:'جدید', confirmed:'تأیید', preparing:'آماده‌سازی', delivering:'ارسال', delivered:'تحویل', cancelled:'لغو' };
+        return found?.label || labels[status] || status;
+    }
+
+    async function loadOrders() {
+        const status = document.getElementById('orderStatusFilter').value;
+        const search = document.getElementById('orderSearch').value;
+        const res = await api(`/api/admin/orders?status=${status}&search=${encodeURIComponent(search)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        orderStatuses = data.statuses || [];
+
+        const filterEl = document.getElementById('orderStatusFilter');
+        if (filterEl.options.length <= 1) {
+            orderStatuses.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.label;
+                filterEl.appendChild(opt);
+            });
+        }
+
+        const tbody = document.getElementById('ordersBody');
+        if (!data.orders.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">سفارشی یافت نشد</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.orders.map(o => `
+            <tr>
+                <td>${o.id.split('-')[1] || o.id}</td>
+                <td>${o.customerName}</td>
+                <td dir="ltr">${o.phone}</td>
+                <td>${formatPrice(o.totalAmount)}</td>
+                <td>${paymentLabels[o.paymentMethod] || o.paymentMethod}</td>
+                <td>${statusBadge(o.status, o.statusLabel)}</td>
+                <td>${formatDate(o.createdAt)}</td>
+                <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">جزئیات</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function debounceOrders() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadOrders, 300);
+    }
+
+    async function loadCustomers() {
+        const search = document.getElementById('customerSearch').value;
+        const res = await api(`/api/admin/customers?search=${encodeURIComponent(search)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const tbody = document.getElementById('customersBody');
+        if (!data.customers.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">مشتری یافت نشد</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.customers.map(c => `
+            <tr>
+                <td>${c.name}</td>
+                <td dir="ltr">${c.phone}</td>
+                <td>${(c.totalOrders || 0).toLocaleString('fa-IR')}</td>
+                <td>${formatPrice(c.totalSpent)}</td>
+                <td>${formatDate(c.lastOrderAt)}</td>
+                <td><button class="btn btn-secondary" onclick="openCustomer('${c.id}')">پروفایل</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function debounceCustomers() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadCustomers, 300);
+    }
+
+    async function openOrder(id) {
+        currentOrderId = id;
+        const res = await api(`/api/admin/orders/${id}`);
+        if (!res.ok) return;
+        const { order, statuses } = await res.json();
+        orderStatuses = statuses;
+
+        let itemsHtml = order.items.map(i => {
+            const qty = i.qty || 1;
+            const rev = i.total || (i.price * qty);
+            const buyPrice = i.buyPrice || Math.round(i.price * 0.7);
+            const cost = buyPrice * qty;
+            const profit = rev - cost;
+            return `
+                <div class="item-row" style="flex-direction:column; gap:4px; padding:8px 0; border-bottom:1px solid #e2e8f0;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                        <span>${i.name} × ${qty}</span>
+                        <span>فروش: ${formatPrice(rev)}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted);">
+                        <span>قیمت خرید واحد: ${formatPrice(buyPrice)} (کل هزینه: ${formatPrice(cost)})</span>
+                        <span style="color:var(--success); font-weight:bold;">سود آیتم: ${formatPrice(profit)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('orderDetailContent').innerHTML = `
+            <div class="detail-row"><span>کد سفارش</span><strong>${order.id}</strong></div>
+            <div class="detail-row"><span>مشتری</span><strong>${order.customerName}</strong></div>
+            <div class="detail-row"><span>تلفن</span><strong dir="ltr">${order.phone}</strong></div>
+            <div class="detail-row"><span>آدرس</span><strong>${order.address}</strong></div>
+            ${order.note ? `<div class="detail-row"><span>توضیحات</span><strong>${order.note}</strong></div>` : ''}
+            <div class="detail-row"><span>روش پرداخت</span><strong>${paymentLabels[order.paymentMethod] || order.paymentMethod}</strong></div>
+            <div class="detail-row"><span>مبلغ کل فروش</span><strong>${formatPrice(order.totalAmount)}</strong></div>
+            <div class="detail-row"><span>کل هزینه خرید</span><strong style="color:var(--warning);">${formatPrice(order.totalCost || 0)}</strong></div>
+            <div class="detail-row"><span>سود خالص سفارش</span><strong style="color:var(--success); font-size:1rem;">${formatPrice(order.totalProfit || 0)} (${(order.profitMargin || 0).toLocaleString('fa-IR')}٪)</strong></div>
+            <h4 style="margin:16px 0 8px; font-size:0.9rem;">ریز اقلام و محاسبه سود</h4>
+            <div class="items-list">${itemsHtml}</div>
+        `;
+
+        document.getElementById('adminNotes').value = order.adminNotes || '';
+
+        const pills = document.getElementById('statusPills');
+        pills.innerHTML = statuses.map(s =>
+            `<button type="button" class="status-pill ${order.status === s.id ? 'active' : ''}" data-status="${s.id}" onclick="selectStatus('${s.id}')">${s.label}</button>`
+        ).join('');
+
+        const waMsg = encodeURIComponent(`سلام ${order.customerName}،\nسفارش شما (${order.id}) در حال پیگیری است.\nمبلغ: ${order.totalAmount.toLocaleString('fa-IR')} تومان`);
+        document.getElementById('whatsappOrderLink').href = `https://wa.me/98${order.phone.replace(/^0/, '')}?text=${waMsg}`;
+
+        document.getElementById('orderModal').style.display = 'flex';
+    }
+
+    function selectStatus(status) {
+        document.querySelectorAll('.status-pill').forEach(p => {
+            p.classList.toggle('active', p.dataset.status === status);
+        });
+    }
+
+    async function saveOrderChanges() {
+        const activePill = document.querySelector('.status-pill.active');
+        const status = activePill?.dataset.status;
+        const adminNotes = document.getElementById('adminNotes').value;
+
+        const res = await api(`/api/admin/orders/${currentOrderId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, adminNotes })
+        });
+
+        if (res.ok) {
+            closeOrderModal();
+            await refreshAll();
+        }
+    }
+
+    function closeOrderModal() {
+        document.getElementById('orderModal').style.display = 'none';
+        currentOrderId = null;
+    }
+
+    async function openCustomer(id) {
+        currentCustomerId = id;
+        const res = await api(`/api/admin/customers/${id}`);
+        if (!res.ok) return;
+        const { customer } = await res.json();
+
+        let ordersHtml = customer.orders.length
+            ? customer.orders.map(o =>
+                `<div class="item-row"><span>${formatDate(o.createdAt)} — ${formatPrice(o.totalAmount)}</span>${statusBadge(o.status, o.statusLabel)}</div>`
+              ).join('')
+            : '<p style="color:var(--muted); font-size:0.85rem;">بدون سفارش</p>';
+
+        document.getElementById('customerDetailContent').innerHTML = `
+            <div class="detail-row"><span>نام</span><strong>${customer.name}</strong></div>
+            <div class="detail-row"><span>تلفن</span><strong dir="ltr">${customer.phone}</strong></div>
+            <div class="detail-row"><span>آدرس</span><strong>${customer.address || '—'}</strong></div>
+            <div class="detail-row"><span>تعداد سفارش</span><strong>${customer.totalOrders}</strong></div>
+            <div class="detail-row"><span>مجموع خرید</span><strong>${formatPrice(customer.totalSpent)}</strong></div>
+            <h4 style="margin:16px 0 8px; font-size:0.9rem;">تاریخچه سفارشات</h4>
+            <div class="items-list">${ordersHtml}</div>
+        `;
+
+        document.getElementById('customerNotes').value = customer.notes || '';
+        document.getElementById('customerModal').style.display = 'flex';
+    }
+
+    async function saveCustomerNotes() {
+        const notes = document.getElementById('customerNotes').value;
+        const res = await api(`/api/admin/customers/${currentCustomerId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ notes })
+        });
+        if (res.ok) {
+            closeCustomerModal();
+            await loadCustomers();
+        }
+    }
+
+    function closeCustomerModal() {
+        document.getElementById('customerModal').style.display = 'none';
+        currentCustomerId = null;
+    }
+
+    document.getElementById('orderModal').addEventListener('click', e => {
+        if (e.target.id === 'orderModal') closeOrderModal();
+    });
+    document.getElementById('customerModal').addEventListener('click', e => {
+        if (e.target.id === 'customerModal') closeCustomerModal();
+    });
+
+    if (token) {
+        showApp();
+    }
+
+    setInterval(() => {
+        if (token && document.getElementById('app').style.display !== 'none') {
+            refreshAll();
+        }
+    }, 15000);
+</script>
+</body>
+</html>

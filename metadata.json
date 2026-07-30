@@ -1,0 +1,8 @@
+{
+  "name": "فروشگاه آنلاین شوینده‌های رافونه",
+  "description": "توزیع مستقیم محصولات بهداشتی رافونه و لوازم نظافت درب منزل با سفارش آنلاین از طریق واتساپ",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
