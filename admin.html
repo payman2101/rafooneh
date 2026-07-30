@@ -335,8 +335,13 @@
             </div>
             <div class="form-group" id="serverUrlGroup" style="display:none;">
                 <label for="apiBaseUrl">آدرس سرور بک‌اند (API Server)</label>
-                <input type="url" id="apiBaseUrl" class="form-control" placeholder="https://your-app.run.app">
-                <small style="color:var(--muted); font-size:0.75rem; display:block; margin-top:4px;">چون این صفحه روی GitHub Pages استاتیک اجرا می‌شود، آدرس سرور آنلاین را وارد کنید.</small>
+                <input type="text" id="apiBaseUrl" class="form-control" placeholder="https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:8px;">
+                    <small style="color:var(--muted); font-size:0.75rem;">آدرس کامل سرور بک‌اند آنلاین Node.js را وارد کنید.</small>
+                    <button type="button" class="btn btn-secondary" style="padding:3px 8px; font-size:0.75rem; white-space:nowrap;" onclick="resetDefaultServerUrl()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> درج آدرس کامل پیش‌فرض
+                    </button>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary btn-block">
                 <i class="fa-solid fa-right-to-bracket"></i> ورود به پنل
@@ -951,15 +956,23 @@
     let orderStatuses = [];
     let searchTimeout = null;
 
-    // Check if hosted on GitHub Pages or custom domain static host
-    if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+    const DEFAULT_SERVER_URL = 'https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app';
+
+    function resetDefaultServerUrl() {
+        const input = document.getElementById('apiBaseUrl');
+        if (input) input.value = DEFAULT_SERVER_URL;
+        apiBaseUrl = DEFAULT_SERVER_URL;
+        localStorage.setItem('crm_api_base_url', DEFAULT_SERVER_URL);
+    }
+
+    // Show server URL field if not directly hosted on Cloud Run app domain
+    const isDirectBackend = window.location.hostname.includes('run.app') || window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1';
+    if (!isDirectBackend) {
         document.getElementById('serverUrlGroup').style.display = 'block';
-        if (apiBaseUrl) {
+        if (apiBaseUrl && apiBaseUrl.startsWith('https://ais-pre-') && apiBaseUrl.includes('run.app')) {
             document.getElementById('apiBaseUrl').value = apiBaseUrl;
         } else {
-            const defaultServer = 'https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app';
-            document.getElementById('apiBaseUrl').value = defaultServer;
-            apiBaseUrl = defaultServer;
+            resetDefaultServerUrl();
         }
     }
 
@@ -998,11 +1011,13 @@
         const password = document.getElementById('password').value;
         let customUrlInput = document.getElementById('apiBaseUrl')?.value?.trim();
         if (customUrlInput) {
-            if (!/^https?:\/\//i.test(customUrlInput)) {
+            if (customUrlInput.includes('zgpti6-425643246794.europe-west2.run.app') && !customUrlInput.startsWith('https://ais-pre-')) {
+                customUrlInput = DEFAULT_SERVER_URL;
+            } else if (!/^https?:\/\//i.test(customUrlInput)) {
                 customUrlInput = 'https://' + customUrlInput;
-                if (document.getElementById('apiBaseUrl')) {
-                    document.getElementById('apiBaseUrl').value = customUrlInput;
-                }
+            }
+            if (document.getElementById('apiBaseUrl')) {
+                document.getElementById('apiBaseUrl').value = customUrlInput;
             }
             apiBaseUrl = customUrlInput;
             localStorage.setItem('crm_api_base_url', apiBaseUrl);
