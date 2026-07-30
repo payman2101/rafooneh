@@ -952,10 +952,14 @@
     let searchTimeout = null;
 
     // Check if hosted on GitHub Pages or custom domain static host
-    if (window.location.hostname.includes('github.io')) {
+    if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
         document.getElementById('serverUrlGroup').style.display = 'block';
         if (apiBaseUrl) {
             document.getElementById('apiBaseUrl').value = apiBaseUrl;
+        } else {
+            const defaultServer = 'https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app';
+            document.getElementById('apiBaseUrl').value = defaultServer;
+            apiBaseUrl = defaultServer;
         }
     }
 
@@ -968,7 +972,10 @@
     function api(path, options = {}) {
         const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const baseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/$/, '') : '';
+        let baseUrl = apiBaseUrl ? apiBaseUrl.trim().replace(/\/$/, '') : '';
+        if (baseUrl && !/^https?:\/\//i.test(baseUrl)) {
+            baseUrl = 'https://' + baseUrl;
+        }
         return fetch(baseUrl + path, { ...options, headers });
     }
 
@@ -989,8 +996,14 @@
     async function handleLogin(e) {
         e.preventDefault();
         const password = document.getElementById('password').value;
-        const customUrlInput = document.getElementById('apiBaseUrl')?.value?.trim();
+        let customUrlInput = document.getElementById('apiBaseUrl')?.value?.trim();
         if (customUrlInput) {
+            if (!/^https?:\/\//i.test(customUrlInput)) {
+                customUrlInput = 'https://' + customUrlInput;
+                if (document.getElementById('apiBaseUrl')) {
+                    document.getElementById('apiBaseUrl').value = customUrlInput;
+                }
+            }
             apiBaseUrl = customUrlInput;
             localStorage.setItem('crm_api_base_url', apiBaseUrl);
         }
