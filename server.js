@@ -547,6 +547,25 @@ app.post('/api/orders', (req, res) => {
   }
 });
 
+// Public API: Track/Lookup orders by phone number or order ID for invoice generation
+app.get('/api/orders/track', (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query || String(query).trim().length < 3) {
+      return res.status(400).json({ success: false, message: 'لطفاً شماره تماس یا کد سفارش معتبر وارد کنید' });
+    }
+    const q = String(query).trim();
+    const allOrders = listOrders({ search: q });
+    const formatted = allOrders.map(o => ({
+      ...o,
+      statusLabel: getStatusLabel(o.status)
+    }));
+    res.json({ success: true, count: formatted.length, orders: formatted });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در پیگیری سفارش' });
+  }
+});
+
 // CRM: Admin authentication
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body || {};
