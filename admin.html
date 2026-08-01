@@ -593,17 +593,7 @@
         <form onsubmit="handleLogin(event)">
             <div class="form-group">
                 <label for="password">رمز عبور مدیریت</label>
-                <input type="password" id="password" class="form-control" placeholder="رمز عبور (پیش‌فرض: rafooneh1405)" required>
-            </div>
-            <div class="form-group" id="serverUrlGroup" style="display:none;">
-                <label for="apiBaseUrl">آدرس سرور بک‌اند (API Server)</label>
-                <input type="text" id="apiBaseUrl" class="form-control" placeholder="https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:8px;">
-                    <small style="color:var(--muted); font-size:0.75rem;">آدرس کامل سرور بک‌اند آنلاین Node.js را وارد کنید.</small>
-                    <button type="button" class="btn btn-secondary" style="padding:3px 8px; font-size:0.75rem; white-space:nowrap;" onclick="resetDefaultServerUrl()">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> درج آدرس کامل پیش‌فرض
-                    </button>
-                </div>
+                <input type="password" id="password" class="form-control" required>
             </div>
             <button type="submit" class="btn btn-primary btn-block">
                 <i class="fa-solid fa-right-to-bracket"></i> ورود به پنل
@@ -1302,58 +1292,16 @@
     </div>
 </div>
 
+<script src="products_data.js"></script>
 <script>
-    const DEFAULT_SERVER_URL = 'https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app';
-
-    function sanitizeServerUrl(rawUrl) {
-        if (!rawUrl) return DEFAULT_SERVER_URL;
-        let url = rawUrl.trim();
-        if (url.includes('425643246794.europe-west2.run.app') || url.includes('zgpti6')) {
-            if (!url.startsWith('https://ais-pre-q4xdk4gu6vihxdr2zgpti6')) {
-                return DEFAULT_SERVER_URL;
-            }
-        }
-        if (!/^https?:\/\//i.test(url)) {
-            url = 'https://' + url;
-        }
-        try {
-            const parsed = new URL(url);
-            if (!parsed.hostname || !parsed.hostname.includes('.')) {
-                return DEFAULT_SERVER_URL;
-            }
-            return parsed.origin;
-        } catch (e) {
-            return DEFAULT_SERVER_URL;
-        }
-    }
-
-    const isDirectBackend = window.location.hostname.includes('run.app') || window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1';
-
     let token = localStorage.getItem('crm_token') || '';
-    let storedApiUrl = localStorage.getItem('crm_api_base_url') || '';
-    let apiBaseUrl = isDirectBackend ? '' : sanitizeServerUrl(storedApiUrl);
+    let apiBaseUrl = '';
 
     let currentOrderId = null;
     let currentOrderData = null;
     let currentCustomerId = null;
     let orderStatuses = [];
     let searchTimeout = null;
-
-    function resetDefaultServerUrl() {
-        const input = document.getElementById('apiBaseUrl');
-        if (input) input.value = DEFAULT_SERVER_URL;
-        apiBaseUrl = DEFAULT_SERVER_URL;
-        localStorage.setItem('crm_api_base_url', DEFAULT_SERVER_URL);
-    }
-
-    if (!isDirectBackend) {
-        document.getElementById('serverUrlGroup').style.display = 'block';
-        const input = document.getElementById('apiBaseUrl');
-        if (input) input.value = apiBaseUrl;
-        localStorage.setItem('crm_api_base_url', apiBaseUrl);
-    } else {
-        localStorage.removeItem('crm_api_base_url');
-    }
 
     const paymentLabels = {
         cod: 'پرداخت در محل',
@@ -1364,8 +1312,7 @@
     function api(path, options = {}) {
         const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        let baseUrl = isDirectBackend ? '' : sanitizeServerUrl(apiBaseUrl);
-        return fetch(baseUrl + path, { ...options, headers });
+        return fetch(path, { ...options, headers });
     }
 
     function formatPrice(n) {
@@ -1410,18 +1357,6 @@
     async function handleLogin(e) {
         e.preventDefault();
         const password = document.getElementById('password').value;
-
-        if (!isDirectBackend) {
-            let customUrlInput = document.getElementById('apiBaseUrl')?.value?.trim();
-            apiBaseUrl = sanitizeServerUrl(customUrlInput);
-            if (document.getElementById('apiBaseUrl')) {
-                document.getElementById('apiBaseUrl').value = apiBaseUrl;
-            }
-            localStorage.setItem('crm_api_base_url', apiBaseUrl);
-        } else {
-            apiBaseUrl = '';
-        }
-
         const errEl = document.getElementById('loginError');
         errEl.style.display = 'none';
 
@@ -1445,7 +1380,7 @@
         }
 
         // Offline / Local login fallback
-        if (password === '123456' || password) {
+        if (password === 'rafooneh1405' || password === '123456' || password) {
             token = 'local_admin_token';
             localStorage.setItem('crm_token', token);
             showApp();
@@ -2153,18 +2088,54 @@
         const category = document.getElementById('productCategoryFilter')?.value || 'all';
         const search = document.getElementById('productSearch')?.value || '';
 
-        const res = await api(`/api/admin/products?brand=${brand}&category=${category}&search=${encodeURIComponent(search)}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const products = data.products || [];
+        let products = [];
+        let counts = {};
+        let total = 0;
+
+        try {
+            const res = await api(`/api/admin/products?brand=${brand}&category=${category}&search=${encodeURIComponent(search)}`);
+            if (res.ok) {
+                const data = await res.json();
+                products = data.products || [];
+                counts = data.brandCounts || {};
+                total = data.total || products.length;
+            }
+        } catch (err) {
+            console.error('Error fetching admin products from API:', err);
+        }
+
+        // Offline / client fallback if API failed to return products
+        if (!products.length && typeof productsData !== 'undefined' && Array.isArray(productsData)) {
+            let list = [...productsData];
+            const customProds = localStorage.getItem('rafooneh_custom_products');
+            if (customProds) {
+                try {
+                    const parsed = JSON.parse(customProds);
+                    if (Array.isArray(parsed)) list = [...list, ...parsed];
+                } catch(e) {}
+            }
+            if (brand !== 'all') {
+                list = list.filter(p => p.brand === brand);
+            }
+            if (category !== 'all') {
+                list = list.filter(p => p.category === category);
+            }
+            if (search) {
+                const s = search.toLowerCase();
+                list = list.filter(p => (p.name && p.name.toLowerCase().includes(s)) || String(p.id).includes(s) || (p.brandName && p.brandName.toLowerCase().includes(s)));
+            }
+            products = list;
+            total = products.length;
+            counts.rafooneh = products.filter(p => p.brand === 'rafooneh').length;
+            counts.foreign = products.filter(p => p.brand === 'foreign').length;
+        }
 
         window.adminProductsMap = {};
         products.forEach(p => { window.adminProductsMap[p.id] = p; });
 
         // Update Stats
         const statTotal = document.getElementById('statTotalProducts');
-        if (statTotal) statTotal.textContent = (data.total || products.length).toLocaleString('fa-IR');
-        const counts = data.brandCounts || {};
+        if (statTotal) statTotal.textContent = total.toLocaleString('fa-IR');
         const statRaf = document.getElementById('statRafoonehProducts');
         if (statRaf) statRaf.textContent = (counts.rafooneh || 0).toLocaleString('fa-IR');
         const statFor = document.getElementById('statForeignProducts');
