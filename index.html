@@ -2258,6 +2258,7 @@
             }
 
             // Save order to CRM
+            const generatedOrderId = 'ord-' + Date.now().toString().slice(-6);
             const newOrderPayload = {
                 customerName: name,
                 phone,
@@ -2268,6 +2269,17 @@
                 paymentMethod: selectedPaymentMethod
             };
 
+            const fallbackLocalOrder = {
+                id: generatedOrderId,
+                ...newOrderPayload,
+                status: 'new',
+                statusLabel: 'جدید',
+                createdAt: new Date().toISOString()
+            };
+
+            // Save locally right away so order is preserved on this device
+            saveLocalOrder(fallbackLocalOrder);
+
             fetch(getApiUrl('/api/orders'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2276,22 +2288,15 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.order) {
+                    saveLocalOrder(data.order);
                     showCustomerInvoice(data.order);
                 } else {
-                    showCustomerInvoice({
-                        id: 'ord-' + Math.floor(1000 + Math.random() * 9000),
-                        ...newOrderPayload,
-                        createdAt: new Date().toISOString()
-                    });
+                    showCustomerInvoice(fallbackLocalOrder);
                 }
             })
             .catch(err => {
                 console.log('CRM save error:', err);
-                showCustomerInvoice({
-                    id: 'ord-' + Math.floor(1000 + Math.random() * 9000),
-                    ...newOrderPayload,
-                    createdAt: new Date().toISOString()
-                });
+                showCustomerInvoice(fallbackLocalOrder);
             });
 
             let orderText = `🛒 *سفارش جدید از وب‌سایت توزیع رافونه*\n\n`;
@@ -2617,11 +2622,36 @@
         // Live Store Sync: Load products from API server
         const DEFAULT_SERVER_URL = 'https://ais-pre-q4xdk4gu6vihxdr2zgpti6-425643246794.europe-west2.run.app';
 
+        function getLocalOrders() {
+            try {
+                const stored = localStorage.getItem('rafooneh_local_orders');
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveLocalOrder(order) {
+            if (!order || !order.id) return;
+            try {
+                let orders = getLocalOrders();
+                const idx = orders.findIndex(o => o.id === order.id);
+                if (idx >= 0) {
+                    orders[idx] = { ...orders[idx], ...order };
+                } else {
+                    orders.unshift(order);
+                }
+                localStorage.setItem('rafooneh_local_orders', JSON.stringify(orders));
+            } catch (e) {
+                console.error('Error saving local order:', e);
+            }
+        }
+
         function getApiUrl(path) {
             const isDirectBackend = window.location.hostname.includes('run.app') || window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1';
             if (isDirectBackend) return path;
             const stored = localStorage.getItem('crm_api_base_url');
-            let baseUrl = (stored && stored.startsWith('https://ais-pre-')) ? stored : DEFAULT_SERVER_URL;
+            let baseUrl = (stored && stored.startsWith('https://')) ? stored : DEFAULT_SERVER_URL;
             return baseUrl.trim().replace(/\/$/, '') + path;
         }
 
@@ -2816,48 +2846,64 @@
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال جستجوی سفارشات...`;
 
+            let serverOrders = [];
             try {
                 const res = await fetch(getApiUrl('/api/orders/track?query=' + encodeURIComponent(query)));
-                const data = await res.json();
-
-                if (data.success && data.orders && data.orders.length > 0) {
-                    let html = `<h4 style="margin-bottom:10px; color:var(--primary-dark);"><i class="fa-solid fa-list-check"></i> ${data.count.toLocaleString('fa-IR')} سفارش برای شما پیدا شد:</h4>`;
-                    
-                    data.orders.forEach(ord => {
-                        const dateStr = ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('fa-IR') : '-';
-                        const statusBadgeClass = ord.status || 'new';
-                        
-                        html += `
-                            <div class="track-result-card">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">
-                                    <div><strong>کد سفارش:</strong> ${ord.id}</div>
-                                    <span class="track-status-badge ${statusBadgeClass}">${ord.statusLabel || ord.status}</span>
-                                </div>
-                                <div style="font-size:0.85rem; color:#475569; margin-bottom:4px;"><strong>تاریخ ثبت:</strong> ${dateStr}</div>
-                                <div style="font-size:0.85rem; color:#475569; margin-bottom:8px;"><strong>گیرنده:</strong> ${ord.customerName} - ${ord.phone}</div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px dashed #cbd5e1; padding-top:8px;">
-                                    <div style="font-weight:bold; color:var(--primary-dark);">${(ord.totalAmount || 0).toLocaleString('fa-IR')} تومان</div>
-                                    <button class="btn-invoice-action print-btn" style="padding: 5px 12px; font-size: 0.8rem;" onclick="viewInvoiceFromTrack('${ord.id}')">
-                                        <i class="fa-solid fa-file-invoice"></i> مشاهده و چاپ فاکتور
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    window.trackedOrdersCache = data.orders;
-                    resultBox.innerHTML = html;
-                    resultBox.style.display = 'block';
-                } else {
-                    resultBox.innerHTML = `<div style="color:#64748b; padding:15px; text-align:center;"><i class="fa-solid fa-triangle-exclamation" style="font-size:1.5rem; color:#f59e0b; margin-bottom:6px; display:block;"></i>سفارشی با این شماره یا کد یافت نشد. لطفاً شماره موبایلی که هنگام خرید وارد کرده‌اید را بررسی کنید.</div>`;
-                    resultBox.style.display = 'block';
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && Array.isArray(data.orders)) {
+                        serverOrders = data.orders;
+                    }
                 }
             } catch (err) {
-                resultBox.innerHTML = `<div style="color:#dc2626; padding:10px;">خطا در دریافت اطلاعات از سرور.</div>`;
-                resultBox.style.display = 'block';
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> جستجوی فاکتور`;
+                console.log('Server track failed, fallback to local');
             }
+
+            const localMatches = getLocalOrders().filter(o => 
+                (o.phone && o.phone.includes(query)) ||
+                (o.id && o.id.toLowerCase().includes(query.toLowerCase())) ||
+                (o.customerName && o.customerName.includes(query))
+            );
+
+            const mergedMap = new Map();
+            localMatches.forEach(o => mergedMap.set(o.id, o));
+            serverOrders.forEach(o => mergedMap.set(o.id, o));
+
+            const finalOrders = Array.from(mergedMap.values());
+
+            if (finalOrders.length > 0) {
+                let html = `<h4 style="margin-bottom:10px; color:var(--primary-dark);"><i class="fa-solid fa-list-check"></i> ${finalOrders.length.toLocaleString('fa-IR')} سفارش برای شما پیدا شد:</h4>`;
+                
+                finalOrders.forEach(ord => {
+                    const dateStr = ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('fa-IR') : '-';
+                    const statusBadgeClass = ord.status || 'new';
+                    
+                    html += `
+                        <div class="track-result-card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">
+                                <div><strong>کد سفارش:</strong> ${ord.id}</div>
+                                <span class="track-status-badge ${statusBadgeClass}">${ord.statusLabel || ord.status}</span>
+                            </div>
+                            <div style="font-size:0.85rem; color:#475569; margin-bottom:4px;"><strong>تاریخ ثبت:</strong> ${dateStr}</div>
+                            <div style="font-size:0.85rem; color:#475569; margin-bottom:8px;"><strong>گیرنده:</strong> ${ord.customerName} - ${ord.phone}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px dashed #cbd5e1; padding-top:8px;">
+                                <div style="font-weight:bold; color:var(--primary-dark);">${(ord.totalAmount || 0).toLocaleString('fa-IR')} تومان</div>
+                                <button class="btn-invoice-action print-btn" style="padding: 5px 12px; font-size: 0.8rem;" onclick="viewInvoiceFromTrack('${ord.id}')">
+                                    <i class="fa-solid fa-file-invoice"></i> مشاهده و چاپ فاکتور
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                window.trackedOrdersCache = finalOrders;
+                resultBox.innerHTML = html;
+                resultBox.style.display = 'block';
+            } else {
+                resultBox.innerHTML = `<div style="color:#64748b; padding:15px; text-align:center;"><i class="fa-solid fa-triangle-exclamation" style="font-size:1.5rem; color:#f59e0b; margin-bottom:6px; display:block;"></i>سفارشی با این شماره یا کد یافت نشد. لطفاً شماره موبایلی که هنگام خرید وارد کرده‌اید را بررسی کنید.</div>`;
+                resultBox.style.display = 'block';
+            }
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> جستجوی فاکتور`;
         }
 
         function viewInvoiceFromTrack(orderId) {
