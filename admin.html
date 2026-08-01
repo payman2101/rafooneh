@@ -1446,7 +1446,19 @@
     async function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
-        await refreshAll();
+
+        // 1. Instantly load active Dashboard stats & alerts
+        loadStats();
+        loadAlerts();
+
+        // 2. Load secondary sections in non-blocking background
+        setTimeout(() => {
+            loadOrders().catch(() => {});
+            loadCustomers().catch(() => {});
+            loadProfitStats().catch(() => {});
+            loadAdminProducts().catch(() => {});
+            loadGSheetsStatus().catch(() => {});
+        }, 50);
     }
 
     function showSection(name, btn) {
@@ -1460,10 +1472,15 @@
         }
         if (name === 'products') loadAdminProducts();
         if (name === 'gsheets') loadGSheetsStatus();
+        if (name === 'profit') loadProfitStats();
+        if (name === 'customers') loadCustomers();
+        if (name === 'orders') loadOrders();
+        if (name === 'alerts') loadAlerts();
+        if (name === 'dashboard') loadStats();
     }
 
     async function refreshAll() {
-        await Promise.all([
+        await Promise.allSettled([
             loadStats(),
             loadOrders(),
             loadCustomers(),
@@ -1474,13 +1491,93 @@
         ]);
     }
 
+    function renderStatsSkeleton() {
+        const statsGrid = document.getElementById('statsGrid');
+        if (statsGrid && !statsGrid.children.length) {
+            statsGrid.innerHTML = Array(6).fill(0).map(() => `
+                <div class="stat-card" style="opacity:0.6; animation: pulse 1.5s infinite ease-in-out;">
+                    <div style="background:#e2e8f0; height:14px; width:60%; border-radius:4px; margin-bottom:8px;"></div>
+                    <div style="background:#cbd5e1; height:24px; width:40%; border-radius:4px;"></div>
+                </div>
+            `).join('');
+        }
+        const tbody = document.getElementById('recentOrdersBody');
+        if (tbody && !tbody.children.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="color:var(--muted);">در حال دریافت اطلاعات...</td></tr>';
+        }
+    }
+
+    function renderStatsUI(stats) {
+        if (!stats) return;
+        const alertBanner = document.getElementById('dashboardAlertBanner');
+        if (alertBanner) {
+            if (stats.alerts && stats.alerts.totalAlertsCount > 0) {
+                alertBanner.innerHTML = `
+                    <div style="background:#fff3cd; border:1px solid #ffeba2; color:#856404; padding:14px 18px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <strong><i class="fa-solid fa-bell"></i> هشدارهای نیازمند توجه:</strong>
+                            ${stats.alerts.lowStockCount > 0 ? `<span style="margin-right:10px;">• ${stats.alerts.lowStockCount.toLocaleString('fa-IR')} کالا با موجودی کم (کمتر از ۵ عدد)</span>` : ''}
+                            ${stats.alerts.delayedOrdersCount > 0 ? `<span style="margin-right:10px;">• ${stats.alerts.delayedOrdersCount.toLocaleString('fa-IR')} سفارش با تأخیر بیش از یک هفته در تحویل</span>` : ''}
+                        </div>
+                        <button class="btn btn-primary" onclick="showSection('alerts')" style="font-size:0.8rem; padding:6px 12px;">مشاهده هشدارها</button>
+                    </div>
+                `;
+            } else {
+                alertBanner.innerHTML = '';
+            }
+        }
+
+        const grid = document.getElementById('statsGrid');
+        if (grid) {
+            grid.innerHTML = `
+                <div class="stat-card"><div class="label">سفارشات امروز</div><div class="value">${(stats.todayOrders || 0).toLocaleString('fa-IR')}</div></div>
+                <div class="stat-card"><div class="label">درآمد امروز</div><div class="value">${(stats.revenueToday || 0).toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
+                <div class="stat-card"><div class="label">سود امروز</div><div class="value" style="color:var(--success);">${(stats.profitToday || 0).toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
+                <div class="stat-card"><div class="label">سفارشات فعال</div><div class="value">${(stats.activeOrders || 0).toLocaleString('fa-IR')}</div><div class="sub">در انتظار تحویل</div></div>
+                <div class="stat-card"><div class="label">درآمد کل تحویل‌شده</div><div class="value">${(stats.revenueTotal || 0).toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
+                <div class="stat-card"><div class="label">سود کل تحویل‌شده</div><div class="value" style="color:var(--success);">${(stats.profitTotal || 0).toLocaleString('fa-IR')}</div><div class="sub">حاشیه سود: ${(stats.profitMarginTotal || 0).toLocaleString('fa-IR')}٪</div></div>
+            `;
+        }
+
+        const tbody = document.getElementById('recentOrdersBody');
+        if (tbody) {
+            if (!stats.recentOrders || !stats.recentOrders.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">هنوز سفارشی ثبت نشده</td></tr>';
+            } else {
+                tbody.innerHTML = stats.recentOrders.map(o => `
+                    <tr>
+                        <td>${o.id.split('-')[1] || o.id}</td>
+                        <td>${o.customerName}</td>
+                        <td>${formatPrice(o.totalAmount)}</td>
+                        <td style="color:var(--success); font-weight:bold;">${formatPrice(o.totalProfit || 0)}</td>
+                        <td>${statusBadge(o.status, getStatusLabel(o.status))}</td>
+                        <td>${formatDate(o.createdAt)}</td>
+                        <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">مشاهده</button></td>
+                    </tr>
+                `).join('');
+            }
+        }
+    }
+
     async function loadStats() {
+        const cached = localStorage.getItem('crm_cached_stats');
+        if (cached) {
+            try { renderStatsUI(JSON.parse(cached)); } catch(e) {}
+        } else {
+            renderStatsSkeleton();
+        }
+
         let stats = null;
         try {
             const res = await api('/api/admin/stats');
             if (res.ok) {
                 const data = await res.json();
                 stats = data.stats;
+                if (stats) {
+                    localStorage.setItem('crm_cached_stats', JSON.stringify(stats));
+                    renderStatsUI(stats);
+                    return;
+                }
             }
         } catch (err) {
             console.log('Failed to fetch server stats');
@@ -1505,51 +1602,8 @@
                 recentOrders: localOrders.slice(0, 10),
                 alerts: { totalAlertsCount: 0, lowStockCount: 0, delayedOrdersCount: 0 }
             };
+            renderStatsUI(stats);
         }
-
-        // Banner for alerts on dashboard
-        const alertBanner = document.getElementById('dashboardAlertBanner');
-        if (stats.alerts && stats.alerts.totalAlertsCount > 0) {
-            alertBanner.innerHTML = `
-                <div style="background:#fff3cd; border:1px solid #ffeba2; color:#856404; padding:14px 18px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                    <div>
-                        <strong><i class="fa-solid fa-bell"></i> هشدارهای نیازمند توجه:</strong>
-                        ${stats.alerts.lowStockCount > 0 ? `<span style="margin-right:10px;">• ${stats.alerts.lowStockCount.toLocaleString('fa-IR')} کالا با موجودی کم (کمتر از ۵ عدد)</span>` : ''}
-                        ${stats.alerts.delayedOrdersCount > 0 ? `<span style="margin-right:10px;">• ${stats.alerts.delayedOrdersCount.toLocaleString('fa-IR')} سفارش با تأخیر بیش از یک هفته در تحویل</span>` : ''}
-                    </div>
-                    <button class="btn btn-primary" onclick="showSection('alerts')" style="font-size:0.8rem; padding:6px 12px;">مشاهده هشدارها</button>
-                </div>
-            `;
-        } else {
-            alertBanner.innerHTML = '';
-        }
-
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card"><div class="label">سفارشات امروز</div><div class="value">${stats.todayOrders.toLocaleString('fa-IR')}</div></div>
-            <div class="stat-card"><div class="label">درآمد امروز</div><div class="value">${stats.revenueToday.toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
-            <div class="stat-card"><div class="label">سود امروز</div><div class="value" style="color:var(--success);">${(stats.profitToday || 0).toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
-            <div class="stat-card"><div class="label">سفارشات فعال</div><div class="value">${stats.activeOrders.toLocaleString('fa-IR')}</div><div class="sub">در انتظار تحویل</div></div>
-            <div class="stat-card"><div class="label">درآمد کل تحویل‌شده</div><div class="value">${stats.revenueTotal.toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
-            <div class="stat-card"><div class="label">سود کل تحویل‌شده</div><div class="value" style="color:var(--success);">${(stats.profitTotal || 0).toLocaleString('fa-IR')}</div><div class="sub">حاشیه سود: ${(stats.profitMarginTotal || 0).toLocaleString('fa-IR')}٪</div></div>
-        `;
-
-        const tbody = document.getElementById('recentOrdersBody');
-        if (!stats.recentOrders || !stats.recentOrders.length) {
-            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">هنوز سفارشی ثبت نشده</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = stats.recentOrders.map(o => `
-            <tr>
-                <td>${o.id.split('-')[1] || o.id}</td>
-                <td>${o.customerName}</td>
-                <td>${formatPrice(o.totalAmount)}</td>
-                <td style="color:var(--success); font-weight:bold;">${formatPrice(o.totalProfit || 0)}</td>
-                <td>${statusBadge(o.status, getStatusLabel(o.status))}</td>
-                <td>${formatDate(o.createdAt)}</td>
-                <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">مشاهده</button></td>
-            </tr>
-        `).join('');
     }
 
     async function loadProfitStats() {
