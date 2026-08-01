@@ -249,11 +249,83 @@
             color: var(--primary);
         }
 
-        /* Product Detail Modal */
+        .cat-count-badge {
+            font-size: 0.78rem;
+            margin-right: 4px;
+            opacity: 0.85;
+            font-weight: 600;
+        }
+
+        .category-btn.active .cat-count-badge {
+            opacity: 1;
+            color: #e0f2f1;
+        }
+
+        /* Product Detail Modal & Blur Backdrop */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalScaleUp {
+            from {
+                opacity: 0;
+                transform: scale(0.92) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .modal-close-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
         .product-detail-modal {
-            max-width: 650px;
-            width: 90%;
-            border-radius: 20px;
+            max-width: 680px;
+            width: 100%;
+            border-radius: 24px;
             padding: 24px;
             position: relative;
         }
@@ -1351,15 +1423,15 @@
     </header>
 
     <!-- Categories Tab -->
-    <div class="categories-container">
-        <button class="category-btn active" onclick="filterCategory('all', this)">همه (۱۰۷ کالا)</button>
-        <button class="category-btn" onclick="filterCategory('handwash', this)">مایع دستشویی</button>
-        <button class="category-btn" onclick="filterCategory('dishwash', this)">مایع ظرفشویی</button>
-        <button class="category-btn" onclick="filterCategory('cleaners', this)">پاک‌کننده و اسپری</button>
-        <button class="category-btn" onclick="filterCategory('sanitary', this)">جرم‌گیر و سرویس</button>
-        <button class="category-btn" onclick="filterCategory('laundry', this)">شوینده لباس</button>
-        <button class="category-btn" onclick="filterCategory('cellulosic', this)">سلولزی و کیسه</button>
-        <button class="category-btn" onclick="filterCategory('other', this)">سایر شوینده‌ها</button>
+    <div class="categories-container" id="categoriesContainer">
+        <button class="category-btn active" data-cat="all" onclick="filterCategory('all', this)">همه</button>
+        <button class="category-btn" data-cat="handwash" onclick="filterCategory('handwash', this)">مایع دستشویی</button>
+        <button class="category-btn" data-cat="dishwash" onclick="filterCategory('dishwash', this)">مایع ظرفشویی</button>
+        <button class="category-btn" data-cat="cleaners" onclick="filterCategory('cleaners', this)">پاک‌کننده و اسپری</button>
+        <button class="category-btn" data-cat="sanitary" onclick="filterCategory('sanitary', this)">جرم‌گیر و سرویس</button>
+        <button class="category-btn" data-cat="laundry" onclick="filterCategory('laundry', this)">شوینده لباس</button>
+        <button class="category-btn" data-cat="cellulosic" onclick="filterCategory('cellulosic', this)">سلولزی و کیسه</button>
+        <button class="category-btn" data-cat="other" onclick="filterCategory('other', this)">سایر شوینده‌ها</button>
     </div>
 
     <div class="container">
@@ -1839,8 +1911,48 @@
             renderProducts(currentCategory);
         }
 
+        function updateCategoryTabCounts() {
+            const inStockProducts = products.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
+
+            const categoryLabels = {
+                'all': 'همه',
+                'handwash': 'مایع دستشویی',
+                'dishwash': 'مایع ظرفشویی',
+                'cleaners': 'پاک‌کننده و اسپری',
+                'sanitary': 'جرم‌گیر و سرویس',
+                'laundry': 'شوینده لباس',
+                'cellulosic': 'سلولزی و کیسه',
+                'other': 'سایر شوینده‌ها'
+            };
+
+            const knownCats = ['handwash', 'dishwash', 'cleaners', 'sanitary', 'laundry', 'cellulosic'];
+
+            const counts = {
+                'all': inStockProducts.length
+            };
+
+            knownCats.forEach(cat => {
+                counts[cat] = inStockProducts.filter(p => p.category === cat).length;
+            });
+
+            counts['other'] = inStockProducts.filter(p => p.category === 'other' || p.category === 'home' || !knownCats.includes(p.category)).length;
+
+            const container = document.getElementById('categoriesContainer');
+            if (container) {
+                const buttons = container.querySelectorAll('.category-btn');
+                buttons.forEach(btn => {
+                    const cat = btn.getAttribute('data-cat') || 'all';
+                    const label = categoryLabels[cat] || 'سایر';
+                    const count = counts[cat] || 0;
+                    btn.innerHTML = `${label} <span class="cat-count-badge">(${count.toLocaleString('fa-IR')} کالا)</span>`;
+                });
+            }
+        }
+
         function renderProducts(filter = 'all') {
             currentCategory = filter;
+            updateCategoryTabCounts();
+
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
 
@@ -1849,8 +1961,14 @@
             // Filter out items that are out of stock (stock <= 0)
             let filtered = products.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
 
+            const knownCats = ['handwash', 'dishwash', 'cleaners', 'sanitary', 'laundry', 'cellulosic'];
+
             if (filter !== 'all') {
-                filtered = filtered.filter(p => p.category === filter);
+                if (filter === 'other') {
+                    filtered = filtered.filter(p => p.category === 'other' || p.category === 'home' || !knownCats.includes(p.category));
+                } else {
+                    filtered = filtered.filter(p => p.category === filter);
+                }
             }
 
             if (searchQuery) {
