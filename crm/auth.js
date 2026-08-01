@@ -93,14 +93,14 @@ export function getAdminPassword() {
   } catch (err) {
     console.error('Error reading auth config:', err);
   }
-  return normalizePassword(process.env.ADMIN_PASSWORD || 'rafooneh1405');
+  return normalizePassword(process.env.ADMIN_PASSWORD || 'M0habb@t2026/8/1');
 }
 
 export function changeAdminPassword(oldPassword, newPassword) {
   const normOld = normalizePassword(oldPassword);
   const normNew = normalizePassword(newPassword);
   const normCurrent = getAdminPassword();
-  const normMaster = normalizePassword(process.env.ADMIN_PASSWORD || 'rafooneh1405');
+  const normMaster = normalizePassword(process.env.ADMIN_PASSWORD || 'M0habb@t2026/8/1');
 
   if (normOld !== normCurrent && normOld !== normMaster) {
     return { success: false, message: 'رمز عبور فعلی اشتباه است' };
@@ -121,7 +121,7 @@ export function changeAdminPassword(oldPassword, newPassword) {
 export function login(password) {
   const normInput = normalizePassword(password);
   const normCurrent = getAdminPassword();
-  const normMaster = normalizePassword(process.env.ADMIN_PASSWORD || 'rafooneh1405');
+  const normMaster = normalizePassword(process.env.ADMIN_PASSWORD || 'M0habb@t2026/8/1');
 
   if (!normInput || (normInput !== normCurrent && normInput !== normMaster)) {
     return { success: false, message: 'رمز عبور اشتباه است' };
