@@ -1846,7 +1846,12 @@
 
             const searchQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
 
-            let filtered = filter === 'all' ? products : products.filter(p => p.category === filter);
+            // Filter out items that are out of stock (stock <= 0)
+            let filtered = products.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
+
+            if (filter !== 'all') {
+                filtered = filtered.filter(p => p.category === filter);
+            }
 
             if (searchQuery) {
                 filtered = filtered.filter(p => 

@@ -23,7 +23,7 @@ import {
   addProduct,
   deleteProduct
 } from './crm/store.js';
-import { authMiddleware, login, logout } from './crm/auth.js';
+import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -288,7 +288,11 @@ app.get('/api/products', (req, res) => {
     const jsonPath = path.join(__dirname, 'products_data.json');
     if (fs.existsSync(jsonPath)) {
       const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-      return res.json({ success: true, count: data.length, products: data });
+      const includeAll = req.query.includeAll === 'true';
+      const products = includeAll
+        ? data
+        : data.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
+      return res.json({ success: true, count: products.length, products });
     }
     res.json({ success: true, count: 0, products: [] });
   } catch (err) {
@@ -581,6 +585,19 @@ app.post('/api/admin/login', (req, res) => {
 app.post('/api/admin/logout', authMiddleware, (req, res) => {
   logout(req.adminToken);
   res.json({ success: true });
+});
+
+app.post('/api/admin/change-password', authMiddleware, (req, res) => {
+  const { oldPassword, newPassword } = req.body || {};
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ success: false, message: 'لطفاً رمز عبور فعلی و جدید را وارد نمایید.' });
+  }
+  const result = changeAdminPassword(oldPassword, newPassword);
+  if (result.success) {
+    return res.json(result);
+  } else {
+    return res.status(400).json(result);
+  }
 });
 
 // CRM: Admin dashboard & data
