@@ -1356,10 +1356,14 @@
         online: 'پرداخت آنلاین'
     };
 
-    function api(path, options = {}) {
+    async function api(path, options = {}) {
         const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        return fetch(path, { ...options, headers });
+        const res = await fetch(path, { ...options, headers });
+        if (res.status === 401 && path !== '/api/admin/login') {
+            handleLogout();
+        }
+        return res;
     }
 
     function formatPrice(n) {
@@ -1413,26 +1417,18 @@
                 body: JSON.stringify({ password })
             });
 
-            if (res.ok) {
-                const data = await res.json();
-                if (data.success) {
-                    token = data.token;
-                    localStorage.setItem('crm_token', token);
-                    showApp();
-                    return;
-                }
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                token = data.token;
+                localStorage.setItem('crm_token', token);
+                showApp();
+            } else {
+                errEl.textContent = data.message || 'کلمه عبور اشتباه است.';
+                errEl.style.display = 'block';
             }
         } catch (err) {
-            console.log('Server login attempt failed, attempting local auth fallback');
-        }
-
-        // Offline / Local login fallback
-        if (password === 'rafooneh1405' || password === '123456' || password) {
-            token = 'local_admin_token';
-            localStorage.setItem('crm_token', token);
-            showApp();
-        } else {
-            errEl.textContent = 'کلمه عبور اشتباه است.';
+            console.error('Login request failed:', err);
+            errEl.textContent = 'خطا در ارتباط با سرور.';
             errEl.style.display = 'block';
         }
     }

@@ -47,7 +47,7 @@ export function changeAdminPassword(oldPassword, newPassword) {
 }
 
 export function login(password) {
-  if (password !== getAdminPassword()) {
+  if (!password || String(password).trim() !== getAdminPassword()) {
     return { success: false, message: 'رمز عبور اشتباه است' };
   }
 
