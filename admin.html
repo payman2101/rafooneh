@@ -1359,9 +1359,21 @@
     async function api(path, options = {}) {
         const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch(path, { ...options, headers });
+        let res;
+        try {
+            res = await fetch(path, { ...options, headers });
+        } catch (err) {
+            await new Promise(r => setTimeout(r, 1000));
+            res = await fetch(path, { ...options, headers });
+        }
         if (res.status === 401 && path !== '/api/admin/login') {
-            handleLogout();
+            await new Promise(r => setTimeout(r, 800));
+            const retryRes = await fetch(path, { ...options, headers });
+            if (retryRes.status === 401) {
+                handleLogout();
+                return retryRes;
+            }
+            return retryRes;
         }
         return res;
     }

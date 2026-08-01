@@ -21,7 +21,9 @@ import {
   listProducts,
   updateProduct,
   addProduct,
-  deleteProduct
+  deleteProduct,
+  readProductsList,
+  saveProductsList
 } from './crm/store.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
 
@@ -254,18 +256,72 @@ function parseExcelAndBuildProducts() {
       };
     });
 
-    fs.writeFileSync(path.join(__dirname, 'products_data.json'), JSON.stringify(result, null, 2));
-    fs.writeFileSync(path.join(__dirname, 'products_data.js'), `const productsData = ${JSON.stringify(result, null, 2)};\n`);
-    console.log(`[Excel Watcher] Automatically processed ${result.length} products from Excel.`);
-    return result;
+    const finalProducts = mergeAndSaveProducts(result);
+    console.log(`[Excel Watcher] Processed ${finalProducts.length} products (preserved admin price & info updates).`);
+    return finalProducts;
   } catch (err) {
     console.error('[Excel Watcher] Error processing Excel file:', err);
     return null;
   }
 }
 
-// Initial parse on server start
-parseExcelAndBuildProducts();
+function mergeAndSaveProducts(newProductsList) {
+  const existingList = readProductsList();
+  const existingMap = new Map();
+  existingList.forEach(p => {
+    if (p.id) existingMap.set(String(p.id), p);
+    if (p.code) existingMap.set(String(p.code), p);
+  });
+
+  const processedKeys = new Set();
+  const merged = newProductsList.map(np => {
+    const key = String(np.id || np.code || '');
+    processedKeys.add(key);
+    const existing = existingMap.get(key);
+
+    if (existing) {
+      return {
+        ...np,
+        name: existing.name || np.name,
+        brand: existing.brand || np.brand,
+        brandName: existing.brandName || np.brandName,
+        category: existing.category || np.category,
+        categoryName: existing.categoryName || np.categoryName,
+        price: existing.price !== undefined ? existing.price : np.price,
+        consumerPrice: existing.consumerPrice !== undefined ? existing.consumerPrice : np.consumerPrice,
+        newPrice: existing.newPrice !== undefined ? existing.newPrice : np.newPrice,
+        buyPrice: existing.buyPrice !== undefined ? existing.buyPrice : np.buyPrice,
+        image: existing.image || np.image,
+        stock: existing.stock !== undefined ? existing.stock : np.stock,
+        badge: existing.badge || np.badge,
+        description: existing.description || np.description,
+        isCustomized: existing.isCustomized,
+        updatedAt: existing.updatedAt || np.updatedAt
+      };
+    }
+    return np;
+  });
+
+  existingList.forEach(ep => {
+    const key = String(ep.id || ep.code || '');
+    if (key && !processedKeys.has(key) && ep.isCustomized) {
+      merged.push(ep);
+    }
+  });
+
+  saveProductsList(merged);
+  return merged;
+}
+
+// Initial check on server start: NEVER overwrite existing admin product updates
+const currentCatalog = readProductsList();
+if (!currentCatalog || currentCatalog.length === 0) {
+  console.log('[Server Startup] No existing products dataset found. Initializing catalog from Excel...');
+  parseExcelAndBuildProducts();
+} else {
+  console.log(`[Server Startup] Loaded ${currentCatalog.length} products. Preserving existing admin updates.`);
+  saveProductsList(currentCatalog);
+}
 
 // Setup file watcher on 'سفارش 1405.xlsx'
 const excelFilePath = path.join(__dirname, 'سفارش 1405.xlsx');
@@ -285,16 +341,12 @@ if (fs.existsSync(excelFilePath)) {
 // API: Get live products dataset
 app.get('/api/products', (req, res) => {
   try {
-    const jsonPath = path.join(__dirname, 'products_data.json');
-    if (fs.existsSync(jsonPath)) {
-      const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-      const includeAll = req.query.includeAll === 'true';
-      const products = includeAll
-        ? data
-        : data.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
-      return res.json({ success: true, count: products.length, products });
-    }
-    res.json({ success: true, count: 0, products: [] });
+    const data = readProductsList();
+    const includeAll = req.query.includeAll === 'true';
+    const products = includeAll
+      ? data
+      : data.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
+    return res.json({ success: true, count: products.length, products });
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطا در دریافت لیست محصولات' });
   }
@@ -405,10 +457,9 @@ async function syncFromGSheetsId(spreadsheetId) {
         const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 });
         const products = processRowsToProducts(rows);
         if (products.length > 0) {
-          fs.writeFileSync(path.join(__dirname, 'products_data.json'), JSON.stringify(products, null, 2));
-          fs.writeFileSync(path.join(__dirname, 'products_data.js'), `const productsData = ${JSON.stringify(products, null, 2)};\n`);
-          console.log(`[Google Sheets Auto-Sync] Successfully updated ${products.length} products from sheet ${spreadsheetId}`);
-          return { success: true, products, count: products.length };
+          const merged = mergeAndSaveProducts(products);
+          console.log(`[Google Sheets Auto-Sync] Successfully updated ${merged.length} products from sheet ${spreadsheetId}`);
+          return { success: true, products: merged, count: merged.length };
         }
       }
     }
@@ -475,13 +526,12 @@ app.post('/api/gsheets/sync', async (req, res) => {
 
     const sheetProducts = processRowsToProducts(rows);
     if (sheetProducts.length > 0) {
-      fs.writeFileSync(path.join(__dirname, 'products_data.json'), JSON.stringify(sheetProducts, null, 2));
-      fs.writeFileSync(path.join(__dirname, 'products_data.js'), `const productsData = ${JSON.stringify(sheetProducts, null, 2)};\n`);
+      const merged = mergeAndSaveProducts(sheetProducts);
       return res.json({
         success: true,
-        message: `موفقیت‌آمیز! ${sheetProducts.length} محصول با موفقیت از گوگل شیت همگام‌سازی شد.`,
-        count: sheetProducts.length,
-        products: sheetProducts
+        message: `موفقیت‌آمیز! ${merged.length} محصول با موفقیت از گوگل شیت همگام‌سازی شد.`,
+        count: merged.length,
+        products: merged
       });
     }
 

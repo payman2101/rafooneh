@@ -5,6 +5,45 @@ import crypto from 'crypto';
 const DATA_DIR = path.join(process.cwd(), 'data');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const CUSTOMERS_FILE = path.join(DATA_DIR, 'customers.json');
+const DATA_PRODUCTS_FILE = path.join(DATA_DIR, 'products_data.json');
+const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
+const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
+
+export function saveProductsList(list) {
+  try {
+    ensureDataDir();
+    const jsonStr = JSON.stringify(list, null, 2);
+    fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8');
+    fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8');
+    fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8');
+  } catch (err) {
+    console.error('Error saving products list:', err);
+  }
+}
+
+export function readProductsList() {
+  try {
+    ensureDataDir();
+    if (fs.existsSync(DATA_PRODUCTS_FILE)) {
+      const data = fs.readFileSync(DATA_PRODUCTS_FILE, 'utf8');
+      const list = JSON.parse(data);
+      if (Array.isArray(list) && list.length > 0) return list;
+    }
+  } catch (e) {}
+
+  try {
+    if (fs.existsSync(ROOT_PRODUCTS_JSON)) {
+      const data = fs.readFileSync(ROOT_PRODUCTS_JSON, 'utf8');
+      const list = JSON.parse(data);
+      if (Array.isArray(list) && list.length > 0) {
+        saveProductsList(list);
+        return list;
+      }
+    }
+  } catch (e) {}
+
+  return [];
+}
 
 const ORDER_STATUSES = ['new', 'confirmed', 'preparing', 'delivering', 'delivered', 'cancelled'];
 
@@ -88,16 +127,13 @@ export function upsertCustomer({ name, phone, address }) {
 
 function getProductsMap() {
   try {
-    const productsPath = path.join(process.cwd(), 'products_data.json');
-    if (fs.existsSync(productsPath)) {
-      const list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
-      const map = {};
-      list.forEach(p => {
-        if (p.id) map[String(p.id)] = p;
-        if (p.code) map[String(p.code)] = p;
-      });
-      return { map, list };
-    }
+    const list = readProductsList();
+    const map = {};
+    list.forEach(p => {
+      if (p.id) map[String(p.id)] = p;
+      if (p.code) map[String(p.code)] = p;
+    });
+    return { map, list };
   } catch (e) {}
   return { map: {}, list: [] };
 }
@@ -145,9 +181,8 @@ export function enrichOrderWithProfit(order, productsMap) {
 
 export function reduceProductStock(items) {
   try {
-    const productsPath = path.join(process.cwd(), 'products_data.json');
-    if (!fs.existsSync(productsPath)) return;
-    const list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+    const list = readProductsList();
+    if (!list.length) return;
     let modified = false;
 
     (items || []).forEach(item => {
@@ -160,14 +195,13 @@ export function reduceProductStock(items) {
       if (product) {
         product.stock = Math.max(0, (Number(product.stock) || 0) - qty);
         product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
+        product.updatedAt = new Date().toISOString();
         modified = true;
       }
     });
 
     if (modified) {
-      fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
-      const jsPath = path.join(process.cwd(), 'products_data.js');
-      fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
+      saveProductsList(list);
     }
   } catch (e) {
     console.error('Error reducing product stock:', e);
@@ -176,9 +210,8 @@ export function reduceProductStock(items) {
 
 export function restoreProductStock(items) {
   try {
-    const productsPath = path.join(process.cwd(), 'products_data.json');
-    if (!fs.existsSync(productsPath)) return;
-    const list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+    const list = readProductsList();
+    if (!list.length) return;
     let modified = false;
 
     (items || []).forEach(item => {
@@ -188,14 +221,13 @@ export function restoreProductStock(items) {
       if (product) {
         product.stock = (Number(product.stock) || 0) + qty;
         product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
+        product.updatedAt = new Date().toISOString();
         modified = true;
       }
     });
 
     if (modified) {
-      fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
-      const jsPath = path.join(process.cwd(), 'products_data.js');
-      fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
+      saveProductsList(list);
     }
   } catch (e) {
     console.error('Error restoring product stock:', e);
@@ -489,9 +521,8 @@ export function listProducts(filters = {}) {
 }
 
 export function updateProduct(id, updates) {
-  const productsPath = path.join(process.cwd(), 'products_data.json');
-  if (!fs.existsSync(productsPath)) return null;
-  const list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+  const list = readProductsList();
+  if (!list.length) return null;
   const pid = String(id);
   const idx = list.findIndex(p => String(p.id) === pid || String(p.code) === pid);
 
@@ -531,19 +562,16 @@ export function updateProduct(id, updates) {
     badge,
     newPrice,
     consumerPrice: newPrice,
+    isCustomized: true,
     updatedAt: new Date().toISOString()
   };
 
-  fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
-  const jsPath = path.join(process.cwd(), 'products_data.js');
-  fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
-
+  saveProductsList(list);
   return list[idx];
 }
 
 export function addProduct(productData) {
-  const productsPath = path.join(process.cwd(), 'products_data.json');
-  const list = fs.existsSync(productsPath) ? JSON.parse(fs.readFileSync(productsPath, 'utf8')) : [];
+  const list = readProductsList();
 
   const code = String(productData.id || productData.code || Date.now());
   const stock = Number(productData.stock) || 0;
@@ -574,31 +602,27 @@ export function addProduct(productData) {
     stock: stock,
     image: productData.image || 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg',
     badge: badge,
-    description: productData.description || 'محصول باکیفیت و استاندارد'
+    description: productData.description || 'محصول باکیفیت و استاندارد',
+    isCustomized: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 
   list.unshift(newProd);
-
-  fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
-  const jsPath = path.join(process.cwd(), 'products_data.js');
-  fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
-
+  saveProductsList(list);
   return newProd;
 }
 
 export function deleteProduct(id) {
-  const productsPath = path.join(process.cwd(), 'products_data.json');
-  if (!fs.existsSync(productsPath)) return false;
-  let list = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+  let list = readProductsList();
+  if (!list.length) return false;
   const pid = String(id);
   const initialLength = list.length;
 
   list = list.filter(p => String(p.id) !== pid && String(p.code) !== pid);
 
   if (list.length !== initialLength) {
-    fs.writeFileSync(productsPath, JSON.stringify(list, null, 2), 'utf8');
-    const jsPath = path.join(process.cwd(), 'products_data.js');
-    fs.writeFileSync(jsPath, `const productsData = ${JSON.stringify(list, null, 2)};\n`, 'utf8');
+    saveProductsList(list);
     return true;
   }
   return false;
