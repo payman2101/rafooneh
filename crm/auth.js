@@ -1,10 +1,49 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const AUTH_CONFIG_FILE = path.join(__dirname, 'auth_config.json');
 
 const sessions = new Map();
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
 export function getAdminPassword() {
+  try {
+    if (fs.existsSync(AUTH_CONFIG_FILE)) {
+      const data = JSON.parse(fs.readFileSync(AUTH_CONFIG_FILE, 'utf8'));
+      if (data && data.password) {
+        return data.password;
+      }
+    }
+  } catch (err) {
+    console.error('Error reading auth config:', err);
+  }
   return process.env.ADMIN_PASSWORD || 'rafooneh1405';
+}
+
+export function changeAdminPassword(oldPassword, newPassword) {
+  const current = getAdminPassword();
+  if (oldPassword !== current) {
+    return { success: false, message: 'رمز عبور فعلی اشتباه است' };
+  }
+  if (!newPassword || newPassword.trim().length < 4) {
+    return { success: false, message: 'رمز عبور جدید باید حداقل ۴ کاراکتر باشد' };
+  }
+
+  try {
+    const configData = {
+      password: newPassword.trim(),
+      updatedAt: new Date().toISOString()
+    };
+    fs.writeFileSync(AUTH_CONFIG_FILE, JSON.stringify(configData, null, 2), 'utf8');
+    return { success: true, message: 'رمز عبور ادمین با موفقیت تغییر یافت' };
+  } catch (err) {
+    console.error('Error saving admin password:', err);
+    return { success: false, message: 'خطا در ذخیره‌سازی رمز عبور جدید' };
+  }
 }
 
 export function login(password) {

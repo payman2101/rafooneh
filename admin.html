@@ -612,6 +612,9 @@
             <a href="/" class="btn btn-secondary" style="text-decoration:none;">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> فروشگاه
             </a>
+            <button class="btn btn-secondary" onclick="openChangePasswordModal()">
+                <i class="fa-solid fa-key"></i> تغییر رمز عبور
+            </button>
             <button class="btn btn-secondary" onclick="refreshAll()">
                 <i class="fa-solid fa-rotate"></i> بروزرسانی
             </button>
@@ -1287,6 +1290,50 @@
                     <i class="fa-solid fa-floppy-disk"></i> ذخیره تغییرات
                 </button>
                 <button type="button" class="btn btn-secondary" onclick="closeEditProductModal()">انصراف</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Change Admin Password Modal -->
+<div class="modal-overlay" id="changePasswordModal" style="display: none;" onclick="if(event.target.id==='changePasswordModal') closeChangePasswordModal();">
+    <div class="modal" style="max-width: 440px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;">
+            <h3 style="margin: 0; color: var(--primary-dark); font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-key" style="color: var(--primary);"></i> تغییر رمز عبور مدیر
+            </h3>
+            <button onclick="closeChangePasswordModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form onsubmit="handleChangePasswordSubmit(event)">
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-weight: bold; font-size: 0.85rem; color: #334155; margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-lock"></i> رمز عبور فعلی:
+                </label>
+                <input type="password" id="oldPasswordInput" class="form-control" placeholder="رمز عبور فعلی را وارد کنید" required style="width: 100%;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-weight: bold; font-size: 0.85rem; color: #334155; margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-key"></i> رمز عبور جدید:
+                </label>
+                <input type="password" id="newPasswordInput" class="form-control" placeholder="حداقل ۴ کاراکتر" minlength="4" required style="width: 100%;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label style="font-weight: bold; font-size: 0.85rem; color: #334155; margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-shield-halved"></i> تکرار رمز عبور جدید:
+                </label>
+                <input type="password" id="confirmPasswordInput" class="form-control" placeholder="تکرار رمز عبور جدید" minlength="4" required style="width: 100%;">
+            </div>
+
+            <div id="changePasswordStatus" style="display: none; margin-bottom: 14px; padding: 10px; border-radius: 8px; font-size: 0.85rem;"></div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">انصراف</button>
+                <button type="submit" class="btn btn-primary" id="btnSubmitChangePassword">
+                    <i class="fa-solid fa-check"></i> ذخیره رمز عبور جدید
+                </button>
             </div>
         </form>
     </div>
@@ -2575,6 +2622,80 @@
         }
     }
 
+    function openChangePasswordModal() {
+        document.getElementById('oldPasswordInput').value = '';
+        document.getElementById('newPasswordInput').value = '';
+        document.getElementById('confirmPasswordInput').value = '';
+        const statusEl = document.getElementById('changePasswordStatus');
+        statusEl.style.display = 'none';
+        statusEl.innerText = '';
+        document.getElementById('changePasswordModal').style.display = 'flex';
+    }
+
+    function closeChangePasswordModal() {
+        document.getElementById('changePasswordModal').style.display = 'none';
+    }
+
+    async function handleChangePasswordSubmit(e) {
+        e.preventDefault();
+        const oldPassword = document.getElementById('oldPasswordInput').value.trim();
+        const newPassword = document.getElementById('newPasswordInput').value.trim();
+        const confirmPassword = document.getElementById('confirmPasswordInput').value.trim();
+        const statusEl = document.getElementById('changePasswordStatus');
+        const submitBtn = document.getElementById('btnSubmitChangePassword');
+
+        if (newPassword !== confirmPassword) {
+            statusEl.style.display = 'block';
+            statusEl.style.background = '#fee2e2';
+            statusEl.style.color = '#b91c1c';
+            statusEl.innerText = 'رمز عبور جدید و تکرار آن یکسان نیستند.';
+            return;
+        }
+
+        if (newPassword.length < 4) {
+            statusEl.style.display = 'block';
+            statusEl.style.background = '#fee2e2';
+            statusEl.style.color = '#b91c1c';
+            statusEl.innerText = 'رمز عبور جدید باید حداقل ۴ کاراکتر باشد.';
+            return;
+        }
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال بروزرسانی...';
+
+            const res = await api('/api/admin/change-password', {
+                method: 'POST',
+                body: JSON.stringify({ oldPassword, newPassword })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                statusEl.style.display = 'block';
+                statusEl.style.background = '#dcfce7';
+                statusEl.style.color = '#15803d';
+                statusEl.innerText = data.message || 'رمز عبور با موفقیت تغییر یافت.';
+                setTimeout(() => {
+                    closeChangePasswordModal();
+                }, 1500);
+            } else {
+                statusEl.style.display = 'block';
+                statusEl.style.background = '#fee2e2';
+                statusEl.style.color = '#b91c1c';
+                statusEl.innerText = data.message || 'خطا در تغییر رمز عبور.';
+            }
+        } catch (err) {
+            statusEl.style.display = 'block';
+            statusEl.style.background = '#fee2e2';
+            statusEl.style.color = '#b91c1c';
+            statusEl.innerText = 'خطای ارتباط با سرور.';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> ذخیره رمز عبور جدید';
+        }
+    }
+
     document.getElementById('orderModal').addEventListener('click', e => {
         if (e.target.id === 'orderModal') closeOrderModal();
     });
@@ -2586,6 +2707,9 @@
     });
     document.getElementById('editProductModal').addEventListener('click', e => {
         if (e.target.id === 'editProductModal') closeEditProductModal();
+    });
+    document.getElementById('changePasswordModal').addEventListener('click', e => {
+        if (e.target.id === 'changePasswordModal') closeChangePasswordModal();
     });
 
     if (token) {
