@@ -2229,6 +2229,57 @@
             return total;
         }
 
+        function deductLocalProductStock(items) {
+            if (!Array.isArray(items)) return;
+            try {
+                if (typeof products !== 'undefined' && Array.isArray(products)) {
+                    items.forEach(item => {
+                        const pid = String(item.id || item.productId || item.code || '');
+                        const qty = Number(item.qty) || 1;
+                        const p = products.find(x => String(x.id) === pid || String(x.code) === pid || x.name === item.name);
+                        if (p) {
+                            p.stock = Math.max(0, (Number(p.stock) || 0) - qty);
+                            p.badge = p.stock <= 0 ? 'ناموجود' : (p.stock <= 5 ? `تعداد محدود (${p.stock} عدد)` : null);
+                        }
+                    });
+                }
+                if (typeof productsData !== 'undefined' && Array.isArray(productsData)) {
+                    items.forEach(item => {
+                        const pid = String(item.id || item.productId || item.code || '');
+                        const qty = Number(item.qty) || 1;
+                        const p = productsData.find(x => String(x.id) === pid || String(x.code) === pid || x.name === item.name);
+                        if (p) {
+                            p.stock = Math.max(0, (Number(p.stock) || 0) - qty);
+                            p.badge = p.stock <= 0 ? 'ناموجود' : (p.stock <= 5 ? `تعداد محدود (${p.stock} عدد)` : null);
+                        }
+                    });
+                }
+                let customProds = localStorage.getItem('rafooneh_custom_products');
+                if (customProds) {
+                    let list = JSON.parse(customProds);
+                    let modified = false;
+                    items.forEach(item => {
+                        const pid = String(item.id || item.productId || item.code || '');
+                        const qty = Number(item.qty) || 1;
+                        const p = list.find(x => String(x.id) === pid || String(x.code) === pid || x.name === item.name);
+                        if (p) {
+                            p.stock = Math.max(0, (Number(p.stock) || 0) - qty);
+                            p.badge = p.stock <= 0 ? 'ناموجود' : (p.stock <= 5 ? `تعداد محدود (${p.stock} عدد)` : null);
+                            modified = true;
+                        }
+                    });
+                    if (modified) {
+                        localStorage.setItem('rafooneh_custom_products', JSON.stringify(list));
+                    }
+                }
+                if (typeof renderProducts === 'function') {
+                    renderProducts();
+                }
+            } catch (err) {
+                console.error('Error deducting local product stock:', err);
+            }
+        }
+
         function handleOrderSubmit(e) {
             e.preventDefault();
 
@@ -2248,6 +2299,8 @@
                 const p = products.find(prod => prod.id == id);
                 if (p) {
                     orderItems.push({
+                        id: p.id,
+                        code: p.id,
                         productId: p.id,
                         name: p.name,
                         qty,
@@ -2257,9 +2310,13 @@
                 }
             }
 
+            // Deduct product stock locally
+            deductLocalProductStock(orderItems);
+
             // Save order to CRM
             const generatedOrderId = 'ord-' + Date.now().toString().slice(-6);
             const newOrderPayload = {
+                id: generatedOrderId,
                 customerName: name,
                 phone,
                 address,

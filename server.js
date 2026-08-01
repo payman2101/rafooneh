@@ -519,7 +519,7 @@ app.post('/api/upload-excel', (req, res) => {
 // CRM: Public order submission from website
 app.post('/api/orders', (req, res) => {
   try {
-    const { customerName, phone, address, note, items, totalAmount, paymentMethod } = req.body || {};
+    const { id, customerName, phone, address, note, items, totalAmount, paymentMethod } = req.body || {};
 
     if (!customerName || !phone || !address) {
       return res.status(400).json({ success: false, message: 'نام، تلفن و آدرس الزامی است' });
@@ -530,6 +530,7 @@ app.post('/api/orders', (req, res) => {
     }
 
     const order = createOrder({
+      id,
       customerName,
       phone,
       address,
@@ -652,8 +653,8 @@ app.get('/api/admin/customers/:id', authMiddleware, (req, res) => {
 });
 
 app.patch('/api/admin/customers/:id', authMiddleware, (req, res) => {
-  const { notes, name, address } = req.body || {};
-  const customer = updateCustomer(req.params.id, { notes, name, address });
+  const { notes, name, phone, address } = req.body || {};
+  const customer = updateCustomer(req.params.id, { notes, name, phone, address });
   if (!customer) {
     return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
   }

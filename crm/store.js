@@ -151,9 +151,12 @@ export function reduceProductStock(items) {
     let modified = false;
 
     (items || []).forEach(item => {
-      const pid = String(item.id || item.code || '');
+      const pid = String(item.id || item.code || item.productId || '');
       const qty = Number(item.qty) || 1;
-      const product = list.find(p => String(p.id) === pid || String(p.code) === pid);
+      const product = list.find(p =>
+        (pid && (String(p.id) === pid || String(p.code) === pid)) ||
+        (item.name && String(p.name).trim() === String(item.name).trim())
+      );
       if (product) {
         product.stock = Math.max(0, (Number(product.stock) || 0) - qty);
         product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
@@ -210,17 +213,20 @@ export function createOrder(orderData) {
   });
 
   const items = (orderData.items || []).map(item => {
-    const pid = String(item.id || item.code || '');
+    const pid = String(item.id || item.code || item.productId || '');
     const prod = pMap[pid] || {};
     const buyPrice = Number(item.buyPrice) || Number(prod.buyPrice) || Math.round((Number(item.price) || 0) * 0.7);
     return {
       ...item,
+      id: item.id || item.productId || item.code,
       buyPrice
     };
   });
 
+  const orderId = orderData.id || generateId('ord');
+
   const order = {
-    id: generateId('ord'),
+    id: orderId,
     customerId: customer.id,
     customerName: orderData.customerName,
     phone: normalizePhone(orderData.phone),
@@ -613,14 +619,33 @@ export function getCustomerById(id) {
 
 export function updateCustomer(id, updates) {
   const customers = readJson(CUSTOMERS_FILE, []);
-  const idx = customers.findIndex(c => c.id === id);
+  const idx = customers.findIndex(c => c.id === id || c.phone === id);
   if (idx === -1) return null;
+
+  const oldPhone = customers[idx].phone;
 
   customers[idx] = {
     ...customers[idx],
     ...updates,
     updatedAt: new Date().toISOString()
   };
+
+  // Sync customer changes across orders
+  if (updates.name || updates.phone || updates.address) {
+    const orders = readJson(ORDERS_FILE, []);
+    let ordersUpdated = false;
+    orders.forEach(o => {
+      if (o.customerId === id || o.phone === oldPhone || o.phone === id) {
+        if (updates.name) o.customerName = updates.name;
+        if (updates.phone) o.phone = normalizePhone(updates.phone);
+        if (updates.address) o.address = updates.address;
+        ordersUpdated = true;
+      }
+    });
+    if (ordersUpdated) {
+      writeJson(ORDERS_FILE, orders);
+    }
+  }
 
   writeJson(CUSTOMERS_FILE, customers);
   return customers[idx];

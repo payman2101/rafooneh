@@ -1114,16 +1114,12 @@
 
 <!-- Customer Detail Modal -->
 <div class="modal-overlay" id="customerModal">
-    <div class="modal">
-        <h3><i class="fa-solid fa-user"></i> پروفایل مشتری</h3>
+    <div class="modal" style="max-width: 580px;">
+        <h3><i class="fa-solid fa-user-pen"></i> ویرایش و پروفایل مشتری</h3>
         <div id="customerDetailContent"></div>
-        <div class="form-group" style="margin-top:16px;">
-            <label for="customerNotes">یادداشت مشتری</label>
-            <textarea id="customerNotes" class="form-control"></textarea>
-        </div>
-        <div style="display:flex; gap:10px; margin-top:12px;">
-            <button class="btn btn-primary" onclick="saveCustomerNotes()">
-                <i class="fa-solid fa-floppy-disk"></i> ذخیره یادداشت
+        <div style="display:flex; gap:10px; margin-top:16px;">
+            <button class="btn btn-primary" onclick="saveCustomerProfile()">
+                <i class="fa-solid fa-floppy-disk"></i> ذخیره تغییرات مشخصات مشتری
             </button>
             <button class="btn btn-secondary" onclick="closeCustomerModal()">بستن</button>
         </div>
@@ -1751,7 +1747,19 @@
         localOrders.forEach(o => mergedMap.set(o.id, o));
         serverOrders.forEach(o => mergedMap.set(o.id, o));
 
-        let allOrders = Array.from(mergedMap.values());
+        // Smart deduplication for identical orders submitted in close window
+        const deduplicated = [];
+        const seenSignatures = new Set();
+        Array.from(mergedMap.values()).forEach(o => {
+            const timeKey = Math.floor(new Date(o.createdAt || Date.now()).getTime() / (120 * 1000));
+            const sig = `${o.phone || ''}_${o.totalAmount || 0}_${timeKey}`;
+            if (!seenSignatures.has(sig)) {
+                seenSignatures.add(sig);
+                deduplicated.push(o);
+            }
+        });
+
+        let allOrders = deduplicated;
 
         if (status && status !== 'all') {
             allOrders = allOrders.filter(o => o.status === status);
@@ -1980,40 +1988,117 @@
 
     async function openCustomer(id) {
         currentCustomerId = id;
-        const res = await api(`/api/admin/customers/${id}`);
-        if (!res.ok) return;
-        const { customer } = await res.json();
+        let customer = null;
 
-        let ordersHtml = customer.orders.length
+        try {
+            const res = await api(`/api/admin/customers/${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                customer = data.customer;
+            }
+        } catch (err) {
+            console.log('Failed to fetch customer from API');
+        }
+
+        if (!customer) {
+            const localOrders = getLocalOrders().filter(o => o.phone === id || o.customerId === id || o.customerName === id);
+            if (localOrders.length > 0) {
+                const first = localOrders[0];
+                const totalSpent = localOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+                customer = {
+                    id: first.phone || id,
+                    name: first.customerName || 'مشتری',
+                    phone: first.phone || id,
+                    address: first.address || '',
+                    notes: '',
+                    totalOrders: localOrders.length,
+                    totalSpent: totalSpent,
+                    orders: localOrders
+                };
+            }
+        }
+
+        if (!customer) {
+            alert('اطلاعات مشتری یافت نشد');
+            return;
+        }
+
+        let ordersHtml = (customer.orders && customer.orders.length)
             ? customer.orders.map(o =>
-                `<div class="item-row"><span>${formatDate(o.createdAt)} — ${formatPrice(o.totalAmount)}</span>${statusBadge(o.status, o.statusLabel)}</div>`
+                `<div class="item-row"><span>${formatDate(o.createdAt)} — ${formatPrice(o.totalAmount)}</span>${statusBadge(o.status || 'new', o.statusLabel || getStatusLabel(o.status || 'new'))}</div>`
               ).join('')
             : '<p style="color:var(--muted); font-size:0.85rem;">بدون سفارش</p>';
 
         document.getElementById('customerDetailContent').innerHTML = `
-            <div class="detail-row"><span>نام</span><strong>${customer.name}</strong></div>
-            <div class="detail-row"><span>تلفن</span><strong dir="ltr">${customer.phone}</strong></div>
-            <div class="detail-row"><span>آدرس</span><strong>${customer.address || '—'}</strong></div>
-            <div class="detail-row"><span>تعداد سفارش</span><strong>${customer.totalOrders}</strong></div>
-            <div class="detail-row"><span>مجموع خرید</span><strong>${formatPrice(customer.totalSpent)}</strong></div>
-            <h4 style="margin:16px 0 8px; font-size:0.9rem;">تاریخچه سفارشات</h4>
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+                <h4 style="margin-bottom:12px; font-size:0.95rem; color:var(--primary-dark);"><i class="fa-solid fa-user-pen"></i> ویرایش اطلاعات خریدار</h4>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem; font-weight:bold; display:block; margin-bottom:4px;">نام و نام خانوادگی:</label>
+                        <input type="text" id="editCustomerName" class="form-control" value="${customer.name || customer.customerName || ''}">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem; font-weight:bold; display:block; margin-bottom:4px;">شماره همراه:</label>
+                        <input type="text" id="editCustomerPhone" class="form-control" dir="ltr" value="${customer.phone || ''}">
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label class="form-label" style="font-size:0.8rem; font-weight:bold; display:block; margin-bottom:4px;">آدرس تحویل سفارشات:</label>
+                    <textarea id="editCustomerAddress" class="form-control" rows="2">${customer.address || ''}</textarea>
+                </div>
+                <div>
+                    <label class="form-label" style="font-size:0.8rem; font-weight:bold; display:block; margin-bottom:4px;">یادداشت مدیریتی مشتری:</label>
+                    <textarea id="customerNotes" class="form-control" rows="2" placeholder="یادداشت پیگیری...">${customer.notes || ''}</textarea>
+                </div>
+            </div>
+
+            <div class="detail-row"><span>تعداد کل سفارشات</span><strong>${(customer.totalOrders || (customer.orders ? customer.orders.length : 0)).toLocaleString('fa-IR')}</strong></div>
+            <div class="detail-row"><span>مجموع مبلغ خرید</span><strong>${formatPrice(customer.totalSpent)}</strong></div>
+            <h4 style="margin:16px 0 8px; font-size:0.9rem;"><i class="fa-solid fa-history"></i> تاریخچه سفارشات</h4>
             <div class="items-list">${ordersHtml}</div>
         `;
 
-        document.getElementById('customerNotes').value = customer.notes || '';
         document.getElementById('customerModal').style.display = 'flex';
     }
 
-    async function saveCustomerNotes() {
-        const notes = document.getElementById('customerNotes').value;
-        const res = await api(`/api/admin/customers/${currentCustomerId}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ notes })
-        });
-        if (res.ok) {
-            closeCustomerModal();
-            await loadCustomers();
+    async function saveCustomerProfile() {
+        if (!currentCustomerId) return;
+        const name = document.getElementById('editCustomerName').value.trim();
+        const phone = document.getElementById('editCustomerPhone').value.trim();
+        const address = document.getElementById('editCustomerAddress').value.trim();
+        const notes = document.getElementById('customerNotes').value.trim();
+
+        try {
+            await api(`/api/admin/customers/${currentCustomerId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ name, phone, address, notes })
+            });
+        } catch (err) {
+            console.log('Customer update server save error');
         }
+
+        try {
+            let localOrders = getLocalOrders();
+            let updated = false;
+            localOrders.forEach(o => {
+                if (o.customerId === currentCustomerId || o.phone === currentCustomerId || o.phone === phone) {
+                    if (name) o.customerName = name;
+                    if (phone) o.phone = phone;
+                    if (address) o.address = address;
+                    updated = true;
+                }
+            });
+            if (updated) {
+                localStorage.setItem('rafooneh_local_orders', JSON.stringify(localOrders));
+            }
+        } catch (err) {
+            console.error('Error updating local customer orders:', err);
+        }
+
+        alert('اطلاعات مشتری با موفقیت به روزرسانی شد.');
+        closeCustomerModal();
+        await loadCustomers();
+        await loadOrders();
     }
 
     function closeCustomerModal() {
