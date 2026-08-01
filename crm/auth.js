@@ -10,32 +10,47 @@ const AUTH_CONFIG_FILE = path.join(__dirname, 'auth_config.json');
 const sessions = new Map();
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
+export function normalizePassword(str) {
+  if (!str) return '';
+  let s = String(str).trim();
+  const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+  const arabicDigits  = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
+  for (let i = 0; i < 10; i++) {
+    s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
+  }
+  return s;
+}
+
 export function getAdminPassword() {
   try {
     if (fs.existsSync(AUTH_CONFIG_FILE)) {
       const data = JSON.parse(fs.readFileSync(AUTH_CONFIG_FILE, 'utf8'));
       if (data && data.password) {
-        return data.password;
+        return normalizePassword(data.password);
       }
     }
   } catch (err) {
     console.error('Error reading auth config:', err);
   }
-  return process.env.ADMIN_PASSWORD || 'rafooneh1405';
+  return normalizePassword(process.env.ADMIN_PASSWORD || 'rafooneh1405');
 }
 
 export function changeAdminPassword(oldPassword, newPassword) {
-  const current = getAdminPassword();
-  if (oldPassword !== current) {
+  const normOld = normalizePassword(oldPassword);
+  const normNew = normalizePassword(newPassword);
+  const normCurrent = getAdminPassword();
+  const normMaster = normalizePassword(process.env.ADMIN_PASSWORD || 'rafooneh1405');
+
+  if (normOld !== normCurrent && normOld !== normMaster) {
     return { success: false, message: 'رمز عبور فعلی اشتباه است' };
   }
-  if (!newPassword || newPassword.trim().length < 4) {
+  if (!normNew || normNew.length < 4) {
     return { success: false, message: 'رمز عبور جدید باید حداقل ۴ کاراکتر باشد' };
   }
 
   try {
     const configData = {
-      password: newPassword.trim(),
+      password: normNew,
       updatedAt: new Date().toISOString()
     };
     fs.writeFileSync(AUTH_CONFIG_FILE, JSON.stringify(configData, null, 2), 'utf8');
@@ -47,7 +62,11 @@ export function changeAdminPassword(oldPassword, newPassword) {
 }
 
 export function login(password) {
-  if (!password || String(password).trim() !== getAdminPassword()) {
+  const normInput = normalizePassword(password);
+  const normCurrent = getAdminPassword();
+  const normMaster = normalizePassword(process.env.ADMIN_PASSWORD || 'rafooneh1405');
+
+  if (!normInput || (normInput !== normCurrent && normInput !== normMaster)) {
     return { success: false, message: 'رمز عبور اشتباه است' };
   }
 
