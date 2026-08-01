@@ -24,7 +24,7 @@ const productsData = [
     "brandName": "برند رافونه",
     "category": "handwash",
     "categoryName": "مایع دستشویی",
-    "price": 19,
+    "price": 1914400,
     "consumerPrice": 0,
     "buyPrice": 1146682,
     "packing": 1,

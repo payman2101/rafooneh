@@ -13,6 +13,7 @@ import {
   listOrders,
   updateCustomer,
   updateOrder,
+  deleteOrder,
   getAllStatuses,
   getStatusLabel,
   getProfitStats,
@@ -630,6 +631,18 @@ app.patch('/api/admin/orders/:id', authMiddleware, (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/admin/orders/:id', authMiddleware, (req, res) => {
+  try {
+    const success = deleteOrder(req.params.id);
+    if (!success) {
+      return res.status(404).json({ success: false, message: 'سفارش یافت نشد' });
+    }
+    res.json({ success: true, message: 'سفارش با موفقیت حذف شد' });
+  } catch (err) {
+    res.status(400).json({ success: false, message: 'خطا در حذف سفارش' });
   }
 });
 

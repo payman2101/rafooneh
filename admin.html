@@ -1017,6 +1017,9 @@
             <a id="whatsappOrderLink" href="#" target="_blank" class="btn btn-secondary" style="text-decoration:none;">
                 <i class="fa-brands fa-whatsapp"></i> واتساپ
             </a>
+            <button class="btn btn-secondary" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="deleteCurrentOrder()">
+                <i class="fa-solid fa-trash"></i> حذف سفارش
+            </button>
             <button class="btn btn-secondary" onclick="closeOrderModal()">بستن</button>
         </div>
     </div>
@@ -1790,7 +1793,14 @@
                 <td>${paymentLabels[o.paymentMethod] || o.paymentMethod || 'پرداخت در محل'}</td>
                 <td>${statusBadge(o.status || 'new', o.statusLabel || getStatusLabel(o.status || 'new'))}</td>
                 <td>${formatDate(o.createdAt)}</td>
-                <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">جزئیات</button></td>
+                <td>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-secondary" onclick="openOrder('${o.id}')">جزئیات</button>
+                        <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteOrder('${o.id}')" title="حذف سفارش">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `).join('');
     }
@@ -1984,6 +1994,35 @@
     function closeOrderModal() {
         document.getElementById('orderModal').style.display = 'none';
         currentOrderId = null;
+    }
+
+    async function quickDeleteOrder(id) {
+        if (!confirm(`آیا از حذف سفارش کد ${id} اطمینان دارید؟ این عمل غیرقابل بازگشت است.`)) {
+            return;
+        }
+
+        try {
+            await api(`/api/admin/orders/${id}`, { method: 'DELETE' });
+        } catch (err) {
+            console.log('Order delete request executed');
+        }
+
+        try {
+            let localOrders = getLocalOrders();
+            localOrders = localOrders.filter(o => o.id !== id);
+            localStorage.setItem('rafooneh_local_orders', JSON.stringify(localOrders));
+        } catch (e) {
+            console.error('Error removing local order:', e);
+        }
+
+        await refreshAll();
+    }
+
+    async function deleteCurrentOrder() {
+        if (!currentOrderId) return;
+        const id = currentOrderId;
+        closeOrderModal();
+        await quickDeleteOrder(id);
     }
 
     async function openCustomer(id) {

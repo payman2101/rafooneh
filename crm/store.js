@@ -302,6 +302,17 @@ export function getOrderById(id) {
   return enrichOrderWithProfit(order, pMap);
 }
 
+export function deleteOrder(id) {
+  let orders = readJson(ORDERS_FILE, []);
+  const initialLength = orders.length;
+  orders = orders.filter(o => o.id !== id);
+  if (orders.length !== initialLength) {
+    writeJson(ORDERS_FILE, orders);
+    return true;
+  }
+  return false;
+}
+
 export function getAdminAlerts() {
   const { list: products } = getProductsMap();
   const orders = readJson(ORDERS_FILE, []);
