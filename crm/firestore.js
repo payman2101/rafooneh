@@ -1,4 +1,5 @@
-import { Firestore } from '@google-cloud/firestore';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, writeBatch } from 'firebase/firestore';
 import fs from 'fs';
 import path from 'path';
 
@@ -12,12 +13,9 @@ export function getFirestoreDb() {
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      const opts = { projectId: config.projectId };
-      if (config.firestoreDatabaseId && config.firestoreDatabaseId !== '(default)') {
-        opts.databaseId = config.firestoreDatabaseId;
-      }
-      db = new Firestore(opts);
-      console.log(`[Firestore] Initialized with projectId: ${config.projectId}, databaseId: ${opts.databaseId || '(default)'}`);
+      const app = initializeApp(config);
+      db = getFirestore(app, config.firestoreDatabaseId);
+      console.log(`[Firestore] Initialized with projectId: ${config.projectId}, databaseId: ${config.firestoreDatabaseId}`);
       return db;
     }
   } catch (err) {
@@ -31,13 +29,11 @@ export async function syncSaveProducts(list) {
   if (!firestore || !Array.isArray(list) || list.length === 0) return;
 
   try {
-    const batch = firestore.batch();
-    const collectionRef = firestore.collection('products');
+    const batch = writeBatch(firestore);
     for (const prod of list) {
       if (!prod || (!prod.id && !prod.code)) continue;
       const docId = String(prod.id || prod.code);
-      const docRef = collectionRef.doc(docId);
-      // Ensure all values are firestore-serializable
+      const docRef = doc(firestore, 'products', docId);
       const cleanData = JSON.parse(JSON.stringify(prod));
       batch.set(docRef, cleanData, { merge: true });
     }
@@ -54,7 +50,7 @@ export async function syncSaveOrder(order) {
 
   try {
     const cleanOrder = JSON.parse(JSON.stringify(order));
-    await firestore.collection('orders').doc(String(order.id)).set(cleanOrder, { merge: true });
+    await setDoc(doc(firestore, 'orders', String(order.id)), cleanOrder, { merge: true });
     console.log(`[Firestore] Saved order ${order.id} to Firestore.`);
   } catch (err) {
     console.error(`[Firestore] Error saving order ${order.id}:`, err.message);
@@ -66,7 +62,7 @@ export async function syncDeleteOrder(orderId) {
   if (!firestore || !orderId) return;
 
   try {
-    await firestore.collection('orders').doc(String(orderId)).delete();
+    await deleteDoc(doc(firestore, 'orders', String(orderId)));
     console.log(`[Firestore] Deleted order ${orderId} from Firestore.`);
   } catch (err) {
     console.error(`[Firestore] Error deleting order ${orderId}:`, err.message);
@@ -79,7 +75,7 @@ export async function syncSaveCustomer(customer) {
 
   try {
     const cleanCust = JSON.parse(JSON.stringify(customer));
-    await firestore.collection('customers').doc(String(customer.id)).set(cleanCust, { merge: true });
+    await setDoc(doc(firestore, 'customers', String(customer.id)), cleanCust, { merge: true });
     console.log(`[Firestore] Saved customer ${customer.id} to Firestore.`);
   } catch (err) {
     console.error(`[Firestore] Error saving customer ${customer.id}:`, err.message);
@@ -100,19 +96,17 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
     console.log('[Firestore] Performing initial database sync...');
 
     // 1. Sync Products
-    const prodSnapshot = await firestore.collection('products').get();
+    const prodSnapshot = await getDocs(collection(firestore, 'products'));
     if (prodSnapshot.empty) {
-      // Seed Firestore from local products
       const localProducts = readProductsList();
       if (localProducts && localProducts.length > 0) {
         console.log(`[Firestore] Seeding Firestore with ${localProducts.length} local products...`);
         await syncSaveProducts(localProducts);
       }
     } else {
-      // Load products from Firestore to keep local storage updated
       const firestoreProducts = [];
-      prodSnapshot.forEach(doc => {
-        firestoreProducts.push({ id: doc.id, ...doc.data() });
+      prodSnapshot.forEach(docSnap => {
+        firestoreProducts.push({ id: docSnap.id, ...docSnap.data() });
       });
       if (firestoreProducts.length > 0) {
         console.log(`[Firestore] Loaded ${firestoreProducts.length} products from Firestore into local cache.`);
@@ -121,7 +115,7 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
     }
 
     // 2. Sync Orders
-    const orderSnapshot = await firestore.collection('orders').get();
+    const orderSnapshot = await getDocs(collection(firestore, 'orders'));
     if (orderSnapshot.empty) {
       const localOrders = readJson(ORDERS_FILE, []);
       if (localOrders && localOrders.length > 0) {
@@ -132,8 +126,8 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
       }
     } else {
       const firestoreOrders = [];
-      orderSnapshot.forEach(doc => {
-        firestoreOrders.push({ id: doc.id, ...doc.data() });
+      orderSnapshot.forEach(docSnap => {
+        firestoreOrders.push({ id: docSnap.id, ...docSnap.data() });
       });
       if (firestoreOrders.length > 0) {
         writeJson(ORDERS_FILE, firestoreOrders);
@@ -142,7 +136,7 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
     }
 
     // 3. Sync Customers
-    const custSnapshot = await firestore.collection('customers').get();
+    const custSnapshot = await getDocs(collection(firestore, 'customers'));
     if (custSnapshot.empty) {
       const localCusts = readJson(CUSTOMERS_FILE, []);
       if (localCusts && localCusts.length > 0) {
@@ -153,8 +147,8 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
       }
     } else {
       const firestoreCusts = [];
-      custSnapshot.forEach(doc => {
-        firestoreCusts.push({ id: doc.id, ...doc.data() });
+      custSnapshot.forEach(docSnap => {
+        firestoreCusts.push({ id: docSnap.id, ...docSnap.data() });
       });
       if (firestoreCusts.length > 0) {
         writeJson(CUSTOMERS_FILE, firestoreCusts);
