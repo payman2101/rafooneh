@@ -664,10 +664,36 @@
             <!-- Dashboard -->
             <section class="section active" id="section-dashboard">
                 <div id="dashboardAlertBanner"></div>
+
+                <!-- Dashboard Date Filter Bar -->
+                <div class="panel" style="margin-bottom: 20px; padding: 16px 20px;">
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-chart-pie" style="color: var(--primary); font-size: 1.25rem;"></i>
+                            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text);">خلاصه عملکرد و فیلتر زمان</h3>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 4px; background: var(--bg-hover, #f1f5f9); padding: 4px; border-radius: 10px; border: 1px solid var(--border, #e2e8f0);">
+                                <button type="button" class="btn btn-sm dash-filter-btn active" data-timeframe="all" onclick="setDashboardTimeframe('all')" style="border-radius: 8px;">کل دوره</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="today" onclick="setDashboardTimeframe('today')" style="border-radius: 8px;">امروز</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="yesterday" onclick="setDashboardTimeframe('yesterday')" style="border-radius: 8px;">دیروز</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="week" onclick="setDashboardTimeframe('week')" style="border-radius: 8px;">۷ روز اخیر</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="month" onclick="setDashboardTimeframe('month')" style="border-radius: 8px;">۳۰ روز اخیر</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="custom" onclick="setDashboardTimeframe('custom')" style="border-radius: 8px;">تاریخ دلخواه</button>
+                            </div>
+                            <div id="dashCustomDateGroup" style="display: none; align-items: center; gap: 8px;">
+                                <input type="date" id="dashFromDate" class="form-control" style="width: 140px; font-size: 0.85rem; padding: 6px 10px;" onchange="loadStats()">
+                                <span style="font-size: 0.85rem; color: var(--muted);">تا</span>
+                                <input type="date" id="dashToDate" class="form-control" style="width: 140px; font-size: 0.85rem; padding: 6px 10px;" onchange="loadStats()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="stats-grid" id="statsGrid"></div>
                 <div class="panel">
                     <div class="panel-header">
-                        <h2>آخرین سفارشات</h2>
+                        <h2>لیست سفارشات بازه انتخابی</h2>
                     </div>
                     <div class="table-wrap">
                         <table>
@@ -1519,6 +1545,30 @@
         }
     }
 
+    let currentDashboardTimeframe = 'all';
+
+    function setDashboardTimeframe(tf) {
+        currentDashboardTimeframe = tf;
+        document.querySelectorAll('.dash-filter-btn').forEach(btn => {
+            if (btn.dataset.timeframe === tf) {
+                btn.classList.add('active');
+                btn.style.background = 'var(--primary)';
+                btn.style.color = '#fff';
+            } else {
+                btn.classList.remove('active');
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--text)';
+            }
+        });
+
+        const customGroup = document.getElementById('dashCustomDateGroup');
+        if (customGroup) {
+            customGroup.style.display = tf === 'custom' ? 'flex' : 'none';
+        }
+
+        loadStats();
+    }
+
     function renderStatsUI(stats) {
         if (!stats) return;
         const alertBanner = document.getElementById('dashboardAlertBanner');
@@ -1539,22 +1589,57 @@
             }
         }
 
+        const tfLabels = {
+            all: 'کل دوره',
+            today: 'امروز',
+            yesterday: 'دیروز',
+            week: '۷ روز اخیر',
+            month: '۳۰ روز اخیر',
+            year: 'امسال',
+            custom: 'تاریخ انتخاب‌شده'
+        };
+        const activeLabel = tfLabels[currentDashboardTimeframe] || 'بازه انتخابی';
+
         const grid = document.getElementById('statsGrid');
         if (grid) {
             grid.innerHTML = `
-                <div class="stat-card"><div class="label">سفارشات امروز</div><div class="value">${(stats.todayOrders || 0).toLocaleString('fa-IR')}</div></div>
-                <div class="stat-card"><div class="label">درآمد امروز</div><div class="value">${(stats.revenueToday || 0).toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
-                <div class="stat-card"><div class="label">سود امروز</div><div class="value" style="color:var(--success);">${(stats.profitToday || 0).toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
-                <div class="stat-card"><div class="label">سفارشات فعال</div><div class="value">${(stats.activeOrders || 0).toLocaleString('fa-IR')}</div><div class="sub">در انتظار تحویل</div></div>
-                <div class="stat-card"><div class="label">درآمد کل تحویل‌شده</div><div class="value">${(stats.revenueTotal || 0).toLocaleString('fa-IR')}</div><div class="sub">تومان</div></div>
-                <div class="stat-card"><div class="label">سود کل تحویل‌شده</div><div class="value" style="color:var(--success);">${(stats.profitTotal || 0).toLocaleString('fa-IR')}</div><div class="sub">حاشیه سود: ${(stats.profitMarginTotal || 0).toLocaleString('fa-IR')}٪</div></div>
+                <div class="stat-card">
+                    <div class="label">تعداد سفارشات (${activeLabel})</div>
+                    <div class="value">${(stats.filteredOrdersCount !== undefined ? stats.filteredOrdersCount : (stats.totalOrders || 0)).toLocaleString('fa-IR')}</div>
+                    <div class="sub">از مجموع ${(stats.totalOrders || 0).toLocaleString('fa-IR')} سفارش کل</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">درآمد فروش (${activeLabel})</div>
+                    <div class="value">${(stats.revenueTotal || 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">تومان</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">سود تخمینی (${activeLabel})</div>
+                    <div class="value" style="color:var(--success);">${(stats.profitTotal || 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">حاشیه سود: ${(stats.profitMarginTotal || 0).toLocaleString('fa-IR')}٪</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">سفارشات در جریان</div>
+                    <div class="value" style="color:var(--primary);">${(stats.activeOrders || 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">در انتظار آماده‌سازی و ارسال</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">سفارشات تحویل‌شده</div>
+                    <div class="value" style="color:#0284c7;">${(stats.deliveredOrdersCount !== undefined ? stats.deliveredOrdersCount : 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">تکمیل شده</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">امروز (${(stats.todayOrders || 0).toLocaleString('fa-IR')} سفارش)</div>
+                    <div class="value">${(stats.revenueToday || 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">سود امروز: ${(stats.profitToday || 0).toLocaleString('fa-IR')} تومان</div>
+                </div>
             `;
         }
 
         const tbody = document.getElementById('recentOrdersBody');
         if (tbody) {
             if (!stats.recentOrders || !stats.recentOrders.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">هنوز سفارشی ثبت نشده</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">سفارشی در این بازه زمانی یافت نشد</td></tr>';
             } else {
                 tbody.innerHTML = stats.recentOrders.map(o => `
                     <tr>
@@ -1572,21 +1657,22 @@
     }
 
     async function loadStats() {
-        const cached = localStorage.getItem('crm_cached_stats');
-        if (cached) {
-            try { renderStatsUI(JSON.parse(cached)); } catch(e) {}
-        } else {
-            renderStatsSkeleton();
-        }
+        renderStatsSkeleton();
 
         let stats = null;
+        let url = `/api/admin/stats?timeframe=${currentDashboardTimeframe}`;
+        if (currentDashboardTimeframe === 'custom') {
+            const from = document.getElementById('dashFromDate')?.value || '';
+            const to = document.getElementById('dashToDate')?.value || '';
+            url += `&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+        }
+
         try {
-            const res = await api('/api/admin/stats');
+            const res = await api(url);
             if (res.ok) {
                 const data = await res.json();
                 stats = data.stats;
                 if (stats) {
-                    localStorage.setItem('crm_cached_stats', JSON.stringify(stats));
                     renderStatsUI(stats);
                     return;
                 }
@@ -1611,6 +1697,9 @@
                 revenueTotal: totalRevenue,
                 profitTotal: Math.round(totalRevenue * 0.3),
                 profitMarginTotal: 30,
+                filteredOrdersCount: localOrders.length,
+                totalOrders: localOrders.length,
+                deliveredOrdersCount: localOrders.filter(o => o.status === 'delivered').length,
                 recentOrders: localOrders.slice(0, 10),
                 alerts: { totalAlertsCount: 0, lowStockCount: 0, delayedOrdersCount: 0 }
             };

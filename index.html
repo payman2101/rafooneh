@@ -2359,9 +2359,10 @@
                     items.forEach(item => {
                         const pid = String(item.id || item.productId || item.code || '');
                         const qty = Number(item.qty) || 1;
-                        const p = products.find(x => String(x.id) === pid || String(x.code) === pid || x.name === item.name);
+                        const p = products.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
                         if (p) {
-                            p.stock = Math.max(0, (Number(p.stock) || 0) - qty);
+                            let currentStock = p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock)) ? Number(p.stock) : 10;
+                            p.stock = Math.max(0, currentStock - qty);
                             p.badge = p.stock <= 0 ? 'ناموجود' : (p.stock <= 5 ? `تعداد محدود (${p.stock} عدد)` : null);
                         }
                     });
@@ -2370,9 +2371,10 @@
                     items.forEach(item => {
                         const pid = String(item.id || item.productId || item.code || '');
                         const qty = Number(item.qty) || 1;
-                        const p = productsData.find(x => String(x.id) === pid || String(x.code) === pid || x.name === item.name);
+                        const p = productsData.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
                         if (p) {
-                            p.stock = Math.max(0, (Number(p.stock) || 0) - qty);
+                            let currentStock = p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock)) ? Number(p.stock) : 10;
+                            p.stock = Math.max(0, currentStock - qty);
                             p.badge = p.stock <= 0 ? 'ناموجود' : (p.stock <= 5 ? `تعداد محدود (${p.stock} عدد)` : null);
                         }
                     });

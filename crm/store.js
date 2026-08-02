@@ -190,10 +190,13 @@ export function reduceProductStock(items) {
       const qty = Number(item.qty) || 1;
       const product = list.find(p =>
         (pid && (String(p.id) === pid || String(p.code) === pid)) ||
-        (item.name && String(p.name).trim() === String(item.name).trim())
+        (item.name && String(p.name).trim().toLowerCase() === String(item.name).trim().toLowerCase())
       );
       if (product) {
-        product.stock = Math.max(0, (Number(product.stock) || 0) - qty);
+        let currentStock = product.stock !== undefined && product.stock !== null && !isNaN(Number(product.stock))
+          ? Number(product.stock)
+          : 10;
+        product.stock = Math.max(0, currentStock - qty);
         product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
         product.updatedAt = new Date().toISOString();
         modified = true;
@@ -215,11 +218,17 @@ export function restoreProductStock(items) {
     let modified = false;
 
     (items || []).forEach(item => {
-      const pid = String(item.id || item.code || '');
+      const pid = String(item.id || item.code || item.productId || '');
       const qty = Number(item.qty) || 1;
-      const product = list.find(p => String(p.id) === pid || String(p.code) === pid);
+      const product = list.find(p =>
+        (pid && (String(p.id) === pid || String(p.code) === pid)) ||
+        (item.name && String(p.name).trim().toLowerCase() === String(item.name).trim().toLowerCase())
+      );
       if (product) {
-        product.stock = (Number(product.stock) || 0) + qty;
+        let currentStock = product.stock !== undefined && product.stock !== null && !isNaN(Number(product.stock))
+          ? Number(product.stock)
+          : 0;
+        product.stock = currentStock + qty;
         product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
         product.updatedAt = new Date().toISOString();
         modified = true;
@@ -686,61 +695,103 @@ export function updateCustomer(id, updates) {
   return customers[idx];
 }
 
-export function getDashboardStats() {
+export function getDashboardStats(filters = {}) {
   const orders = readJson(ORDERS_FILE, []);
   const customers = readJson(CUSTOMERS_FILE, []);
   const { map: pMap } = getProductsMap();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayIso = today.toISOString();
+  const timeframe = filters.timeframe || 'all';
+  let fromDate = null;
+  let toDate = null;
 
-  const todayOrders = orders.filter(o => o.createdAt >= todayIso);
-  const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.status));
-  const deliveredOrders = orders.filter(o => o.status === 'delivered');
+  if (timeframe === 'today') {
+    fromDate = new Date();
+    fromDate.setHours(0, 0, 0, 0);
+  } else if (timeframe === 'yesterday') {
+    fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - 1);
+    fromDate.setHours(0, 0, 0, 0);
+    toDate = new Date();
+    toDate.setDate(toDate.getDate() - 1);
+    toDate.setHours(23, 59, 59, 999);
+  } else if (timeframe === 'week') {
+    fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - 7);
+    fromDate.setHours(0, 0, 0, 0);
+  } else if (timeframe === 'month') {
+    fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - 30);
+    fromDate.setHours(0, 0, 0, 0);
+  } else if (timeframe === 'year') {
+    fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - 365);
+    fromDate.setHours(0, 0, 0, 0);
+  } else if (timeframe === 'custom') {
+    if (filters.from) {
+      fromDate = new Date(filters.from);
+      if (isNaN(fromDate.getTime())) fromDate = null;
+      else fromDate.setHours(0, 0, 0, 0);
+    }
+    if (filters.to) {
+      toDate = new Date(filters.to);
+      if (isNaN(toDate.getTime())) toDate = null;
+      else toDate.setHours(23, 59, 59, 999);
+    }
+  }
 
   const enrichedOrders = orders.map(o => enrichOrderWithProfit(o, pMap));
-  const enrichedTodayOrders = todayOrders.map(o => enrichOrderWithProfit(o, pMap));
-  const enrichedDeliveredOrders = deliveredOrders.map(o => enrichOrderWithProfit(o, pMap));
 
-  const revenueToday = enrichedTodayOrders
-    .filter(o => o.status !== 'cancelled')
-    .reduce((sum, o) => sum + o.totalAmount, 0);
+  const filteredOrders = enrichedOrders.filter(o => {
+    if (!o.createdAt) return true;
+    const oDate = new Date(o.createdAt);
+    if (fromDate && oDate < fromDate) return false;
+    if (toDate && oDate > toDate) return false;
+    return true;
+  });
 
-  const costToday = enrichedTodayOrders
-    .filter(o => o.status !== 'cancelled')
-    .reduce((sum, o) => sum + o.totalCost, 0);
+  const validOrders = filteredOrders.filter(o => o.status !== 'cancelled');
+  const activeOrders = filteredOrders.filter(o => !['delivered', 'cancelled'].includes(o.status));
+  const deliveredOrders = filteredOrders.filter(o => o.status === 'delivered');
 
-  const profitToday = revenueToday - costToday;
+  const timeframeRevenue = validOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const timeframeCost = validOrders.reduce((sum, o) => sum + (o.totalCost || 0), 0);
+  const timeframeProfit = timeframeRevenue - timeframeCost;
+  const timeframeProfitMargin = timeframeRevenue > 0 ? Math.round((timeframeProfit / timeframeRevenue) * 1000) / 10 : 0;
 
-  const revenueTotal = enrichedDeliveredOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-  const costTotal = enrichedDeliveredOrders.reduce((sum, o) => sum + o.totalCost, 0);
-  const profitTotal = revenueTotal - costTotal;
-  const profitMarginTotal = revenueTotal > 0 ? Math.round((profitTotal / revenueTotal) * 1000) / 10 : 0;
+  // Today metrics
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const todayOrders = enrichedOrders.filter(o => new Date(o.createdAt) >= startOfToday);
+  const revenueToday = todayOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.totalAmount || 0), 0);
+  const profitToday = todayOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.totalProfit || 0), 0);
 
   const alerts = getAdminAlerts();
 
   const byStatus = ORDER_STATUSES.reduce((acc, status) => {
-    acc[status] = orders.filter(o => o.status === status).length;
+    acc[status] = filteredOrders.filter(o => o.status === status).length;
     return acc;
   }, {});
 
-  const recentOrders = [...enrichedOrders]
+  const recentOrders = [...filteredOrders]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 8);
+    .slice(0, 10);
 
   return {
+    timeframe,
+    fromDate: fromDate ? fromDate.toISOString() : null,
+    toDate: toDate ? toDate.toISOString() : null,
     totalOrders: orders.length,
+    filteredOrdersCount: filteredOrders.length,
     totalCustomers: customers.length,
     todayOrders: todayOrders.length,
-    activeOrders: activeOrders.length,
     revenueToday,
-    costToday,
     profitToday,
-    revenueTotal,
-    costTotal,
-    profitTotal,
-    profitMarginTotal,
+    activeOrders: activeOrders.length,
+    deliveredOrdersCount: deliveredOrders.length,
+    revenueTotal: timeframeRevenue,
+    costTotal: timeframeCost,
+    profitTotal: timeframeProfit,
+    profitMarginTotal: timeframeProfitMargin,
     alerts,
     byStatus,
     recentOrders

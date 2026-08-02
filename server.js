@@ -652,7 +652,8 @@ app.post('/api/admin/change-password', authMiddleware, (req, res) => {
 
 // CRM: Admin dashboard & data
 app.get('/api/admin/stats', authMiddleware, (req, res) => {
-  res.json({ success: true, stats: getDashboardStats() });
+  const { timeframe, from, to } = req.query;
+  res.json({ success: true, stats: getDashboardStats({ timeframe, from, to }) });
 });
 
 app.get('/api/admin/profit', authMiddleware, (req, res) => {
