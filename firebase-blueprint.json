@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "entities": {
+    "products": {
+      "firestorePath": "products/{productId}",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "price": { "type": "number", "required": true },
+        "newPrice": { "type": "number", "required": false },
+        "consumerPrice": { "type": "number", "required": false },
+        "buyPrice": { "type": "number", "required": false },
+        "stock": { "type": "number", "required": false },
+        "category": { "type": "string", "required": false },
+        "image": { "type": "string", "required": false },
+        "badge": { "type": "string", "required": false },
+        "unit": { "type": "string", "required": false },
+        "updatedAt": { "type": "string", "required": false }
+      }
+    },
+    "orders": {
+      "firestorePath": "orders/{orderId}",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "orderNumber": { "type": "string", "required": true },
+        "totalAmount": { "type": "number", "required": true },
+        "status": { "type": "string", "required": true },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "customers": {
+      "firestorePath": "customers/{customerId}",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "phone": { "type": "string", "required": true }
+      }
+    },
+    "transactions": {
+      "firestorePath": "transactions/{transactionId}",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "amount": { "type": "number", "required": true }
+      }
+    }
+  }
+}

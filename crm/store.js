@@ -1,6 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import {
+  syncSaveProducts,
+  syncSaveOrder,
+  syncDeleteOrder,
+  syncSaveCustomer,
+  initFirestoreSync
+} from './firestore.js';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
@@ -16,6 +23,7 @@ export function saveProductsList(list) {
     fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8');
     fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8');
     fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8');
+    syncSaveProducts(list);
   } catch (err) {
     console.error('Error saving products list:', err);
   }
@@ -122,6 +130,7 @@ export function upsertCustomer({ name, phone, address }) {
   }
 
   writeJson(CUSTOMERS_FILE, customers);
+  syncSaveCustomer(customer);
   return customer;
 }
 
@@ -299,6 +308,11 @@ export function createOrder(orderData) {
   writeJson(ORDERS_FILE, orders);
   writeJson(CUSTOMERS_FILE, customers);
 
+  syncSaveOrder(order);
+  if (customers[customerIdx]) {
+    syncSaveCustomer(customers[customerIdx]);
+  }
+
   // Automatically update stock in products dataset upon order creation!
   reduceProductStock(items);
 
@@ -349,6 +363,7 @@ export function deleteOrder(id) {
   orders = orders.filter(o => o.id !== id);
   if (orders.length !== initialLength) {
     writeJson(ORDERS_FILE, orders);
+    syncDeleteOrder(id);
     return true;
   }
   return false;
@@ -494,6 +509,7 @@ export function updateOrder(id, updates) {
   };
 
   writeJson(ORDERS_FILE, orders);
+  syncSaveOrder(orders[idx]);
 
   // If status changed to cancelled, restore stock!
   if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
@@ -692,6 +708,7 @@ export function updateCustomer(id, updates) {
   }
 
   writeJson(CUSTOMERS_FILE, customers);
+  syncSaveCustomer(customers[idx]);
   return customers[idx];
 }
 
@@ -796,4 +813,21 @@ export function getDashboardStats(filters = {}) {
     byStatus,
     recentOrders
   };
+}
+
+export async function initDatabaseSync() {
+  await initFirestoreSync({
+    saveProductsList,
+    readProductsList,
+    readJson: (file, fallback) => {
+      if (!fs.existsSync(file)) return fallback;
+      try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
+    },
+    writeJson: (file, data) => {
+      if (!fs.existsSync(path.dirname(file))) fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+    },
+    ORDERS_FILE,
+    CUSTOMERS_FILE
+  });
 }

@@ -23,7 +23,8 @@ import {
   addProduct,
   deleteProduct,
   readProductsList,
-  saveProductsList
+  saveProductsList,
+  initDatabaseSync
 } from './crm/store.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
 
@@ -933,5 +934,6 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
+  initDatabaseSync().catch(err => console.error('Database sync error on startup:', err));
 });
 
