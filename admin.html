@@ -1213,8 +1213,20 @@
             <div id="addDiscountCalcNotice" style="background:#f0fdf4; border:1px solid #86efac; padding:8px 12px; border-radius:8px; font-size:0.82rem; color:#15803d; font-weight:bold; margin-bottom:12px; display:none;"></div>
 
             <div class="form-group">
-                <label for="newProdImage">لینک تصویر (اختیاری)</label>
-                <input type="url" id="newProdImage" class="form-control" placeholder="https://...">
+                <label for="newProdImage">تصویر محصول</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <img id="newProdImagePreview" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23f1f5f9'/%3E%3C/svg%3E" alt="پیش‌نمایش" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#f8fafc;" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';">
+                    <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="newProdImage" class="form-control" placeholder="https://..." oninput="updateNewImagePreview(this.value)">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('newProdImageFile').click()" style="white-space:nowrap;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> آپلود فایل
+                            </button>
+                            <input type="file" id="newProdImageFile" accept="image/*" style="display:none;" onchange="handleProductFileUpload(this, 'newProdImage', 'newProdImagePreview', 'newProdUploadStatus')">
+                        </div>
+                        <span id="newProdUploadStatus" style="font-size:0.75rem; color:var(--muted);">امکان انتخاب فایل عکس از کامپیوتر/موبایل یا وارد کردن لینک مستقیم.</span>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
@@ -1298,12 +1310,20 @@
             <div id="editDiscountCalcNotice" style="background:#f0fdf4; border:1px solid #86efac; padding:8px 12px; border-radius:8px; font-size:0.82rem; color:#15803d; font-weight:bold; margin-bottom:12px; display:none;"></div>
 
             <div class="form-group">
-                <label for="editProdImage">لینک تصویر محصول (URL)</label>
+                <label for="editProdImage">تصویر محصول</label>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <img id="editProdImagePreview" src="" alt="پیش‌نمایش" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#f8fafc;">
-                    <input type="url" id="editProdImage" class="form-control" placeholder="https://..." oninput="updateEditImagePreview(this.value)">
+                    <img id="editProdImagePreview" src="" alt="پیش‌نمایش" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#f8fafc;" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';">
+                    <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="editProdImage" class="form-control" placeholder="https://..." oninput="updateEditImagePreview(this.value)">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editProdImageFile').click()" style="white-space:nowrap;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> آپلود فایل
+                            </button>
+                            <input type="file" id="editProdImageFile" accept="image/*" style="display:none;" onchange="handleProductFileUpload(this, 'editProdImage', 'editProdImagePreview', 'editProdUploadStatus')">
+                        </div>
+                        <span id="editProdUploadStatus" style="font-size:0.75rem; color:var(--muted);">امکان انتخاب فایل عکس از کامپیوتر/موبایل یا وارد کردن لینک مستقیم.</span>
+                    </div>
                 </div>
-                <span style="font-size:0.78rem; color:var(--muted); margin-top:4px; display:block;">لینک مستقیم تصویر کالا را وارد کنید تا پیش‌نمایش آن نمایش داده شود.</span>
             </div>
 
             <div class="form-group">
@@ -2468,7 +2488,55 @@
 
     function updateEditImagePreview(url) {
         const img = document.getElementById('editProdImagePreview');
-        if (img) img.src = url || 'https://via.placeholder.com/50';
+        if (img) img.src = url || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';
+    }
+
+    function updateNewImagePreview(url) {
+        const img = document.getElementById('newProdImagePreview');
+        if (img) img.src = url || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';
+    }
+
+    async function handleProductFileUpload(fileInput, urlInputId, previewImgId, statusElemId) {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+
+        const statusElem = document.getElementById(statusElemId);
+        if (statusElem) {
+            statusElem.style.color = '#0284c7';
+            statusElem.innerText = 'در حال آپلود تصویر...';
+        }
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const token = localStorage.getItem('adminToken');
+            const res = await fetch('/api/upload-image', {
+                method: 'POST',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success && data.url) {
+                document.getElementById(urlInputId).value = data.url;
+                const preview = document.getElementById(previewImgId);
+                if (preview) preview.src = data.url;
+                if (statusElem) {
+                    statusElem.style.color = '#16a34a';
+                    statusElem.innerText = '✓ تصویر با موفقیت آپلود شد';
+                }
+            } else {
+                throw new Error(data.message || 'خطا در آپلود تصویر');
+            }
+        } catch (err) {
+            console.error('Image upload failed:', err);
+            if (statusElem) {
+                statusElem.style.color = '#dc2626';
+                statusElem.innerText = 'خطا در آپلود: ' + err.message;
+            }
+        } finally {
+            fileInput.value = '';
+        }
     }
 
     function openEditProductModal(id) {

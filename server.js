@@ -571,6 +571,42 @@ app.post('/api/upload-excel', (req, res) => {
   }
 });
 
+// API: Upload product image file
+const handleImageUploadRoute = (req, res) => {
+  try {
+    const file = req.files && (req.files.image || req.files.file);
+    if (!file) {
+      return res.status(400).json({ success: false, message: 'فایل تصویری ارسال نشده است.' });
+    }
+
+    const uploadsDir = path.join(__dirname, 'uploads', 'products');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const ext = path.extname(file.name) || '.jpg';
+    const cleanExt = ext.match(/^\.[a-zA-Z0-9]+$/) ? ext : '.jpg';
+    const filename = `prod_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${cleanExt}`;
+    const savePath = path.join(uploadsDir, filename);
+
+    file.mv(savePath, (err) => {
+      if (err) {
+        console.error('Image save error:', err);
+        return res.status(500).json({ success: false, message: 'خطا در ذخیره فایل تصویر' });
+      }
+
+      const imageUrl = `/uploads/products/${filename}`;
+      res.json({ success: true, url: imageUrl, message: 'تصویر با موفقیت آپلود شد.' });
+    });
+  } catch (err) {
+    console.error('Image upload endpoint error:', err);
+    res.status(500).json({ success: false, message: 'خطای سرور در آپلود تصویر' });
+  }
+};
+
+app.post('/api/upload-image', handleImageUploadRoute);
+app.post('/api/admin/upload-image', handleImageUploadRoute);
+
 // CRM: Public order submission from website
 app.post('/api/orders', (req, res) => {
   try {
