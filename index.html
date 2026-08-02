@@ -1727,7 +1727,7 @@
             <button class="modal-close-btn" onclick="closeProductDetailModal()"><i class="fa-solid fa-xmark"></i></button>
             <div class="detail-modal-grid">
                 <div class="detail-modal-img-wrap">
-                    <img id="detailModalImg" src="" alt="" onerror="this.src='https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg'">
+                    <img id="detailModalImg" src="" alt="" onerror="handleProductImgError(this)">
                     <div id="detailModalBadge" class="product-tag" style="display:none; position:absolute; top:12px; right:12px;"></div>
                 </div>
                 <div class="detail-modal-info">
@@ -1901,6 +1901,15 @@
 
     <script src="products_data.js"></script>
     <script>
+        const PRODUCT_PLACEHOLDER_SVG = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f1f5f9'/%3E%3Cpath d='M160 140h80v20h-80zM170 120h60v20h-60zM150 160h100v160c0 11-9 20-20 20h-60c-11 0-20-9-20-20V160z' fill='%230284c7' opacity='0.3'/%3E%3Ctext x='200' y='320' font-family='sans-serif' font-size='16' fill='%2364748b' text-anchor='middle'%3Eتصویر کالا%3E%3C/text%3E%3C/svg%3E";
+
+        function handleProductImgError(img) {
+            if (img) {
+                img.onerror = null;
+                img.src = PRODUCT_PLACEHOLDER_SVG;
+            }
+        }
+
         // Products Dataset from Excel and Rafooneh Catalog
         let products = typeof productsData !== 'undefined' ? productsData : [];
 
@@ -2024,7 +2033,7 @@
                 card.innerHTML = `
                     ${badgeText ? `<div class="${badgeClass}">${badgeText}</div>` : ''}
                     <div class="product-img-wrapper" onclick="openProductDetailModal('${p.id}')">
-                        <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg'">
+                        <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="handleProductImgError(this)">
                     </div>
                     <div class="product-details" onclick="openProductDetailModal('${p.id}')">
                         <div>

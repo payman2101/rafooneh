@@ -2361,7 +2361,7 @@
             <tr id="prodRow-${p.id}">
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <img src="${p.image || 'https://via.placeholder.com/40'}" alt="" style="width:36px; height:36px; object-fit:cover; border-radius:6px; background:#f1f5f9;">
+                        <img src="${p.image || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E'}" alt="" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';" style="width:36px; height:36px; object-fit:cover; border-radius:6px; background:#f1f5f9;">
                         <span style="font-family:monospace; font-weight:bold;">${p.id}</span>
                     </div>
                 </td>
