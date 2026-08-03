@@ -630,6 +630,7 @@
         <button onclick="showSection('products', this)">انبار و برندها</button>
         <button onclick="showSection('gsheets', this)">گوگل شیت</button>
         <button onclick="showSection('profit', this)">تحلیل سود</button>
+        <button onclick="showSection('company-payments', this)">پرداختی شرکت</button>
         <button onclick="showSection('alerts', this)">هشدارها <span class="badge badge-cancelled" id="alertBadgeMobile" style="display:none; padding:2px 6px; font-size:0.7rem;">0</span></button>
         <button onclick="showSection('customers', this)">مشتریان</button>
     </div>
@@ -650,6 +651,9 @@
             </button>
             <button class="nav-item" data-section="profit" onclick="showSection('profit', this)">
                 <i class="fa-solid fa-chart-pie"></i> محاسبه سود
+            </button>
+            <button class="nav-item" data-section="company-payments" onclick="showSection('company-payments', this)">
+                <i class="fa-solid fa-file-invoice-dollar"></i> پرداختی شرکت
             </button>
             <button class="nav-item" data-section="alerts" onclick="showSection('alerts', this)">
                 <i class="fa-solid fa-triangle-exclamation"></i> هشدارها
@@ -773,6 +777,126 @@
                                 </tr>
                             </thead>
                             <tbody id="orderProfitBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Company Payments & Sales Calculation Settlement -->
+            <section class="section" id="section-company-payments">
+                <!-- Header & Date Filter Panel -->
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
+                        <div>
+                            <h2><i class="fa-solid fa-file-invoice-dollar"></i> محاسبه فروش و تسویه پرداختی به شرکت</h2>
+                            <p style="font-size:0.85rem; color:var(--muted); margin-top:4px;">
+                                محاسبه تعداد اقلام فروخته‌شده و مبلغ پرداختی به شرکت بر اساس قیمت خرید در بازه زمانی مشخص و ثبت تاریخچه پرداختی‌ها
+                            </p>
+                        </div>
+                    </div>
+                    <div style="padding:18px; border-bottom:1px solid var(--border);">
+                        <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <label style="font-size:0.85rem; font-weight:bold;">از تاریخ:</label>
+                                <input type="date" id="cpFromDate" class="form-control" style="width:160px; padding:6px 10px;">
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <label style="font-size:0.85rem; font-weight:bold;">تا تاریخ:</label>
+                                <input type="date" id="cpToDate" class="form-control" style="width:160px; padding:6px 10px;">
+                            </div>
+                            <button class="btn btn-primary" onclick="loadCompanyPaymentStats()">
+                                <i class="fa-solid fa-calculator"></i> محاسبه کارکرد بازه
+                            </button>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-right:auto;">
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('today')" style="padding:6px 10px; font-size:0.8rem;">امروز</button>
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('7days')" style="padding:6px 10px; font-size:0.8rem;">۷ روز اخیر</button>
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('30days')" style="padding:6px 10px; font-size:0.8rem;">۳۰ روز اخیر</button>
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('thisMonth')" style="padding:6px 10px; font-size:0.8rem;">این ماه</button>
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('all')" style="padding:6px 10px; font-size:0.8rem;">نمایش کل</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculated Stats Cards Grid -->
+                    <div style="padding:18px;">
+                        <div class="stats-grid" id="companyPaymentStatsGrid">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Record Settlement Banner Card -->
+                <div class="panel" style="margin-bottom:20px; background:linear-gradient(135deg, #e0f2f1 0%, #ffffff 100%); border:1px solid #b2dfdb;">
+                    <div style="padding:18px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
+                        <div>
+                            <h3 style="font-size:1.05rem; color:var(--primary-dark); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-file-signature"></i> ثبت و نهایی‌سازی تسویه‌حساب این بازه
+                            </h3>
+                            <p style="font-size:0.85rem; color:#004d40;">
+                                پس از محاسبه میزان اقلام فروخته‌شده، می‌توانید مبلغ قابل پرداخت را به عنوان تسویه‌حساب شرکت با تاریخ مشخص ثبت نمایید.
+                            </p>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                            <input type="text" id="cpRefNumber" class="form-control" placeholder="شماره پیگیری / سند (اختیاری)" style="width:200px; background:white;">
+                            <input type="text" id="cpNotes" class="form-control" placeholder="توضیحات تسویه" style="width:200px; background:white;">
+                            <button class="btn btn-primary" onclick="submitCompanyPaymentSettlement()" style="background:#00695c;">
+                                <i class="fa-solid fa-check-circle"></i> ثبت تسویه حساب پرداختی
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Itemized Sold Products Breakdown -->
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header" style="flex-wrap:wrap; gap:10px;">
+                        <h2><i class="fa-solid fa-list-check"></i> جزئیات اقلام فروخته‌شده در بازه انتخابی (بر اساس قیمت خرید)</h2>
+                        <input type="text" id="cpSearchItem" class="form-control" placeholder="جستجو در اقلام..." style="width:220px; font-size:0.85rem; padding:6px 12px;" oninput="filterCompanyPaymentItems()">
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>کد / شناسه کالا</th>
+                                    <th>نام محصول</th>
+                                    <th>تعداد فروخته‌شده</th>
+                                    <th>قیمت خرید واحد (تومان)</th>
+                                    <th>مجموع قیمت خرید (پرداختی شرکت)</th>
+                                    <th>قیمت فروش واحد (تومان)</th>
+                                    <th>مجموع فروش (تومان)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="companyPaymentItemsBody">
+                                <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:20px;">در حال بارگذاری داده‌ها...</td></tr>
+                            </tbody>
+                            <tfoot id="companyPaymentItemsFoot" style="font-weight:bold; background:#f8fafc; border-top:2px solid var(--border);">
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Settlement History Table -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-clock-rotate-left"></i> تاریخچه تسویه‌حساب‌ها و پرداختی‌های ثبت‌شده</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد تسویه</th>
+                                    <th>تاریخ ثبت پرداخت</th>
+                                    <th>بازه زمان کارکرد</th>
+                                    <th>تعداد سفارشات</th>
+                                    <th>تعداد کل اقلام</th>
+                                    <th>مبلغ پرداخت‌شده (قیمت خرید)</th>
+                                    <th>شماره پیگیری / توضیحات</th>
+                                    <th>وضعیت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="companyPaymentHistoryBody">
+                                <tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">هیچ تسویه‌حسابی هنوز ثبت نشده است.</td></tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -1531,6 +1655,7 @@
         if (name === 'products') loadAdminProducts();
         if (name === 'gsheets') loadGSheetsStatus();
         if (name === 'profit') loadProfitStats();
+        if (name === 'company-payments') initCompanyPaymentsSection();
         if (name === 'customers') loadCustomers();
         if (name === 'orders') loadOrders();
         if (name === 'alerts') loadAlerts();
@@ -1543,6 +1668,7 @@
             loadOrders(),
             loadCustomers(),
             loadProfitStats(),
+            loadCompanyPaymentHistory(),
             loadAlerts(),
             loadAdminProducts(),
             loadGSheetsStatus()
@@ -2930,6 +3056,360 @@
     document.getElementById('changePasswordModal').addEventListener('click', e => {
         if (e.target.id === 'changePasswordModal') closeChangePasswordModal();
     });
+    document.getElementById('companyPaymentDetailModal')?.addEventListener('click', e => {
+        if (e.target.id === 'companyPaymentDetailModal') closeCompanyPaymentDetailModal();
+    });
+
+    // --- COMPANY PAYMENTS & SETTLEMENT ENGINE ---
+    let currentCompanyPaymentStats = null;
+    let currentCompanyPaymentItems = [];
+    let companyPaymentHistoryList = [];
+
+    function initCompanyPaymentsSection() {
+        const fromInp = document.getElementById('cpFromDate');
+        const toInp = document.getElementById('cpToDate');
+        if (fromInp && toInp && !fromInp.value && !toInp.value) {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            fromInp.value = firstDay.toISOString().split('T')[0];
+            toInp.value = now.toISOString().split('T')[0];
+        }
+        loadCompanyPaymentStats();
+        loadCompanyPaymentHistory();
+    }
+
+    function setCompanyPaymentPreset(preset) {
+        const fromInp = document.getElementById('cpFromDate');
+        const toInp = document.getElementById('cpToDate');
+        if (!fromInp || !toInp) return;
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+
+        if (preset === 'today') {
+            fromInp.value = todayStr;
+            toInp.value = todayStr;
+        } else if (preset === '7days') {
+            const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            fromInp.value = d7.toISOString().split('T')[0];
+            toInp.value = todayStr;
+        } else if (preset === '30days') {
+            const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            fromInp.value = d30.toISOString().split('T')[0];
+            toInp.value = todayStr;
+        } else if (preset === 'thisMonth') {
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            fromInp.value = firstDay.toISOString().split('T')[0];
+            toInp.value = todayStr;
+        } else if (preset === 'all') {
+            fromInp.value = '';
+            toInp.value = '';
+        }
+        loadCompanyPaymentStats();
+    }
+
+    async function loadCompanyPaymentStats() {
+        const fromDate = document.getElementById('cpFromDate')?.value || '';
+        const toDate = document.getElementById('cpToDate')?.value || '';
+
+        const grid = document.getElementById('companyPaymentStatsGrid');
+        if (grid) grid.innerHTML = '<p style="color:var(--muted); padding:10px;">در حال محاسبه کارکرد...</p>';
+
+        try {
+            const res = await api(`/api/admin/company-payments/stats?fromDate=${fromDate}&toDate=${toDate}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.stats) {
+                    currentCompanyPaymentStats = data.stats;
+                    currentCompanyPaymentItems = data.stats.products || [];
+
+                    if (grid) {
+                        grid.innerHTML = `
+                            <div class="stat-card" style="border-right:4px solid var(--primary);">
+                                <div class="stat-title">تعداد سفارشات ثبت‌شده</div>
+                                <div class="stat-value">${(data.stats.ordersCount || 0).toLocaleString('fa-IR')}</div>
+                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">در بازه زمانی انتخابی</div>
+                            </div>
+                            <div class="stat-card" style="border-right:4px solid var(--accent);">
+                                <div class="stat-title">تعداد کل اقلام فروخته‌شده</div>
+                                <div class="stat-value">${(data.stats.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</div>
+                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">مجموع واحد محصولات</div>
+                            </div>
+                            <div class="stat-card" style="border-right:4px solid var(--danger); background:#fef2f2;">
+                                <div class="stat-title" style="color:#991b1b; font-weight:bold;">مجموع مبلغ خرید (بدهی به شرکت)</div>
+                                <div class="stat-value" style="color:var(--danger); font-weight:bold;">${formatPrice(data.stats.totalBuyCost)}</div>
+                                <div style="font-size:0.75rem; color:#b91c1c; margin-top:4px;">مبلغ تسویه قابل پرداخت به شرکت</div>
+                            </div>
+                            <div class="stat-card" style="border-right:4px solid var(--success);">
+                                <div class="stat-title">مجموع مبلغ فروش کل</div>
+                                <div class="stat-value" style="color:var(--success);">${formatPrice(data.stats.totalRevenue)}</div>
+                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">درآمد کل دریافتی از مشتریان</div>
+                            </div>
+                        `;
+                    }
+
+                    renderCompanyPaymentItems(currentCompanyPaymentItems);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching company payment stats:', err);
+        }
+
+        if (grid) grid.innerHTML = '<p style="color:var(--danger); padding:10px;">خطا در دریافت اطلاعات کارکرد.</p>';
+    }
+
+    function renderCompanyPaymentItems(items) {
+        const tbody = document.getElementById('companyPaymentItemsBody');
+        const tfoot = document.getElementById('companyPaymentItemsFoot');
+        if (!tbody) return;
+
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:20px;">هیچ محصولی در این بازه زمانی فروخته نشده است.</td></tr>';
+            if (tfoot) tfoot.innerHTML = '';
+            return;
+        }
+
+        let sumUnits = 0;
+        let sumBuyCost = 0;
+        let sumRevenue = 0;
+
+        tbody.innerHTML = items.map((p, idx) => {
+            sumUnits += Number(p.unitsSold) || 0;
+            sumBuyCost += Number(p.totalBuyCost) || 0;
+            sumRevenue += Number(p.totalRevenue) || 0;
+
+            return `
+                <tr>
+                    <td>${(idx + 1).toLocaleString('fa-IR')}</td>
+                    <td><strong>${p.code || p.id || '-'}</strong></td>
+                    <td style="font-weight:bold; color:var(--text);">${p.name || 'محصول رافونه'}</td>
+                    <td><span class="badge" style="background:var(--primary-light); color:var(--primary-dark); font-size:0.9rem; padding:4px 10px;">${(p.unitsSold || 0).toLocaleString('fa-IR')}</span></td>
+                    <td>${(p.buyPrice || 0).toLocaleString('fa-IR')}</td>
+                    <td style="color:var(--danger); font-weight:bold;">${formatPrice(p.totalBuyCost)}</td>
+                    <td>${(p.sellingPrice || 0).toLocaleString('fa-IR')}</td>
+                    <td style="font-weight:bold;">${formatPrice(p.totalRevenue)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        if (tfoot) {
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:left; padding:12px;">مجموع کل بازه:</td>
+                    <td style="color:var(--primary-dark); font-size:1rem;">${sumUnits.toLocaleString('fa-IR')} عدد</td>
+                    <td>—</td>
+                    <td style="color:var(--danger); font-size:1.05rem;">${formatPrice(sumBuyCost)}</td>
+                    <td>—</td>
+                    <td style="color:var(--success); font-size:1.05rem;">${formatPrice(sumRevenue)}</td>
+                </tr>
+            `;
+        }
+    }
+
+    function filterCompanyPaymentItems() {
+        const q = (document.getElementById('cpSearchItem')?.value || '').toLowerCase().trim();
+        if (!q) {
+            renderCompanyPaymentItems(currentCompanyPaymentItems);
+            return;
+        }
+        const filtered = currentCompanyPaymentItems.filter(i =>
+            (i.name || '').toLowerCase().includes(q) ||
+            (i.code || '').toLowerCase().includes(q) ||
+            (i.id || '').toLowerCase().includes(q)
+        );
+        renderCompanyPaymentItems(filtered);
+    }
+
+    async function submitCompanyPaymentSettlement() {
+        if (!currentCompanyPaymentStats || currentCompanyPaymentStats.totalBuyCost <= 0) {
+            alert('هیچ فروش یا کارکردی در این بازه زمانی وجود ندارد یا مبلغ بدهی به شرکت صفر است.');
+            return;
+        }
+
+        const refNumber = document.getElementById('cpRefNumber')?.value?.trim() || '';
+        const notes = document.getElementById('cpNotes')?.value?.trim() || '';
+        const fromDate = currentCompanyPaymentStats.fromDate || 'ابتدا';
+        const toDate = currentCompanyPaymentStats.toDate || 'امروز';
+        const totalAmountStr = formatPrice(currentCompanyPaymentStats.totalBuyCost);
+        const totalItemsStr = (currentCompanyPaymentStats.totalItemsCount || 0).toLocaleString('fa-IR');
+
+        const confirmMsg = `آیا از ثبت نهایی تسویه‌حساب پرداختی به شرکت اطمینان دارید؟\n\n• بازه زمانی: از ${fromDate} تا ${toDate}\n• تعداد کل اقلام: ${totalItemsStr} عدد\n• مبلغ پرداختی بر اساس قیمت خرید: ${totalAmountStr}`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const payload = {
+                paymentDate: new Date().toISOString().split('T')[0],
+                fromDate: currentCompanyPaymentStats.fromDate,
+                toDate: currentCompanyPaymentStats.toDate,
+                totalBuyCost: currentCompanyPaymentStats.totalBuyCost,
+                totalItemsCount: currentCompanyPaymentStats.totalItemsCount,
+                ordersCount: currentCompanyPaymentStats.ordersCount,
+                refNumber,
+                notes,
+                status: 'پرداخت شده',
+                items: currentCompanyPaymentStats.products || []
+            };
+
+            const res = await api('/api/admin/company-payments', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert('تسویه‌حساب پرداختی به شرکت با موفقیت در سیستم و دیتابیس ثبت شد.');
+                document.getElementById('cpRefNumber').value = '';
+                document.getElementById('cpNotes').value = '';
+                await loadCompanyPaymentHistory();
+            } else {
+                alert('خطا در ثبت تسویه‌حساب.');
+            }
+        } catch (err) {
+            console.error('Error submitting company payment settlement:', err);
+            alert('خطا در برقراری ارتباط با سرور.');
+        }
+    }
+
+    async function loadCompanyPaymentHistory() {
+        const tbody = document.getElementById('companyPaymentHistoryBody');
+        if (!tbody) return;
+
+        try {
+            const res = await api('/api/admin/company-payments');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && Array.isArray(data.payments)) {
+                    companyPaymentHistoryList = data.payments;
+                    if (data.payments.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">هیچ تسویه‌حسابی هنوز ثبت نشده است.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = data.payments.map((p) => {
+                        const periodStr = (p.fromDate || p.toDate)
+                            ? `${p.fromDate || 'ابتدا'} تا ${p.toDate || 'امروز'}`
+                            : 'کل دوره';
+
+                        return `
+                            <tr>
+                                <td><strong>${p.id || '-'}</strong></td>
+                                <td><i class="fa-regular fa-calendar-check" style="color:var(--primary); margin-left:4px;"></i> ${p.paymentDate || '-'}</td>
+                                <td style="font-size:0.85rem;">${periodStr}</td>
+                                <td>${(p.ordersCount || 0).toLocaleString('fa-IR')}</td>
+                                <td><strong style="color:var(--primary-dark);">${(p.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</strong></td>
+                                <td><strong style="color:var(--danger); font-size:0.95rem;">${formatPrice(p.totalBuyCost)}</strong></td>
+                                <td style="font-size:0.82rem; color:var(--muted);">
+                                    ${p.refNumber ? `<span style="font-weight:bold; color:var(--text);">پیگیری: ${p.refNumber}</span><br>` : ''}
+                                    ${p.notes || '—'}
+                                </td>
+                                <td><span class="badge" style="background:#dcfce7; color:#15803d; font-weight:bold;">${p.status || 'پرداخت شده'}</span></td>
+                                <td>
+                                    <div style="display:flex; gap:6px;">
+                                        <button class="btn btn-secondary" onclick="viewCompanyPaymentDetails('${p.id}')" style="padding:4px 8px; font-size:0.78rem;" title="مشاهده جزئیات اقلام">
+                                            <i class="fa-solid fa-eye"></i> جزئیات
+                                        </button>
+                                        <button class="btn btn-danger" onclick="deleteCompanyPaymentRecord('${p.id}')" style="padding:4px 8px; font-size:0.78rem;" title="حذف سند">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching company payment history:', err);
+        }
+
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">خطا در دریافت تاریخچه تسویه‌ها.</td></tr>';
+    }
+
+    async function deleteCompanyPaymentRecord(id) {
+        if (!confirm(`آیا از حذف سند تسویه‌حساب کد ${id} اطمینان دارید؟`)) return;
+
+        try {
+            const res = await api(`/api/admin/company-payments/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                await loadCompanyPaymentHistory();
+            } else {
+                alert('خطا در حذف تسویه‌حساب.');
+            }
+        } catch (err) {
+            console.error('Error deleting company payment:', err);
+        }
+    }
+
+    function viewCompanyPaymentDetails(id) {
+        const item = companyPaymentHistoryList.find(p => String(p.id) === String(id));
+        if (!item) {
+            alert('اطلاعات تسویه‌حساب یافت نشد.');
+            return;
+        }
+
+        const periodStr = (item.fromDate || item.toDate)
+            ? `${item.fromDate || 'ابتدا'} تا ${item.toDate || 'امروز'}`
+            : 'کل دوره';
+
+        let itemsHtml = '';
+        if (Array.isArray(item.items) && item.items.length > 0) {
+            itemsHtml = `
+                <div class="table-wrap" style="margin-top:12px; max-height:300px; overflow-y:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>کد کالا</th>
+                                <th>نام محصول</th>
+                                <th>تعداد</th>
+                                <th>قیمت خرید unit</th>
+                                <th>کل قیمت خرید (تومان)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${item.items.map((pi, idx) => `
+                                <tr>
+                                    <td>${(idx + 1).toLocaleString('fa-IR')}</td>
+                                    <td>${pi.code || pi.id || '-'}</td>
+                                    <td style="font-weight:bold;">${pi.name || 'محصول'}</td>
+                                    <td>${(pi.unitsSold || pi.qty || 1).toLocaleString('fa-IR')}</td>
+                                    <td>${(pi.buyPrice || 0).toLocaleString('fa-IR')}</td>
+                                    <td style="color:var(--danger); font-weight:bold;">${formatPrice(pi.totalBuyCost || (pi.buyPrice * (pi.unitsSold || pi.qty || 1)))}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            itemsHtml = '<p style="color:var(--muted); margin-top:10px;">لیست ریز اقلام ثبت نشده است.</p>';
+        }
+
+        const modalContent = document.getElementById('cpDetailModalContent');
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; background:#f8fafc; padding:14px; border-radius:12px; border:1px solid var(--border);">
+                    <div><span>کد تسویه‌حساب:</span> <strong>${item.id}</strong></div>
+                    <div><span>تاریخ پرداخت:</span> <strong>${item.paymentDate || '-'}</strong></div>
+                    <div><span>بازه زمانی کارکرد:</span> <strong>${periodStr}</strong></div>
+                    <div><span>تعداد کل اقلام:</span> <strong>${(item.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</strong></div>
+                    <div><span>مبلغ تسویه (قیمت خرید):</span> <strong style="color:var(--danger); font-size:1.05rem;">${formatPrice(item.totalBuyCost)}</strong></div>
+                    <div><span>کد پیگیری:</span> <strong>${item.refNumber || '—'}</strong></div>
+                </div>
+                ${item.notes ? `<p style="margin-bottom:12px; font-size:0.9rem; color:var(--text);"><strong>توضیحات:</strong> ${item.notes}</p>` : ''}
+                <h4 style="font-size:0.95rem; color:var(--primary-dark); margin-top:16px;">ریز اقلام شامل در این تسویه‌حساب:</h4>
+                ${itemsHtml}
+            `;
+        }
+
+        const modal = document.getElementById('companyPaymentDetailModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeCompanyPaymentDetailModal() {
+        const modal = document.getElementById('companyPaymentDetailModal');
+        if (modal) modal.style.display = 'none';
+    }
 
     if (token) {
         showApp();
@@ -2941,5 +3421,21 @@
         }
     }, 15000);
 </script>
+    <!-- Company Payment Detail Modal -->
+    <div id="companyPaymentDetailModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:15px;">
+        <div class="modal-card" style="background:white; border-radius:16px; max-width:800px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.2);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+                <h3 style="font-size:1.1rem; color:var(--primary-dark); display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-file-invoice"></i> جزئیات سند تسویه‌حساب شرکت
+                </h3>
+                <button onclick="closeCompanyPaymentDetailModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--muted);">&times;</button>
+            </div>
+            <div id="cpDetailModalContent"></div>
+            <div style="margin-top:20px; text-align:left;">
+                <button class="btn btn-secondary" onclick="closeCompanyPaymentDetailModal()">بستن</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

@@ -6,12 +6,15 @@ import {
   syncSaveOrder,
   syncDeleteOrder,
   syncSaveCustomer,
+  syncSaveCompanyPayment,
+  syncDeleteCompanyPayment,
   initFirestoreSync
 } from './firestore.js';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const CUSTOMERS_FILE = path.join(DATA_DIR, 'customers.json');
+const COMPANY_PAYMENTS_FILE = path.join(DATA_DIR, 'company_payments.json');
 const DATA_PRODUCTS_FILE = path.join(DATA_DIR, 'products_data.json');
 const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
 const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
@@ -815,6 +818,126 @@ export function getDashboardStats(filters = {}) {
   };
 }
 
+export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
+  const orders = readJson(ORDERS_FILE, []);
+  const { map: pMap } = getProductsMap();
+
+  let filteredOrders = orders.filter(o => o.status !== 'cancelled');
+
+  let startMs = 0;
+  let endMs = Infinity;
+
+  if (fromDate) {
+    const s = new Date(fromDate);
+    s.setHours(0, 0, 0, 0);
+    startMs = s.getTime();
+  }
+  if (toDate) {
+    const e = new Date(toDate);
+    e.setHours(23, 59, 59, 999);
+    endMs = e.getTime();
+  }
+
+  if (startMs > 0 || endMs < Infinity) {
+    filteredOrders = filteredOrders.filter(o => {
+      const orderTime = new Date(o.createdAt).getTime();
+      return orderTime >= startMs && orderTime <= endMs;
+    });
+  }
+
+  let totalItemsCount = 0;
+  let totalBuyCost = 0;
+  let totalRevenue = 0;
+  const productSummaryMap = {};
+
+  filteredOrders.forEach(o => {
+    const enriched = enrichOrderWithProfit(o, pMap);
+    totalRevenue += Number(enriched.totalAmount) || 0;
+
+    (enriched.items || []).forEach(item => {
+      const pid = String(item.id || item.code || item.productId || item.name);
+      if (!productSummaryMap[pid]) {
+        productSummaryMap[pid] = {
+          id: pid,
+          code: item.code || item.id || pid,
+          name: item.name || 'محصول',
+          unitsSold: 0,
+          buyPrice: Number(item.buyPrice) || 0,
+          totalBuyCost: 0,
+          sellingPrice: Number(item.price) || 0,
+          totalRevenue: 0
+        };
+      }
+      const qty = Number(item.qty || item.quantity) || 1;
+      const buyPrice = Number(item.buyPrice) || 0;
+      const sellPrice = Number(item.price) || 0;
+      const itemCost = buyPrice * qty;
+      const itemRev = sellPrice * qty;
+
+      productSummaryMap[pid].unitsSold += qty;
+      productSummaryMap[pid].totalBuyCost += itemCost;
+      productSummaryMap[pid].totalRevenue += itemRev;
+
+      totalItemsCount += qty;
+      totalBuyCost += itemCost;
+    });
+  });
+
+  const productList = Object.values(productSummaryMap).sort((a, b) => b.totalBuyCost - a.totalBuyCost);
+
+  return {
+    fromDate: fromDate || '',
+    toDate: toDate || '',
+    ordersCount: filteredOrders.length,
+    totalItemsCount,
+    totalBuyCost,
+    totalRevenue,
+    products: productList
+  };
+}
+
+export function listCompanyPayments() {
+  const payments = readJson(COMPANY_PAYMENTS_FILE, []);
+  return payments.sort((a, b) => new Date(b.paymentDate || b.createdAt) - new Date(a.paymentDate || a.createdAt));
+}
+
+export function createCompanyPayment(paymentData) {
+  const payments = readJson(COMPANY_PAYMENTS_FILE, []);
+  const nowStr = new Date().toISOString();
+
+  const newPayment = {
+    id: paymentData.id || `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    paymentDate: paymentData.paymentDate || nowStr.split('T')[0],
+    fromDate: paymentData.fromDate || '',
+    toDate: paymentData.toDate || '',
+    totalBuyCost: Number(paymentData.totalBuyCost) || 0,
+    totalItemsCount: Number(paymentData.totalItemsCount) || 0,
+    ordersCount: Number(paymentData.ordersCount) || 0,
+    refNumber: paymentData.refNumber || '',
+    notes: paymentData.notes || '',
+    status: paymentData.status || 'پرداخت شده',
+    items: Array.isArray(paymentData.items) ? paymentData.items : [],
+    createdAt: nowStr
+  };
+
+  payments.unshift(newPayment);
+  writeJson(COMPANY_PAYMENTS_FILE, payments);
+  syncSaveCompanyPayment(newPayment);
+  return newPayment;
+}
+
+export function deleteCompanyPayment(id) {
+  let payments = readJson(COMPANY_PAYMENTS_FILE, []);
+  const initialLen = payments.length;
+  payments = payments.filter(p => String(p.id) !== String(id));
+  if (payments.length !== initialLen) {
+    writeJson(COMPANY_PAYMENTS_FILE, payments);
+    syncDeleteCompanyPayment(id);
+    return true;
+  }
+  return false;
+}
+
 export async function initDatabaseSync() {
   await initFirestoreSync({
     saveProductsList,
@@ -828,6 +951,7 @@ export async function initDatabaseSync() {
       fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
     },
     ORDERS_FILE,
-    CUSTOMERS_FILE
+    CUSTOMERS_FILE,
+    COMPANY_PAYMENTS_FILE
   });
 }

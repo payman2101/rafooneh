@@ -17,6 +17,10 @@ import {
   getAllStatuses,
   getStatusLabel,
   getProfitStats,
+  getCompanyPaymentStats,
+  listCompanyPayments,
+  createCompanyPayment,
+  deleteCompanyPayment,
   getAdminAlerts,
   listProducts,
   updateProduct,
@@ -696,6 +700,28 @@ app.get('/api/admin/stats', authMiddleware, (req, res) => {
 app.get('/api/admin/profit', authMiddleware, (req, res) => {
   const { timeframe } = req.query;
   res.json({ success: true, profitStats: getProfitStats({ timeframe }) });
+});
+
+// CRM: Company Payment Calculation & Settlement
+app.get('/api/admin/company-payments/stats', authMiddleware, (req, res) => {
+  const { fromDate, toDate } = req.query;
+  const stats = getCompanyPaymentStats({ fromDate, toDate });
+  res.json({ success: true, stats });
+});
+
+app.get('/api/admin/company-payments', authMiddleware, (req, res) => {
+  const payments = listCompanyPayments();
+  res.json({ success: true, payments });
+});
+
+app.post('/api/admin/company-payments', authMiddleware, (req, res) => {
+  const payment = createCompanyPayment(req.body);
+  res.json({ success: true, payment });
+});
+
+app.delete('/api/admin/company-payments/:id', authMiddleware, (req, res) => {
+  const deleted = deleteCompanyPayment(req.params.id);
+  res.json({ success: deleted });
 });
 
 app.get('/api/admin/alerts', authMiddleware, (req, res) => {

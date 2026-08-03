@@ -82,7 +82,32 @@ export async function syncSaveCustomer(customer) {
   }
 }
 
-export async function initFirestoreSync({ saveProductsList, readProductsList, readJson, writeJson, ORDERS_FILE, CUSTOMERS_FILE }) {
+export async function syncSaveCompanyPayment(payment) {
+  const firestore = getFirestoreDb();
+  if (!firestore || !payment || !payment.id) return;
+
+  try {
+    const cleanPayment = JSON.parse(JSON.stringify(payment));
+    await setDoc(doc(firestore, 'company_payments', String(payment.id)), cleanPayment, { merge: true });
+    console.log(`[Firestore] Saved company payment ${payment.id} to Firestore.`);
+  } catch (err) {
+    console.error(`[Firestore] Error saving company payment ${payment.id}:`, err.message);
+  }
+}
+
+export async function syncDeleteCompanyPayment(paymentId) {
+  const firestore = getFirestoreDb();
+  if (!firestore || !paymentId) return;
+
+  try {
+    await deleteDoc(doc(firestore, 'company_payments', String(paymentId)));
+    console.log(`[Firestore] Deleted company payment ${paymentId} from Firestore.`);
+  } catch (err) {
+    console.error(`[Firestore] Error deleting company payment ${paymentId}:`, err.message);
+  }
+}
+
+export async function initFirestoreSync({ saveProductsList, readProductsList, readJson, writeJson, ORDERS_FILE, CUSTOMERS_FILE, COMPANY_PAYMENTS_FILE }) {
   if (isInitialized) return;
   isInitialized = true;
 
@@ -153,6 +178,29 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
       if (firestoreCusts.length > 0) {
         writeJson(CUSTOMERS_FILE, firestoreCusts);
         console.log(`[Firestore] Loaded ${firestoreCusts.length} customers from Firestore.`);
+      }
+    }
+
+    // 4. Sync Company Payments
+    if (COMPANY_PAYMENTS_FILE) {
+      const paySnapshot = await getDocs(collection(firestore, 'company_payments'));
+      if (paySnapshot.empty) {
+        const localPays = readJson(COMPANY_PAYMENTS_FILE, []);
+        if (localPays && localPays.length > 0) {
+          console.log(`[Firestore] Seeding Firestore with ${localPays.length} local company payments...`);
+          for (const pay of localPays) {
+            await syncSaveCompanyPayment(pay);
+          }
+        }
+      } else {
+        const firestorePays = [];
+        paySnapshot.forEach(docSnap => {
+          firestorePays.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        if (firestorePays.length > 0) {
+          writeJson(COMPANY_PAYMENTS_FILE, firestorePays);
+          console.log(`[Firestore] Loaded ${firestorePays.length} company payments from Firestore.`);
+        }
       }
     }
 
