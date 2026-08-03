@@ -49,7 +49,7 @@ export function readProductsList() {
       const data = fs.readFileSync(ROOT_PRODUCTS_JSON, 'utf8');
       const list = JSON.parse(data);
       if (Array.isArray(list) && list.length > 0) {
-        saveProductsList(list);
+        saveProductsList(list, true);
         return list;
       }
     }

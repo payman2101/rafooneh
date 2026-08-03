@@ -330,8 +330,12 @@ if (!currentCatalog || currentCatalog.length === 0) {
 // Setup file watcher on 'سفارش 1405.xlsx'
 const excelFilePath = path.join(__dirname, 'سفارش 1405.xlsx');
 let watchDebounce = null;
+let serverReadyForExcelWatcher = false;
+setTimeout(() => { serverReadyForExcelWatcher = true; }, 10000);
+
 if (fs.existsSync(excelFilePath)) {
   fs.watch(excelFilePath, (eventType) => {
+    if (!serverReadyForExcelWatcher) return;
     if (eventType === 'change' || eventType === 'rename') {
       if (watchDebounce) clearTimeout(watchDebounce);
       watchDebounce = setTimeout(() => {
