@@ -1479,6 +1479,7 @@
         <button class="category-btn" data-cat="sanitary" onclick="filterCategory('sanitary', this)">جرم‌گیر و سرویس</button>
         <button class="category-btn" data-cat="laundry" onclick="filterCategory('laundry', this)">شوینده لباس</button>
         <button class="category-btn" data-cat="cellulosic" onclick="filterCategory('cellulosic', this)">سلولزی و کیسه</button>
+        <button class="category-btn" data-cat="imported" onclick="filterCategory('imported', this)">محصولات خارجی</button>
         <button class="category-btn" data-cat="other" onclick="filterCategory('other', this)">سایر شوینده‌ها</button>
     </div>
 
@@ -1968,6 +1969,13 @@
             renderProducts(currentCategory);
         }
 
+        function isForeignProduct(p) {
+            if (!p) return false;
+            const b = (p.brand || '').toString().toLowerCase();
+            const c = (p.category || '').toString().toLowerCase();
+            return b === 'foreign' || b.includes('خارجی') || b.includes('وارداتی') || c === 'imported' || c === 'foreign';
+        }
+
         function updateCategoryTabCounts() {
             const inStockProducts = products.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
 
@@ -1979,6 +1987,7 @@
                 'sanitary': 'جرم‌گیر و سرویس',
                 'laundry': 'شوینده لباس',
                 'cellulosic': 'سلولزی و کیسه',
+                'imported': 'محصولات خارجی',
                 'other': 'سایر شوینده‌ها'
             };
 
@@ -1992,7 +2001,9 @@
                 counts[cat] = inStockProducts.filter(p => p.category === cat).length;
             });
 
-            counts['other'] = inStockProducts.filter(p => p.category === 'other' || p.category === 'home' || !knownCats.includes(p.category)).length;
+            counts['imported'] = inStockProducts.filter(isForeignProduct).length;
+
+            counts['other'] = inStockProducts.filter(p => (p.category === 'other' || p.category === 'home' || !knownCats.includes(p.category)) && !isForeignProduct(p)).length;
 
             const container = document.getElementById('categoriesContainer');
             if (container) {
@@ -2021,8 +2032,10 @@
             const knownCats = ['handwash', 'dishwash', 'cleaners', 'sanitary', 'laundry', 'cellulosic'];
 
             if (filter !== 'all') {
-                if (filter === 'other') {
-                    filtered = filtered.filter(p => p.category === 'other' || p.category === 'home' || !knownCats.includes(p.category));
+                if (filter === 'imported') {
+                    filtered = filtered.filter(isForeignProduct);
+                } else if (filter === 'other') {
+                    filtered = filtered.filter(p => (p.category === 'other' || p.category === 'home' || !knownCats.includes(p.category)) && !isForeignProduct(p));
                 } else {
                     filtered = filtered.filter(p => p.category === filter);
                 }
