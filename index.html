@@ -1793,10 +1793,6 @@
 
                     <div style="margin-bottom: 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                         <div style="background:#f1f5f9; padding:6px 12px; border-radius:8px; font-size:0.82rem; color:var(--text-main);">
-                            <span style="color:var(--text-muted);">بسته‌بندی:</span>
-                            <span id="detailModalPacking" style="font-weight:bold; margin-right:4px;"></span>
-                        </div>
-                        <div style="background:#f1f5f9; padding:6px 12px; border-radius:8px; font-size:0.82rem; color:var(--text-main);">
                             <span style="color:var(--text-muted);">موجودی:</span>
                             <span id="detailModalStock" style="font-weight:bold; margin-right:4px;"></span>
                         </div>
@@ -2197,7 +2193,10 @@
                 badgeEl.style.display = 'none';
             }
 
-            document.getElementById('detailModalPacking').innerText = p.packing > 1 ? `${p.packing.toLocaleString('fa-IR')} عدد در کارتن` : 'تک عددی';
+            const packingEl = document.getElementById('detailModalPacking');
+            if (packingEl) {
+                packingEl.innerText = p.packing > 1 ? `${p.packing.toLocaleString('fa-IR')} عدد در کارتن` : 'تک عددی';
+            }
             
             const stockEl = document.getElementById('detailModalStock');
             if (stockEl) {
