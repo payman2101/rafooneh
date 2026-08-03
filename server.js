@@ -324,8 +324,7 @@ if (!currentCatalog || currentCatalog.length === 0) {
   console.log('[Server Startup] No existing products dataset found. Initializing catalog from Excel...');
   parseExcelAndBuildProducts();
 } else {
-  console.log(`[Server Startup] Loaded ${currentCatalog.length} products. Preserving existing admin updates.`);
-  saveProductsList(currentCatalog);
+  console.log(`[Server Startup] Loaded ${currentCatalog.length} products from local cache. Firestore sync will run on listen.`);
 }
 
 // Setup file watcher on 'سفارش 1405.xlsx'
