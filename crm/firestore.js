@@ -134,8 +134,14 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
         firestoreProducts.push({ id: docSnap.id, ...docSnap.data() });
       });
       if (firestoreProducts.length > 0) {
+        firestoreProducts.sort((a, b) => {
+          const numA = parseInt(a.id, 10);
+          const numB = parseInt(b.id, 10);
+          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+          return String(a.id).localeCompare(String(b.id));
+        });
         console.log(`[Firestore] Loaded ${firestoreProducts.length} products from Firestore into local cache.`);
-        saveProductsList(firestoreProducts);
+        saveProductsList(firestoreProducts, true);
       }
     }
 

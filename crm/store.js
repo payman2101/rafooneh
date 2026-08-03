@@ -19,14 +19,16 @@ const DATA_PRODUCTS_FILE = path.join(DATA_DIR, 'products_data.json');
 const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
 const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
 
-export function saveProductsList(list) {
+export function saveProductsList(list, skipFirestoreSync = false) {
   try {
     ensureDataDir();
     const jsonStr = JSON.stringify(list, null, 2);
     fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8');
     fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8');
     fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8');
-    syncSaveProducts(list);
+    if (!skipFirestoreSync) {
+      syncSaveProducts(list);
+    }
   } catch (err) {
     console.error('Error saving products list:', err);
   }
