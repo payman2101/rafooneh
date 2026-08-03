@@ -587,6 +587,14 @@ const handleImageUploadRoute = (req, res) => {
       return res.status(400).json({ success: false, message: 'فایل تصویری ارسال نشده است.' });
     }
 
+    const mimeType = file.mimetype || 'image/jpeg';
+    const base64Data = file.data ? file.data.toString('base64') : '';
+    let imageUrl = '';
+
+    if (base64Data) {
+      imageUrl = `data:${mimeType};base64,${base64Data}`;
+    }
+
     const uploadsDir = path.join(__dirname, 'uploads', 'products');
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
@@ -599,13 +607,15 @@ const handleImageUploadRoute = (req, res) => {
 
     file.mv(savePath, (err) => {
       if (err) {
-        console.error('Image save error:', err);
-        return res.status(500).json({ success: false, message: 'خطا در ذخیره فایل تصویر' });
+        console.error('Image save error (disk):', err);
       }
-
-      const imageUrl = `/uploads/products/${filename}`;
-      res.json({ success: true, url: imageUrl, message: 'تصویر با موفقیت آپلود شد.' });
     });
+
+    if (!imageUrl) {
+      imageUrl = `/uploads/products/${filename}`;
+    }
+
+    res.json({ success: true, url: imageUrl, message: 'تصویر با موفقیت آپلود شد.' });
   } catch (err) {
     console.error('Image upload endpoint error:', err);
     res.status(500).json({ success: false, message: 'خطای سرور در آپلود تصویر' });
