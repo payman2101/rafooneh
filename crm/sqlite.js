@@ -1,5 +1,4 @@
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
 import fs from 'fs';
 
@@ -14,20 +13,21 @@ function ensureDataDir() {
   }
 }
 
-export async function getDb() {
+export function getDb() {
   if (dbInstance) return dbInstance;
 
   ensureDataDir();
-  dbInstance = await open({
-    filename: DB_PATH,
-    driver: sqlite3.Database
-  });
+  dbInstance = new DatabaseSync(DB_PATH);
 
   // Enable WAL mode for better performance and concurrency
-  await dbInstance.exec('PRAGMA journal_mode = WAL;');
+  try {
+    dbInstance.exec('PRAGMA journal_mode = WAL;');
+  } catch (e) {
+    console.warn('[SQLite] PRAGMA WAL warning:', e.message);
+  }
 
   // Create tables if they do not exist
-  await dbInstance.exec(`
+  dbInstance.exec(`
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY,
       code TEXT,
@@ -101,11 +101,11 @@ export async function getDb() {
 
 // Seed SQLite DB from existing JSON files if SQLite tables are empty
 export async function seedSqliteFromJson() {
-  const db = await getDb();
+  const db = getDb();
 
   // 1. Seed Products
-  const prodCount = await db.get('SELECT COUNT(*) as count FROM products');
-  if (prodCount.count === 0) {
+  const prodRow = db.prepare('SELECT COUNT(*) as count FROM products').get();
+  if (!prodRow || prodRow.count === 0) {
     const jsonPath = path.join(DATA_DIR, 'products_data.json');
     const rootJsonPath = path.join(process.cwd(), 'products_data.json');
     let products = [];
@@ -118,14 +118,14 @@ export async function seedSqliteFromJson() {
     if (Array.isArray(products) && products.length > 0) {
       console.log(`[SQLite Seeding] Migrating ${products.length} products to SQLite...`);
       for (const p of products) {
-        await saveProductSqlite(p, db);
+        saveProductSqlite(p, db);
       }
     }
   }
 
   // 2. Seed Customers
-  const custCount = await db.get('SELECT COUNT(*) as count FROM customers');
-  if (custCount.count === 0) {
+  const custRow = db.prepare('SELECT COUNT(*) as count FROM customers').get();
+  if (!custRow || custRow.count === 0) {
     const custJsonPath = path.join(DATA_DIR, 'customers.json');
     if (fs.existsSync(custJsonPath)) {
       try {
@@ -133,7 +133,7 @@ export async function seedSqliteFromJson() {
         if (Array.isArray(customers) && customers.length > 0) {
           console.log(`[SQLite Seeding] Migrating ${customers.length} customers to SQLite...`);
           for (const c of customers) {
-            await saveCustomerSqlite(c, db);
+            saveCustomerSqlite(c, db);
           }
         }
       } catch (e) {}
@@ -141,8 +141,8 @@ export async function seedSqliteFromJson() {
   }
 
   // 3. Seed Orders
-  const orderCount = await db.get('SELECT COUNT(*) as count FROM orders');
-  if (orderCount.count === 0) {
+  const orderRow = db.prepare('SELECT COUNT(*) as count FROM orders').get();
+  if (!orderRow || orderRow.count === 0) {
     const ordersJsonPath = path.join(DATA_DIR, 'orders.json');
     if (fs.existsSync(ordersJsonPath)) {
       try {
@@ -150,7 +150,7 @@ export async function seedSqliteFromJson() {
         if (Array.isArray(orders) && orders.length > 0) {
           console.log(`[SQLite Seeding] Migrating ${orders.length} orders to SQLite...`);
           for (const o of orders) {
-            await saveOrderSqlite(o, db);
+            saveOrderSqlite(o, db);
           }
         }
       } catch (e) {}
@@ -158,8 +158,8 @@ export async function seedSqliteFromJson() {
   }
 
   // 4. Seed Company Payments
-  const payCount = await db.get('SELECT COUNT(*) as count FROM company_payments');
-  if (payCount.count === 0) {
+  const payRow = db.prepare('SELECT COUNT(*) as count FROM company_payments').get();
+  if (!payRow || payRow.count === 0) {
     const payJsonPath = path.join(DATA_DIR, 'company_payments.json');
     if (fs.existsSync(payJsonPath)) {
       try {
@@ -167,7 +167,7 @@ export async function seedSqliteFromJson() {
         if (Array.isArray(payments) && payments.length > 0) {
           console.log(`[SQLite Seeding] Migrating ${payments.length} company payments to SQLite...`);
           for (const p of payments) {
-            await saveCompanyPaymentSqlite(p, db);
+            saveCompanyPaymentSqlite(p, db);
           }
         }
       } catch (e) {}
@@ -176,12 +176,12 @@ export async function seedSqliteFromJson() {
 }
 
 // CRUD helper functions for Products
-export async function saveProductSqlite(p, dbConn = null) {
-  const db = dbConn || await getDb();
+export function saveProductSqlite(p, dbConn = null) {
+  const db = dbConn || getDb();
   const id = String(p.id || p.code || '');
   if (!id) return;
 
-  await db.run(
+  const stmt = db.prepare(
     `INSERT INTO products (
       id, code, name, brand, brandName, category, categoryName, price, consumerPrice,
       newPrice, buyPrice, packing, stock, image, badge, description, isCustomized, updatedAt
@@ -203,65 +203,66 @@ export async function saveProductSqlite(p, dbConn = null) {
       badge = excluded.badge,
       description = excluded.description,
       isCustomized = excluded.isCustomized,
-      updatedAt = excluded.updatedAt;`,
-    [
-      id,
-      String(p.code || id),
-      p.name || '',
-      p.brand || 'rafooneh',
-      p.brandName || 'برند رافونه',
-      p.category || 'other',
-      p.categoryName || 'سایر شوینده‌ها',
-      Number(p.price) || 0,
-      Number(p.consumerPrice || p.newPrice) || 0,
-      Number(p.newPrice || p.consumerPrice) || 0,
-      Number(p.buyPrice) || 0,
-      Number(p.packing) || 1,
-      Number(p.stock) || 0,
-      p.image || '',
-      p.badge || null,
-      p.description || '',
-      p.isCustomized ? 1 : 0,
-      p.updatedAt || new Date().toISOString()
-    ]
+      updatedAt = excluded.updatedAt;`
+  );
+
+  stmt.run(
+    id,
+    String(p.code || id),
+    p.name || '',
+    p.brand || 'rafooneh',
+    p.brandName || 'برند رافونه',
+    p.category || 'other',
+    p.categoryName || 'سایر شوینده‌ها',
+    Number(p.price) || 0,
+    Number(p.consumerPrice || p.newPrice) || 0,
+    Number(p.newPrice || p.consumerPrice) || 0,
+    Number(p.buyPrice) || 0,
+    Number(p.packing) || 1,
+    Number(p.stock) || 0,
+    p.image || '',
+    p.badge || null,
+    p.description || '',
+    p.isCustomized ? 1 : 0,
+    p.updatedAt || new Date().toISOString()
   );
 }
 
-export async function saveAllProductsSqlite(products) {
-  const db = await getDb();
-  await db.run('BEGIN TRANSACTION;');
+export function saveAllProductsSqlite(products) {
+  const db = getDb();
+  db.exec('BEGIN TRANSACTION;');
   try {
     for (const p of products) {
-      await saveProductSqlite(p, db);
+      saveProductSqlite(p, db);
     }
-    await db.run('COMMIT;');
+    db.exec('COMMIT;');
   } catch (err) {
-    await db.run('ROLLBACK;');
+    db.exec('ROLLBACK;');
     throw err;
   }
 }
 
-export async function getAllProductsSqlite() {
-  const db = await getDb();
-  const rows = await db.all('SELECT * FROM products ORDER BY name ASC');
+export function getAllProductsSqlite() {
+  const db = getDb();
+  const rows = db.prepare('SELECT * FROM products ORDER BY name ASC').all();
   return rows.map(r => ({
     ...r,
     isCustomized: Boolean(r.isCustomized)
   }));
 }
 
-export async function deleteProductSqlite(id) {
-  const db = await getDb();
-  await db.run('DELETE FROM products WHERE id = ? OR code = ?', [String(id), String(id)]);
+export function deleteProductSqlite(id) {
+  const db = getDb();
+  db.prepare('DELETE FROM products WHERE id = ? OR code = ?').run(String(id), String(id));
 }
 
 // CRUD helper functions for Customers
-export async function saveCustomerSqlite(c, dbConn = null) {
-  const db = dbConn || await getDb();
+export function saveCustomerSqlite(c, dbConn = null) {
+  const db = dbConn || getDb();
   const id = String(c.id || '');
   if (!id) return;
 
-  await db.run(
+  const stmt = db.prepare(
     `INSERT INTO customers (
       id, name, phone, address, totalOrders, totalSpent, notes, createdAt, updatedAt, lastOrderAt
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -273,36 +274,37 @@ export async function saveCustomerSqlite(c, dbConn = null) {
       totalSpent = excluded.totalSpent,
       notes = excluded.notes,
       updatedAt = excluded.updatedAt,
-      lastOrderAt = excluded.lastOrderAt;`,
-    [
-      id,
-      c.name || '',
-      c.phone || '',
-      c.address || '',
-      Number(c.totalOrders) || 0,
-      Number(c.totalSpent) || 0,
-      c.notes || '',
-      c.createdAt || new Date().toISOString(),
-      c.updatedAt || new Date().toISOString(),
-      c.lastOrderAt || null
-    ]
+      lastOrderAt = excluded.lastOrderAt;`
+  );
+
+  stmt.run(
+    id,
+    c.name || '',
+    c.phone || '',
+    c.address || '',
+    Number(c.totalOrders) || 0,
+    Number(c.totalSpent) || 0,
+    c.notes || '',
+    c.createdAt || new Date().toISOString(),
+    c.updatedAt || new Date().toISOString(),
+    c.lastOrderAt || null
   );
 }
 
-export async function getAllCustomersSqlite() {
-  const db = await getDb();
-  return await db.all('SELECT * FROM customers ORDER BY datetime(updatedAt) DESC');
+export function getAllCustomersSqlite() {
+  const db = getDb();
+  return db.prepare('SELECT * FROM customers ORDER BY datetime(updatedAt) DESC').all();
 }
 
 // CRUD helper functions for Orders
-export async function saveOrderSqlite(o, dbConn = null) {
-  const db = dbConn || await getDb();
+export function saveOrderSqlite(o, dbConn = null) {
+  const db = dbConn || getDb();
   const id = String(o.id || '');
   if (!id) return;
 
   const itemsJson = typeof o.items === 'string' ? o.items : JSON.stringify(o.items || []);
 
-  await db.run(
+  const stmt = db.prepare(
     `INSERT INTO orders (
       id, customerId, customerName, phone, address, note, items, totalAmount,
       paymentMethod, status, adminNotes, source, createdAt, updatedAt
@@ -319,29 +321,30 @@ export async function saveOrderSqlite(o, dbConn = null) {
       status = excluded.status,
       adminNotes = excluded.adminNotes,
       source = excluded.source,
-      updatedAt = excluded.updatedAt;`,
-    [
-      id,
-      o.customerId || '',
-      o.customerName || '',
-      o.phone || '',
-      o.address || '',
-      o.note || '',
-      itemsJson,
-      Number(o.totalAmount) || 0,
-      o.paymentMethod || 'cod',
-      o.status || 'new',
-      o.adminNotes || '',
-      o.source || 'website',
-      o.createdAt || new Date().toISOString(),
-      o.updatedAt || new Date().toISOString()
-    ]
+      updatedAt = excluded.updatedAt;`
+  );
+
+  stmt.run(
+    id,
+    o.customerId || '',
+    o.customerName || '',
+    o.phone || '',
+    o.address || '',
+    o.note || '',
+    itemsJson,
+    Number(o.totalAmount) || 0,
+    o.paymentMethod || 'cod',
+    o.status || 'new',
+    o.adminNotes || '',
+    o.source || 'website',
+    o.createdAt || new Date().toISOString(),
+    o.updatedAt || new Date().toISOString()
   );
 }
 
-export async function getAllOrdersSqlite() {
-  const db = await getDb();
-  const rows = await db.all('SELECT * FROM orders ORDER BY datetime(createdAt) DESC');
+export function getAllOrdersSqlite() {
+  const db = getDb();
+  const rows = db.prepare('SELECT * FROM orders ORDER BY datetime(createdAt) DESC').all();
   return rows.map(r => {
     let items = [];
     try { items = JSON.parse(r.items || '[]'); } catch (e) {}
@@ -352,20 +355,20 @@ export async function getAllOrdersSqlite() {
   });
 }
 
-export async function deleteOrderSqlite(id) {
-  const db = await getDb();
-  await db.run('DELETE FROM orders WHERE id = ?', [String(id)]);
+export function deleteOrderSqlite(id) {
+  const db = getDb();
+  db.prepare('DELETE FROM orders WHERE id = ?').run(String(id));
 }
 
 // CRUD helper functions for Company Payments
-export async function saveCompanyPaymentSqlite(p, dbConn = null) {
-  const db = dbConn || await getDb();
+export function saveCompanyPaymentSqlite(p, dbConn = null) {
+  const db = dbConn || getDb();
   const id = String(p.id || '');
   if (!id) return;
 
   const itemsJson = typeof p.items === 'string' ? p.items : JSON.stringify(p.items || []);
 
-  await db.run(
+  const stmt = db.prepare(
     `INSERT INTO company_payments (
       id, paymentDate, fromDate, toDate, totalBuyCost, totalItemsCount,
       ordersCount, refNumber, notes, status, items, createdAt
@@ -380,27 +383,28 @@ export async function saveCompanyPaymentSqlite(p, dbConn = null) {
       refNumber = excluded.refNumber,
       notes = excluded.notes,
       status = excluded.status,
-      items = excluded.items;`,
-    [
-      id,
-      p.paymentDate || '',
-      p.fromDate || '',
-      p.toDate || '',
-      Number(p.totalBuyCost) || 0,
-      Number(p.totalItemsCount) || 0,
-      Number(p.ordersCount) || 0,
-      p.refNumber || '',
-      p.notes || '',
-      p.status || 'پرداخت شده',
-      itemsJson,
-      p.createdAt || new Date().toISOString()
-    ]
+      items = excluded.items;`
+  );
+
+  stmt.run(
+    id,
+    p.paymentDate || '',
+    p.fromDate || '',
+    p.toDate || '',
+    Number(p.totalBuyCost) || 0,
+    Number(p.totalItemsCount) || 0,
+    Number(p.ordersCount) || 0,
+    p.refNumber || '',
+    p.notes || '',
+    p.status || 'پرداخت شده',
+    itemsJson,
+    p.createdAt || new Date().toISOString()
   );
 }
 
-export async function getAllCompanyPaymentsSqlite() {
-  const db = await getDb();
-  const rows = await db.all('SELECT * FROM company_payments ORDER BY datetime(createdAt) DESC');
+export function getAllCompanyPaymentsSqlite() {
+  const db = getDb();
+  const rows = db.prepare('SELECT * FROM company_payments ORDER BY datetime(createdAt) DESC').all();
   return rows.map(r => {
     let items = [];
     try { items = JSON.parse(r.items || '[]'); } catch (e) {}
@@ -411,7 +415,7 @@ export async function getAllCompanyPaymentsSqlite() {
   });
 }
 
-export async function deleteCompanyPaymentSqlite(id) {
-  const db = await getDb();
-  await db.run('DELETE FROM company_payments WHERE id = ?', [String(id)]);
+export function deleteCompanyPaymentSqlite(id) {
+  const db = getDb();
+  db.prepare('DELETE FROM company_payments WHERE id = ?').run(String(id));
 }
