@@ -321,33 +321,9 @@ function mergeAndSaveProducts(newProductsList) {
   return merged;
 }
 
-// Initial check on server start: NEVER overwrite existing admin product updates
+// Initial check on server start: Load catalog from persistent storage without overwriting
 const currentCatalog = readProductsList();
-if (!currentCatalog || currentCatalog.length === 0) {
-  console.log('[Server Startup] No existing products dataset found. Initializing catalog from Excel...');
-  parseExcelAndBuildProducts();
-} else {
-  console.log(`[Server Startup] Loaded ${currentCatalog.length} products from local cache. Firestore sync will run on listen.`);
-}
-
-// Setup file watcher on 'سفارش 1405.xlsx'
-const excelFilePath = path.join(__dirname, 'سفارش 1405.xlsx');
-let watchDebounce = null;
-let serverReadyForExcelWatcher = false;
-setTimeout(() => { serverReadyForExcelWatcher = true; }, 10000);
-
-if (fs.existsSync(excelFilePath)) {
-  fs.watch(excelFilePath, (eventType) => {
-    if (!serverReadyForExcelWatcher) return;
-    if (eventType === 'change' || eventType === 'rename') {
-      if (watchDebounce) clearTimeout(watchDebounce);
-      watchDebounce = setTimeout(() => {
-        console.log('[Excel Watcher] Detected Excel file modification. Auto-updating products...');
-        parseExcelAndBuildProducts();
-      }, 500);
-    }
-  });
-}
+console.log(`[Server Startup] Loaded ${currentCatalog ? currentCatalog.length : 0} products from persistent storage.`);
 
 // API: Get live products dataset
 app.get('/api/products', (req, res) => {

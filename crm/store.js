@@ -29,6 +29,10 @@ const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const CUSTOMERS_FILE = path.join(DATA_DIR, 'customers.json');
 const COMPANY_PAYMENTS_FILE = path.join(DATA_DIR, 'company_payments.json');
 const DATA_PRODUCTS_FILE = path.join(DATA_DIR, 'products_data.json');
+
+const ROOT_ORDERS_FILE = path.join(process.cwd(), 'orders.json');
+const ROOT_CUSTOMERS_FILE = path.join(process.cwd(), 'customers.json');
+const ROOT_COMPANY_PAYMENTS_FILE = path.join(process.cwd(), 'company_payments.json');
 const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
 const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
 
@@ -111,33 +115,72 @@ function ensureDataDir() {
 
 const fileCacheMap = new Map();
 
+function getRootEquivalentPath(file) {
+  if (file === ORDERS_FILE || file.endsWith('data/orders.json') || file.endsWith('data\\orders.json')) return ROOT_ORDERS_FILE;
+  if (file === CUSTOMERS_FILE || file.endsWith('data/customers.json') || file.endsWith('data\\customers.json')) return ROOT_CUSTOMERS_FILE;
+  if (file === COMPANY_PAYMENTS_FILE || file.endsWith('data/company_payments.json') || file.endsWith('data\\company_payments.json')) return ROOT_COMPANY_PAYMENTS_FILE;
+  if (file === DATA_PRODUCTS_FILE || file.endsWith('data/products_data.json') || file.endsWith('data\\products_data.json')) return ROOT_PRODUCTS_JSON;
+  return null;
+}
+
 function readJson(file, fallback) {
   ensureDataDir();
-  if (!fs.existsSync(file)) {
-    fs.writeFileSync(file, JSON.stringify(fallback, null, 2), 'utf8');
+  const rootFile = getRootEquivalentPath(file);
+
+  let resultData = null;
+
+  // Try reading primary file first
+  if (fs.existsSync(file)) {
     try {
-      const stat = fs.statSync(file);
-      fileCacheMap.set(file, { mtime: stat.mtimeMs, data: fallback });
+      const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (Array.isArray(data) && data.length > 0) {
+        resultData = data;
+      } else if (!Array.isArray(fallback) || data) {
+        resultData = data;
+      }
     } catch (e) {}
-    return fallback;
   }
+
+  // If primary file was empty or missing array, try reading root fallback
+  if ((!resultData || (Array.isArray(resultData) && resultData.length === 0)) && rootFile && fs.existsSync(rootFile)) {
+    try {
+      const rootData = JSON.parse(fs.readFileSync(rootFile, 'utf8'));
+      if (Array.isArray(rootData) && rootData.length > 0) {
+        resultData = rootData;
+        // Sync back to primary file
+        try { fs.writeFileSync(file, JSON.stringify(resultData, null, 2), 'utf8'); } catch (e) {}
+      }
+    } catch (e) {}
+  }
+
+  if (resultData === null) {
+    resultData = fallback;
+    try { fs.writeFileSync(file, JSON.stringify(fallback, null, 2), 'utf8'); } catch (e) {}
+    if (rootFile) {
+      try { fs.writeFileSync(rootFile, JSON.stringify(fallback, null, 2), 'utf8'); } catch (e) {}
+    }
+  }
+
   try {
     const stat = fs.statSync(file);
-    const cached = fileCacheMap.get(file);
-    if (cached && cached.mtime === stat.mtimeMs) {
-      return cached.data;
-    }
-    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-    fileCacheMap.set(file, { mtime: stat.mtimeMs, data });
-    return data;
-  } catch {
-    return fallback;
-  }
+    fileCacheMap.set(file, { mtime: stat.mtimeMs, data: resultData });
+  } catch (e) {}
+
+  return resultData;
 }
 
 function writeJson(file, data) {
   ensureDataDir();
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+
+  const rootFile = getRootEquivalentPath(file);
+  if (rootFile) {
+    try { fs.writeFileSync(rootFile, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
+    if (rootFile === ROOT_PRODUCTS_JSON) {
+      try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${JSON.stringify(data, null, 2)};\n`, 'utf8'); } catch (e) {}
+    }
+  }
+
   try {
     const stat = fs.statSync(file);
     fileCacheMap.set(file, { mtime: stat.mtimeMs, data });

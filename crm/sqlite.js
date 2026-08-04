@@ -127,16 +127,18 @@ export async function seedSqliteFromJson() {
   const custRow = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   if (!custRow || custRow.count === 0) {
     const custJsonPath = path.join(DATA_DIR, 'customers.json');
+    const rootCustJsonPath = path.join(process.cwd(), 'customers.json');
+    let customers = [];
     if (fs.existsSync(custJsonPath)) {
-      try {
-        const customers = JSON.parse(fs.readFileSync(custJsonPath, 'utf8'));
-        if (Array.isArray(customers) && customers.length > 0) {
-          console.log(`[SQLite Seeding] Migrating ${customers.length} customers to SQLite...`);
-          for (const c of customers) {
-            saveCustomerSqlite(c, db);
-          }
-        }
-      } catch (e) {}
+      try { customers = JSON.parse(fs.readFileSync(custJsonPath, 'utf8')); } catch (e) {}
+    } else if (fs.existsSync(rootCustJsonPath)) {
+      try { customers = JSON.parse(fs.readFileSync(rootCustJsonPath, 'utf8')); } catch (e) {}
+    }
+    if (Array.isArray(customers) && customers.length > 0) {
+      console.log(`[SQLite Seeding] Migrating ${customers.length} customers to SQLite...`);
+      for (const c of customers) {
+        saveCustomerSqlite(c, db);
+      }
     }
   }
 
@@ -144,16 +146,18 @@ export async function seedSqliteFromJson() {
   const orderRow = db.prepare('SELECT COUNT(*) as count FROM orders').get();
   if (!orderRow || orderRow.count === 0) {
     const ordersJsonPath = path.join(DATA_DIR, 'orders.json');
+    const rootOrdersJsonPath = path.join(process.cwd(), 'orders.json');
+    let orders = [];
     if (fs.existsSync(ordersJsonPath)) {
-      try {
-        const orders = JSON.parse(fs.readFileSync(ordersJsonPath, 'utf8'));
-        if (Array.isArray(orders) && orders.length > 0) {
-          console.log(`[SQLite Seeding] Migrating ${orders.length} orders to SQLite...`);
-          for (const o of orders) {
-            saveOrderSqlite(o, db);
-          }
-        }
-      } catch (e) {}
+      try { orders = JSON.parse(fs.readFileSync(ordersJsonPath, 'utf8')); } catch (e) {}
+    } else if (fs.existsSync(rootOrdersJsonPath)) {
+      try { orders = JSON.parse(fs.readFileSync(rootOrdersJsonPath, 'utf8')); } catch (e) {}
+    }
+    if (Array.isArray(orders) && orders.length > 0) {
+      console.log(`[SQLite Seeding] Migrating ${orders.length} orders to SQLite...`);
+      for (const o of orders) {
+        saveOrderSqlite(o, db);
+      }
     }
   }
 
@@ -161,16 +165,18 @@ export async function seedSqliteFromJson() {
   const payRow = db.prepare('SELECT COUNT(*) as count FROM company_payments').get();
   if (!payRow || payRow.count === 0) {
     const payJsonPath = path.join(DATA_DIR, 'company_payments.json');
+    const rootPayJsonPath = path.join(process.cwd(), 'company_payments.json');
+    let payments = [];
     if (fs.existsSync(payJsonPath)) {
-      try {
-        const payments = JSON.parse(fs.readFileSync(payJsonPath, 'utf8'));
-        if (Array.isArray(payments) && payments.length > 0) {
-          console.log(`[SQLite Seeding] Migrating ${payments.length} company payments to SQLite...`);
-          for (const p of payments) {
-            saveCompanyPaymentSqlite(p, db);
-          }
-        }
-      } catch (e) {}
+      try { payments = JSON.parse(fs.readFileSync(payJsonPath, 'utf8')); } catch (e) {}
+    } else if (fs.existsSync(rootPayJsonPath)) {
+      try { payments = JSON.parse(fs.readFileSync(rootPayJsonPath, 'utf8')); } catch (e) {}
+    }
+    if (Array.isArray(payments) && payments.length > 0) {
+      console.log(`[SQLite Seeding] Migrating ${payments.length} company payments to SQLite...`);
+      for (const p of payments) {
+        saveCompanyPaymentSqlite(p, db);
+      }
     }
   }
 }
