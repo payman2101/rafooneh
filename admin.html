@@ -612,6 +612,9 @@
             <a href="/" class="btn btn-secondary" style="text-decoration:none;">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> فروشگاه
             </a>
+            <button class="btn btn-secondary" onclick="downloadDatabaseSqlite()" title="دانلود دیتابیس SQLite جهت استفاده لوکال">
+                <i class="fa-solid fa-database"></i> دانلود SQLite
+            </button>
             <button class="btn btn-secondary" onclick="openChangePasswordModal()">
                 <i class="fa-solid fa-key"></i> تغییر رمز عبور
             </button>
@@ -3406,6 +3409,30 @@
     function closeCompanyPaymentDetailModal() {
         const modal = document.getElementById('companyPaymentDetailModal');
         if (modal) modal.style.display = 'none';
+    }
+
+    async function downloadDatabaseSqlite() {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const res = await fetch('/api/admin/database/download', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                alert('خطا در دریافت فایل دیتابیس SQLite');
+                return;
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rafooneh.db';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (e) {
+            alert('خطا در دانلود دیتابیس: ' + e.message);
+        }
     }
 
     if (token) {

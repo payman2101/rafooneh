@@ -894,6 +894,46 @@ app.get('/api/admin/gsheets/status', authMiddleware, (req, res) => {
   });
 });
 
+// API: Download SQLite database file
+app.get('/api/admin/database/download', authMiddleware, (req, res) => {
+  const dbPath = path.join(__dirname, 'data', 'rafooneh.db');
+  if (fs.existsSync(dbPath)) {
+    res.download(dbPath, 'rafooneh.db');
+  } else {
+    res.status(404).json({ success: false, message: 'فایل دیتابیس SQLite یافت نشد.' });
+  }
+});
+
+// API: Export complete database snapshot as JSON
+app.get('/api/admin/database/export-json', authMiddleware, (req, res) => {
+  try {
+    const products = readProductsList();
+    const orders = listOrders();
+    const customers = listCustomers();
+    const companyPayments = listCompanyPayments();
+
+    const snapshot = {
+      exportedAt: new Date().toISOString(),
+      productsCount: products.length,
+      ordersCount: orders.length,
+      customersCount: customers.length,
+      companyPaymentsCount: companyPayments.length,
+      data: {
+        products,
+        orders,
+        customers,
+        companyPayments
+      }
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename=rafooneh_backup.json');
+    res.send(JSON.stringify(snapshot, null, 2));
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در خروجی گرفتن از اطلاعات دیتابیس' });
+  }
+});
+
 app.get(['/admin', '/admin.html'], (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });

@@ -10,6 +10,15 @@ import {
   syncDeleteCompanyPayment,
   initFirestoreSync
 } from './firestore.js';
+import {
+  seedSqliteFromJson,
+  saveAllProductsSqlite,
+  saveCustomerSqlite,
+  saveOrderSqlite,
+  deleteOrderSqlite,
+  saveCompanyPaymentSqlite,
+  deleteCompanyPaymentSqlite
+} from './sqlite.js';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
@@ -26,6 +35,7 @@ export function saveProductsList(list, skipFirestoreSync = false) {
     fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8');
     fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8');
     fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8');
+    saveAllProductsSqlite(list).catch(err => console.error('SQLite save products error:', err));
     if (!skipFirestoreSync) {
       syncSaveProducts(list);
     }
@@ -135,6 +145,7 @@ export function upsertCustomer({ name, phone, address }) {
   }
 
   writeJson(CUSTOMERS_FILE, customers);
+  saveCustomerSqlite(customer).catch(e => console.error('SQLite save customer notice:', e));
   syncSaveCustomer(customer);
   return customer;
 }
@@ -323,8 +334,10 @@ export function createOrder(orderData) {
   writeJson(ORDERS_FILE, orders);
   writeJson(CUSTOMERS_FILE, customers);
 
+  saveOrderSqlite(order).catch(e => console.error('SQLite save order notice:', e));
   syncSaveOrder(order);
   if (customers[customerIdx]) {
+    saveCustomerSqlite(customers[customerIdx]).catch(e => console.error('SQLite save customer notice:', e));
     syncSaveCustomer(customers[customerIdx]);
   }
 
@@ -378,6 +391,7 @@ export function deleteOrder(id) {
   orders = orders.filter(o => o.id !== id);
   if (orders.length !== initialLength) {
     writeJson(ORDERS_FILE, orders);
+    deleteOrderSqlite(id).catch(e => console.error('SQLite delete order notice:', e));
     syncDeleteOrder(id);
     return true;
   }
@@ -524,6 +538,7 @@ export function updateOrder(id, updates) {
   };
 
   writeJson(ORDERS_FILE, orders);
+  saveOrderSqlite(orders[idx]).catch(e => console.error('SQLite update order notice:', e));
   syncSaveOrder(orders[idx]);
 
   // If status changed to cancelled, restore stock!
@@ -934,6 +949,7 @@ export function createCompanyPayment(paymentData) {
 
   payments.unshift(newPayment);
   writeJson(COMPANY_PAYMENTS_FILE, payments);
+  saveCompanyPaymentSqlite(newPayment).catch(e => console.error('SQLite save payment notice:', e));
   syncSaveCompanyPayment(newPayment);
   return newPayment;
 }
@@ -944,6 +960,7 @@ export function deleteCompanyPayment(id) {
   payments = payments.filter(p => String(p.id) !== String(id));
   if (payments.length !== initialLen) {
     writeJson(COMPANY_PAYMENTS_FILE, payments);
+    deleteCompanyPaymentSqlite(id).catch(e => console.error('SQLite delete payment notice:', e));
     syncDeleteCompanyPayment(id);
     return true;
   }
@@ -951,6 +968,11 @@ export function deleteCompanyPayment(id) {
 }
 
 export async function initDatabaseSync() {
+  try {
+    await seedSqliteFromJson();
+  } catch (e) {
+    console.error('SQLite init notice:', e);
+  }
   await initFirestoreSync({
     saveProductsList,
     readProductsList,
