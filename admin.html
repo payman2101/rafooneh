@@ -3413,12 +3413,17 @@
 
     async function downloadDatabaseSqlite() {
         try {
-            const token = localStorage.getItem('adminToken');
+            const authToken = localStorage.getItem('crm_token') || token;
+            if (!authToken) {
+                alert('لطفاً ابتدا وارد حساب مدیریت شوید.');
+                return;
+            }
             const res = await fetch('/api/admin/database/download', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${authToken}` }
             });
             if (!res.ok) {
-                alert('خطا در دریافت فایل دیتابیس SQLite');
+                const errData = await res.json().catch(() => ({}));
+                alert(errData.message || 'خطا در دریافت فایل دیتابیس SQLite');
                 return;
             }
             const blob = await res.blob();

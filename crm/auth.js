@@ -166,7 +166,10 @@ export function isAuthenticated(token) {
 
 export function authMiddleware(req, res, next) {
   const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  let token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!token && req.query.token) {
+    token = String(req.query.token);
+  }
 
   if (!isAuthenticated(token)) {
     return res.status(401).json({ success: false, message: 'دسترسی غیرمجاز. لطفاً وارد شوید.' });
