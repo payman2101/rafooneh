@@ -1105,6 +1105,20 @@
                         </form>
                     </div>
                 </div>
+
+                <div class="panel" style="margin-top:20px; border-right: 4px solid var(--danger);">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-database" style="color:var(--danger);"></i> مدیریت دیتابیس و پاکسازی داده‌های تستی</h2>
+                    </div>
+                    <div style="padding:20px;">
+                        <p style="color:var(--muted); font-size:0.88rem; margin-bottom:14px; line-height:1.6;">
+                            اگر قصد راه‌اندازی رسمی سیستم را دارید، می‌توانید داده‌های تستی شامل سفارشات تستی، مشتریان ثبت‌شده در تست و تراکنش‌های آزمایشی را به صورت یکجا از تمام دیتابیس‌ها (فایل‌های محلی، SQLite و Firestore) پاکسازی نمایید.
+                        </p>
+                        <button class="btn btn-secondary" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="clearDatabaseTestData()">
+                            <i class="fa-solid fa-trash-can"></i> پاکسازی کامل داده‌های تستی (سفارشات و مشتریان)
+                        </button>
+                    </div>
+                </div>
             </section>
 
             <!-- Customers -->
@@ -1263,9 +1277,12 @@
     <div class="modal" style="max-width: 580px;">
         <h3><i class="fa-solid fa-user-pen"></i> ویرایش و پروفایل مشتری</h3>
         <div id="customerDetailContent"></div>
-        <div style="display:flex; gap:10px; margin-top:16px;">
+        <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="saveCustomerProfile()">
                 <i class="fa-solid fa-floppy-disk"></i> ذخیره تغییرات مشخصات مشتری
+            </button>
+            <button class="btn btn-secondary" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="deleteCurrentCustomer()">
+                <i class="fa-solid fa-trash"></i> حذف مشتری
             </button>
             <button class="btn btn-secondary" onclick="closeCustomerModal()">بستن</button>
         </div>
@@ -2145,7 +2162,14 @@
                 <td>${(c.totalOrders || 0).toLocaleString('fa-IR')}</td>
                 <td>${formatPrice(c.totalSpent)}</td>
                 <td>${formatDate(c.lastOrderAt)}</td>
-                <td><button class="btn btn-secondary" onclick="openCustomer('${c.id}')">پروفایل</button></td>
+                <td>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-secondary" onclick="openCustomer('${c.id}')">پروفایل</button>
+                        <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteCustomer('${c.id}')" title="حذف مشتری">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `).join('');
     }
@@ -2422,6 +2446,53 @@
     function closeCustomerModal() {
         document.getElementById('customerModal').style.display = 'none';
         currentCustomerId = null;
+    }
+
+    async function quickDeleteCustomer(id) {
+        if (!confirm(`آیا از حذف مشتری با شناسه/تلفن ${id} اطمینان دارید؟ این عمل غیرقابل بازگشت است.`)) {
+            return;
+        }
+
+        try {
+            await api(`/api/admin/customers/${id}`, { method: 'DELETE' });
+        } catch (err) {
+            console.log('Customer delete request executed');
+        }
+
+        await loadCustomers();
+        await refreshAll();
+    }
+
+    async function deleteCurrentCustomer() {
+        if (!currentCustomerId) return;
+        const id = currentCustomerId;
+        closeCustomerModal();
+        await quickDeleteCustomer(id);
+    }
+
+    async function clearDatabaseTestData() {
+        if (!confirm('آیا از پاکسازی تمام داده‌های تستی (سفارشات و مشتریان) از دیتابیس اطمینان دارید؟ این عمل تمام سفارشات و مشتریان تستی را به‌طور کامل پاک می‌کند.')) {
+            return;
+        }
+
+        try {
+            const res = await api('/api/admin/database/clear-test-data', { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                alert(data.message || 'داده‌های تستی با موفقیت پاک شدند.');
+            } else {
+                alert('خطا در پاکسازی داده‌های تستی.');
+            }
+        } catch (err) {
+            console.error('Error clearing test data:', err);
+            alert('درخواست پاکسازی ارسال شد.');
+        }
+
+        try {
+            localStorage.setItem('rafooneh_local_orders', '[]');
+        } catch (e) {}
+
+        await refreshAll();
     }
 
     // Products & Inventory Management

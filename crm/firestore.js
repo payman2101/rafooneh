@@ -89,6 +89,40 @@ export async function syncSaveCustomer(customer) {
   }
 }
 
+export async function syncDeleteCustomer(customerId) {
+  const firestore = getFirestoreDb();
+  if (!firestore || !customerId) return;
+
+  try {
+    await withTimeout(deleteDoc(doc(firestore, 'customers', String(customerId))), 3000);
+    console.log(`[Firestore] Deleted customer ${customerId} from Firestore.`);
+  } catch (err) {
+    console.warn(`[Firestore] Notice on deleting customer ${customerId}:`, err.message);
+  }
+}
+
+export async function clearFirestoreTestData() {
+  const firestore = getFirestoreDb();
+  if (!firestore) return;
+
+  try {
+    const collectionsToClear = ['orders', 'customers', 'company_payments'];
+    for (const colName of collectionsToClear) {
+      const snapshot = await withTimeout(getDocs(collection(firestore, colName)), 3000);
+      if (!snapshot.empty) {
+        const batch = writeBatch(firestore);
+        snapshot.forEach(docSnap => {
+          batch.delete(docSnap.ref);
+        });
+        await withTimeout(batch.commit(), 4000);
+        console.log(`[Firestore] Cleared all docs in ${colName}`);
+      }
+    }
+  } catch (err) {
+    console.warn('[Firestore] Error clearing test data:', err.message);
+  }
+}
+
 export async function syncSaveCompanyPayment(payment) {
   const firestore = getFirestoreDb();
   if (!firestore || !payment || !payment.id) return;

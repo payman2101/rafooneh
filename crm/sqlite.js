@@ -296,6 +296,11 @@ export function getAllCustomersSqlite() {
   return db.prepare('SELECT * FROM customers ORDER BY datetime(updatedAt) DESC').all();
 }
 
+export function deleteCustomerSqlite(id) {
+  const db = getDb();
+  db.prepare('DELETE FROM customers WHERE id = ? OR phone = ?').run(String(id), String(id));
+}
+
 // CRUD helper functions for Orders
 export function saveOrderSqlite(o, dbConn = null) {
   const db = dbConn || getDb();

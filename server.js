@@ -12,6 +12,8 @@ import {
   listCustomers,
   listOrders,
   updateCustomer,
+  deleteCustomer,
+  clearAllTestData,
   updateOrder,
   deleteOrder,
   getAllStatuses,
@@ -817,6 +819,27 @@ app.patch('/api/admin/customers/:id', authMiddleware, (req, res) => {
     return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
   }
   res.json({ success: true, customer });
+});
+
+app.delete('/api/admin/customers/:id', authMiddleware, (req, res) => {
+  try {
+    const success = deleteCustomer(req.params.id);
+    if (!success) {
+      return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
+    }
+    res.json({ success: true, message: 'مشتری با موفقیت حذف شد' });
+  } catch (err) {
+    res.status(400).json({ success: false, message: 'خطا در حذف مشتری' });
+  }
+});
+
+app.post('/api/admin/database/clear-test-data', authMiddleware, (req, res) => {
+  try {
+    clearAllTestData();
+    res.json({ success: true, message: 'داده‌های تستی (سفارشات و مشتریان) با موفقیت پاک شدند' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در پاکسازی داده‌های تستی' });
+  }
 });
 
 // API: Admin Inventory & Brand Products Management

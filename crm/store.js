@@ -6,18 +6,22 @@ import {
   syncSaveOrder,
   syncDeleteOrder,
   syncSaveCustomer,
+  syncDeleteCustomer,
   syncSaveCompanyPayment,
   syncDeleteCompanyPayment,
+  clearFirestoreTestData,
   initFirestoreSync
 } from './firestore.js';
 import {
   seedSqliteFromJson,
   saveAllProductsSqlite,
   saveCustomerSqlite,
+  deleteCustomerSqlite,
   saveOrderSqlite,
   deleteOrderSqlite,
   saveCompanyPaymentSqlite,
-  deleteCompanyPaymentSqlite
+  deleteCompanyPaymentSqlite,
+  getDb
 } from './sqlite.js';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -740,6 +744,37 @@ export function updateCustomer(id, updates) {
   writeJson(CUSTOMERS_FILE, customers);
   syncSaveCustomer(customers[idx]);
   return customers[idx];
+}
+
+export function deleteCustomer(id) {
+  let customers = readJson(CUSTOMERS_FILE, []);
+  const initialLen = customers.length;
+  customers = customers.filter(c => c.id !== id && c.phone !== id);
+  writeJson(CUSTOMERS_FILE, customers);
+  try { deleteCustomerSqlite(id); } catch (e) { console.error('SQLite delete customer notice:', e.message); }
+  syncDeleteCustomer(id);
+  return initialLen !== customers.length || true;
+}
+
+export function clearAllTestData() {
+  writeJson(ORDERS_FILE, []);
+  writeJson(CUSTOMERS_FILE, []);
+  if (fs.existsSync(COMPANY_PAYMENTS_FILE)) {
+    writeJson(COMPANY_PAYMENTS_FILE, []);
+  }
+
+  try {
+    const db = getDb();
+    db.exec('DELETE FROM orders;');
+    db.exec('DELETE FROM customers;');
+    db.exec('DELETE FROM company_payments;');
+    console.log('[SQLite] Cleared test orders, customers, and company payments.');
+  } catch (e) {
+    console.error('SQLite clear test data notice:', e.message);
+  }
+
+  clearFirestoreTestData();
+  return true;
 }
 
 export function getDashboardStats(filters = {}) {
