@@ -419,3 +419,13 @@ export function deleteCompanyPaymentSqlite(id) {
   const db = getDb();
   db.prepare('DELETE FROM company_payments WHERE id = ?').run(String(id));
 }
+
+export function checkpointSqlite() {
+  try {
+    const db = getDb();
+    db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
+    console.log('[SQLite] Checkpoint completed before export.');
+  } catch (err) {
+    console.error('[SQLite] Checkpoint error:', err.message);
+  }
+}

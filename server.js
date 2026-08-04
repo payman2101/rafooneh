@@ -30,6 +30,7 @@ import {
   saveProductsList,
   initDatabaseSync
 } from './crm/store.js';
+import { checkpointSqlite } from './crm/sqlite.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -896,6 +897,7 @@ app.get('/api/admin/gsheets/status', authMiddleware, (req, res) => {
 
 // API: Download SQLite database file
 app.get('/api/admin/database/download', authMiddleware, (req, res) => {
+  checkpointSqlite();
   const dbPath = path.join(__dirname, 'data', 'rafooneh.db');
   if (fs.existsSync(dbPath)) {
     res.download(dbPath, 'rafooneh.db');
