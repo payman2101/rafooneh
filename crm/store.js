@@ -198,6 +198,7 @@ export function reduceProductStock(items) {
     const list = readProductsList();
     if (!list.length) return;
     let modified = false;
+    const changedProducts = [];
 
     (items || []).forEach(item => {
       const pid = String(item.id || item.code || item.productId || '');
@@ -214,11 +215,15 @@ export function reduceProductStock(items) {
         product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
         product.updatedAt = new Date().toISOString();
         modified = true;
+        changedProducts.push(product);
       }
     });
 
     if (modified) {
-      saveProductsList(list);
+      saveProductsList(list, true);
+      if (changedProducts.length > 0) {
+        syncSaveProducts(changedProducts);
+      }
     }
   } catch (e) {
     console.error('Error reducing product stock:', e);
@@ -230,6 +235,7 @@ export function restoreProductStock(items) {
     const list = readProductsList();
     if (!list.length) return;
     let modified = false;
+    const changedProducts = [];
 
     (items || []).forEach(item => {
       const pid = String(item.id || item.code || item.productId || '');
@@ -246,11 +252,15 @@ export function restoreProductStock(items) {
         product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
         product.updatedAt = new Date().toISOString();
         modified = true;
+        changedProducts.push(product);
       }
     });
 
     if (modified) {
-      saveProductsList(list);
+      saveProductsList(list, true);
+      if (changedProducts.length > 0) {
+        syncSaveProducts(changedProducts);
+      }
     }
   } catch (e) {
     console.error('Error restoring product stock:', e);

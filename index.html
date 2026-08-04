@@ -2476,23 +2476,31 @@
             }
         }
 
-        function handleOrderSubmit(e) {
-            e.preventDefault();
+        async function handleOrderSubmit(e) {
+            if (e) e.preventDefault();
 
-            const name = document.getElementById('custName').value;
-            const phone = document.getElementById('custPhone').value;
-            const address = document.getElementById('custAddress').value;
-            const note = document.getElementById('custNote').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال ثبت سفارش...`;
+            }
+
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            const address = document.getElementById('custAddress').value.trim();
+            const note = document.getElementById('custNote').value.trim();
             const totalAmount = calculateCartTotal();
 
             if (totalAmount <= 0) {
                 alert('سبد خرید شما خالی است!');
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnHtml; }
                 return;
             }
 
             const orderItems = [];
             for (const [id, qty] of Object.entries(cart)) {
-                const p = products.find(prod => prod.id == id);
+                const p = products.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
                 if (p) {
                     orderItems.push({
                         id: p.id,
@@ -2506,7 +2514,7 @@
                 }
             }
 
-            // Deduct product stock locally
+            // Deduct product stock locally immediately
             deductLocalProductStock(orderItems);
 
             // Save order to CRM
@@ -2527,30 +2535,12 @@
                 ...newOrderPayload,
                 status: 'new',
                 statusLabel: 'جدید',
+                syncedWithServer: false,
                 createdAt: new Date().toISOString()
             };
 
             // Save locally right away so order is preserved on this device
             saveLocalOrder(fallbackLocalOrder);
-
-            fetch(getApiUrl('/api/orders'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newOrderPayload)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.order) {
-                    saveLocalOrder(data.order);
-                    showCustomerInvoice(data.order);
-                } else {
-                    showCustomerInvoice(fallbackLocalOrder);
-                }
-            })
-            .catch(err => {
-                console.log('CRM save error:', err);
-                showCustomerInvoice(fallbackLocalOrder);
-            });
 
             let orderText = `🛒 *سفارش جدید از وب‌سایت توزیع رافونه*\n\n`;
             orderText += `👤 *نام مشتری:* ${name}\n`;
@@ -2561,7 +2551,7 @@
 
             orderText += `\n📦 *اقلام سفارشی:*\n`;
             for (const [id, qty] of Object.entries(cart)) {
-                const p = products.find(prod => prod.id == id);
+                const p = products.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
                 if (p) {
                     const itemTotal = p.price * qty;
                     orderText += `▫️ ${p.name} × ${qty} عدد = ${itemTotal.toLocaleString('fa-IR')} تومان\n`;
@@ -2575,11 +2565,41 @@
             const encodedMessage = encodeURIComponent(orderText);
             const waUrl = `https://wa.me/${myPhoneNumber}?text=${encodedMessage}`;
 
-            closeCheckoutModal();
-            cart = {};
-            updateCartBar();
-            renderProducts();
-            window.open(waUrl, '_blank');
+            let finalOrder = fallbackLocalOrder;
+
+            try {
+                const targetUrl = getApiUrl('/api/orders');
+                const res = await fetch(targetUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newOrderPayload),
+                    keepalive: true
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success && data.order) {
+                        finalOrder = { ...data.order, syncedWithServer: true };
+                        saveLocalOrder(finalOrder);
+                    }
+                }
+            } catch (err) {
+                console.warn('CRM save notice:', err);
+            } finally {
+                closeCheckoutModal();
+                cart = {};
+                updateCartBar();
+                renderProducts();
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnHtml; }
+                showCustomerInvoice(finalOrder);
+
+                setTimeout(() => {
+                    try {
+                        window.open(waUrl, '_blank');
+                    } catch (err) {
+                        console.log('WhatsApp open notice:', err);
+                    }
+                }, 300);
+            }
         }
 
         function openBankGatewayModal(authority, amount) {
@@ -2901,11 +2921,39 @@
         }
 
         function getApiUrl(path) {
-            const isDirectBackend = window.location.hostname.includes('run.app') || window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1';
-            if (isDirectBackend) return path;
             const stored = localStorage.getItem('crm_api_base_url');
-            let baseUrl = (stored && stored.startsWith('https://')) ? stored : DEFAULT_SERVER_URL;
-            return baseUrl.trim().replace(/\/$/, '') + path;
+            if (stored && stored.startsWith('https://') && !stored.includes(window.location.hostname)) {
+                return stored.trim().replace(/\/$/, '') + path;
+            }
+            return path;
+        }
+
+        async function syncPendingLocalOrders() {
+            try {
+                const localOrders = getLocalOrders();
+                const pending = localOrders.filter(o => !o.syncedWithServer);
+                if (pending.length === 0) return;
+
+                for (const ord of pending) {
+                    try {
+                        const res = await fetch('/api/orders', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(ord),
+                            keepalive: true
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && data.success) {
+                                ord.syncedWithServer = true;
+                                saveLocalOrder(ord);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Sync pending order notice:', e);
+                    }
+                }
+            } catch (err) {}
         }
 
         let lastProductsHash = '';
@@ -3171,7 +3219,9 @@
 
         renderProducts();
         loadProductsFromApi();
+        syncPendingLocalOrders();
         setInterval(loadProductsFromApi, 3000);
+        setInterval(syncPendingLocalOrders, 10000);
     </script>
 </body>
 </html>
