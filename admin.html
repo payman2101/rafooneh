@@ -788,9 +788,9 @@
                 <div class="panel" style="margin-bottom:20px;">
                     <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
                         <div>
-                            <h2><i class="fa-solid fa-file-invoice-dollar"></i> محاسبه فروش و تسویه پرداختی به شرکت</h2>
+                            <h2><i class="fa-solid fa-file-invoice-dollar"></i> محاسبه فروش و تسویه پرداختی به شرکت (اختصاصی برند رافونه)</h2>
                             <p style="font-size:0.85rem; color:var(--muted); margin-top:4px;">
-                                محاسبه تعداد اقلام فروخته‌شده و مبلغ پرداختی به شرکت بر اساس قیمت خرید در بازه زمانی مشخص و ثبت تاریخچه پرداختی‌ها
+                                محاسبه تعداد اقلام فروخته‌شده برند رافونه و مبلغ پرداختی به شرکت بر اساس قیمت خرید در بازه زمانی مشخص و ثبت تاریخچه پرداختی‌ها
                             </p>
                         </div>
                     </div>
@@ -1106,19 +1106,7 @@
                     </div>
                 </div>
 
-                <div class="panel" style="margin-top:20px; border-right: 4px solid var(--danger);">
-                    <div class="panel-header">
-                        <h2><i class="fa-solid fa-database" style="color:var(--danger);"></i> مدیریت دیتابیس و پاکسازی داده‌های تستی</h2>
-                    </div>
-                    <div style="padding:20px;">
-                        <p style="color:var(--muted); font-size:0.88rem; margin-bottom:14px; line-height:1.6;">
-                            اگر قصد راه‌اندازی رسمی سیستم را دارید، می‌توانید داده‌های تستی شامل سفارشات تستی، مشتریان ثبت‌شده در تست و تراکنش‌های آزمایشی را به صورت یکجا از تمام دیتابیس‌ها (فایل‌های محلی، SQLite و Firestore) پاکسازی نمایید.
-                        </p>
-                        <button class="btn btn-secondary" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="clearDatabaseTestData()">
-                            <i class="fa-solid fa-trash-can"></i> پاکسازی کامل داده‌های تستی (سفارشات و مشتریان)
-                        </button>
-                    </div>
-                </div>
+            <!-- Settings & Password -->
             </section>
 
             <!-- Customers -->
@@ -1679,17 +1667,40 @@
         if (name === 'dashboard') loadStats();
     }
 
+    let isRefreshingActive = false;
+    async function refreshActiveSection() {
+        if (isRefreshingActive) return;
+        isRefreshingActive = true;
+        try {
+            const activeSec = document.querySelector('.section.active')?.id?.replace('section-', '') || 'dashboard';
+            const tasks = [loadAlerts()];
+
+            if (activeSec === 'dashboard') {
+                tasks.push(loadStats(), loadOrders());
+            } else if (activeSec === 'orders') {
+                tasks.push(loadOrders());
+            } else if (activeSec === 'customers') {
+                tasks.push(loadCustomers());
+            } else if (activeSec === 'products') {
+                tasks.push(loadAdminProducts());
+            } else if (activeSec === 'profit') {
+                tasks.push(loadProfitStats());
+            } else if (activeSec === 'company-payments') {
+                tasks.push(loadCompanyPaymentHistory());
+            } else if (activeSec === 'gsheets') {
+                tasks.push(loadGSheetsStatus());
+            }
+
+            await Promise.allSettled(tasks);
+        } catch (e) {
+            console.error('Error in refreshActiveSection:', e);
+        } finally {
+            isRefreshingActive = false;
+        }
+    }
+
     async function refreshAll() {
-        await Promise.allSettled([
-            loadStats(),
-            loadOrders(),
-            loadCustomers(),
-            loadProfitStats(),
-            loadCompanyPaymentHistory(),
-            loadAlerts(),
-            loadAdminProducts(),
-            loadGSheetsStatus()
-        ]);
+        await refreshActiveSection();
     }
 
     function renderStatsSkeleton() {
@@ -2468,31 +2479,6 @@
         const id = currentCustomerId;
         closeCustomerModal();
         await quickDeleteCustomer(id);
-    }
-
-    async function clearDatabaseTestData() {
-        if (!confirm('آیا از پاکسازی تمام داده‌های تستی (سفارشات و مشتریان) از دیتابیس اطمینان دارید؟ این عمل تمام سفارشات و مشتریان تستی را به‌طور کامل پاک می‌کند.')) {
-            return;
-        }
-
-        try {
-            const res = await api('/api/admin/database/clear-test-data', { method: 'POST' });
-            const data = await res.json().catch(() => ({}));
-            if (res.ok && data.success) {
-                alert(data.message || 'داده‌های تستی با موفقیت پاک شدند.');
-            } else {
-                alert('خطا در پاکسازی داده‌های تستی.');
-            }
-        } catch (err) {
-            console.error('Error clearing test data:', err);
-            alert('درخواست پاکسازی ارسال شد.');
-        }
-
-        try {
-            localStorage.setItem('rafooneh_local_orders', '[]');
-        } catch (e) {}
-
-        await refreshAll();
     }
 
     // Products & Inventory Management
@@ -3517,9 +3503,9 @@
 
     setInterval(() => {
         if (token && document.getElementById('app').style.display !== 'none') {
-            refreshAll();
+            refreshActiveSection();
         }
-    }, 15000);
+    }, 30000);
 </script>
     <!-- Company Payment Detail Modal -->
     <div id="companyPaymentDetailModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:15px;">

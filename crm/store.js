@@ -32,6 +32,14 @@ const DATA_PRODUCTS_FILE = path.join(DATA_DIR, 'products_data.json');
 const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
 const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
 
+let productsListCache = null;
+let productsMapCache = null;
+
+export function invalidateProductsCache() {
+  productsListCache = null;
+  productsMapCache = null;
+}
+
 export function saveProductsList(list, skipFirestoreSync = false) {
   try {
     ensureDataDir();
@@ -39,6 +47,10 @@ export function saveProductsList(list, skipFirestoreSync = false) {
     fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8');
     fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8');
     fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8');
+    
+    productsListCache = list;
+    productsMapCache = null;
+
     try { saveAllProductsSqlite(list); } catch (err) { console.error('SQLite save products error:', err); }
     if (!skipFirestoreSync) {
       syncSaveProducts(list);
@@ -49,12 +61,19 @@ export function saveProductsList(list, skipFirestoreSync = false) {
 }
 
 export function readProductsList() {
+  if (productsListCache && Array.isArray(productsListCache) && productsListCache.length > 0) {
+    return productsListCache;
+  }
+
   try {
     ensureDataDir();
     if (fs.existsSync(DATA_PRODUCTS_FILE)) {
       const data = fs.readFileSync(DATA_PRODUCTS_FILE, 'utf8');
       const list = JSON.parse(data);
-      if (Array.isArray(list) && list.length > 0) return list;
+      if (Array.isArray(list) && list.length > 0) {
+        productsListCache = list;
+        return list;
+      }
     }
   } catch (e) {}
 
@@ -63,6 +82,7 @@ export function readProductsList() {
       const data = fs.readFileSync(ROOT_PRODUCTS_JSON, 'utf8');
       const list = JSON.parse(data);
       if (Array.isArray(list) && list.length > 0) {
+        productsListCache = list;
         saveProductsList(list, true);
         return list;
       }
@@ -89,14 +109,27 @@ function ensureDataDir() {
   }
 }
 
+const fileCacheMap = new Map();
+
 function readJson(file, fallback) {
   ensureDataDir();
   if (!fs.existsSync(file)) {
     fs.writeFileSync(file, JSON.stringify(fallback, null, 2), 'utf8');
+    try {
+      const stat = fs.statSync(file);
+      fileCacheMap.set(file, { mtime: stat.mtimeMs, data: fallback });
+    } catch (e) {}
     return fallback;
   }
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
+    const stat = fs.statSync(file);
+    const cached = fileCacheMap.get(file);
+    if (cached && cached.mtime === stat.mtimeMs) {
+      return cached.data;
+    }
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    fileCacheMap.set(file, { mtime: stat.mtimeMs, data });
+    return data;
   } catch {
     return fallback;
   }
@@ -105,6 +138,12 @@ function readJson(file, fallback) {
 function writeJson(file, data) {
   ensureDataDir();
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+  try {
+    const stat = fs.statSync(file);
+    fileCacheMap.set(file, { mtime: stat.mtimeMs, data });
+  } catch (e) {
+    fileCacheMap.delete(file);
+  }
 }
 
 function generateId(prefix) {
@@ -155,6 +194,9 @@ export function upsertCustomer({ name, phone, address }) {
 }
 
 function getProductsMap() {
+  if (productsMapCache && productsListCache) {
+    return { map: productsMapCache, list: productsListCache };
+  }
   try {
     const list = readProductsList();
     const map = {};
@@ -162,6 +204,7 @@ function getProductsMap() {
       if (p.id) map[String(p.id)] = p;
       if (p.code) map[String(p.code)] = p;
     });
+    productsMapCache = map;
     return { map, list };
   } catch (e) {}
   return { map: {}, list: [] };
@@ -910,19 +953,31 @@ export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
   let totalItemsCount = 0;
   let totalBuyCost = 0;
   let totalRevenue = 0;
+  let rafoonehOrdersCount = 0;
   const productSummaryMap = {};
 
   filteredOrders.forEach(o => {
     const enriched = enrichOrderWithProfit(o, pMap);
-    totalRevenue += Number(enriched.totalAmount) || 0;
+    let orderHasRafooneh = false;
 
     (enriched.items || []).forEach(item => {
       const pid = String(item.id || item.code || item.productId || item.name);
+      const prod = pMap[pid] || pMap[item.id] || pMap[item.code] || {};
+
+      const brand = String(item.brand || prod.brand || '').toLowerCase();
+      const brandName = String(item.brandName || prod.brandName || '').toLowerCase();
+      
+      // Calculate ONLY items under the Rafooneh brand
+      const isRafooneh = (brand === 'rafooneh' || brandName.includes('رافونه')) || (brand !== 'foreign' && !brandName.includes('خارجی'));
+      if (!isRafooneh) return;
+
+      orderHasRafooneh = true;
+
       if (!productSummaryMap[pid]) {
         productSummaryMap[pid] = {
           id: pid,
-          code: item.code || item.id || pid,
-          name: item.name || 'محصول',
+          code: item.code || prod.code || item.id || pid,
+          name: item.name || prod.name || 'محصول رافونه',
           unitsSold: 0,
           buyPrice: Number(item.buyPrice) || 0,
           totalBuyCost: 0,
@@ -942,7 +997,12 @@ export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
 
       totalItemsCount += qty;
       totalBuyCost += itemCost;
+      totalRevenue += itemRev;
     });
+
+    if (orderHasRafooneh) {
+      rafoonehOrdersCount++;
+    }
   });
 
   const productList = Object.values(productSummaryMap).sort((a, b) => b.totalBuyCost - a.totalBuyCost);
@@ -950,7 +1010,7 @@ export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
   return {
     fromDate: fromDate || '',
     toDate: toDate || '',
-    ordersCount: filteredOrders.length,
+    ordersCount: rafoonehOrdersCount,
     totalItemsCount,
     totalBuyCost,
     totalRevenue,
