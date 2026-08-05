@@ -644,6 +644,7 @@ export function updateOrder(id, updates) {
   orders[idx] = {
     ...orders[idx],
     ...updates,
+    createdAt: updates.createdAt || orders[idx].createdAt,
     updatedAt: new Date().toISOString()
   };
 

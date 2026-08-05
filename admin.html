@@ -1142,6 +1142,10 @@
         <h3><i class="fa-solid fa-receipt"></i> جزئیات سفارش</h3>
         <div id="orderDetailContent"></div>
         <div class="form-group" style="margin-top:16px;">
+            <label for="orderCreatedAtInput"><i class="fa-regular fa-calendar-days"></i> تاریخ و زمان ثبت سفارش</label>
+            <input type="datetime-local" id="orderCreatedAtInput" class="form-control" style="font-family: inherit;">
+        </div>
+        <div class="form-group" style="margin-top:12px;">
             <label>تغییر وضعیت</label>
             <div class="status-pills" id="statusPills"></div>
         </div>
@@ -2309,6 +2313,14 @@
 
         document.getElementById('adminNotes').value = order.adminNotes || '';
 
+        const createdDate = order.createdAt ? new Date(order.createdAt) : new Date();
+        const year = createdDate.getFullYear();
+        const month = String(createdDate.getMonth() + 1).padStart(2, '0');
+        const day = String(createdDate.getDate()).padStart(2, '0');
+        const hours = String(createdDate.getHours()).padStart(2, '0');
+        const minutes = String(createdDate.getMinutes()).padStart(2, '0');
+        document.getElementById('orderCreatedAtInput').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+
         const pills = document.getElementById('statusPills');
         pills.innerHTML = orderStatuses.map(s =>
             `<button type="button" class="status-pill ${order.status === s.id ? 'active' : ''}" data-status="${s.id}" onclick="selectStatus('${s.id}')">${s.label}</button>`
@@ -2330,12 +2342,15 @@
         const activePill = document.querySelector('.status-pill.active');
         const status = activePill?.dataset.status;
         const adminNotes = document.getElementById('adminNotes').value;
+        const createdAtVal = document.getElementById('orderCreatedAtInput').value;
+        const createdAt = createdAtVal ? new Date(createdAtVal).toISOString() : undefined;
 
         if (currentOrderId) {
             let localOrder = getLocalOrders().find(o => o.id === currentOrderId);
             if (localOrder) {
                 localOrder.status = status;
                 localOrder.adminNotes = adminNotes;
+                if (createdAt) localOrder.createdAt = createdAt;
                 saveLocalOrder(localOrder);
             }
         }
@@ -2343,7 +2358,7 @@
         try {
             await api(`/api/admin/orders/${currentOrderId}`, {
                 method: 'PATCH',
-                body: JSON.stringify({ status, adminNotes })
+                body: JSON.stringify({ status, adminNotes, createdAt })
             });
         } catch (err) {
             console.log('Order status saved locally');

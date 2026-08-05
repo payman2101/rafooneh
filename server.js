@@ -748,8 +748,8 @@ app.get('/api/admin/orders/:id', authMiddleware, (req, res) => {
 
 app.patch('/api/admin/orders/:id', authMiddleware, (req, res) => {
   try {
-    const { status, adminNotes } = req.body || {};
-    const order = updateOrder(req.params.id, { status, adminNotes });
+    const { status, adminNotes, createdAt } = req.body || {};
+    const order = updateOrder(req.params.id, { status, adminNotes, createdAt });
     if (!order) {
       return res.status(404).json({ success: false, message: 'سفارش یافت نشد' });
     }
