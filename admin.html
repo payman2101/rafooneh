@@ -590,10 +590,10 @@
         <h1><i class="fa-solid fa-chart-line"></i> CRM رافونه</h1>
         <p>مدیریت سفارشات، مشتریان و پیگیری تحویل</p>
         <div class="error-msg" id="loginError"></div>
-        <form onsubmit="handleLogin(event)">
+        <form onsubmit="handleLogin(event)" id="loginForm" autocomplete="off">
             <div class="form-group">
                 <label for="password">رمز عبور مدیریت</label>
-                <input type="password" id="password" class="form-control" required>
+                <input type="password" id="password" class="form-control" autocomplete="new-password" required>
             </div>
             <button type="submit" class="btn btn-primary btn-block">
                 <i class="fa-solid fa-right-to-bracket"></i> ورود به پنل
@@ -1607,6 +1607,8 @@
             if (res.ok && data.success) {
                 token = data.token;
                 localStorage.setItem('crm_token', token);
+                const passEl = document.getElementById('password');
+                if (passEl) passEl.value = '';
                 showApp();
             } else {
                 errEl.textContent = data.message || 'کلمه عبور اشتباه است.';
@@ -1625,6 +1627,12 @@
         }
         token = '';
         localStorage.removeItem('crm_token');
+        const passEl = document.getElementById('password');
+        if (passEl) passEl.value = '';
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) loginForm.reset();
+        const errEl = document.getElementById('loginError');
+        if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
         document.getElementById('app').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
     }
