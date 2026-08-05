@@ -705,9 +705,7 @@ export function updateProduct(id, updates) {
     laundry: 'شوینده لباس',
     cleaners: 'پاک‌کننده و اسپری',
     sanitary: 'جرم‌گیر و ضدعفونی',
-    home: 'خانه و فرش',
     cellulosic: 'سلولزی و مصرفی',
-    car: 'خودرو',
     imported: 'محصولات خارجی',
     other: 'سایر شوینده‌ها'
   };
