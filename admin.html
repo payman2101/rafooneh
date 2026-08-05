@@ -1296,7 +1296,7 @@
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div class="form-group">
                     <label for="newProdBrand">انتخاب برند</label>
-                    <select id="newProdBrand" class="form-control">
+                    <select id="newProdBrand" class="form-control" onchange="handleBrandChange('new')">
                         <option value="rafooneh" selected>برند رافونه</option>
                         <option value="foreign">محصولات خارجی / وارداتی</option>
                     </select>
@@ -1312,8 +1312,12 @@
                         <option value="home">خانه و فرش</option>
                         <option value="cellulosic">سلولزی و مصرفی</option>
                         <option value="car">خودرو</option>
+                        <option value="imported">محصولات خارجی (بدون دسته‌بندی)</option>
                         <option value="other" selected>سایر</option>
                     </select>
+                    <div id="newProdCategoryNote" style="display:none; font-size:0.75rem; color:#0284c7; margin-top:4px; font-weight:bold;">
+                        <i class="fa-solid fa-circle-info"></i> برند خارجی دسته‌بندی مجزا ندارد.
+                    </div>
                 </div>
             </div>
 
@@ -1393,7 +1397,7 @@
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div class="form-group">
                     <label for="editProdBrand">انتخاب برند</label>
-                    <select id="editProdBrand" class="form-control">
+                    <select id="editProdBrand" class="form-control" onchange="handleBrandChange('edit')">
                         <option value="rafooneh">برند رافونه</option>
                         <option value="foreign">محصولات خارجی / وارداتی</option>
                     </select>
@@ -1409,8 +1413,12 @@
                         <option value="home">خانه و فرش</option>
                         <option value="cellulosic">سلولزی و مصرفی</option>
                         <option value="car">خودرو</option>
+                        <option value="imported">محصولات خارجی (بدون دسته‌بندی)</option>
                         <option value="other">سایر</option>
                     </select>
+                    <div id="editProdCategoryNote" style="display:none; font-size:0.75rem; color:#0284c7; margin-top:4px; font-weight:bold;">
+                        <i class="fa-solid fa-circle-info"></i> برند خارجی دسته‌بندی مجزا ندارد.
+                    </div>
                 </div>
             </div>
 
@@ -2611,7 +2619,7 @@
                 </td>
                 <td><strong>${p.name}</strong></td>
                 <td>${brandBadges[p.brand] || `<span class="badge badge-preparing">${p.brandName || p.brand || '—'}</span>`}</td>
-                <td>${p.categoryName || p.category || '—'}</td>
+                <td>${(p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی'))) ? '<span style="color:#64748b; font-size:0.8rem;">— (محصولات خارجی)</span>' : (p.categoryName || p.category || '—')}</td>
                 <td>
                     <input type="number" id="inpStock-${p.id}" class="form-control" value="${p.stock}" min="0" style="width:70px; padding:4px 6px; text-align:center;" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
                 </td>
@@ -2763,6 +2771,25 @@
         }
     }
 
+    function handleBrandChange(mode) {
+        const brandSelect = document.getElementById(mode === 'new' ? 'newProdBrand' : 'editProdBrand');
+        const catSelect = document.getElementById(mode === 'new' ? 'newProdCategory' : 'editProdCategory');
+        const noteEl = document.getElementById(mode === 'new' ? 'newProdCategoryNote' : 'editProdCategoryNote');
+        if (!brandSelect || !catSelect) return;
+
+        if (brandSelect.value === 'foreign') {
+            catSelect.value = 'imported';
+            catSelect.disabled = true;
+            if (noteEl) noteEl.style.display = 'block';
+        } else {
+            catSelect.disabled = false;
+            if (catSelect.value === 'imported') {
+                catSelect.value = 'other';
+            }
+            if (noteEl) noteEl.style.display = 'none';
+        }
+    }
+
     function openEditProductModal(id) {
         const p = window.adminProductsMap ? window.adminProductsMap[id] : null;
         if (!p) return alert('اطلاعات محصول یافت نشد');
@@ -2771,7 +2798,7 @@
         document.getElementById('editProdCodeView').value = p.id;
         document.getElementById('editProdName').value = p.name || '';
         document.getElementById('editProdBrand').value = p.brand || 'rafooneh';
-        document.getElementById('editProdCategory').value = p.category || 'other';
+        document.getElementById('editProdCategory').value = p.brand === 'foreign' ? 'imported' : (p.category || 'other');
         document.getElementById('editProdStock').value = p.stock || 0;
         document.getElementById('editProdPrice').value = p.price || 0;
         document.getElementById('editProdNewPrice').value = p.newPrice || p.consumerPrice || '';
@@ -2779,6 +2806,7 @@
         document.getElementById('editProdImage').value = p.image || '';
         document.getElementById('editProdDescription').value = p.description || '';
 
+        handleBrandChange('edit');
         updateEditImagePreview(p.image);
         calcEditDiscount();
         document.getElementById('editProductModal').style.display = 'flex';
@@ -2816,6 +2844,7 @@
 
     function openAddProductModal() {
         document.getElementById('addProductForm').reset();
+        handleBrandChange('new');
         calcAddDiscount();
         document.getElementById('addProductModal').style.display = 'flex';
     }

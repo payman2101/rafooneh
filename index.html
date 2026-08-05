@@ -1996,7 +1996,7 @@
             };
 
             knownCats.forEach(cat => {
-                counts[cat] = inStockProducts.filter(p => p.category === cat).length;
+                counts[cat] = inStockProducts.filter(p => p.category === cat && !isForeignProduct(p)).length;
             });
 
             counts['imported'] = inStockProducts.filter(isForeignProduct).length;
@@ -2035,7 +2035,7 @@
                 } else if (filter === 'other') {
                     filtered = filtered.filter(p => (p.category === 'other' || p.category === 'home' || !knownCats.includes(p.category)) && !isForeignProduct(p));
                 } else {
-                    filtered = filtered.filter(p => p.category === filter);
+                    filtered = filtered.filter(p => p.category === filter && !isForeignProduct(p));
                 }
             }
 

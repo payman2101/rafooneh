@@ -708,11 +708,12 @@ export function updateProduct(id, updates) {
     home: 'خانه و فرش',
     cellulosic: 'سلولزی و مصرفی',
     car: 'خودرو',
+    imported: 'محصولات خارجی',
     other: 'سایر شوینده‌ها'
   };
 
-  const category = updates.category || list[idx].category || 'other';
-  const categoryName = updates.categoryName || categoryNames[category] || list[idx].categoryName || 'سایر شوینده‌ها';
+  const category = brand === 'foreign' ? 'imported' : (updates.category || list[idx].category || 'other');
+  const categoryName = brand === 'foreign' ? 'محصولات خارجی' : (updates.categoryName || categoryNames[category] || list[idx].categoryName || 'سایر شوینده‌ها');
 
   const newPrice = updates.newPrice !== undefined ? Number(updates.newPrice) : (updates.consumerPrice !== undefined ? Number(updates.consumerPrice) : Number(list[idx].newPrice || list[idx].consumerPrice || 0));
 
@@ -751,14 +752,17 @@ export function addProduct(productData) {
   const brandName = brandNames[brand];
   const newPriceVal = Number(productData.newPrice || productData.consumerPrice) || 0;
 
+  const category = brand === 'foreign' ? 'imported' : (productData.category || 'other');
+  const categoryName = brand === 'foreign' ? 'محصولات خارجی' : (productData.categoryName || 'سایر شوینده‌ها');
+
   const newProd = {
     id: code,
     code: code,
     name: productData.name || 'محصول جدید',
     brand,
     brandName,
-    category: productData.category || 'other',
-    categoryName: productData.categoryName || 'سایر شوینده‌ها',
+    category,
+    categoryName,
     price: Number(productData.price) || 0,
     newPrice: newPriceVal,
     consumerPrice: newPriceVal,
