@@ -332,6 +332,7 @@ export function saveOrderSqlite(o, dbConn = null) {
       status = excluded.status,
       adminNotes = excluded.adminNotes,
       source = excluded.source,
+      createdAt = excluded.createdAt,
       updatedAt = excluded.updatedAt;`
   );
 

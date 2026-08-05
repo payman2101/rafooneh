@@ -183,57 +183,22 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
             return String(a.id).localeCompare(String(b.id));
           });
 
-          // Merge with local products to avoid overwriting reduced stocks
+          // Local SQLite/JSON products are the single source of truth for products.
+          // Local products always take precedence over remote Firestore products to prevent quota errors or stale overrides.
           const localProds = readProductsList();
           const mergedMap = new Map();
 
-          // Start with all local products first
+          // Load local products first
           localProds.forEach(lp => {
             const key = String(lp.id || lp.code || '');
             if (key) mergedMap.set(key, lp);
           });
 
-          // Overlay Firestore products while preserving reduced stock
+          // Only add missing products from Firestore if they don't exist locally
           firestoreProducts.forEach(fp => {
             const key = String(fp.id || fp.code || '');
             if (!key) return;
-            const localMatch = mergedMap.get(key);
-            if (localMatch) {
-              const localStock = (localMatch.stock !== undefined && localMatch.stock !== null && !isNaN(Number(localMatch.stock))) ? Number(localMatch.stock) : null;
-              const fpStock = (fp.stock !== undefined && fp.stock !== null && !isNaN(Number(fp.stock))) ? Number(fp.stock) : null;
-              let finalStock = localStock;
-              if (localStock !== null && fpStock !== null) {
-                finalStock = Math.min(localStock, fpStock);
-              } else if (localStock !== null) {
-                finalStock = localStock;
-              } else if (fpStock !== null) {
-                finalStock = fpStock;
-              }
-
-              // Sanitize legacy category values from Firestore doc
-              if (fp.category === 'home' || fp.category === 'car' || fp.id === '1057') {
-                fp.category = 'cleaners';
-                fp.categoryName = 'پاک‌کننده و اسپری';
-              }
-              if (fp.brand === 'foreign' || fp.id === '2359') {
-                fp.brand = 'foreign';
-                fp.brandName = 'محصولات خارجی';
-                fp.category = 'imported';
-                fp.categoryName = 'محصولات خارجی';
-              }
-
-              const localTime = localMatch.updatedAt ? new Date(localMatch.updatedAt).getTime() : 0;
-              const fpTime = fp.updatedAt ? new Date(fp.updatedAt).getTime() : 0;
-
-              // Whichever record was updated more recently wins for fields, but stock remains min(local, fp)
-              const baseWinner = fpTime > localTime ? { ...localMatch, ...fp } : { ...fp, ...localMatch };
-
-              mergedMap.set(key, {
-                ...baseWinner,
-                stock: finalStock,
-                badge: (finalStock !== null && finalStock <= 0) ? 'ناموجود' : ((finalStock !== null && finalStock <= 5) ? `تعداد محدود (${finalStock} عدد)` : null)
-              });
-            } else {
+            if (!mergedMap.has(key)) {
               if (fp.category === 'home' || fp.category === 'car' || fp.id === '1057') {
                 fp.category = 'cleaners';
                 fp.categoryName = 'پاک‌کننده و اسپری';
@@ -253,7 +218,7 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
               p.category = 'cleaners';
               p.categoryName = 'پاک‌کننده و اسپری';
             }
-            if (p.brand === 'foreign' || p.id === '2359') {
+            if (p.brand === 'foreign' || p.id === '2359' || p.category === 'imported') {
               p.brand = 'foreign';
               p.brandName = 'محصولات خارجی';
               p.category = 'imported';
@@ -262,10 +227,8 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
             return p;
           });
 
-          console.log(`[Firestore] Loaded ${merged.length} products from Firestore/Local into cache.`);
+          console.log(`[Firestore] Preserved ${merged.length} local SQLite products.`);
           saveProductsList(merged, true);
-          // Sync clean product categories back to Firestore DB
-          await syncSaveProducts(merged);
         }
       }
     } catch (prodErr) {

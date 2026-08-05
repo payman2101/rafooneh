@@ -15,6 +15,7 @@ import {
 import {
   seedSqliteFromJson,
   saveAllProductsSqlite,
+  getAllProductsSqlite,
   saveCustomerSqlite,
   deleteCustomerSqlite,
   saveOrderSqlite,
@@ -78,6 +79,14 @@ export function readProductsList() {
         productsListCache = list;
         return list;
       }
+    }
+  } catch (e) {}
+
+  try {
+    const sqliteProducts = getAllProductsSqlite();
+    if (Array.isArray(sqliteProducts) && sqliteProducts.length > 0) {
+      productsListCache = sqliteProducts;
+      return sqliteProducts;
     }
   } catch (e) {}
 
