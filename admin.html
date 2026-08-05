@@ -1630,9 +1630,48 @@
         document.getElementById('loginScreen').style.display = 'flex';
     }
 
+    let isSyncingLocalOrders = false;
+    async function syncLocalOrdersToServer() {
+        if (isSyncingLocalOrders) return;
+        isSyncingLocalOrders = true;
+        try {
+            const localOrders = getLocalOrders();
+            if (!localOrders || !localOrders.length) return;
+
+            for (const ord of localOrders) {
+                if (!ord || !ord.customerName || !ord.phone) continue;
+                try {
+                    await fetch('/api/orders', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: ord.id,
+                            customerName: ord.customerName,
+                            phone: ord.phone,
+                            address: ord.address || 'تهران',
+                            note: ord.note || '',
+                            items: ord.items || [],
+                            totalAmount: ord.totalAmount || 0,
+                            paymentMethod: ord.paymentMethod || 'cod',
+                            status: ord.status || 'new',
+                            createdAt: ord.createdAt
+                        })
+                    });
+                } catch (e) {
+                    console.log('Sync local order notice:', e);
+                }
+            }
+        } finally {
+            isSyncingLocalOrders = false;
+        }
+    }
+
     async function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
+
+        // Ensure any local orders are synced to server database so stats match
+        await syncLocalOrdersToServer();
 
         // 1. Instantly load active Dashboard stats & alerts
         loadStats();
@@ -1832,6 +1871,7 @@
 
     async function loadStats() {
         renderStatsSkeleton();
+        await syncLocalOrdersToServer();
 
         let stats = null;
         let url = `/api/admin/stats?timeframe=${currentDashboardTimeframe}`;
@@ -1882,6 +1922,7 @@
     }
 
     async function loadProfitStats() {
+        await syncLocalOrdersToServer();
         const timeframe = document.getElementById('profitTimeframe')?.value || 'all';
         const res = await api(`/api/admin/profit?timeframe=${timeframe}`);
         if (!res.ok) return;

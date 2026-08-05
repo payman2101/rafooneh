@@ -390,31 +390,49 @@ export function createOrder(orderData) {
   });
 
   const orderId = orderData.id || generateId('ord');
+  const existingIdx = orders.findIndex(o => o.id === orderId);
 
-  const order = {
-    id: orderId,
-    customerId: customer.id,
-    customerName: orderData.customerName,
-    phone: normalizePhone(orderData.phone),
-    address: orderData.address,
-    note: orderData.note || '',
-    items,
-    totalAmount: Number(orderData.totalAmount) || 0,
-    paymentMethod: orderData.paymentMethod || 'cod',
-    status: 'new',
-    adminNotes: '',
-    source: orderData.source || 'website',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-
-  orders.push(order);
+  let order;
+  if (existingIdx !== -1) {
+    order = {
+      ...orders[existingIdx],
+      customerName: orderData.customerName || orders[existingIdx].customerName,
+      phone: normalizePhone(orderData.phone) || orders[existingIdx].phone,
+      address: orderData.address || orders[existingIdx].address,
+      items: (items && items.length) ? items : orders[existingIdx].items,
+      totalAmount: Number(orderData.totalAmount) || orders[existingIdx].totalAmount,
+      paymentMethod: orderData.paymentMethod || orders[existingIdx].paymentMethod,
+      status: orderData.status || orders[existingIdx].status || 'new',
+      updatedAt: new Date().toISOString()
+    };
+    orders[existingIdx] = order;
+  } else {
+    order = {
+      id: orderId,
+      customerId: customer.id,
+      customerName: orderData.customerName,
+      phone: normalizePhone(orderData.phone),
+      address: orderData.address,
+      note: orderData.note || '',
+      items,
+      totalAmount: Number(orderData.totalAmount) || 0,
+      paymentMethod: orderData.paymentMethod || 'cod',
+      status: orderData.status || 'new',
+      adminNotes: orderData.adminNotes || '',
+      source: orderData.source || 'website',
+      createdAt: orderData.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    orders.push(order);
+  }
 
   const customers = readJson(CUSTOMERS_FILE, []);
   const customerIdx = customers.findIndex(c => c.id === customer.id);
   if (customerIdx !== -1) {
-    customers[customerIdx].totalOrders += 1;
-    customers[customerIdx].totalSpent += order.totalAmount;
+    if (existingIdx === -1) {
+      customers[customerIdx].totalOrders += 1;
+      customers[customerIdx].totalSpent += order.totalAmount;
+    }
     customers[customerIdx].lastOrderAt = order.createdAt;
     customers[customerIdx].name = order.customerName;
     customers[customerIdx].address = order.address;
@@ -432,7 +450,9 @@ export function createOrder(orderData) {
   }
 
   // Automatically update stock in products dataset upon order creation!
-  reduceProductStock(items);
+  if (existingIdx === -1) {
+    reduceProductStock(items);
+  }
 
   return enrichOrderWithProfit(order, pMap);
 }
