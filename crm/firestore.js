@@ -209,6 +209,7 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
               } else if (fpStock !== null) {
                 finalStock = fpStock;
               }
+
               // Sanitize legacy category values from Firestore doc
               if (fp.category === 'home' || fp.category === 'car' || fp.id === '1057') {
                 fp.category = 'cleaners';
@@ -221,10 +222,14 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
                 fp.categoryName = 'محصولات خارجی';
               }
 
+              const localTime = localMatch.updatedAt ? new Date(localMatch.updatedAt).getTime() : 0;
+              const fpTime = fp.updatedAt ? new Date(fp.updatedAt).getTime() : 0;
+
+              // Whichever record was updated more recently wins for fields, but stock remains min(local, fp)
+              const baseWinner = fpTime > localTime ? { ...localMatch, ...fp } : { ...fp, ...localMatch };
+
               mergedMap.set(key, {
-                ...fp,
-                ...localMatch,
-                // Preserve stock if modified in Firestore
+                ...baseWinner,
                 stock: finalStock,
                 badge: (finalStock !== null && finalStock <= 0) ? 'ناموجود' : ((finalStock !== null && finalStock <= 5) ? `تعداد محدود (${finalStock} عدد)` : null)
               });
