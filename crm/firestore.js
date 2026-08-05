@@ -209,20 +209,58 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
               } else if (fpStock !== null) {
                 finalStock = fpStock;
               }
+              // Sanitize legacy category values from Firestore doc
+              if (fp.category === 'home' || fp.category === 'car' || fp.id === '1057') {
+                fp.category = 'cleaners';
+                fp.categoryName = 'پاک‌کننده و اسپری';
+              }
+              if (fp.brand === 'foreign' || fp.id === '2359') {
+                fp.brand = 'foreign';
+                fp.brandName = 'محصولات خارجی';
+                fp.category = 'imported';
+                fp.categoryName = 'محصولات خارجی';
+              }
+
               mergedMap.set(key, {
-                ...localMatch,
                 ...fp,
+                ...localMatch,
+                // Preserve stock if modified in Firestore
                 stock: finalStock,
                 badge: (finalStock !== null && finalStock <= 0) ? 'ناموجود' : ((finalStock !== null && finalStock <= 5) ? `تعداد محدود (${finalStock} عدد)` : null)
               });
             } else {
+              if (fp.category === 'home' || fp.category === 'car' || fp.id === '1057') {
+                fp.category = 'cleaners';
+                fp.categoryName = 'پاک‌کننده و اسپری';
+              }
+              if (fp.brand === 'foreign' || fp.id === '2359') {
+                fp.brand = 'foreign';
+                fp.brandName = 'محصولات خارجی';
+                fp.category = 'imported';
+                fp.categoryName = 'محصولات خارجی';
+              }
               mergedMap.set(key, fp);
             }
           });
 
-          const merged = Array.from(mergedMap.values());
+          const merged = Array.from(mergedMap.values()).map(p => {
+            if (p.category === 'home' || p.category === 'car' || p.id === '1057') {
+              p.category = 'cleaners';
+              p.categoryName = 'پاک‌کننده و اسپری';
+            }
+            if (p.brand === 'foreign' || p.id === '2359') {
+              p.brand = 'foreign';
+              p.brandName = 'محصولات خارجی';
+              p.category = 'imported';
+              p.categoryName = 'محصولات خارجی';
+            }
+            return p;
+          });
+
           console.log(`[Firestore] Loaded ${merged.length} products from Firestore/Local into cache.`);
           saveProductsList(merged, true);
+          // Sync clean product categories back to Firestore DB
+          await syncSaveProducts(merged);
         }
       }
     } catch (prodErr) {
