@@ -1922,26 +1922,26 @@
 
     <!-- Modal Order Tracking & Invoice Lookup -->
     <div class="modal-overlay" id="trackOrderModal" style="display: none;" onclick="if(event.target.id==='trackOrderModal') closeTrackOrderModal();">
-        <div class="modal" style="max-width: 550px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;">
-                <h3 style="margin: 0; color: var(--primary-dark); font-size: 1.15rem;">
-                    <i class="fa-solid fa-file-invoice"></i> پیگیری سفارش و دریافت فاکتور
+        <div class="modal" style="max-width: 540px; border: 2px solid #0284c7; outline: 5px solid rgba(2, 132, 199, 0.12); border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; padding: 24px; position: relative; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; padding: 16px 20px; border-radius: 14px 14px 0 0; margin: -24px -24px 20px -24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(2,132,199,0.2);">
+                <h3 style="margin: 0; color: #ffffff; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-file-invoice" style="font-size: 1.2rem; background: rgba(255,255,255,0.2); padding: 6px 8px; border-radius: 8px;"></i> پیگیری سفارش و دریافت فاکتور
                 </h3>
-                <button onclick="closeTrackOrderModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeTrackOrderModal()" style="border: none; background: rgba(255,255,255,0.15); color: #ffffff; width: 32px; height: 32px; border-radius: 50%; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <p style="font-size: 0.9rem; color: #1e293b; font-weight: 500; line-height: 1.6; margin-bottom: 16px;">
-                لطفاً <strong style="color: var(--primary-dark);">شماره تلفن همراه</strong> یا <strong style="color: var(--primary-dark);">کد پیگیری سفارش</strong> خود را وارد کنید تا لیست فاکتورهای صادر شده برای شما نمایش داده شود:
+            <p style="font-size: 0.9rem; color: #334155; font-weight: 500; line-height: 1.6; margin-bottom: 16px; background: #f0f9ff; border-right: 4px solid #0284c7; padding: 10px 14px; border-radius: 0 8px 8px 0;">
+                جهت استعلام آخرین وضعیت و دریافت فاکتور، لطفاً <strong style="color: #0369a1;">کد پیگیری سفارش</strong> (مانند ORD-1722...) را وارد کنید:
             </p>
 
-            <form onsubmit="searchCustomerOrders(event)" style="display: flex; gap: 10px; margin-bottom: 16px;">
-                <input type="text" id="trackQueryInput" class="search-input" placeholder="مثلاً: 09121234567 یا ord-..." style="padding: 10px 14px; border-radius: 10px;" required>
-                <button type="submit" class="btn-invoice-action print-btn" id="btnTrackSearch" style="white-space: nowrap;">
+            <form onsubmit="searchCustomerOrders(event)" style="display: flex; gap: 10px; margin-bottom: 18px;">
+                <input type="text" id="trackQueryInput" class="search-input" placeholder="کد پیگیری سفارش (مثلاً: ORD-1722800000)" style="padding: 12px 16px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 0.92rem; flex: 1; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0284c7'" onblur="this.style.borderColor='#cbd5e1'" required>
+                <button type="submit" class="btn-invoice-action print-btn" id="btnTrackSearch" style="white-space: nowrap; padding: 12px 18px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; background: #0284c7; color: white; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                     <i class="fa-solid fa-magnifying-glass"></i> جستجوی فاکتور
                 </button>
             </form>
 
-            <div id="trackResultBox" style="display: none; max-height: 380px; overflow-y: auto;">
+            <div id="trackResultBox" style="display: none; max-height: 380px; overflow-y: auto; padding-right: 2px;">
                 <!-- Track results -->
             </div>
         </div>
@@ -3140,16 +3140,16 @@
 
             if (!query || query.length < 3) {
                 resultBox.style.display = 'block';
-                resultBox.innerHTML = `<div style="color:#dc2626; padding:10px; font-weight:bold;">لطفاً حداقل ۳ کاراکتر (شماره تلفن یا کد سفارش) وارد کنید.</div>`;
+                resultBox.innerHTML = `<div style="color:#dc2626; padding:12px; font-weight:bold; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; font-size:0.88rem;"><i class="fa-solid fa-triangle-exclamation"></i> لطفاً کد پیگیری سفارش معتبر (حداقل ۳ کاراکتر) وارد کنید.</div>`;
                 return;
             }
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال جستجوی سفارشات...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال استعلام...`;
 
             let serverOrders = [];
             try {
-                const res = await fetch(getApiUrl('/api/orders/track?query=' + encodeURIComponent(query)));
+                const res = await fetch(getApiUrl('/api/orders/track?code=' + encodeURIComponent(query) + '&query=' + encodeURIComponent(query)));
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success && Array.isArray(data.orders)) {
@@ -3160,10 +3160,10 @@
                 console.log('Server track failed, fallback to local');
             }
 
+            const cleanQ = query.toLowerCase();
             const localMatches = getLocalOrders().filter(o => 
-                (o.phone && o.phone.includes(query)) ||
-                (o.id && o.id.toLowerCase().includes(query.toLowerCase())) ||
-                (o.customerName && o.customerName.includes(query))
+                (o.id && String(o.id).toLowerCase().includes(cleanQ)) ||
+                (o.code && String(o.code).toLowerCase().includes(cleanQ))
             );
 
             const mergedMap = new Map();
@@ -3173,23 +3173,25 @@
             const finalOrders = Array.from(mergedMap.values());
 
             if (finalOrders.length > 0) {
-                let html = `<h4 style="margin-bottom:10px; color:var(--primary-dark);"><i class="fa-solid fa-list-check"></i> ${finalOrders.length.toLocaleString('fa-IR')} سفارش برای شما پیدا شد:</h4>`;
+                let html = `<h4 style="margin-bottom:12px; color:#0369a1; font-size:0.95rem; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> ${finalOrders.length.toLocaleString('fa-IR')} فاکتور معتبر پیدا شد:</h4>`;
                 
                 finalOrders.forEach(ord => {
                     const dateStr = ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('fa-IR') : '-';
                     const statusBadgeClass = ord.status || 'new';
                     
                     html += `
-                        <div class="track-result-card">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">
-                                <div><strong>کد سفارش:</strong> ${ord.id}</div>
-                                <span class="track-status-badge ${statusBadgeClass}">${ord.statusLabel || ord.status}</span>
+                        <div class="track-result-card" style="border: 2px solid #e2e8f0; border-radius: 14px; padding: 16px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 12px; transition: border-color 0.2s;" onmouseover="this.style.borderColor='#0284c7'" onmouseout="this.style.borderColor='#e2e8f0'">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+                                <div style="font-size:0.95rem; color:#0f172a;"><strong style="color:#0284c7;">کد پیگیری:</strong> <span style="font-family:monospace; font-weight:700; font-size:1rem; letter-spacing:0.5px;">${ord.id}</span></div>
+                                <span class="track-status-badge ${statusBadgeClass}" style="padding:4px 12px; border-radius:20px; font-size:0.78rem; font-weight:bold;">${ord.statusLabel || ord.status}</span>
                             </div>
-                            <div style="font-size:0.85rem; color:#475569; margin-bottom:4px;"><strong>تاریخ ثبت:</strong> ${dateStr}</div>
-                            <div style="font-size:0.85rem; color:#475569; margin-bottom:8px;"><strong>گیرنده:</strong> ${ord.customerName} - ${ord.phone}</div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px dashed #cbd5e1; padding-top:8px;">
-                                <div style="font-weight:bold; color:var(--primary-dark);">${(ord.totalAmount || 0).toLocaleString('fa-IR')} تومان</div>
-                                <button class="btn-invoice-action print-btn" style="padding: 5px 12px; font-size: 0.8rem;" onclick="viewInvoiceFromTrack('${ord.id}')">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.85rem; color:#475569; margin-bottom:10px;">
+                                <div><strong>تاریخ ثبت:</strong> ${dateStr}</div>
+                                <div><strong>گیرنده:</strong> ${ord.customerName || 'مشتری محترم'}</div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px dashed #cbd5e1; padding-top:10px;">
+                                <div style="font-weight:bold; color:#0f172a; font-size:0.95rem;">مبلغ فاکتور: <span style="color:#0284c7; font-size:1.05rem;">${(ord.totalAmount || 0).toLocaleString('fa-IR')}</span> تومان</div>
+                                <button class="btn-invoice-action print-btn" style="padding: 7px 14px; font-size: 0.82rem; border-radius: 8px; background: #0284c7; color: white; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600;" onclick="viewInvoiceFromTrack('${ord.id}')">
                                     <i class="fa-solid fa-file-invoice"></i> مشاهده و چاپ فاکتور
                                 </button>
                             </div>
@@ -3200,7 +3202,7 @@
                 resultBox.innerHTML = html;
                 resultBox.style.display = 'block';
             } else {
-                resultBox.innerHTML = `<div style="color:#64748b; padding:15px; text-align:center;"><i class="fa-solid fa-triangle-exclamation" style="font-size:1.5rem; color:#f59e0b; margin-bottom:6px; display:block;"></i>سفارشی با این شماره یا کد یافت نشد. لطفاً شماره موبایلی که هنگام خرید وارد کرده‌اید را بررسی کنید.</div>`;
+                resultBox.innerHTML = `<div style="color:#475569; background:#f8fafc; border:2px dashed #cbd5e1; border-radius:12px; padding:20px; text-align:center;"><i class="fa-solid fa-file-circle-xmark" style="font-size:2rem; color:#f59e0b; margin-bottom:8px; display:block;"></i>سفارشی با کد پیگیری <strong style="color:#0f172a;">"${query}"</strong> یافت نشد.<br><span style="font-size:0.82rem; color:#64748b; margin-top:4px; display:block;">لطفاً دقت فرماپید کد پیگیری دقیقاً همان کدی باشد که پس از ثبت سفارش دریافت کرده‌اید.</span></div>`;
                 resultBox.style.display = 'block';
             }
             btn.disabled = false;

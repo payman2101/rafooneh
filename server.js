@@ -636,16 +636,21 @@ app.post('/api/orders', (req, res) => {
   }
 });
 
-// Public API: Track/Lookup orders by phone number or order ID for invoice generation
+// Public API: Track/Lookup orders EXCLUSIVELY by order tracking ID (کد پیگیری سفارش)
 app.get('/api/orders/track', (req, res) => {
   try {
-    const { query } = req.query;
-    if (!query || String(query).trim().length < 3) {
-      return res.status(400).json({ success: false, message: 'لطفاً شماره تماس یا کد سفارش معتبر وارد کنید' });
+    const { query, code } = req.query;
+    const trackCode = String(code || query || '').trim();
+    if (!trackCode || trackCode.length < 3) {
+      return res.status(400).json({ success: false, message: 'لطفاً کد پیگیری سفارش معتبر وارد کنید' });
     }
-    const q = String(query).trim();
-    const allOrders = listOrders({ search: q });
-    const formatted = allOrders.map(o => ({
+    const q = trackCode.toLowerCase();
+    const allOrders = listOrders();
+    const matched = allOrders.filter(o =>
+      (o.id && String(o.id).toLowerCase().includes(q)) ||
+      (o.code && String(o.code).toLowerCase().includes(q))
+    );
+    const formatted = matched.map(o => ({
       ...o,
       statusLabel: getStatusLabel(o.status)
     }));
