@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cust-1785775413853-874e91",
+    "lastOrderAt": "2026-08-03T16:43:33.863Z",
+    "totalOrders": 1,
+    "name": "تست مشتری",
+    "updatedAt": "2026-08-03T16:43:33.863Z",
+    "address": "تهران",
+    "notes": "",
+    "totalSpent": 100000,
+    "createdAt": "2026-08-03T16:43:33.854Z",
+    "phone": "09121111111"
+  },
+  {
+    "id": "cust-1785775551028-4e87b6",
+    "phone": "09129999999",
+    "updatedAt": "2026-08-03T16:45:51.028Z",
+    "notes": "",
+    "totalOrders": 0,
+    "createdAt": "2026-08-03T16:45:51.028Z",
+    "name": "تست سفارش همراه",
+    "address": "تهران خیابان پیروزی",
+    "lastOrderAt": null,
+    "totalSpent": 0
+  }
+]

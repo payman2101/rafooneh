@@ -1,0 +1,3535 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM | مدیریت سفارشات رافونه</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00897b;
+            --primary-dark: #00695c;
+            --primary-light: #e0f2f1;
+            --accent: #ff9800;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --warning: #d97706;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', Tahoma, sans-serif; }
+
+        body { background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .login-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 32px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+        .login-card h1 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+        }
+
+        .login-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; }
+        .form-control {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        .form-control:focus { border-color: var(--primary); }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+        .btn-danger { background: #fee2e2; color: var(--danger); }
+        .btn-block { width: 100%; justify-content: center; }
+
+        .app { display: none; min-height: 100vh; }
+
+        .topbar {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .topbar h1 { font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+
+        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            min-height: calc(100vh - 64px);
+        }
+
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .mobile-tabs { display: flex !important; }
+        }
+
+        .sidebar {
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            padding: 16px 12px;
+        }
+
+        .nav-item {
+            width: 100%;
+            text-align: right;
+            padding: 12px 14px;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item.active, .nav-item:hover {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .mobile-tabs {
+            display: none;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            padding: 8px 12px;
+            gap: 8px;
+        }
+
+        .mobile-tabs button {
+            white-space: nowrap;
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+        }
+
+        .mobile-tabs button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .main { padding: 20px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+        .stat-card .value { font-size: 1.6rem; font-weight: 800; color: var(--primary-dark); }
+        .stat-card .sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+        .panel {
+            background: var(--card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .panel-header h2 { font-size: 1rem; }
+
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .filters input, .filters select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 12px 14px; text-align: right; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; color: var(--muted); font-weight: 600; }
+        tr:hover td { background: #fafafa; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .badge-new { background: #dbeafe; color: #1d4ed8; }
+        .badge-confirmed { background: #e0f2fe; color: #0369a1; }
+        .badge-preparing { background: #fef3c7; color: #b45309; }
+        .badge-delivering { background: #ffedd5; color: #c2410c; }
+        .badge-delivered { background: #dcfce7; color: #15803d; }
+        .badge-cancelled { background: #fee2e2; color: #b91c1c; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .modal h3 { margin-bottom: 16px; color: var(--primary-dark); }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+            font-size: 0.88rem;
+        }
+
+        .items-list {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.85rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--muted);
+        }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .status-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .status-pill {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .status-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        textarea.form-control { min-height: 80px; resize: vertical; }
+
+        /* Invoice Modal & Printable Area for Admin CRM */
+        .invoice-container-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 820px;
+            border-radius: 20px;
+            padding: 24px;
+            max-height: 92vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+            position: relative;
+        }
+
+        .invoice-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .printable-invoice {
+            border: 2px solid #00897b;
+            border-radius: 12px;
+            padding: 24px;
+            background: #ffffff;
+            color: #1e293b;
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        .inv-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #00897b;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+            gap: 15px;
+        }
+
+        .inv-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .inv-logo {
+            width: 52px;
+            height: 52px;
+            background: #e0f2f1;
+            color: #00695c;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            border: 1px solid #80cbc4;
+        }
+
+        .inv-brand h2 {
+            font-size: 1.25rem;
+            color: #00695c;
+            font-weight: 800;
+        }
+
+        .inv-brand p {
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        .inv-title-box {
+            text-align: left;
+        }
+
+        .inv-title-box h1 {
+            font-size: 1.15rem;
+            color: #00695c;
+            background: #e0f2f1;
+            padding: 4px 14px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .inv-meta {
+            font-size: 0.8rem;
+            color: #334155;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .inv-parties-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .inv-party-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 0.84rem;
+        }
+
+        .inv-party-box h3 {
+            font-size: 0.88rem;
+            color: #00695c;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .inv-party-box div {
+            margin-bottom: 4px;
+        }
+
+        .inv-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+
+        .inv-table th {
+            background: #00897b;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #00695c;
+            font-weight: 700;
+        }
+
+        .inv-table td {
+            padding: 10px 8px;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+        }
+
+        .inv-table tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .inv-summary-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .inv-totals-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 12px;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .inv-total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed #e2e8f0;
+            font-size: 0.86rem;
+        }
+
+        .inv-total-row.grand-total {
+            border-bottom: none;
+            border-top: 2px solid #00897b;
+            padding-top: 10px;
+            margin-top: 6px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #00695c;
+        }
+
+        .inv-total-words {
+            background: #e0f2f1;
+            color: #00695c;
+            font-weight: bold;
+            font-size: 0.8rem;
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .inv-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 16px;
+            margin-top: 20px;
+            font-size: 0.82rem;
+            text-align: center;
+        }
+
+        .signature-box {
+            width: 45%;
+        }
+
+        .stamp-placeholder {
+            border: 2px dashed #00897b;
+            color: #00897b;
+            border-radius: 50px;
+            padding: 8px 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            transform: rotate(-3deg);
+            background: rgba(224, 242, 241, 0.5);
+        }
+
+        @media print {
+            body * {
+                visibility: hidden !important;
+            }
+            #customerInvoiceModal, #customerInvoiceModal * {
+                visibility: visible !important;
+            }
+            #customerInvoiceModal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                background: white !important;
+                display: block !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .invoice-container-card {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .printable-invoice {
+                border: 2px solid #000 !important;
+                padding: 15px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+    <div class="login-card">
+        <h1><i class="fa-solid fa-chart-line"></i> CRM رافونه</h1>
+        <p>مدیریت سفارشات، مشتریان و پیگیری تحویل</p>
+        <div class="error-msg" id="loginError"></div>
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="password">رمز عبور مدیریت</label>
+                <input type="password" id="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+                <i class="fa-solid fa-right-to-bracket"></i> ورود به پنل
+            </button>
+        </form>
+        <p style="margin-top:16px; font-size:0.75rem; color:var(--muted); text-align:center;">
+            <a href="/" style="color:var(--primary-dark);">← بازگشت به فروشگاه</a>
+        </p>
+    </div>
+</div>
+
+<div class="app" id="app">
+    <header class="topbar">
+        <h1><i class="fa-solid fa-store"></i> پنل CRM توزیع رافونه</h1>
+        <div class="topbar-actions">
+            <a href="/" class="btn btn-secondary" style="text-decoration:none;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> فروشگاه
+            </a>
+            <button class="btn btn-secondary" onclick="downloadDatabaseSqlite()" title="دانلود دیتابیس SQLite جهت استفاده لوکال">
+                <i class="fa-solid fa-database"></i> دانلود SQLite
+            </button>
+            <button class="btn btn-secondary" onclick="openChangePasswordModal()">
+                <i class="fa-solid fa-key"></i> تغییر رمز عبور
+            </button>
+            <button class="btn btn-danger" onclick="handleLogout()">
+                <i class="fa-solid fa-right-from-bracket"></i> خروج
+            </button>
+        </div>
+    </header>
+
+    <div class="mobile-tabs" id="mobileTabs">
+        <button class="active" onclick="showSection('dashboard', this)">داشبورد</button>
+        <button onclick="showSection('orders', this)">سفارشات</button>
+        <button onclick="showSection('products', this)">انبار و برندها</button>
+        <button onclick="showSection('gsheets', this)">گوگل شیت</button>
+        <button onclick="showSection('profit', this)">تحلیل سود</button>
+        <button onclick="showSection('company-payments', this)">پرداختی شرکت</button>
+        <button onclick="showSection('alerts', this)">هشدارها <span class="badge badge-cancelled" id="alertBadgeMobile" style="display:none; padding:2px 6px; font-size:0.7rem;">0</span></button>
+        <button onclick="showSection('customers', this)">مشتریان</button>
+    </div>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <button class="nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)">
+                <i class="fa-solid fa-gauge-high"></i> داشبورد
+            </button>
+            <button class="nav-item" data-section="orders" onclick="showSection('orders', this)">
+                <i class="fa-solid fa-box"></i> سفارشات
+            </button>
+            <button class="nav-item" data-section="products" onclick="showSection('products', this)">
+                <i class="fa-solid fa-boxes-stacked"></i> مدیریت انبار و برندها
+            </button>
+            <button class="nav-item" data-section="gsheets" onclick="showSection('gsheets', this)">
+                <i class="fa-solid fa-file-csv"></i> اتصال گوگل شیت
+            </button>
+            <button class="nav-item" data-section="profit" onclick="showSection('profit', this)">
+                <i class="fa-solid fa-chart-pie"></i> محاسبه سود
+            </button>
+            <button class="nav-item" data-section="company-payments" onclick="showSection('company-payments', this)">
+                <i class="fa-solid fa-file-invoice-dollar"></i> پرداختی شرکت
+            </button>
+            <button class="nav-item" data-section="alerts" onclick="showSection('alerts', this)">
+                <i class="fa-solid fa-triangle-exclamation"></i> هشدارها
+                <span class="badge badge-cancelled" id="alertBadgeSidebar" style="display:none; margin-right:auto; font-size:0.7rem;">0</span>
+            </button>
+            <button class="nav-item" data-section="customers" onclick="showSection('customers', this)">
+                <i class="fa-solid fa-users"></i> مشتریان
+            </button>
+        </aside>
+
+        <main class="main">
+            <!-- Dashboard -->
+            <section class="section active" id="section-dashboard">
+                <div id="dashboardAlertBanner"></div>
+
+                <!-- Dashboard Date Filter Bar -->
+                <div class="panel" style="margin-bottom: 20px; padding: 16px 20px;">
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-chart-pie" style="color: var(--primary); font-size: 1.25rem;"></i>
+                            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text);">خلاصه عملکرد و فیلتر زمان</h3>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 4px; background: var(--bg-hover, #f1f5f9); padding: 4px; border-radius: 10px; border: 1px solid var(--border, #e2e8f0);">
+                                <button type="button" class="btn btn-sm dash-filter-btn active" data-timeframe="all" onclick="setDashboardTimeframe('all')" style="border-radius: 8px;">کل دوره</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="today" onclick="setDashboardTimeframe('today')" style="border-radius: 8px;">امروز</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="yesterday" onclick="setDashboardTimeframe('yesterday')" style="border-radius: 8px;">دیروز</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="week" onclick="setDashboardTimeframe('week')" style="border-radius: 8px;">۷ روز اخیر</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="month" onclick="setDashboardTimeframe('month')" style="border-radius: 8px;">۳۰ روز اخیر</button>
+                                <button type="button" class="btn btn-sm dash-filter-btn" data-timeframe="custom" onclick="setDashboardTimeframe('custom')" style="border-radius: 8px;">تاریخ دلخواه</button>
+                            </div>
+                            <div id="dashCustomDateGroup" style="display: none; align-items: center; gap: 8px;">
+                                <input type="date" id="dashFromDate" class="form-control" style="width: 140px; font-size: 0.85rem; padding: 6px 10px;" onchange="loadStats()">
+                                <span style="font-size: 0.85rem; color: var(--muted);">تا</span>
+                                <input type="date" id="dashToDate" class="form-control" style="width: 140px; font-size: 0.85rem; padding: 6px 10px;" onchange="loadStats()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="statsGrid"></div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>لیست سفارشات بازه انتخابی</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد</th>
+                                    <th>مشتری</th>
+                                    <th>فروش</th>
+                                    <th>سود تخمینی</th>
+                                    <th>وضعیت</th>
+                                    <th>زمان</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrdersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Profit Analysis -->
+            <section class="section" id="section-profit">
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-chart-line"></i> محاسبه سود و گزارش مالی CRM</h2>
+                        <div class="filters">
+                            <select id="profitTimeframe" onchange="loadProfitStats()">
+                                <option value="all">کل دوره</option>
+                                <option value="today">امروز</option>
+                                <option value="7days">۷ روز گذشته</option>
+                                <option value="30days">۳۰ روز گذشته</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="padding:18px;">
+                        <div class="stats-grid" id="profitStatsGrid"></div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header">
+                        <h2>سودآوری به تفکیک محصولات</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد محصول</th>
+                                    <th>نام محصول</th>
+                                    <th>تعداد فروخته‌شده</th>
+                                    <th>مجموع فروش</th>
+                                    <th>مجموع قیمت خرید</th>
+                                    <th>سود کل</th>
+                                    <th>حاشیه سود٪</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productProfitBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>سود به تفکیک سفارشات</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد سفارش</th>
+                                    <th>مشتری</th>
+                                    <th>مبلغ فروش</th>
+                                    <th>هزینه خرید</th>
+                                    <th>سود سفارش</th>
+                                    <th>حاشیه سود٪</th>
+                                    <th>تاریخ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderProfitBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Company Payments & Sales Calculation Settlement -->
+            <section class="section" id="section-company-payments">
+                <!-- Header & Date Filter Panel -->
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
+                        <div>
+                            <h2><i class="fa-solid fa-file-invoice-dollar"></i> محاسبه فروش و تسویه پرداختی به شرکت (اختصاصی برند رافونه)</h2>
+                            <p style="font-size:0.85rem; color:var(--muted); margin-top:4px;">
+                                محاسبه تعداد اقلام فروخته‌شده برند رافونه و مبلغ پرداختی به شرکت بر اساس قیمت خرید در بازه زمانی مشخص و ثبت تاریخچه پرداختی‌ها
+                            </p>
+                        </div>
+                    </div>
+                    <div style="padding:18px; border-bottom:1px solid var(--border);">
+                        <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <label style="font-size:0.85rem; font-weight:bold;">از تاریخ:</label>
+                                <input type="date" id="cpFromDate" class="form-control" style="width:160px; padding:6px 10px;">
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <label style="font-size:0.85rem; font-weight:bold;">تا تاریخ:</label>
+                                <input type="date" id="cpToDate" class="form-control" style="width:160px; padding:6px 10px;">
+                            </div>
+                            <button class="btn btn-primary" onclick="loadCompanyPaymentStats()">
+                                <i class="fa-solid fa-calculator"></i> محاسبه کارکرد بازه
+                            </button>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-right:auto;">
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('today')" style="padding:6px 10px; font-size:0.8rem;">امروز</button>
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('7days')" style="padding:6px 10px; font-size:0.8rem;">۷ روز اخیر</button>
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('30days')" style="padding:6px 10px; font-size:0.8rem;">۳۰ روز اخیر</button>
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('thisMonth')" style="padding:6px 10px; font-size:0.8rem;">این ماه</button>
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('all')" style="padding:6px 10px; font-size:0.8rem;">نمایش کل</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculated Stats Cards Grid -->
+                    <div style="padding:18px;">
+                        <div class="stats-grid" id="companyPaymentStatsGrid">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Record Settlement Banner Card -->
+                <div class="panel" style="margin-bottom:20px; background:linear-gradient(135deg, #e0f2f1 0%, #ffffff 100%); border:1px solid #b2dfdb;">
+                    <div style="padding:18px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
+                        <div>
+                            <h3 style="font-size:1.05rem; color:var(--primary-dark); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-file-signature"></i> ثبت و نهایی‌سازی تسویه‌حساب این بازه
+                            </h3>
+                            <p style="font-size:0.85rem; color:#004d40;">
+                                پس از محاسبه میزان اقلام فروخته‌شده، می‌توانید مبلغ قابل پرداخت را به عنوان تسویه‌حساب شرکت با تاریخ مشخص ثبت نمایید.
+                            </p>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                            <input type="text" id="cpRefNumber" class="form-control" placeholder="شماره پیگیری / سند (اختیاری)" style="width:200px; background:white;">
+                            <input type="text" id="cpNotes" class="form-control" placeholder="توضیحات تسویه" style="width:200px; background:white;">
+                            <button class="btn btn-primary" onclick="submitCompanyPaymentSettlement()" style="background:#00695c;">
+                                <i class="fa-solid fa-check-circle"></i> ثبت تسویه حساب پرداختی
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Itemized Sold Products Breakdown -->
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header" style="flex-wrap:wrap; gap:10px;">
+                        <h2><i class="fa-solid fa-list-check"></i> جزئیات اقلام فروخته‌شده در بازه انتخابی (بر اساس قیمت خرید)</h2>
+                        <input type="text" id="cpSearchItem" class="form-control" placeholder="جستجو در اقلام..." style="width:220px; font-size:0.85rem; padding:6px 12px;" oninput="filterCompanyPaymentItems()">
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>کد / شناسه کالا</th>
+                                    <th>نام محصول</th>
+                                    <th>تعداد فروخته‌شده</th>
+                                    <th>قیمت خرید واحد (تومان)</th>
+                                    <th>مجموع قیمت خرید (پرداختی شرکت)</th>
+                                    <th>قیمت فروش واحد (تومان)</th>
+                                    <th>مجموع فروش (تومان)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="companyPaymentItemsBody">
+                                <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:20px;">در حال بارگذاری داده‌ها...</td></tr>
+                            </tbody>
+                            <tfoot id="companyPaymentItemsFoot" style="font-weight:bold; background:#f8fafc; border-top:2px solid var(--border);">
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Settlement History Table -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-clock-rotate-left"></i> تاریخچه تسویه‌حساب‌ها و پرداختی‌های ثبت‌شده</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد تسویه</th>
+                                    <th>تاریخ ثبت پرداخت</th>
+                                    <th>بازه زمان کارکرد</th>
+                                    <th>تعداد سفارشات</th>
+                                    <th>تعداد کل اقلام</th>
+                                    <th>مبلغ پرداخت‌شده (قیمت خرید)</th>
+                                    <th>شماره پیگیری / توضیحات</th>
+                                    <th>وضعیت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="companyPaymentHistoryBody">
+                                <tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">هیچ تسویه‌حسابی هنوز ثبت نشده است.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alerts -->
+            <section class="section" id="section-alerts">
+                <div class="panel" style="margin-bottom:20px; border-right: 4px solid var(--warning);">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);"></i> هشدار موجودی کالا (کمتر از ۵ عدد)</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد کالا</th>
+                                    <th>نام کالا</th>
+                                    <th>دسته</th>
+                                    <th>قیمت تحویل</th>
+                                    <th>قیمت خرید</th>
+                                    <th>موجودی فعلی</th>
+                                    <th>وضعیت</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowStockAlertsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel" style="border-right: 4px solid var(--danger);">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-clock-rotate-left" style="color:var(--danger);"></i> هشدار تأخیر تحویل سفارشات (بیش از یک هفته)</h2>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد سفارش</th>
+                                    <th>نام مشتری</th>
+                                    <th>شماره تماس</th>
+                                    <th>مبلغ سفارش</th>
+                                    <th>تاریخ ثبت</th>
+                                    <th>مدت زمان گذشته</th>
+                                    <th>وضعیت فعلی</th>
+                                    <th>عمل</th>
+                                </tr>
+                            </thead>
+                            <tbody id="delayedOrdersAlertsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Orders -->
+            <section class="section" id="section-orders">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>لیست سفارشات</h2>
+                        <div class="filters">
+                            <select id="orderStatusFilter" onchange="loadOrders()">
+                                <option value="all">همه وضعیت‌ها</option>
+                            </select>
+                            <input type="text" id="orderSearch" placeholder="جستجو نام / تلفن / کد..." oninput="debounceOrders()">
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد سفارش</th>
+                                    <th>مشتری</th>
+                                    <th>تلفن</th>
+                                    <th>مبلغ</th>
+                                    <th>پرداخت</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inventory & Brands Management -->
+            <section class="section" id="section-products">
+                <div class="stats-grid" id="productStatsGrid" style="margin-bottom:20px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                    <div class="stat-card">
+                        <div class="label">کل محصولات انبار</div>
+                        <div class="value" id="statTotalProducts">0</div>
+                        <div class="sub">تنوع کل اقلام</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">برند رافونه</div>
+                        <div class="value" id="statRafoonehProducts" style="color:var(--primary);">0</div>
+                        <div class="sub">محصولات شرکت رافونه</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">محصولات خارجی / وارداتی</div>
+                        <div class="value" id="statForeignProducts" style="color:#0284c7;">0</div>
+                        <div class="sub">برندهای بین‌المللی و وارداتی</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-boxes-stacked"></i> مدیریت اقلام انبار، موجودی و قیمت‌ها</h2>
+                        <div class="filters" style="gap:10px; align-items:center;">
+                            <select id="productBrandFilter" onchange="loadAdminProducts()">
+                                <option value="all">همه برندها</option>
+                                <option value="rafooneh">برند رافونه</option>
+                                <option value="foreign">محصولات خارجی / وارداتی</option>
+                            </select>
+                            <select id="productCategoryFilter" onchange="loadAdminProducts()">
+                                <option value="all">همه دسته‌بندی‌ها</option>
+                                <option value="handwash">مایع دستشویی</option>
+                                <option value="dishwash">مایع ظرفشویی</option>
+                                <option value="laundry">شوینده لباس</option>
+                                <option value="cleaners">پاک‌کننده و اسپری</option>
+                                <option value="sanitary">جرم‌گیر و ضدعفونی</option>
+                                <option value="home">خانه و فرش</option>
+                                <option value="cellulosic">سلولزی و مصرفی</option>
+                                <option value="car">خودرو</option>
+                                <option value="other">سایر</option>
+                            </select>
+                            <input type="text" id="productSearch" placeholder="جستجو نام / کد / برند..." oninput="debounceProducts()">
+                            <button class="btn btn-primary" onclick="openAddProductModal()">
+                                <i class="fa-solid fa-plus"></i> افزودن محصول جدید
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کد / تصویر</th>
+                                    <th>نام محصول</th>
+                                    <th>برند</th>
+                                    <th>دسته‌بندی</th>
+                                    <th>موجودی</th>
+                                    <th>قیمت قدیم (فروش)</th>
+                                    <th>قیمت جدید بازار</th>
+                                    <th>تخفیف خریدار</th>
+                                    <th>قیمت خرید</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsAdminBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Google Sheets CRM Control -->
+            <section class="section" id="section-gsheets">
+                <div class="panel" style="margin-bottom:20px;">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-file-excel" style="color:var(--success);"></i> مدیریت اتصال فایل گوگل شیت (Google Sheets)</h2>
+                        <span class="badge badge-delivered" id="gsheetsConnStatus"><i class="fa-solid fa-circle-check"></i> متصل به گوگل شیت</span>
+                    </div>
+                    <div style="padding:20px;">
+                        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:16px; line-height:1.6;">
+                            ادمین عزیز، شما می‌توانید فایل گوگل شیت حاوی قیمت‌ها و اقلام را مستقیماً از اینجا مدیریت کنید. اطلاعات کالاهای انبار هم به‌صورت آنلاین همگام می‌شوند و هم با هر ثبت سفارش، موجودی در CRM به‌روزرسانی می‌گردد.
+                        </p>
+                        
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:20px;">
+                            <div style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:16px;">
+                                <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:6px;">شناسه شیت گوگل (Spreadsheet ID):</label>
+                                <input type="text" class="form-control" id="gsheetIdInput" value="1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8" style="margin-bottom:10px; font-family:monospace; font-size:0.85rem;">
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-primary" onclick="syncGSheetsNow()" id="btnSyncGSheets">
+                                        <i class="fa-solid fa-rotate"></i> ذخیره و همگام‌سازی آنلاین
+                                    </button>
+                                    <a id="btnGsheetCsvLink" href="#" target="_blank" class="btn btn-secondary" style="text-decoration:none;">
+                                        <i class="fa-solid fa-external-link"></i> مشاهده لینک CSV
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:16px;">
+                                <div style="font-size:0.85rem; font-weight:bold; margin-bottom:8px;">وضعیت همگام‌سازی انبار:</div>
+                                <div style="font-size:0.85rem; color:var(--muted); margin-bottom:6px;">تعداد کل اقلام همگام‌شده: <strong id="gsheetProductCount" style="color:var(--primary-dark);">0</strong> کالا</div>
+                                <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">آخرین زمان بروزرسانی: <strong id="gsheetLastSyncTime">—</strong></div>
+                                <div style="background:#e0f2fe; color:#0369a1; padding:8px 12px; border-radius:8px; font-size:0.8rem;">
+                                    <i class="fa-solid fa-info-circle"></i> تغییرات سفارشات به طور خودکار رو کاتالوگ و انبار اعمال می‌شود.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-cloud-arrow-up"></i> آپلود و بروزرسانی فایل اکسل محصولات</h2>
+                    </div>
+                    <div style="padding:20px;">
+                        <p style="color:var(--muted); font-size:0.88rem; margin-bottom:12px;">
+                            اگر فایل اکسل جدیدی از لیست کالاها و قیمت‌ها دارید، می‌توانید مستقیم آن را آپلود کنید تا کاتالوگ به‌روزرسانی شود:
+                        </p>
+                        <form id="excelUploadForm" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                            <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="form-control" style="max-width:350px;">
+                            <button type="button" class="btn btn-primary" onclick="uploadExcelFile()">
+                                <i class="fa-solid fa-upload"></i> آپلود فایل اکسل
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            <!-- Settings & Password -->
+            </section>
+
+            <!-- Customers -->
+            <section class="section" id="section-customers">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>لیست مشتریان</h2>
+                        <div class="filters">
+                            <input type="text" id="customerSearch" placeholder="جستجو نام / تلفن / آدرس..." oninput="debounceCustomers()">
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>نام</th>
+                                    <th>تلفن</th>
+                                    <th>تعداد سفارش</th>
+                                    <th>مجموع خرید</th>
+                                    <th>آخرین سفارش</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal-overlay" id="orderModal">
+    <div class="modal">
+        <h3><i class="fa-solid fa-receipt"></i> جزئیات سفارش</h3>
+        <div id="orderDetailContent"></div>
+        <div class="form-group" style="margin-top:16px;">
+            <label>تغییر وضعیت</label>
+            <div class="status-pills" id="statusPills"></div>
+        </div>
+        <div class="form-group">
+            <label for="adminNotes">یادداشت داخلی</label>
+            <textarea id="adminNotes" class="form-control" placeholder="یادداشت برای پیگیری داخلی..."></textarea>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="saveOrderChanges()">
+                <i class="fa-solid fa-floppy-disk"></i> ذخیره
+            </button>
+            <button class="btn btn-primary" style="background:#0284c7;" onclick="printInvoiceFromAdminModal()">
+                <i class="fa-solid fa-print"></i> صدور / چاپ فاکتور مشتری
+            </button>
+            <a id="whatsappOrderLink" href="#" target="_blank" class="btn btn-secondary" style="text-decoration:none;">
+                <i class="fa-brands fa-whatsapp"></i> واتساپ
+            </a>
+            <button class="btn btn-secondary" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="deleteCurrentOrder()">
+                <i class="fa-solid fa-trash"></i> حذف سفارش
+            </button>
+            <button class="btn btn-secondary" onclick="closeOrderModal()">بستن</button>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Invoice Modal for Admin -->
+<div class="modal-overlay" id="customerInvoiceModal" style="display: none;" onclick="if(event.target.id==='customerInvoiceModal') closeInvoiceModal();">
+    <div class="invoice-container-card">
+        <!-- Action Bar (Hidden in Print) -->
+        <div class="invoice-actions no-print">
+            <button class="btn btn-primary" style="background:#0284c7;" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> چاپ A4 / دریافت PDF فاکتور
+            </button>
+            <button class="btn btn-secondary" onclick="closeInvoiceModal()">
+                <i class="fa-solid fa-xmark"></i> بستن
+            </button>
+        </div>
+
+        <!-- Printable Invoice Content -->
+        <div class="printable-invoice" id="printableInvoiceArea">
+            <div class="inv-header">
+                <div class="inv-brand">
+                    <div class="inv-logo"><i class="fa-solid fa-pump-soap"></i></div>
+                    <div>
+                        <h2>محصولات بهداشتی پیمان</h2>
+                        <p>مرکز رسمی پخش و توزیع مستقیم شوینده و بهداشتی رافونه</p>
+                    </div>
+                </div>
+                <div class="inv-title-box">
+                    <h1>فاکتور فروش کالا و خدمات</h1>
+                    <div class="inv-meta">
+                        <div><strong>شماره فاکتور:</strong> <span id="invOrderId">---</span></div>
+                        <div><strong>تاریخ ثبت:</strong> <span id="invDate">---</span></div>
+                        <div><strong>زمان:</strong> <span id="invTime">---</span></div>
+                        <div><strong>روش پرداخت:</strong> <span id="invPaymentMethod">---</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="inv-parties-grid">
+                <div class="inv-party-box">
+                    <h3><i class="fa-solid fa-store"></i> مشخصات فروشنده:</h3>
+                    <div><strong>فروشگاه:</strong> مرکز پخش شوینده رافونه</div>
+                    <div><strong>تلفن پشتیبانی:</strong> ۰۹۰۲۷۹۵۹۵۵۵</div>
+                    <div><strong>وب‌سایت:</strong> rafooneh.com</div>
+                    <div><strong>ارسال:</strong> تحویل مستقیم درب منزل مشتری</div>
+                </div>
+                <div class="inv-party-box">
+                    <h3><i class="fa-solid fa-user"></i> مشخصات خریدار (مشتری):</h3>
+                    <div><strong>نام خریدار:</strong> <span id="invCustName">---</span></div>
+                    <div><strong>شماره تماس:</strong> <span id="invCustPhone">---</span></div>
+                    <div><strong>آدرس تحویل:</strong> <span id="invCustAddress">---</span></div>
+                    <div id="invCustNoteRow" style="display:none;"><strong>توضیحات:</strong> <span id="invCustNote">-</span></div>
+                </div>
+            </div>
+
+            <table class="inv-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">ردیف</th>
+                        <th style="width: 90px;">کد کالا</th>
+                        <th>شرح کالا / محصول</th>
+                        <th style="width: 70px;">تعداد</th>
+                        <th style="width: 130px;">قیمت واحد (تومان)</th>
+                        <th style="width: 140px;">مبلغ کل (تومان)</th>
+                    </tr>
+                </thead>
+                <tbody id="invItemsTableBody">
+                    <!-- Dynamic items -->
+                </tbody>
+            </table>
+
+            <div class="inv-summary-section">
+                <div class="inv-totals-box">
+                    <div class="inv-total-row">
+                        <span>جمع کل اقلام:</span>
+                        <strong id="invSubtotal">۰ تومان</strong>
+                    </div>
+                    <div class="inv-total-row">
+                        <span>هزینه پیک / ارسال:</span>
+                        <strong style="color: #16a34a;">رایگان (تحویل درب منزل)</strong>
+                    </div>
+                    <div class="inv-total-row grand-total">
+                        <span>مبلغ کل قابل پرداخت:</span>
+                        <strong id="invGrandTotal">۰ تومان</strong>
+                    </div>
+                    <div class="inv-total-words" id="invGrandTotalWords">
+                        مبلغ به حروف: صفر تومان
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Detail Modal -->
+<div class="modal-overlay" id="customerModal">
+    <div class="modal" style="max-width: 580px;">
+        <h3><i class="fa-solid fa-user-pen"></i> ویرایش و پروفایل مشتری</h3>
+        <div id="customerDetailContent"></div>
+        <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="saveCustomerProfile()">
+                <i class="fa-solid fa-floppy-disk"></i> ذخیره تغییرات مشخصات مشتری
+            </button>
+            <button class="btn btn-secondary" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="deleteCurrentCustomer()">
+                <i class="fa-solid fa-trash"></i> حذف مشتری
+            </button>
+            <button class="btn btn-secondary" onclick="closeCustomerModal()">بستن</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal-overlay" id="addProductModal">
+    <div class="modal" style="max-width:550px;">
+        <h3><i class="fa-solid fa-box"></i> افزودن محصول جدید به انبار</h3>
+        <form id="addProductForm" onsubmit="submitAddProduct(event)" style="margin-top:16px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="newProdCode">کد محصول (کد کالا)</label>
+                    <input type="text" id="newProdCode" class="form-control" placeholder="مثلاً: 2005" required>
+                </div>
+                <div class="form-group">
+                    <label for="newProdName">نام محصول</label>
+                    <input type="text" id="newProdName" class="form-control" placeholder="نام کالا..." required>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="newProdBrand">انتخاب برند</label>
+                    <select id="newProdBrand" class="form-control">
+                        <option value="rafooneh" selected>برند رافونه</option>
+                        <option value="foreign">محصولات خارجی / وارداتی</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newProdCategory">دسته‌بندی</label>
+                    <select id="newProdCategory" class="form-control">
+                        <option value="handwash">مایع دستشویی</option>
+                        <option value="dishwash">مایع ظرفشویی</option>
+                        <option value="laundry">شوینده لباس</option>
+                        <option value="cleaners">پاک‌کننده و اسپری</option>
+                        <option value="sanitary">جرم‌گیر و ضدعفونی</option>
+                        <option value="home">خانه و فرش</option>
+                        <option value="cellulosic">سلولزی و مصرفی</option>
+                        <option value="car">خودرو</option>
+                        <option value="other" selected>سایر</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="newProdStock">موجودی اولیه (عدد)</label>
+                    <input type="number" id="newProdStock" class="form-control" value="10" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="newProdBuyPrice">قیمت خرید انباردار (تومان)</label>
+                    <input type="number" id="newProdBuyPrice" class="form-control" placeholder="0" required>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="newProdPrice">قیمت فروش فعلی / قدیم (تومان)</label>
+                    <input type="number" id="newProdPrice" class="form-control" placeholder="0" required oninput="calcAddDiscount()">
+                </div>
+                <div class="form-group">
+                    <label for="newProdNewPrice">قیمت جدید بازار / مصرف‌کننده (تومان)</label>
+                    <input type="number" id="newProdNewPrice" class="form-control" placeholder="0 (اختیاری)" oninput="calcAddDiscount()">
+                </div>
+            </div>
+
+            <div id="addDiscountCalcNotice" style="background:#f0fdf4; border:1px solid #86efac; padding:8px 12px; border-radius:8px; font-size:0.82rem; color:#15803d; font-weight:bold; margin-bottom:12px; display:none;"></div>
+
+            <div class="form-group">
+                <label for="newProdImage">تصویر محصول</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <img id="newProdImagePreview" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23f1f5f9'/%3E%3C/svg%3E" alt="پیش‌نمایش" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#f8fafc;" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';">
+                    <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="newProdImage" class="form-control" placeholder="https://..." oninput="updateNewImagePreview(this.value)">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('newProdImageFile').click()" style="white-space:nowrap;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> آپلود فایل
+                            </button>
+                            <input type="file" id="newProdImageFile" accept="image/*" style="display:none;" onchange="handleProductFileUpload(this, 'newProdImage', 'newProdImagePreview', 'newProdUploadStatus')">
+                        </div>
+                        <span id="newProdUploadStatus" style="font-size:0.75rem; color:var(--muted);">امکان انتخاب فایل عکس از کامپیوتر/موبایل یا وارد کردن لینک مستقیم.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="newProdDescription">توضیحات کالا</label>
+                <textarea id="newProdDescription" class="form-control" placeholder="توضیحات مختصر..." rows="2"></textarea>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:16px; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-check"></i> ثبت و ذخیره در انبار
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddProductModal()">انصراف</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal-overlay" id="editProductModal">
+    <div class="modal" style="max-width:580px;">
+        <h3><i class="fa-solid fa-pen-to-square"></i> ویرایش کامل کالا و اصلاح عکس</h3>
+        <form id="editProductForm" onsubmit="submitEditProduct(event)" style="margin-top:16px;">
+            <input type="hidden" id="editProdId">
+            <div style="display:grid; grid-template-columns:1fr 2fr; gap:12px;">
+                <div class="form-group">
+                    <label for="editProdCodeView">کد محصول</label>
+                    <input type="text" id="editProdCodeView" class="form-control" readonly style="background:#f1f5f9; font-weight:bold;">
+                </div>
+                <div class="form-group">
+                    <label for="editProdName">نام محصول</label>
+                    <input type="text" id="editProdName" class="form-control" required>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="editProdBrand">انتخاب برند</label>
+                    <select id="editProdBrand" class="form-control">
+                        <option value="rafooneh">برند رافونه</option>
+                        <option value="foreign">محصولات خارجی / وارداتی</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editProdCategory">دسته‌بندی</label>
+                    <select id="editProdCategory" class="form-control">
+                        <option value="handwash">مایع دستشویی</option>
+                        <option value="dishwash">مایع ظرفشویی</option>
+                        <option value="laundry">شوینده لباس</option>
+                        <option value="cleaners">پاک‌کننده و اسپری</option>
+                        <option value="sanitary">جرم‌گیر و ضدعفونی</option>
+                        <option value="home">خانه و فرش</option>
+                        <option value="cellulosic">سلولزی و مصرفی</option>
+                        <option value="car">خودرو</option>
+                        <option value="other">سایر</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="editProdStock">موجودی انبار</label>
+                    <input type="number" id="editProdStock" class="form-control" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="editProdBuyPrice">قیمت خرید (تومان)</label>
+                    <input type="number" id="editProdBuyPrice" class="form-control" min="0" required>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label for="editProdPrice">قیمت فروش فعلی / قدیم (تومان)</label>
+                    <input type="number" id="editProdPrice" class="form-control" min="0" required oninput="calcEditDiscount()">
+                </div>
+                <div class="form-group">
+                    <label for="editProdNewPrice">قیمت جدید بازار / روی جلد (تومان)</label>
+                    <input type="number" id="editProdNewPrice" class="form-control" min="0" placeholder="0 (اختیاری)" oninput="calcEditDiscount()">
+                </div>
+            </div>
+
+            <div id="editDiscountCalcNotice" style="background:#f0fdf4; border:1px solid #86efac; padding:8px 12px; border-radius:8px; font-size:0.82rem; color:#15803d; font-weight:bold; margin-bottom:12px; display:none;"></div>
+
+            <div class="form-group">
+                <label for="editProdImage">تصویر محصول</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <img id="editProdImagePreview" src="" alt="پیش‌نمایش" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#f8fafc;" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';">
+                    <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="editProdImage" class="form-control" placeholder="https://..." oninput="updateEditImagePreview(this.value)">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editProdImageFile').click()" style="white-space:nowrap;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> آپلود فایل
+                            </button>
+                            <input type="file" id="editProdImageFile" accept="image/*" style="display:none;" onchange="handleProductFileUpload(this, 'editProdImage', 'editProdImagePreview', 'editProdUploadStatus')">
+                        </div>
+                        <span id="editProdUploadStatus" style="font-size:0.75rem; color:var(--muted);">امکان انتخاب فایل عکس از کامپیوتر/موبایل یا وارد کردن لینک مستقیم.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="editProdDescription">توضیحات کالا</label>
+                <textarea id="editProdDescription" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:16px; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> ذخیره تغییرات
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditProductModal()">انصراف</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Change Admin Password Modal -->
+<div class="modal-overlay" id="changePasswordModal" style="display: none;" onclick="if(event.target.id==='changePasswordModal') closeChangePasswordModal();">
+    <div class="modal" style="max-width: 440px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;">
+            <h3 style="margin: 0; color: var(--primary-dark); font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-key" style="color: var(--primary);"></i> تغییر رمز عبور مدیر
+            </h3>
+            <button onclick="closeChangePasswordModal()" style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form onsubmit="handleChangePasswordSubmit(event)">
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-weight: bold; font-size: 0.85rem; color: #334155; margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-lock"></i> رمز عبور فعلی:
+                </label>
+                <input type="password" id="oldPasswordInput" class="form-control" placeholder="رمز عبور فعلی را وارد کنید" required style="width: 100%;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-weight: bold; font-size: 0.85rem; color: #334155; margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-key"></i> رمز عبور جدید:
+                </label>
+                <input type="password" id="newPasswordInput" class="form-control" placeholder="حداقل ۴ کاراکتر" minlength="4" required style="width: 100%;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label style="font-weight: bold; font-size: 0.85rem; color: #334155; margin-bottom: 6px; display: block;">
+                    <i class="fa-solid fa-shield-halved"></i> تکرار رمز عبور جدید:
+                </label>
+                <input type="password" id="confirmPasswordInput" class="form-control" placeholder="تکرار رمز عبور جدید" minlength="4" required style="width: 100%;">
+            </div>
+
+            <div id="changePasswordStatus" style="display: none; margin-bottom: 14px; padding: 10px; border-radius: 8px; font-size: 0.85rem;"></div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">انصراف</button>
+                <button type="submit" class="btn btn-primary" id="btnSubmitChangePassword">
+                    <i class="fa-solid fa-check"></i> ذخیره رمز عبور جدید
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="products_data.js"></script>
+<script>
+    let token = localStorage.getItem('crm_token') || '';
+    let apiBaseUrl = '';
+
+    let currentOrderId = null;
+    let currentOrderData = null;
+    let currentCustomerId = null;
+    let orderStatuses = [];
+    let searchTimeout = null;
+
+    const paymentLabels = {
+        cod: 'پرداخت در محل',
+        whatsapp: 'کارت به کارت',
+        online: 'پرداخت آنلاین'
+    };
+
+    async function api(path, options = {}) {
+        const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        let res;
+        try {
+            res = await fetch(path, { ...options, headers });
+        } catch (err) {
+            await new Promise(r => setTimeout(r, 1000));
+            res = await fetch(path, { ...options, headers });
+        }
+        if (res.status === 401 && path !== '/api/admin/login') {
+            await new Promise(r => setTimeout(r, 800));
+            const retryRes = await fetch(path, { ...options, headers });
+            if (retryRes.status === 401) {
+                const isEditing = document.querySelector('.modal[style*="display: flex"], .modal[style*="display: block"]') ||
+                                  (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName));
+                if (!isEditing) {
+                    handleLogout();
+                }
+                return retryRes;
+            }
+            return retryRes;
+        }
+        return res;
+    }
+
+    function formatPrice(n) {
+        return Number(n || 0).toLocaleString('fa-IR') + ' تومان';
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        return d.toLocaleDateString('fa-IR') + ' ' + d.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function statusBadge(status, label) {
+        return `<span class="badge badge-${status}">${label || status}</span>`;
+    }
+
+    function getLocalOrders() {
+        try {
+            const stored = localStorage.getItem('rafooneh_local_orders');
+            return stored ? JSON.parse(stored) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveLocalOrder(order) {
+        if (!order || !order.id) return;
+        try {
+            let orders = getLocalOrders();
+            const idx = orders.findIndex(o => o.id === order.id);
+            if (idx >= 0) {
+                orders[idx] = { ...orders[idx], ...order };
+            } else {
+                orders.unshift(order);
+            }
+            localStorage.setItem('rafooneh_local_orders', JSON.stringify(orders));
+        } catch (e) {
+            console.error('Error saving local order:', e);
+        }
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const password = document.getElementById('password').value;
+        const errEl = document.getElementById('loginError');
+        errEl.style.display = 'none';
+
+        try {
+            const res = await api('/api/admin/login', {
+                method: 'POST',
+                body: JSON.stringify({ password })
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                token = data.token;
+                localStorage.setItem('crm_token', token);
+                showApp();
+            } else {
+                errEl.textContent = data.message || 'کلمه عبور اشتباه است.';
+                errEl.style.display = 'block';
+            }
+        } catch (err) {
+            console.error('Login request failed:', err);
+            errEl.textContent = 'خطا در ارتباط با سرور.';
+            errEl.style.display = 'block';
+        }
+    }
+
+    function handleLogout() {
+        if (token) {
+            api('/api/admin/logout', { method: 'POST' }).catch(() => {});
+        }
+        token = '';
+        localStorage.removeItem('crm_token');
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+    }
+
+    async function showApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+
+        // 1. Instantly load active Dashboard stats & alerts
+        loadStats();
+        loadAlerts();
+
+        // 2. Load secondary sections in non-blocking background
+        setTimeout(() => {
+            loadOrders().catch(() => {});
+            loadCustomers().catch(() => {});
+            loadProfitStats().catch(() => {});
+            loadAdminProducts().catch(() => {});
+            loadGSheetsStatus().catch(() => {});
+        }, 50);
+    }
+
+    function showSection(name, btn) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('section-' + name).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.nav-item[data-section="' + name + '"]').forEach(n => n.classList.add('active'));
+        if (btn && btn.closest('.mobile-tabs')) {
+            document.querySelectorAll('.mobile-tabs button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        if (name === 'products') loadAdminProducts();
+        if (name === 'gsheets') loadGSheetsStatus();
+        if (name === 'profit') loadProfitStats();
+        if (name === 'company-payments') initCompanyPaymentsSection();
+        if (name === 'customers') loadCustomers();
+        if (name === 'orders') loadOrders();
+        if (name === 'alerts') loadAlerts();
+        if (name === 'dashboard') loadStats();
+    }
+
+    let isRefreshingActive = false;
+    async function refreshActiveSection() {
+        if (isRefreshingActive) return;
+        isRefreshingActive = true;
+        try {
+            const activeSec = document.querySelector('.section.active')?.id?.replace('section-', '') || 'dashboard';
+            const tasks = [loadAlerts()];
+
+            if (activeSec === 'dashboard') {
+                tasks.push(loadStats(), loadOrders());
+            } else if (activeSec === 'orders') {
+                tasks.push(loadOrders());
+            } else if (activeSec === 'customers') {
+                tasks.push(loadCustomers());
+            } else if (activeSec === 'products') {
+                tasks.push(loadAdminProducts());
+            } else if (activeSec === 'profit') {
+                tasks.push(loadProfitStats());
+            } else if (activeSec === 'company-payments') {
+                tasks.push(loadCompanyPaymentHistory());
+            } else if (activeSec === 'gsheets') {
+                tasks.push(loadGSheetsStatus());
+            }
+
+            await Promise.allSettled(tasks);
+        } catch (e) {
+            console.error('Error in refreshActiveSection:', e);
+        } finally {
+            isRefreshingActive = false;
+        }
+    }
+
+    async function refreshAll() {
+        await refreshActiveSection();
+    }
+
+    function renderStatsSkeleton() {
+        const statsGrid = document.getElementById('statsGrid');
+        if (statsGrid && !statsGrid.children.length) {
+            statsGrid.innerHTML = Array(6).fill(0).map(() => `
+                <div class="stat-card" style="opacity:0.6; animation: pulse 1.5s infinite ease-in-out;">
+                    <div style="background:#e2e8f0; height:14px; width:60%; border-radius:4px; margin-bottom:8px;"></div>
+                    <div style="background:#cbd5e1; height:24px; width:40%; border-radius:4px;"></div>
+                </div>
+            `).join('');
+        }
+        const tbody = document.getElementById('recentOrdersBody');
+        if (tbody && !tbody.children.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="color:var(--muted);">در حال دریافت اطلاعات...</td></tr>';
+        }
+    }
+
+    let currentDashboardTimeframe = 'all';
+
+    function setDashboardTimeframe(tf) {
+        currentDashboardTimeframe = tf;
+        document.querySelectorAll('.dash-filter-btn').forEach(btn => {
+            if (btn.dataset.timeframe === tf) {
+                btn.classList.add('active');
+                btn.style.background = 'var(--primary)';
+                btn.style.color = '#fff';
+            } else {
+                btn.classList.remove('active');
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--text)';
+            }
+        });
+
+        const customGroup = document.getElementById('dashCustomDateGroup');
+        if (customGroup) {
+            customGroup.style.display = tf === 'custom' ? 'flex' : 'none';
+        }
+
+        loadStats();
+    }
+
+    function renderStatsUI(stats) {
+        if (!stats) return;
+        const alertBanner = document.getElementById('dashboardAlertBanner');
+        if (alertBanner) {
+            if (stats.alerts && stats.alerts.totalAlertsCount > 0) {
+                alertBanner.innerHTML = `
+                    <div style="background:#fff3cd; border:1px solid #ffeba2; color:#856404; padding:14px 18px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <strong><i class="fa-solid fa-bell"></i> هشدارهای نیازمند توجه:</strong>
+                            ${stats.alerts.lowStockCount > 0 ? `<span style="margin-right:10px;">• ${stats.alerts.lowStockCount.toLocaleString('fa-IR')} کالا با موجودی کم (کمتر از ۵ عدد)</span>` : ''}
+                            ${stats.alerts.delayedOrdersCount > 0 ? `<span style="margin-right:10px;">• ${stats.alerts.delayedOrdersCount.toLocaleString('fa-IR')} سفارش با تأخیر بیش از یک هفته در تحویل</span>` : ''}
+                        </div>
+                        <button class="btn btn-primary" onclick="showSection('alerts')" style="font-size:0.8rem; padding:6px 12px;">مشاهده هشدارها</button>
+                    </div>
+                `;
+            } else {
+                alertBanner.innerHTML = '';
+            }
+        }
+
+        const tfLabels = {
+            all: 'کل دوره',
+            today: 'امروز',
+            yesterday: 'دیروز',
+            week: '۷ روز اخیر',
+            month: '۳۰ روز اخیر',
+            year: 'امسال',
+            custom: 'تاریخ انتخاب‌شده'
+        };
+        const activeLabel = tfLabels[currentDashboardTimeframe] || 'بازه انتخابی';
+
+        const grid = document.getElementById('statsGrid');
+        if (grid) {
+            grid.innerHTML = `
+                <div class="stat-card">
+                    <div class="label">تعداد سفارشات (${activeLabel})</div>
+                    <div class="value">${(stats.filteredOrdersCount !== undefined ? stats.filteredOrdersCount : (stats.totalOrders || 0)).toLocaleString('fa-IR')}</div>
+                    <div class="sub">از مجموع ${(stats.totalOrders || 0).toLocaleString('fa-IR')} سفارش کل</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">درآمد فروش (${activeLabel})</div>
+                    <div class="value">${(stats.revenueTotal || 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">تومان</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">سود تخمینی (${activeLabel})</div>
+                    <div class="value" style="color:var(--success);">${(stats.profitTotal || 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">حاشیه سود: ${(stats.profitMarginTotal || 0).toLocaleString('fa-IR')}٪</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">سفارشات در جریان</div>
+                    <div class="value" style="color:var(--primary);">${(stats.activeOrders || 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">در انتظار آماده‌سازی و ارسال</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">سفارشات تحویل‌شده</div>
+                    <div class="value" style="color:#0284c7;">${(stats.deliveredOrdersCount !== undefined ? stats.deliveredOrdersCount : 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">تکمیل شده</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">امروز (${(stats.todayOrders || 0).toLocaleString('fa-IR')} سفارش)</div>
+                    <div class="value">${(stats.revenueToday || 0).toLocaleString('fa-IR')}</div>
+                    <div class="sub">سود امروز: ${(stats.profitToday || 0).toLocaleString('fa-IR')} تومان</div>
+                </div>
+            `;
+        }
+
+        const tbody = document.getElementById('recentOrdersBody');
+        if (tbody) {
+            if (!stats.recentOrders || !stats.recentOrders.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">سفارشی در این بازه زمانی یافت نشد</td></tr>';
+            } else {
+                tbody.innerHTML = stats.recentOrders.map(o => `
+                    <tr>
+                        <td>${o.id.split('-')[1] || o.id}</td>
+                        <td>${o.customerName}</td>
+                        <td>${formatPrice(o.totalAmount)}</td>
+                        <td style="color:var(--success); font-weight:bold;">${formatPrice(o.totalProfit || 0)}</td>
+                        <td>${statusBadge(o.status, getStatusLabel(o.status))}</td>
+                        <td>${formatDate(o.createdAt)}</td>
+                        <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">مشاهده</button></td>
+                    </tr>
+                `).join('');
+            }
+        }
+    }
+
+    async function loadStats() {
+        renderStatsSkeleton();
+
+        let stats = null;
+        let url = `/api/admin/stats?timeframe=${currentDashboardTimeframe}`;
+        if (currentDashboardTimeframe === 'custom') {
+            const from = document.getElementById('dashFromDate')?.value || '';
+            const to = document.getElementById('dashToDate')?.value || '';
+            url += `&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+        }
+
+        try {
+            const res = await api(url);
+            if (res.ok) {
+                const data = await res.json();
+                stats = data.stats;
+                if (stats) {
+                    renderStatsUI(stats);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.log('Failed to fetch server stats');
+        }
+
+        if (!stats) {
+            const localOrders = getLocalOrders();
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const todayOrders = localOrders.filter(o => o.createdAt && o.createdAt.startsWith(todayStr));
+            const revenueToday = todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+            const activeOrders = localOrders.filter(o => ['new', 'confirmed', 'preparing', 'delivering'].includes(o.status));
+            const totalRevenue = localOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+            stats = {
+                todayOrders: todayOrders.length,
+                revenueToday: revenueToday,
+                profitToday: Math.round(revenueToday * 0.3),
+                activeOrders: activeOrders.length,
+                revenueTotal: totalRevenue,
+                profitTotal: Math.round(totalRevenue * 0.3),
+                profitMarginTotal: 30,
+                filteredOrdersCount: localOrders.length,
+                totalOrders: localOrders.length,
+                deliveredOrdersCount: localOrders.filter(o => o.status === 'delivered').length,
+                recentOrders: localOrders.slice(0, 10),
+                alerts: { totalAlertsCount: 0, lowStockCount: 0, delayedOrdersCount: 0 }
+            };
+            renderStatsUI(stats);
+        }
+    }
+
+    async function loadProfitStats() {
+        const timeframe = document.getElementById('profitTimeframe')?.value || 'all';
+        const res = await api(`/api/admin/profit?timeframe=${timeframe}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const pStats = data.profitStats || {};
+
+        document.getElementById('profitStatsGrid').innerHTML = `
+            <div class="stat-card">
+                <div class="label">کل فروش (درآمد)</div>
+                <div class="value">${(pStats.totalRevenue || 0).toLocaleString('fa-IR')}</div>
+                <div class="sub">تومان</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">کل هزینه خرید کالا</div>
+                <div class="value" style="color:var(--warning);">${(pStats.totalCost || 0).toLocaleString('fa-IR')}</div>
+                <div class="sub">تومان</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">سود خالص کل</div>
+                <div class="value" style="color:var(--success);">${(pStats.totalProfit || 0).toLocaleString('fa-IR')}</div>
+                <div class="sub">تومان</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">حاشیه سود کل</div>
+                <div class="value" style="color:var(--primary-dark);">${(pStats.profitMargin || 0).toLocaleString('fa-IR')}٪</div>
+                <div class="sub">${pStats.ordersCount || 0} سفارش بررسی‌شده</div>
+            </div>
+        `;
+
+        // Product profitability table
+        const prodBody = document.getElementById('productProfitBody');
+        if (!pStats.products || !pStats.products.length) {
+            prodBody.innerHTML = '<tr><td colspan="7" class="empty-state">داده‌ای یافت نشد</td></tr>';
+        } else {
+            prodBody.innerHTML = pStats.products.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.unitsSold.toLocaleString('fa-IR')} عدد</td>
+                    <td>${formatPrice(p.totalRevenue)}</td>
+                    <td>${formatPrice(p.totalCost)}</td>
+                    <td style="color:var(--success); font-weight:bold;">${formatPrice(p.totalProfit)}</td>
+                    <td><span class="badge" style="background:#e0f2f1; color:#00695c;">${p.profitMargin.toLocaleString('fa-IR')}٪</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Order profitability table
+        const ordBody = document.getElementById('orderProfitBody');
+        if (!pStats.orders || !pStats.orders.length) {
+            ordBody.innerHTML = '<tr><td colspan="7" class="empty-state">سفارشی ثبت نشده</td></tr>';
+        } else {
+            ordBody.innerHTML = pStats.orders.map(o => `
+                <tr>
+                    <td>${o.id.split('-')[1] || o.id}</td>
+                    <td>${o.customerName}</td>
+                    <td>${formatPrice(o.totalAmount)}</td>
+                    <td>${formatPrice(o.totalCost)}</td>
+                    <td style="color:var(--success); font-weight:bold;">${formatPrice(o.totalProfit)}</td>
+                    <td><span class="badge" style="background:#e0f2f1; color:#00695c;">${(o.profitMargin || 0).toLocaleString('fa-IR')}٪</span></td>
+                    <td>${formatDate(o.createdAt)}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    async function loadAlerts() {
+        const res = await api('/api/admin/alerts');
+        if (!res.ok) return;
+        const data = await res.json();
+        const alerts = data.alerts || {};
+
+        // Badges
+        const totalAlerts = alerts.totalAlertsCount || 0;
+        const sbBadge = document.getElementById('alertBadgeSidebar');
+        const mbBadge = document.getElementById('alertBadgeMobile');
+
+        if (totalAlerts > 0) {
+            if (sbBadge) { sbBadge.textContent = totalAlerts.toLocaleString('fa-IR'); sbBadge.style.display = 'inline-block'; }
+            if (mbBadge) { mbBadge.textContent = totalAlerts.toLocaleString('fa-IR'); mbBadge.style.display = 'inline-block'; }
+        } else {
+            if (sbBadge) sbBadge.style.display = 'none';
+            if (mbBadge) mbBadge.style.display = 'none';
+        }
+
+        // Low stock products table
+        const lowStockBody = document.getElementById('lowStockAlertsBody');
+        if (!alerts.lowStockProducts || !alerts.lowStockProducts.length) {
+            lowStockBody.innerHTML = '<tr><td colspan="7" class="empty-state">هیچ کالایی کمتر از ۵ عدد موجودی ندارد ✅</td></tr>';
+        } else {
+            lowStockBody.innerHTML = alerts.lowStockProducts.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td><strong>${p.name}</strong></td>
+                    <td>${p.categoryName || '—'}</td>
+                    <td>${formatPrice(p.price)}</td>
+                    <td>${formatPrice(p.buyPrice)}</td>
+                    <td style="color:var(--danger); font-weight:bold; font-size:1.05rem;">${p.stock.toLocaleString('fa-IR')} عدد</td>
+                    <td><span class="badge badge-cancelled">${p.badge}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Delayed orders table
+        const delayedBody = document.getElementById('delayedOrdersAlertsBody');
+        if (!alerts.delayedOrders || !alerts.delayedOrders.length) {
+            delayedBody.innerHTML = '<tr><td colspan="8" class="empty-state">هیچ سفارش بدون تحویلی بیش از ۱ هفته تأخیر ندارد ✅</td></tr>';
+        } else {
+            delayedBody.innerHTML = alerts.delayedOrders.map(o => `
+                <tr>
+                    <td>${o.id.split('-')[1] || o.id}</td>
+                    <td>${o.customerName}</td>
+                    <td dir="ltr">${o.phone}</td>
+                    <td>${formatPrice(o.totalAmount)}</td>
+                    <td>${formatDate(o.createdAt)}</td>
+                    <td><span class="badge badge-cancelled"><i class="fa-solid fa-hourglass-half"></i> ${o.delayDays.toLocaleString('fa-IR')} روز تأخیر</span></td>
+                    <td>${statusBadge(o.status, getStatusLabel(o.status))}</td>
+                    <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">مدیریت سفارش</button></td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    function getStatusLabel(status) {
+        const found = orderStatuses.find(s => s.id === status);
+        const labels = { new:'جدید', confirmed:'تأیید', preparing:'آماده‌سازی', delivering:'ارسال', delivered:'تحویل', cancelled:'لغو' };
+        return found?.label || labels[status] || status;
+    }
+
+    async function loadOrders() {
+        const status = document.getElementById('orderStatusFilter').value;
+        const search = document.getElementById('orderSearch').value;
+
+        let serverOrders = [];
+        let serverStatuses = [];
+
+        try {
+            const res = await api(`/api/admin/orders?status=${status}&search=${encodeURIComponent(search)}`);
+            if (res.ok) {
+                const data = await res.json();
+                serverOrders = data.orders || [];
+                serverStatuses = data.statuses || [];
+            }
+        } catch (err) {
+            console.log('Could not load orders from server, using local storage orders');
+        }
+
+        if (serverStatuses.length > 0) {
+            orderStatuses = serverStatuses;
+        } else if (!orderStatuses || orderStatuses.length === 0) {
+            orderStatuses = [
+                { id: 'new', label: 'جدید' },
+                { id: 'confirmed', label: 'تأیید شده' },
+                { id: 'preparing', label: 'در حال آماده‌سازی' },
+                { id: 'delivering', label: 'در حال ارسال' },
+                { id: 'delivered', label: 'تحویل شده' },
+                { id: 'cancelled', label: 'لغو شده' }
+            ];
+        }
+
+        const filterEl = document.getElementById('orderStatusFilter');
+        if (filterEl.options.length <= 1) {
+            orderStatuses.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.label;
+                filterEl.appendChild(opt);
+            });
+        }
+
+        const localOrders = getLocalOrders();
+        const mergedMap = new Map();
+        localOrders.forEach(o => mergedMap.set(o.id, o));
+        serverOrders.forEach(o => mergedMap.set(o.id, o));
+
+        // Smart deduplication for identical orders submitted in close window
+        const deduplicated = [];
+        const seenSignatures = new Set();
+        Array.from(mergedMap.values()).forEach(o => {
+            const timeKey = Math.floor(new Date(o.createdAt || Date.now()).getTime() / (120 * 1000));
+            const sig = `${o.phone || ''}_${o.totalAmount || 0}_${timeKey}`;
+            if (!seenSignatures.has(sig)) {
+                seenSignatures.add(sig);
+                deduplicated.push(o);
+            }
+        });
+
+        let allOrders = deduplicated;
+
+        if (status && status !== 'all') {
+            allOrders = allOrders.filter(o => o.status === status);
+        }
+        if (search) {
+            const q = search.toLowerCase();
+            allOrders = allOrders.filter(o =>
+                (o.id && o.id.toLowerCase().includes(q)) ||
+                (o.customerName && o.customerName.toLowerCase().includes(q)) ||
+                (o.phone && o.phone.includes(q))
+            );
+        }
+
+        allOrders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+        const tbody = document.getElementById('ordersBody');
+        if (!allOrders.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">سفارشی یافت نشد</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = allOrders.map(o => `
+            <tr>
+                <td>${o.id.split('-')[1] || o.id}</td>
+                <td>${o.customerName || 'مشتری'}</td>
+                <td dir="ltr">${o.phone || '-'}</td>
+                <td>${formatPrice(o.totalAmount)}</td>
+                <td>${paymentLabels[o.paymentMethod] || o.paymentMethod || 'پرداخت در محل'}</td>
+                <td>${statusBadge(o.status || 'new', o.statusLabel || getStatusLabel(o.status || 'new'))}</td>
+                <td>${formatDate(o.createdAt)}</td>
+                <td>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-secondary" onclick="openOrder('${o.id}')">جزئیات</button>
+                        <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteOrder('${o.id}')" title="حذف سفارش">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function debounceOrders() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadOrders, 300);
+    }
+
+    async function loadCustomers() {
+        const search = (document.getElementById('customerSearch')?.value || '').toLowerCase();
+        let customers = [];
+
+        try {
+            const res = await api(`/api/admin/customers?search=${encodeURIComponent(search)}`);
+            if (res.ok) {
+                const data = await res.json();
+                customers = data.customers || [];
+            }
+        } catch (err) {
+            console.log('Failed to fetch server customers');
+        }
+
+        if (customers.length === 0) {
+            const localOrders = getLocalOrders();
+            const custMap = new Map();
+            localOrders.forEach(o => {
+                if (!o.phone) return;
+                let c = custMap.get(o.phone);
+                if (!c) {
+                    c = {
+                        id: o.phone,
+                        name: o.customerName || 'مشتری',
+                        phone: o.phone,
+                        totalOrders: 0,
+                        totalSpent: 0,
+                        lastOrderAt: o.createdAt
+                    };
+                    custMap.set(o.phone, c);
+                }
+                c.totalOrders++;
+                c.totalSpent += (o.totalAmount || 0);
+                if (new Date(o.createdAt || 0) > new Date(c.lastOrderAt || 0)) {
+                    c.lastOrderAt = o.createdAt;
+                }
+            });
+            customers = Array.from(custMap.values());
+            if (search) {
+                customers = customers.filter(c => (c.name && c.name.toLowerCase().includes(search)) || (c.phone && c.phone.includes(search)));
+            }
+        }
+
+        const tbody = document.getElementById('customersBody');
+        if (!customers.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">مشتری یافت نشد</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = customers.map(c => `
+            <tr>
+                <td>${c.name}</td>
+                <td dir="ltr">${c.phone}</td>
+                <td>${(c.totalOrders || 0).toLocaleString('fa-IR')}</td>
+                <td>${formatPrice(c.totalSpent)}</td>
+                <td>${formatDate(c.lastOrderAt)}</td>
+                <td>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-secondary" onclick="openCustomer('${c.id}')">پروفایل</button>
+                        <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteCustomer('${c.id}')" title="حذف مشتری">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function debounceCustomers() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadCustomers, 300);
+    }
+
+    async function openOrder(id) {
+        currentOrderId = id;
+        let order = null;
+        let statuses = orderStatuses;
+
+        try {
+            const res = await api(`/api/admin/orders/${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                order = data.order;
+                statuses = data.statuses || statuses;
+            }
+        } catch (err) {
+            console.log('Failed to fetch order from API, fallback to local');
+        }
+
+        if (!order) {
+            order = getLocalOrders().find(o => o.id === id);
+        }
+
+        if (!order) {
+            alert('اطلاعات سفارش یافت نشد.');
+            return;
+        }
+
+        currentOrderData = order;
+        orderStatuses = (statuses && statuses.length > 0) ? statuses : [
+            { id: 'new', label: 'جدید' },
+            { id: 'confirmed', label: 'تأیید شده' },
+            { id: 'preparing', label: 'در حال آماده‌سازی' },
+            { id: 'delivering', label: 'در حال ارسال' },
+            { id: 'delivered', label: 'تحویل شده' },
+            { id: 'cancelled', label: 'لغو شده' }
+        ];
+
+        let itemsHtml = (order.items || []).map(i => {
+            const qty = i.qty || 1;
+            const rev = i.total || (i.price * qty);
+            const buyPrice = i.buyPrice || Math.round((i.price || 0) * 0.7);
+            const cost = buyPrice * qty;
+            const profit = rev - cost;
+            return `
+                <div class="item-row" style="flex-direction:column; gap:4px; padding:8px 0; border-bottom:1px solid #e2e8f0;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                        <span>${i.name} × ${qty}</span>
+                        <span>فروش: ${formatPrice(rev)}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted);">
+                        <span>قیمت خرید واحد: ${formatPrice(buyPrice)} (کل هزینه: ${formatPrice(cost)})</span>
+                        <span style="color:var(--success); font-weight:bold;">سود آیتم: ${formatPrice(profit)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('orderDetailContent').innerHTML = `
+            <div class="detail-row"><span>کد سفارش</span><strong>${order.id}</strong></div>
+            <div class="detail-row"><span>مشتری</span><strong>${order.customerName || '—'}</strong></div>
+            <div class="detail-row"><span>تلفن</span><strong dir="ltr">${order.phone || '—'}</strong></div>
+            <div class="detail-row"><span>آدرس</span><strong>${order.address || '—'}</strong></div>
+            ${order.note ? `<div class="detail-row"><span>توضیحات</span><strong>${order.note}</strong></div>` : ''}
+            <div class="detail-row"><span>روش پرداخت</span><strong>${paymentLabels[order.paymentMethod] || order.paymentMethod || 'پرداخت در محل'}</strong></div>
+            <div class="detail-row"><span>مبلغ کل فروش</span><strong>${formatPrice(order.totalAmount)}</strong></div>
+            <div class="detail-row"><span>کل هزینه خرید</span><strong style="color:var(--warning);">${formatPrice(order.totalCost || 0)}</strong></div>
+            <div class="detail-row"><span>سود خالص سفارش</span><strong style="color:var(--success); font-size:1rem;">${formatPrice(order.totalProfit || 0)} (${(order.profitMargin || 0).toLocaleString('fa-IR')}٪)</strong></div>
+            <h4 style="margin:16px 0 8px; font-size:0.9rem;">ریز اقلام و محاسبه سود</h4>
+            <div class="items-list">${itemsHtml}</div>
+        `;
+
+        document.getElementById('adminNotes').value = order.adminNotes || '';
+
+        const pills = document.getElementById('statusPills');
+        pills.innerHTML = orderStatuses.map(s =>
+            `<button type="button" class="status-pill ${order.status === s.id ? 'active' : ''}" data-status="${s.id}" onclick="selectStatus('${s.id}')">${s.label}</button>`
+        ).join('');
+
+        const waMsg = encodeURIComponent(`سلام ${order.customerName || 'مشتری محترم'}،\nسفارش شما (${order.id}) در حال پیگیری است.\nمبلغ: ${(order.totalAmount || 0).toLocaleString('fa-IR')} تومان`);
+        document.getElementById('whatsappOrderLink').href = `https://wa.me/98${(order.phone || '').replace(/^0/, '')}?text=${waMsg}`;
+
+        document.getElementById('orderModal').style.display = 'flex';
+    }
+
+    function selectStatus(status) {
+        document.querySelectorAll('.status-pill').forEach(p => {
+            p.classList.toggle('active', p.dataset.status === status);
+        });
+    }
+
+    async function saveOrderChanges() {
+        const activePill = document.querySelector('.status-pill.active');
+        const status = activePill?.dataset.status;
+        const adminNotes = document.getElementById('adminNotes').value;
+
+        if (currentOrderId) {
+            let localOrder = getLocalOrders().find(o => o.id === currentOrderId);
+            if (localOrder) {
+                localOrder.status = status;
+                localOrder.adminNotes = adminNotes;
+                saveLocalOrder(localOrder);
+            }
+        }
+
+        try {
+            await api(`/api/admin/orders/${currentOrderId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status, adminNotes })
+            });
+        } catch (err) {
+            console.log('Order status saved locally');
+        }
+
+        closeOrderModal();
+        await refreshAll();
+    }
+
+    function closeOrderModal() {
+        document.getElementById('orderModal').style.display = 'none';
+        currentOrderId = null;
+    }
+
+    async function quickDeleteOrder(id) {
+        if (!confirm(`آیا از حذف سفارش کد ${id} اطمینان دارید؟ این عمل غیرقابل بازگشت است.`)) {
+            return;
+        }
+
+        try {
+            await api(`/api/admin/orders/${id}`, { method: 'DELETE' });
+        } catch (err) {
+            console.log('Order delete request executed');
+        }
+
+        try {
+            let localOrders = getLocalOrders();
+            localOrders = localOrders.filter(o => o.id !== id);
+            localStorage.setItem('rafooneh_local_orders', JSON.stringify(localOrders));
+        } catch (e) {
+            console.error('Error removing local order:', e);
+        }
+
+        await refreshAll();
+    }
+
+    async function deleteCurrentOrder() {
+        if (!currentOrderId) return;
+        const id = currentOrderId;
+        closeOrderModal();
+        await quickDeleteOrder(id);
+    }
+
+    async function openCustomer(id) {
+        currentCustomerId = id;
+        let customer = null;
+
+        try {
+            const res = await api(`/api/admin/customers/${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                customer = data.customer;
+            }
+        } catch (err) {
+            console.log('Failed to fetch customer from API');
+        }
+
+        if (!customer) {
+            const localOrders = getLocalOrders().filter(o => o.phone === id || o.customerId === id || o.customerName === id);
+            if (localOrders.length > 0) {
+                const first = localOrders[0];
+                const totalSpent = localOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+                customer = {
+                    id: first.phone || id,
+                    name: first.customerName || 'مشتری',
+                    phone: first.phone || id,
+                    address: first.address || '',
+                    notes: '',
+                    totalOrders: localOrders.length,
+                    totalSpent: totalSpent,
+                    orders: localOrders
+                };
+            }
+        }
+
+        if (!customer) {
+            alert('اطلاعات مشتری یافت نشد');
+            return;
+        }
+
+        let ordersHtml = (customer.orders && customer.orders.length)
+            ? customer.orders.map(o =>
+                `<div class="item-row"><span>${formatDate(o.createdAt)} — ${formatPrice(o.totalAmount)}</span>${statusBadge(o.status || 'new', o.statusLabel || getStatusLabel(o.status || 'new'))}</div>`
+              ).join('')
+            : '<p style="color:var(--muted); font-size:0.85rem;">بدون سفارش</p>';
+
+        document.getElementById('customerDetailContent').innerHTML = `
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+                <h4 style="margin-bottom:12px; font-size:0.95rem; color:var(--primary-dark);"><i class="fa-solid fa-user-pen"></i> ویرایش اطلاعات خریدار</h4>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem; font-weight:bold; display:block; margin-bottom:4px;">نام و نام خانوادگی:</label>
+                        <input type="text" id="editCustomerName" class="form-control" value="${customer.name || customer.customerName || ''}">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem; font-weight:bold; display:block; margin-bottom:4px;">شماره همراه:</label>
+                        <input type="text" id="editCustomerPhone" class="form-control" dir="ltr" value="${customer.phone || ''}">
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label class="form-label" style="font-size:0.8rem; font-weight:bold; display:block; margin-bottom:4px;">آدرس تحویل سفارشات:</label>
+                    <textarea id="editCustomerAddress" class="form-control" rows="2">${customer.address || ''}</textarea>
+                </div>
+                <div>
+                    <label class="form-label" style="font-size:0.8rem; font-weight:bold; display:block; margin-bottom:4px;">یادداشت مدیریتی مشتری:</label>
+                    <textarea id="customerNotes" class="form-control" rows="2" placeholder="یادداشت پیگیری...">${customer.notes || ''}</textarea>
+                </div>
+            </div>
+
+            <div class="detail-row"><span>تعداد کل سفارشات</span><strong>${(customer.totalOrders || (customer.orders ? customer.orders.length : 0)).toLocaleString('fa-IR')}</strong></div>
+            <div class="detail-row"><span>مجموع مبلغ خرید</span><strong>${formatPrice(customer.totalSpent)}</strong></div>
+            <h4 style="margin:16px 0 8px; font-size:0.9rem;"><i class="fa-solid fa-history"></i> تاریخچه سفارشات</h4>
+            <div class="items-list">${ordersHtml}</div>
+        `;
+
+        document.getElementById('customerModal').style.display = 'flex';
+    }
+
+    async function saveCustomerProfile() {
+        if (!currentCustomerId) return;
+        const name = document.getElementById('editCustomerName').value.trim();
+        const phone = document.getElementById('editCustomerPhone').value.trim();
+        const address = document.getElementById('editCustomerAddress').value.trim();
+        const notes = document.getElementById('customerNotes').value.trim();
+
+        try {
+            await api(`/api/admin/customers/${currentCustomerId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ name, phone, address, notes })
+            });
+        } catch (err) {
+            console.log('Customer update server save error');
+        }
+
+        try {
+            let localOrders = getLocalOrders();
+            let updated = false;
+            localOrders.forEach(o => {
+                if (o.customerId === currentCustomerId || o.phone === currentCustomerId || o.phone === phone) {
+                    if (name) o.customerName = name;
+                    if (phone) o.phone = phone;
+                    if (address) o.address = address;
+                    updated = true;
+                }
+            });
+            if (updated) {
+                localStorage.setItem('rafooneh_local_orders', JSON.stringify(localOrders));
+            }
+        } catch (err) {
+            console.error('Error updating local customer orders:', err);
+        }
+
+        alert('اطلاعات مشتری با موفقیت به روزرسانی شد.');
+        closeCustomerModal();
+        await loadCustomers();
+        await loadOrders();
+    }
+
+    function closeCustomerModal() {
+        document.getElementById('customerModal').style.display = 'none';
+        currentCustomerId = null;
+    }
+
+    async function quickDeleteCustomer(id) {
+        if (!confirm(`آیا از حذف مشتری با شناسه/تلفن ${id} اطمینان دارید؟ این عمل غیرقابل بازگشت است.`)) {
+            return;
+        }
+
+        try {
+            await api(`/api/admin/customers/${id}`, { method: 'DELETE' });
+        } catch (err) {
+            console.log('Customer delete request executed');
+        }
+
+        await loadCustomers();
+        await refreshAll();
+    }
+
+    async function deleteCurrentCustomer() {
+        if (!currentCustomerId) return;
+        const id = currentCustomerId;
+        closeCustomerModal();
+        await quickDeleteCustomer(id);
+    }
+
+    // Products & Inventory Management
+    window.adminProductsMap = {};
+
+    async function loadAdminProducts() {
+        const brand = document.getElementById('productBrandFilter')?.value || 'all';
+        const category = document.getElementById('productCategoryFilter')?.value || 'all';
+        const search = document.getElementById('productSearch')?.value || '';
+
+        let products = [];
+        let counts = {};
+        let total = 0;
+
+        try {
+            const res = await api(`/api/admin/products?brand=${brand}&category=${category}&search=${encodeURIComponent(search)}`);
+            if (res.ok) {
+                const data = await res.json();
+                products = data.products || [];
+                counts = data.brandCounts || {};
+                total = data.total || products.length;
+            }
+        } catch (err) {
+            console.error('Error fetching admin products from API:', err);
+        }
+
+        // Offline / client fallback if API failed to return products
+        if (!products.length && typeof productsData !== 'undefined' && Array.isArray(productsData)) {
+            let list = [...productsData];
+            const customProds = localStorage.getItem('rafooneh_custom_products');
+            if (customProds) {
+                try {
+                    const parsed = JSON.parse(customProds);
+                    if (Array.isArray(parsed)) list = [...list, ...parsed];
+                } catch(e) {}
+            }
+            if (brand !== 'all') {
+                list = list.filter(p => p.brand === brand);
+            }
+            if (category !== 'all') {
+                list = list.filter(p => p.category === category);
+            }
+            if (search) {
+                const s = search.toLowerCase();
+                list = list.filter(p => (p.name && p.name.toLowerCase().includes(s)) || String(p.id).includes(s) || (p.brandName && p.brandName.toLowerCase().includes(s)));
+            }
+            products = list;
+            total = products.length;
+            counts.rafooneh = products.filter(p => p.brand === 'rafooneh').length;
+            counts.foreign = products.filter(p => p.brand === 'foreign').length;
+        }
+
+        window.adminProductsMap = {};
+        products.forEach(p => { window.adminProductsMap[p.id] = p; });
+
+        // Update Stats
+        const statTotal = document.getElementById('statTotalProducts');
+        if (statTotal) statTotal.textContent = total.toLocaleString('fa-IR');
+        const statRaf = document.getElementById('statRafoonehProducts');
+        if (statRaf) statRaf.textContent = (counts.rafooneh || 0).toLocaleString('fa-IR');
+        const statFor = document.getElementById('statForeignProducts');
+        if (statFor) statFor.textContent = (counts.foreign || 0).toLocaleString('fa-IR');
+
+        const tbody = document.getElementById('productsAdminBody');
+        if (!tbody) return;
+        if (!products.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">محصولی با این مشخصات یافت نشد</td></tr>';
+            return;
+        }
+
+        const brandBadges = {
+            rafooneh: '<span class="badge badge-confirmed">برند رافونه</span>',
+            foreign: '<span class="badge badge-new">خارجی / وارداتی</span>'
+        };
+
+        tbody.innerHTML = products.map(p => {
+            const price = Number(p.price || 0);
+            const newPrice = Number(p.newPrice || p.consumerPrice || 0);
+            const hasDiscount = newPrice > price && price > 0;
+            const discountPct = hasDiscount ? Math.round(((newPrice - price) / newPrice) * 100) : 0;
+
+            return `
+            <tr id="prodRow-${p.id}">
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${p.image || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E'}" alt="" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';" style="width:36px; height:36px; object-fit:cover; border-radius:6px; background:#f1f5f9;">
+                        <span style="font-family:monospace; font-weight:bold;">${p.id}</span>
+                    </div>
+                </td>
+                <td><strong>${p.name}</strong></td>
+                <td>${brandBadges[p.brand] || `<span class="badge badge-preparing">${p.brandName || p.brand || '—'}</span>`}</td>
+                <td>${p.categoryName || p.category || '—'}</td>
+                <td>
+                    <input type="number" id="inpStock-${p.id}" class="form-control" value="${p.stock}" min="0" style="width:70px; padding:4px 6px; text-align:center;" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
+                </td>
+                <td>
+                    <input type="number" id="inpPrice-${p.id}" class="form-control" value="${p.price}" min="0" style="width:100px; padding:4px 6px; text-align:center;" title="قیمت فروش قدیم" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
+                </td>
+                <td>
+                    <input type="number" id="inpNewPrice-${p.id}" class="form-control" value="${newPrice}" min="0" style="width:100px; padding:4px 6px; text-align:center;" placeholder="0" title="قیمت جدید بازار" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
+                </td>
+                <td>
+                    ${hasDiscount 
+                        ? `<span class="badge badge-delivered" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-weight:bold; font-size:0.75rem;"><i class="fa-solid fa-percent"></i> ${discountPct.toLocaleString('fa-IR')}٪ تخفیف</span>`
+                        : `<span class="badge" style="background:#f1f5f9; color:#94a3b8; font-size:0.75rem;">—</span>`
+                    }
+                </td>
+                <td>
+                    <input type="number" id="inpBuyPrice-${p.id}" class="form-control" value="${p.buyPrice || 0}" min="0" style="width:100px; padding:4px 6px; text-align:center;" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
+                </td>
+                <td>
+                    <div style="display:flex; gap:4px; flex-wrap:nowrap;">
+                        <button class="btn btn-primary" style="padding:4px 8px; font-size:0.78rem;" onclick="saveProductInline('${p.id}', this)" title="ذخیره قیمت و موجودی سری">
+                            <i class="fa-solid fa-floppy-disk"></i> ذخیره
+                        </button>
+                        <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.78rem;" onclick="openEditProductModal('${p.id}')" title="ویرایش کامل کالا و اصلاح عکس">
+                            <i class="fa-solid fa-pen-to-square"></i> ویرایش
+                        </button>
+                        <button class="btn btn-danger" style="padding:4px 6px; font-size:0.78rem;" onclick="deleteProductAdmin('${p.id}')" title="حذف کالا">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
+
+    function debounceProducts() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadAdminProducts, 300);
+    }
+
+    function calcAddDiscount() {
+        const price = Number(document.getElementById('newProdPrice')?.value || 0);
+        const newPrice = Number(document.getElementById('newProdNewPrice')?.value || 0);
+        const notice = document.getElementById('addDiscountCalcNotice');
+        if (!notice) return;
+
+        if (newPrice > price && price > 0) {
+            const savings = newPrice - price;
+            const pct = Math.round((savings / newPrice) * 100);
+            notice.style.display = 'block';
+            notice.innerHTML = `<i class="fa-solid fa-fire"></i> تخفیف فعال خرید با قیمت قدیم: <strong>${pct.toLocaleString('fa-IR')}٪ سود خریدار</strong> (${savings.toLocaleString('fa-IR')} تومان صرفه‌جویی در هر عدد)`;
+        } else {
+            notice.style.display = 'none';
+        }
+    }
+
+    function calcEditDiscount() {
+        const price = Number(document.getElementById('editProdPrice')?.value || 0);
+        const newPrice = Number(document.getElementById('editProdNewPrice')?.value || 0);
+        const notice = document.getElementById('editDiscountCalcNotice');
+        if (!notice) return;
+
+        if (newPrice > price && price > 0) {
+            const savings = newPrice - price;
+            const pct = Math.round((savings / newPrice) * 100);
+            notice.style.display = 'block';
+            notice.innerHTML = `<i class="fa-solid fa-fire"></i> تخفیف فعال خرید با قیمت قدیم: <strong>${pct.toLocaleString('fa-IR')}٪ سود خریدار</strong> (${savings.toLocaleString('fa-IR')} تومان صرفه‌جویی به نفع مشتری)`;
+        } else {
+            notice.style.display = 'none';
+        }
+    }
+
+    async function saveProductInline(id, btn) {
+        const stock = Number(document.getElementById(`inpStock-${id}`)?.value || 0);
+        const price = Number(document.getElementById(`inpPrice-${id}`)?.value || 0);
+        const newPrice = Number(document.getElementById(`inpNewPrice-${id}`)?.value || 0);
+        const buyPrice = Number(document.getElementById(`inpBuyPrice-${id}`)?.value || 0);
+
+        const res = await api(`/api/admin/products/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ stock, price, newPrice, consumerPrice: newPrice, buyPrice })
+        });
+
+        if (res.ok) {
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> ثبت شد';
+            btn.style.background = 'var(--success)';
+            setTimeout(() => {
+                btn.innerHTML = origHtml;
+                btn.style.background = 'var(--primary)';
+                loadAdminProducts();
+            }, 1000);
+        } else {
+            alert('خطا در ذخیره‌سازی اطلاعات کالا');
+        }
+    }
+
+    function updateEditImagePreview(url) {
+        const img = document.getElementById('editProdImagePreview');
+        if (img) img.src = url || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';
+    }
+
+    function updateNewImagePreview(url) {
+        const img = document.getElementById('newProdImagePreview');
+        if (img) img.src = url || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';
+    }
+
+    async function handleProductFileUpload(fileInput, urlInputId, previewImgId, statusElemId) {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+
+        const statusElem = document.getElementById(statusElemId);
+        if (statusElem) {
+            statusElem.style.color = '#0284c7';
+            statusElem.innerText = 'در حال آپلود تصویر...';
+        }
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const authToken = localStorage.getItem('crm_token') || token;
+            const res = await fetch('/api/upload-image', {
+                method: 'POST',
+                headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {},
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success && data.url) {
+                document.getElementById(urlInputId).value = data.url;
+                const preview = document.getElementById(previewImgId);
+                if (preview) preview.src = data.url;
+                if (statusElem) {
+                    statusElem.style.color = '#16a34a';
+                    statusElem.innerText = '✓ تصویر با موفقیت آپلود شد';
+                }
+            } else {
+                throw new Error(data.message || 'خطا در آپلود تصویر');
+            }
+        } catch (err) {
+            console.error('Image upload failed:', err);
+            if (statusElem) {
+                statusElem.style.color = '#dc2626';
+                statusElem.innerText = 'خطا در آپلود: ' + err.message;
+            }
+        } finally {
+            fileInput.value = '';
+        }
+    }
+
+    function openEditProductModal(id) {
+        const p = window.adminProductsMap ? window.adminProductsMap[id] : null;
+        if (!p) return alert('اطلاعات محصول یافت نشد');
+
+        document.getElementById('editProdId').value = p.id;
+        document.getElementById('editProdCodeView').value = p.id;
+        document.getElementById('editProdName').value = p.name || '';
+        document.getElementById('editProdBrand').value = p.brand || 'rafooneh';
+        document.getElementById('editProdCategory').value = p.category || 'other';
+        document.getElementById('editProdStock').value = p.stock || 0;
+        document.getElementById('editProdPrice').value = p.price || 0;
+        document.getElementById('editProdNewPrice').value = p.newPrice || p.consumerPrice || '';
+        document.getElementById('editProdBuyPrice').value = p.buyPrice || 0;
+        document.getElementById('editProdImage').value = p.image || '';
+        document.getElementById('editProdDescription').value = p.description || '';
+
+        updateEditImagePreview(p.image);
+        calcEditDiscount();
+        document.getElementById('editProductModal').style.display = 'flex';
+    }
+
+    function closeEditProductModal() {
+        document.getElementById('editProductModal').style.display = 'none';
+    }
+
+    async function submitEditProduct(e) {
+        e.preventDefault();
+        const id = document.getElementById('editProdId').value;
+        const name = document.getElementById('editProdName').value.trim();
+        const brand = document.getElementById('editProdBrand').value;
+        const category = document.getElementById('editProdCategory').value;
+        const stock = Number(document.getElementById('editProdStock').value || 0);
+        const price = Number(document.getElementById('editProdPrice').value || 0);
+        const newPrice = Number(document.getElementById('editProdNewPrice').value || 0);
+        const buyPrice = Number(document.getElementById('editProdBuyPrice').value || 0);
+        const image = document.getElementById('editProdImage').value.trim();
+        const description = document.getElementById('editProdDescription').value.trim();
+
+        const res = await api(`/api/admin/products/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description })
+        });
+
+        if (res.ok) {
+            closeEditProductModal();
+            await loadAdminProducts();
+        } else {
+            alert('خطا در ذخیره‌سازی تغییرات کالا');
+        }
+    }
+
+    function openAddProductModal() {
+        document.getElementById('addProductForm').reset();
+        calcAddDiscount();
+        document.getElementById('addProductModal').style.display = 'flex';
+    }
+
+    function closeAddProductModal() {
+        document.getElementById('addProductModal').style.display = 'none';
+    }
+
+    async function submitAddProduct(e) {
+        e.preventDefault();
+        const id = document.getElementById('newProdCode').value.trim();
+        const name = document.getElementById('newProdName').value.trim();
+        const brand = document.getElementById('newProdBrand').value;
+        const category = document.getElementById('newProdCategory').value;
+        const stock = Number(document.getElementById('newProdStock').value || 0);
+        const price = Number(document.getElementById('newProdPrice').value || 0);
+        const newPrice = Number(document.getElementById('newProdNewPrice').value || 0);
+        const buyPrice = Number(document.getElementById('newProdBuyPrice').value || 0);
+        const image = document.getElementById('newProdImage').value.trim();
+        const description = document.getElementById('newProdDescription').value.trim();
+
+        const res = await api('/api/admin/products', {
+            method: 'POST',
+            body: JSON.stringify({ id, code: id, name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description })
+        });
+
+        if (res.ok) {
+            closeAddProductModal();
+            await loadAdminProducts();
+            alert('محصول جدید با موفقیت اضافه گردید.');
+        } else {
+            const data = await res.json().catch(() => ({}));
+            alert(data.message || 'خطا در افزودن کالا');
+        }
+    }
+
+    async function deleteProductAdmin(id) {
+        if (!confirm(`آیا از حذف کالا با کد ${id} اطمینان دارید؟`)) return;
+        const res = await api(`/api/admin/products/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            await loadAdminProducts();
+        } else {
+            alert('خطا در حذف کالا');
+        }
+    }
+
+    // Google Sheets Management
+    async function loadGSheetsStatus() {
+        const res = await api('/api/admin/gsheets/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.spreadsheetId) {
+            document.getElementById('gsheetIdInput').value = data.spreadsheetId;
+        }
+        document.getElementById('gsheetProductCount').textContent = (data.productCount || 0).toLocaleString('fa-IR');
+        document.getElementById('gsheetLastSyncTime').textContent = formatDate(data.lastSync);
+        
+        if (data.csvUrl) {
+            document.getElementById('btnGsheetCsvLink').href = data.csvUrl;
+        }
+    }
+
+    async function syncGSheetsNow() {
+        const spreadsheetId = document.getElementById('gsheetIdInput').value.trim();
+        const btn = document.getElementById('btnSyncGSheets');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال همگام‌سازی...';
+
+        try {
+            const res = await api('/api/gsheets/sync', {
+                method: 'POST',
+                body: JSON.stringify({ spreadsheetId })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                alert(`همگام‌سازی گوگل شیت با موفقیت انجام شد! ${data.count} کالا بروزرسانی گردید.`);
+                await loadGSheetsStatus();
+                await loadAdminProducts();
+            } else {
+                alert('خطا در همگام‌سازی: ' + (data.message || 'لطفا دسترسی عمومی گوگل شیت را بررسی کنید.'));
+            }
+        } catch (err) {
+            alert('خطا در ارتباط با سرور: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> ذخیره و همگام‌سازی آنلاین';
+        }
+    }
+
+    async function uploadExcelFile() {
+        const fileInput = document.getElementById('excelFileInput');
+        if (!fileInput.files || !fileInput.files[0]) {
+            alert('لطفاً ابتدا یک فایل اکسل انتخاب کنید.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('excelFile', fileInput.files[0]);
+
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const baseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/$/, '') : '';
+
+        try {
+            const res = await fetch(baseUrl + '/api/upload', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                alert('فایل اکسل با موفقیت آپلود و لیست اقلام بروزرسانی گردید.');
+                fileInput.value = '';
+                await loadAdminProducts();
+            } else {
+                alert('خطا در آپلود اکسل: ' + (data.message || 'فایل نامعتبر است'));
+            }
+        } catch (err) {
+            alert('خطا در آپلود: ' + err.message);
+        }
+    }
+
+    // Number to Persian Words Utility
+    function numToPersianWords(number) {
+        if (!number || isNaN(number) || number === 0) return 'صفر تومان';
+        const num = Math.abs(Math.floor(number));
+
+        const ones = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
+        const teens = ['ده', 'یازده', 'دوازده', 'سیزده', 'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده'];
+        const tens = ['', '', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];
+        const hundreds = ['', 'صد', 'دویست', 'سیصد', 'چهارصد', 'پانصد', 'ششصد', 'هفتصد', 'هشتصد', 'نهصد'];
+        const units = ['', 'هزار', 'میلیون', 'میلیارد', 'تریلیون'];
+
+        function convertThreeDigits(n) {
+            let str = '';
+            const h = Math.floor(n / 100);
+            const t = Math.floor((n % 100) / 10);
+            const o = n % 10;
+
+            if (h > 0) str += hundreds[h];
+
+            if (t === 1) {
+                if (str !== '') str += ' و ';
+                str += teens[o];
+            } else {
+                if (t > 1) {
+                    if (str !== '') str += ' و ';
+                    str += tens[t];
+                }
+                if (o > 0) {
+                    if (str !== '') str += ' و ';
+                    str += ones[o];
+                }
+            }
+            return str;
+        }
+
+        let parts = [];
+        let temp = num;
+        let unitIndex = 0;
+
+        while (temp > 0) {
+            const chunk = temp % 1000;
+            if (chunk > 0) {
+                const chunkStr = convertThreeDigits(chunk);
+                const unitStr = units[unitIndex];
+                parts.unshift(chunkStr + (unitStr ? ' ' + unitStr : ''));
+            }
+            temp = Math.floor(temp / 1000);
+            unitIndex++;
+        }
+
+        return parts.join(' و ') + ' تومان';
+    }
+
+    function showCustomerInvoice(order) {
+        if (!order) return;
+
+        document.getElementById('invOrderId').innerText = order.id || 'ord-1405';
+        
+        const createdDate = order.createdAt ? new Date(order.createdAt) : new Date();
+        document.getElementById('invDate').innerText = createdDate.toLocaleDateString('fa-IR');
+        document.getElementById('invTime').innerText = createdDate.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+
+        const payMethodMap = {
+            cod: 'پرداخت در محل (کارتخوان / نقد)',
+            whatsapp: 'کارت به کارت / هماهنگی واتساپ',
+            online: 'پرداخت آنلاین درگاه شتاب'
+        };
+        document.getElementById('invPaymentMethod').innerText = payMethodMap[order.paymentMethod] || order.paymentMethod || 'پرداخت در محل';
+
+        document.getElementById('invCustName').innerText = order.customerName || 'مشتری گرامی';
+        document.getElementById('invCustPhone').innerText = order.phone || '-';
+        document.getElementById('invCustAddress').innerText = order.address || '-';
+
+        const noteRow = document.getElementById('invCustNoteRow');
+        if (order.note && order.note.trim()) {
+            document.getElementById('invCustNote').innerText = order.note;
+            noteRow.style.display = 'block';
+        } else {
+            noteRow.style.display = 'none';
+        }
+
+        const tbody = document.getElementById('invItemsTableBody');
+        tbody.innerHTML = '';
+
+        let subtotal = 0;
+        const items = order.items || [];
+        items.forEach((item, index) => {
+            const qty = Number(item.qty) || 1;
+            const unitPrice = Number(item.price) || 0;
+            const rowTotal = Number(item.total) || (unitPrice * qty);
+
+            subtotal += rowTotal;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${(index + 1).toLocaleString('fa-IR')}</td>
+                <td><strong>${item.productId || item.code || item.id || '-'}</strong></td>
+                <td style="text-align: right; font-weight: bold;">${item.name || item.title || 'محصول رافونه'}</td>
+                <td><strong>${qty.toLocaleString('fa-IR')}</strong></td>
+                <td>${unitPrice.toLocaleString('fa-IR')}</td>
+                <td><strong>${rowTotal.toLocaleString('fa-IR')}</strong></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        const totalAmount = Number(order.totalAmount) || subtotal;
+
+        document.getElementById('invSubtotal').innerText = subtotal.toLocaleString('fa-IR') + ' تومان';
+        document.getElementById('invGrandTotal').innerText = totalAmount.toLocaleString('fa-IR') + ' تومان';
+        document.getElementById('invGrandTotalWords').innerText = 'مبلغ به حروف: ' + numToPersianWords(totalAmount);
+
+        document.getElementById('customerInvoiceModal').style.display = 'flex';
+    }
+
+    function closeInvoiceModal() {
+        document.getElementById('customerInvoiceModal').style.display = 'none';
+    }
+
+    function printInvoiceFromAdminModal() {
+        if (currentOrderData) {
+            showCustomerInvoice(currentOrderData);
+        } else {
+            alert('اطلاعات سفارش بارگذاری نشده است.');
+        }
+    }
+
+    function openChangePasswordModal() {
+        document.getElementById('oldPasswordInput').value = '';
+        document.getElementById('newPasswordInput').value = '';
+        document.getElementById('confirmPasswordInput').value = '';
+        const statusEl = document.getElementById('changePasswordStatus');
+        statusEl.style.display = 'none';
+        statusEl.innerText = '';
+        document.getElementById('changePasswordModal').style.display = 'flex';
+    }
+
+    function closeChangePasswordModal() {
+        document.getElementById('changePasswordModal').style.display = 'none';
+    }
+
+    async function handleChangePasswordSubmit(e) {
+        e.preventDefault();
+        const oldPassword = document.getElementById('oldPasswordInput').value.trim();
+        const newPassword = document.getElementById('newPasswordInput').value.trim();
+        const confirmPassword = document.getElementById('confirmPasswordInput').value.trim();
+        const statusEl = document.getElementById('changePasswordStatus');
+        const submitBtn = document.getElementById('btnSubmitChangePassword');
+
+        if (newPassword !== confirmPassword) {
+            statusEl.style.display = 'block';
+            statusEl.style.background = '#fee2e2';
+            statusEl.style.color = '#b91c1c';
+            statusEl.innerText = 'رمز عبور جدید و تکرار آن یکسان نیستند.';
+            return;
+        }
+
+        if (newPassword.length < 4) {
+            statusEl.style.display = 'block';
+            statusEl.style.background = '#fee2e2';
+            statusEl.style.color = '#b91c1c';
+            statusEl.innerText = 'رمز عبور جدید باید حداقل ۴ کاراکتر باشد.';
+            return;
+        }
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال بروزرسانی...';
+
+            const res = await api('/api/admin/change-password', {
+                method: 'POST',
+                body: JSON.stringify({ oldPassword, newPassword })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                statusEl.style.display = 'block';
+                statusEl.style.background = '#dcfce7';
+                statusEl.style.color = '#15803d';
+                statusEl.innerText = data.message || 'رمز عبور با موفقیت تغییر یافت.';
+                setTimeout(() => {
+                    closeChangePasswordModal();
+                }, 1500);
+            } else {
+                statusEl.style.display = 'block';
+                statusEl.style.background = '#fee2e2';
+                statusEl.style.color = '#b91c1c';
+                statusEl.innerText = data.message || 'خطا در تغییر رمز عبور.';
+            }
+        } catch (err) {
+            statusEl.style.display = 'block';
+            statusEl.style.background = '#fee2e2';
+            statusEl.style.color = '#b91c1c';
+            statusEl.innerText = 'خطای ارتباط با سرور.';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> ذخیره رمز عبور جدید';
+        }
+    }
+
+    document.getElementById('orderModal').addEventListener('click', e => {
+        if (e.target.id === 'orderModal') closeOrderModal();
+    });
+    document.getElementById('customerModal').addEventListener('click', e => {
+        if (e.target.id === 'customerModal') closeCustomerModal();
+    });
+    document.getElementById('addProductModal').addEventListener('click', e => {
+        if (e.target.id === 'addProductModal') closeAddProductModal();
+    });
+    document.getElementById('editProductModal').addEventListener('click', e => {
+        if (e.target.id === 'editProductModal') closeEditProductModal();
+    });
+    document.getElementById('changePasswordModal').addEventListener('click', e => {
+        if (e.target.id === 'changePasswordModal') closeChangePasswordModal();
+    });
+    document.getElementById('companyPaymentDetailModal')?.addEventListener('click', e => {
+        if (e.target.id === 'companyPaymentDetailModal') closeCompanyPaymentDetailModal();
+    });
+
+    // --- COMPANY PAYMENTS & SETTLEMENT ENGINE ---
+    let currentCompanyPaymentStats = null;
+    let currentCompanyPaymentItems = [];
+    let companyPaymentHistoryList = [];
+
+    function initCompanyPaymentsSection() {
+        const fromInp = document.getElementById('cpFromDate');
+        const toInp = document.getElementById('cpToDate');
+        if (fromInp && toInp && !fromInp.value && !toInp.value) {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            fromInp.value = firstDay.toISOString().split('T')[0];
+            toInp.value = now.toISOString().split('T')[0];
+        }
+        loadCompanyPaymentStats();
+        loadCompanyPaymentHistory();
+    }
+
+    function setCompanyPaymentPreset(preset) {
+        const fromInp = document.getElementById('cpFromDate');
+        const toInp = document.getElementById('cpToDate');
+        if (!fromInp || !toInp) return;
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+
+        if (preset === 'today') {
+            fromInp.value = todayStr;
+            toInp.value = todayStr;
+        } else if (preset === '7days') {
+            const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            fromInp.value = d7.toISOString().split('T')[0];
+            toInp.value = todayStr;
+        } else if (preset === '30days') {
+            const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            fromInp.value = d30.toISOString().split('T')[0];
+            toInp.value = todayStr;
+        } else if (preset === 'thisMonth') {
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            fromInp.value = firstDay.toISOString().split('T')[0];
+            toInp.value = todayStr;
+        } else if (preset === 'all') {
+            fromInp.value = '';
+            toInp.value = '';
+        }
+        loadCompanyPaymentStats();
+    }
+
+    async function loadCompanyPaymentStats() {
+        const fromDate = document.getElementById('cpFromDate')?.value || '';
+        const toDate = document.getElementById('cpToDate')?.value || '';
+
+        const grid = document.getElementById('companyPaymentStatsGrid');
+        if (grid) grid.innerHTML = '<p style="color:var(--muted); padding:10px;">در حال محاسبه کارکرد...</p>';
+
+        try {
+            const res = await api(`/api/admin/company-payments/stats?fromDate=${fromDate}&toDate=${toDate}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.stats) {
+                    currentCompanyPaymentStats = data.stats;
+                    currentCompanyPaymentItems = data.stats.products || [];
+
+                    if (grid) {
+                        grid.innerHTML = `
+                            <div class="stat-card" style="border-right:4px solid var(--primary);">
+                                <div class="stat-title">تعداد سفارشات ثبت‌شده</div>
+                                <div class="stat-value">${(data.stats.ordersCount || 0).toLocaleString('fa-IR')}</div>
+                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">در بازه زمانی انتخابی</div>
+                            </div>
+                            <div class="stat-card" style="border-right:4px solid var(--accent);">
+                                <div class="stat-title">تعداد کل اقلام فروخته‌شده</div>
+                                <div class="stat-value">${(data.stats.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</div>
+                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">مجموع واحد محصولات</div>
+                            </div>
+                            <div class="stat-card" style="border-right:4px solid var(--danger); background:#fef2f2;">
+                                <div class="stat-title" style="color:#991b1b; font-weight:bold;">مجموع مبلغ خرید (بدهی به شرکت)</div>
+                                <div class="stat-value" style="color:var(--danger); font-weight:bold;">${formatPrice(data.stats.totalBuyCost)}</div>
+                                <div style="font-size:0.75rem; color:#b91c1c; margin-top:4px;">مبلغ تسویه قابل پرداخت به شرکت</div>
+                            </div>
+                            <div class="stat-card" style="border-right:4px solid var(--success);">
+                                <div class="stat-title">مجموع مبلغ فروش کل</div>
+                                <div class="stat-value" style="color:var(--success);">${formatPrice(data.stats.totalRevenue)}</div>
+                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">درآمد کل دریافتی از مشتریان</div>
+                            </div>
+                        `;
+                    }
+
+                    renderCompanyPaymentItems(currentCompanyPaymentItems);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching company payment stats:', err);
+        }
+
+        if (grid) grid.innerHTML = '<p style="color:var(--danger); padding:10px;">خطا در دریافت اطلاعات کارکرد.</p>';
+    }
+
+    function renderCompanyPaymentItems(items) {
+        const tbody = document.getElementById('companyPaymentItemsBody');
+        const tfoot = document.getElementById('companyPaymentItemsFoot');
+        if (!tbody) return;
+
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:20px;">هیچ محصولی در این بازه زمانی فروخته نشده است.</td></tr>';
+            if (tfoot) tfoot.innerHTML = '';
+            return;
+        }
+
+        let sumUnits = 0;
+        let sumBuyCost = 0;
+        let sumRevenue = 0;
+
+        tbody.innerHTML = items.map((p, idx) => {
+            sumUnits += Number(p.unitsSold) || 0;
+            sumBuyCost += Number(p.totalBuyCost) || 0;
+            sumRevenue += Number(p.totalRevenue) || 0;
+
+            return `
+                <tr>
+                    <td>${(idx + 1).toLocaleString('fa-IR')}</td>
+                    <td><strong>${p.code || p.id || '-'}</strong></td>
+                    <td style="font-weight:bold; color:var(--text);">${p.name || 'محصول رافونه'}</td>
+                    <td><span class="badge" style="background:var(--primary-light); color:var(--primary-dark); font-size:0.9rem; padding:4px 10px;">${(p.unitsSold || 0).toLocaleString('fa-IR')}</span></td>
+                    <td>${(p.buyPrice || 0).toLocaleString('fa-IR')}</td>
+                    <td style="color:var(--danger); font-weight:bold;">${formatPrice(p.totalBuyCost)}</td>
+                    <td>${(p.sellingPrice || 0).toLocaleString('fa-IR')}</td>
+                    <td style="font-weight:bold;">${formatPrice(p.totalRevenue)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        if (tfoot) {
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:left; padding:12px;">مجموع کل بازه:</td>
+                    <td style="color:var(--primary-dark); font-size:1rem;">${sumUnits.toLocaleString('fa-IR')} عدد</td>
+                    <td>—</td>
+                    <td style="color:var(--danger); font-size:1.05rem;">${formatPrice(sumBuyCost)}</td>
+                    <td>—</td>
+                    <td style="color:var(--success); font-size:1.05rem;">${formatPrice(sumRevenue)}</td>
+                </tr>
+            `;
+        }
+    }
+
+    function filterCompanyPaymentItems() {
+        const q = (document.getElementById('cpSearchItem')?.value || '').toLowerCase().trim();
+        if (!q) {
+            renderCompanyPaymentItems(currentCompanyPaymentItems);
+            return;
+        }
+        const filtered = currentCompanyPaymentItems.filter(i =>
+            (i.name || '').toLowerCase().includes(q) ||
+            (i.code || '').toLowerCase().includes(q) ||
+            (i.id || '').toLowerCase().includes(q)
+        );
+        renderCompanyPaymentItems(filtered);
+    }
+
+    async function submitCompanyPaymentSettlement() {
+        if (!currentCompanyPaymentStats || currentCompanyPaymentStats.totalBuyCost <= 0) {
+            alert('هیچ فروش یا کارکردی در این بازه زمانی وجود ندارد یا مبلغ بدهی به شرکت صفر است.');
+            return;
+        }
+
+        const refNumber = document.getElementById('cpRefNumber')?.value?.trim() || '';
+        const notes = document.getElementById('cpNotes')?.value?.trim() || '';
+        const fromDate = currentCompanyPaymentStats.fromDate || 'ابتدا';
+        const toDate = currentCompanyPaymentStats.toDate || 'امروز';
+        const totalAmountStr = formatPrice(currentCompanyPaymentStats.totalBuyCost);
+        const totalItemsStr = (currentCompanyPaymentStats.totalItemsCount || 0).toLocaleString('fa-IR');
+
+        const confirmMsg = `آیا از ثبت نهایی تسویه‌حساب پرداختی به شرکت اطمینان دارید؟\n\n• بازه زمانی: از ${fromDate} تا ${toDate}\n• تعداد کل اقلام: ${totalItemsStr} عدد\n• مبلغ پرداختی بر اساس قیمت خرید: ${totalAmountStr}`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const payload = {
+                paymentDate: new Date().toISOString().split('T')[0],
+                fromDate: currentCompanyPaymentStats.fromDate,
+                toDate: currentCompanyPaymentStats.toDate,
+                totalBuyCost: currentCompanyPaymentStats.totalBuyCost,
+                totalItemsCount: currentCompanyPaymentStats.totalItemsCount,
+                ordersCount: currentCompanyPaymentStats.ordersCount,
+                refNumber,
+                notes,
+                status: 'پرداخت شده',
+                items: currentCompanyPaymentStats.products || []
+            };
+
+            const res = await api('/api/admin/company-payments', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert('تسویه‌حساب پرداختی به شرکت با موفقیت در سیستم و دیتابیس ثبت شد.');
+                document.getElementById('cpRefNumber').value = '';
+                document.getElementById('cpNotes').value = '';
+                await loadCompanyPaymentHistory();
+            } else {
+                alert('خطا در ثبت تسویه‌حساب.');
+            }
+        } catch (err) {
+            console.error('Error submitting company payment settlement:', err);
+            alert('خطا در برقراری ارتباط با سرور.');
+        }
+    }
+
+    async function loadCompanyPaymentHistory() {
+        const tbody = document.getElementById('companyPaymentHistoryBody');
+        if (!tbody) return;
+
+        try {
+            const res = await api('/api/admin/company-payments');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && Array.isArray(data.payments)) {
+                    companyPaymentHistoryList = data.payments;
+                    if (data.payments.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">هیچ تسویه‌حسابی هنوز ثبت نشده است.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = data.payments.map((p) => {
+                        const periodStr = (p.fromDate || p.toDate)
+                            ? `${p.fromDate || 'ابتدا'} تا ${p.toDate || 'امروز'}`
+                            : 'کل دوره';
+
+                        return `
+                            <tr>
+                                <td><strong>${p.id || '-'}</strong></td>
+                                <td><i class="fa-regular fa-calendar-check" style="color:var(--primary); margin-left:4px;"></i> ${p.paymentDate || '-'}</td>
+                                <td style="font-size:0.85rem;">${periodStr}</td>
+                                <td>${(p.ordersCount || 0).toLocaleString('fa-IR')}</td>
+                                <td><strong style="color:var(--primary-dark);">${(p.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</strong></td>
+                                <td><strong style="color:var(--danger); font-size:0.95rem;">${formatPrice(p.totalBuyCost)}</strong></td>
+                                <td style="font-size:0.82rem; color:var(--muted);">
+                                    ${p.refNumber ? `<span style="font-weight:bold; color:var(--text);">پیگیری: ${p.refNumber}</span><br>` : ''}
+                                    ${p.notes || '—'}
+                                </td>
+                                <td><span class="badge" style="background:#dcfce7; color:#15803d; font-weight:bold;">${p.status || 'پرداخت شده'}</span></td>
+                                <td>
+                                    <div style="display:flex; gap:6px;">
+                                        <button class="btn btn-secondary" onclick="viewCompanyPaymentDetails('${p.id}')" style="padding:4px 8px; font-size:0.78rem;" title="مشاهده جزئیات اقلام">
+                                            <i class="fa-solid fa-eye"></i> جزئیات
+                                        </button>
+                                        <button class="btn btn-danger" onclick="deleteCompanyPaymentRecord('${p.id}')" style="padding:4px 8px; font-size:0.78rem;" title="حذف سند">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching company payment history:', err);
+        }
+
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">خطا در دریافت تاریخچه تسویه‌ها.</td></tr>';
+    }
+
+    async function deleteCompanyPaymentRecord(id) {
+        if (!confirm(`آیا از حذف سند تسویه‌حساب کد ${id} اطمینان دارید؟`)) return;
+
+        try {
+            const res = await api(`/api/admin/company-payments/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                await loadCompanyPaymentHistory();
+            } else {
+                alert('خطا در حذف تسویه‌حساب.');
+            }
+        } catch (err) {
+            console.error('Error deleting company payment:', err);
+        }
+    }
+
+    function viewCompanyPaymentDetails(id) {
+        const item = companyPaymentHistoryList.find(p => String(p.id) === String(id));
+        if (!item) {
+            alert('اطلاعات تسویه‌حساب یافت نشد.');
+            return;
+        }
+
+        const periodStr = (item.fromDate || item.toDate)
+            ? `${item.fromDate || 'ابتدا'} تا ${item.toDate || 'امروز'}`
+            : 'کل دوره';
+
+        let itemsHtml = '';
+        if (Array.isArray(item.items) && item.items.length > 0) {
+            itemsHtml = `
+                <div class="table-wrap" style="margin-top:12px; max-height:300px; overflow-y:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>کد کالا</th>
+                                <th>نام محصول</th>
+                                <th>تعداد</th>
+                                <th>قیمت خرید unit</th>
+                                <th>کل قیمت خرید (تومان)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${item.items.map((pi, idx) => `
+                                <tr>
+                                    <td>${(idx + 1).toLocaleString('fa-IR')}</td>
+                                    <td>${pi.code || pi.id || '-'}</td>
+                                    <td style="font-weight:bold;">${pi.name || 'محصول'}</td>
+                                    <td>${(pi.unitsSold || pi.qty || 1).toLocaleString('fa-IR')}</td>
+                                    <td>${(pi.buyPrice || 0).toLocaleString('fa-IR')}</td>
+                                    <td style="color:var(--danger); font-weight:bold;">${formatPrice(pi.totalBuyCost || (pi.buyPrice * (pi.unitsSold || pi.qty || 1)))}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            itemsHtml = '<p style="color:var(--muted); margin-top:10px;">لیست ریز اقلام ثبت نشده است.</p>';
+        }
+
+        const modalContent = document.getElementById('cpDetailModalContent');
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; background:#f8fafc; padding:14px; border-radius:12px; border:1px solid var(--border);">
+                    <div><span>کد تسویه‌حساب:</span> <strong>${item.id}</strong></div>
+                    <div><span>تاریخ پرداخت:</span> <strong>${item.paymentDate || '-'}</strong></div>
+                    <div><span>بازه زمانی کارکرد:</span> <strong>${periodStr}</strong></div>
+                    <div><span>تعداد کل اقلام:</span> <strong>${(item.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</strong></div>
+                    <div><span>مبلغ تسویه (قیمت خرید):</span> <strong style="color:var(--danger); font-size:1.05rem;">${formatPrice(item.totalBuyCost)}</strong></div>
+                    <div><span>کد پیگیری:</span> <strong>${item.refNumber || '—'}</strong></div>
+                </div>
+                ${item.notes ? `<p style="margin-bottom:12px; font-size:0.9rem; color:var(--text);"><strong>توضیحات:</strong> ${item.notes}</p>` : ''}
+                <h4 style="font-size:0.95rem; color:var(--primary-dark); margin-top:16px;">ریز اقلام شامل در این تسویه‌حساب:</h4>
+                ${itemsHtml}
+            `;
+        }
+
+        const modal = document.getElementById('companyPaymentDetailModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeCompanyPaymentDetailModal() {
+        const modal = document.getElementById('companyPaymentDetailModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function downloadDatabaseSqlite() {
+        try {
+            const authToken = localStorage.getItem('crm_token') || token;
+            if (!authToken) {
+                alert('لطفاً ابتدا وارد حساب مدیریت شوید.');
+                return;
+            }
+            const res = await fetch('/api/admin/database/download', {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                alert(errData.message || 'خطا در دریافت فایل دیتابیس SQLite');
+                return;
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rafooneh.db';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (e) {
+            alert('خطا در دانلود دیتابیس: ' + e.message);
+        }
+    }
+
+    if (token) {
+        showApp();
+    }
+
+    setInterval(() => {
+        if (token && document.getElementById('app').style.display !== 'none') {
+            const isEditing = document.querySelector('.modal[style*="display: flex"], .modal[style*="display: block"]') ||
+                              (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName));
+            if (!isEditing) {
+                refreshActiveSection();
+            }
+        }
+    }, 30000);
+</script>
+    <!-- Company Payment Detail Modal -->
+    <div id="companyPaymentDetailModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:15px;">
+        <div class="modal-card" style="background:white; border-radius:16px; max-width:800px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.2);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+                <h3 style="font-size:1.1rem; color:var(--primary-dark); display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-file-invoice"></i> جزئیات سند تسویه‌حساب شرکت
+                </h3>
+                <button onclick="closeCompanyPaymentDetailModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--muted);">&times;</button>
+            </div>
+            <div id="cpDetailModalContent"></div>
+            <div style="margin-top:20px; text-align:left;">
+                <button class="btn btn-secondary" onclick="closeCompanyPaymentDetailModal()">بستن</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
