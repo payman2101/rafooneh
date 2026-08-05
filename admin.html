@@ -1021,7 +1021,6 @@
                                 <option value="home">خانه و فرش</option>
                                 <option value="cellulosic">سلولزی و مصرفی</option>
                                 <option value="car">خودرو</option>
-                                <option value="other">سایر</option>
                             </select>
                             <input type="text" id="productSearch" placeholder="جستجو نام / کد / برند..." oninput="debounceProducts()">
                             <button class="btn btn-primary" onclick="openAddProductModal()">
@@ -1304,7 +1303,7 @@
                 <div class="form-group">
                     <label for="newProdCategory">دسته‌بندی</label>
                     <select id="newProdCategory" class="form-control">
-                        <option value="handwash">مایع دستشویی</option>
+                        <option value="handwash" selected>مایع دستشویی</option>
                         <option value="dishwash">مایع ظرفشویی</option>
                         <option value="laundry">شوینده لباس</option>
                         <option value="cleaners">پاک‌کننده و اسپری</option>
@@ -1313,7 +1312,6 @@
                         <option value="cellulosic">سلولزی و مصرفی</option>
                         <option value="car">خودرو</option>
                         <option value="imported">محصولات خارجی (بدون دسته‌بندی)</option>
-                        <option value="other" selected>سایر</option>
                     </select>
                     <div id="newProdCategoryNote" style="display:none; font-size:0.75rem; color:#0284c7; margin-top:4px; font-weight:bold;">
                         <i class="fa-solid fa-circle-info"></i> برند خارجی دسته‌بندی مجزا ندارد.
@@ -1414,7 +1412,6 @@
                         <option value="cellulosic">سلولزی و مصرفی</option>
                         <option value="car">خودرو</option>
                         <option value="imported">محصولات خارجی (بدون دسته‌بندی)</option>
-                        <option value="other">سایر</option>
                     </select>
                     <div id="editProdCategoryNote" style="display:none; font-size:0.75rem; color:#0284c7; margin-top:4px; font-weight:bold;">
                         <i class="fa-solid fa-circle-info"></i> برند خارجی دسته‌بندی مجزا ندارد.
@@ -2784,7 +2781,7 @@
         } else {
             catSelect.disabled = false;
             if (catSelect.value === 'imported') {
-                catSelect.value = 'other';
+                catSelect.value = 'cleaners';
             }
             if (noteEl) noteEl.style.display = 'none';
         }
@@ -2798,7 +2795,7 @@
         document.getElementById('editProdCodeView').value = p.id;
         document.getElementById('editProdName').value = p.name || '';
         document.getElementById('editProdBrand').value = p.brand || 'rafooneh';
-        document.getElementById('editProdCategory').value = p.brand === 'foreign' ? 'imported' : (p.category || 'other');
+        document.getElementById('editProdCategory').value = p.brand === 'foreign' ? 'imported' : (p.category || 'cleaners');
         document.getElementById('editProdStock').value = p.stock || 0;
         document.getElementById('editProdPrice').value = p.price || 0;
         document.getElementById('editProdNewPrice').value = p.newPrice || p.consumerPrice || '';

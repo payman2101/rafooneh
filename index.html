@@ -1491,7 +1491,6 @@
         <button class="category-btn" data-cat="laundry" onclick="filterCategory('laundry', this)">شوینده لباس</button>
         <button class="category-btn" data-cat="cellulosic" onclick="filterCategory('cellulosic', this)">سلولزی و کیسه</button>
         <button class="category-btn" data-cat="imported" onclick="filterCategory('imported', this)">محصولات خارجی</button>
-        <button class="category-btn" data-cat="other" onclick="filterCategory('other', this)">سایر شوینده‌ها</button>
     </div>
 
     <div class="container">
@@ -1985,8 +1984,7 @@
                 'sanitary': 'جرم‌گیر و سرویس',
                 'laundry': 'شوینده لباس',
                 'cellulosic': 'سلولزی و کیسه',
-                'imported': 'محصولات خارجی',
-                'other': 'سایر شوینده‌ها'
+                'imported': 'محصولات خارجی'
             };
 
             const knownCats = ['handwash', 'dishwash', 'cleaners', 'sanitary', 'laundry', 'cellulosic'];
@@ -2000,8 +1998,6 @@
             });
 
             counts['imported'] = inStockProducts.filter(isForeignProduct).length;
-
-            counts['other'] = inStockProducts.filter(p => (p.category === 'other' || p.category === 'home' || !knownCats.includes(p.category)) && !isForeignProduct(p)).length;
 
             const container = document.getElementById('categoriesContainer');
             if (container) {
@@ -2032,8 +2028,6 @@
             if (filter !== 'all') {
                 if (filter === 'imported') {
                     filtered = filtered.filter(isForeignProduct);
-                } else if (filter === 'other') {
-                    filtered = filtered.filter(p => (p.category === 'other' || p.category === 'home' || !knownCats.includes(p.category)) && !isForeignProduct(p));
                 } else {
                     filtered = filtered.filter(p => p.category === filter && !isForeignProduct(p));
                 }
