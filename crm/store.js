@@ -22,6 +22,9 @@ import {
   deleteOrderSqlite,
   saveCompanyPaymentSqlite,
   deleteCompanyPaymentSqlite,
+  savePurchaseSqlite,
+  getAllPurchasesSqlite,
+  deletePurchaseSqlite,
   getDb
 } from './sqlite.js';
 
@@ -29,11 +32,13 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const CUSTOMERS_FILE = path.join(DATA_DIR, 'customers.json');
 const COMPANY_PAYMENTS_FILE = path.join(DATA_DIR, 'company_payments.json');
+const PURCHASES_FILE = path.join(DATA_DIR, 'purchases.json');
 const DATA_PRODUCTS_FILE = path.join(DATA_DIR, 'products_data.json');
 
 const ROOT_ORDERS_FILE = path.join(process.cwd(), 'orders.json');
 const ROOT_CUSTOMERS_FILE = path.join(process.cwd(), 'customers.json');
 const ROOT_COMPANY_PAYMENTS_FILE = path.join(process.cwd(), 'company_payments.json');
+const ROOT_PURCHASES_FILE = path.join(process.cwd(), 'purchases.json');
 const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
 const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
 
@@ -1135,6 +1140,113 @@ export function deleteCompanyPayment(id) {
     return true;
   }
   return false;
+}
+
+export function listPurchases() {
+  try {
+    const sqlitePurchases = getAllPurchasesSqlite();
+    if (Array.isArray(sqlitePurchases) && sqlitePurchases.length > 0) {
+      return sqlitePurchases;
+    }
+  } catch (e) {}
+
+  return readJson(PURCHASES_FILE, []);
+}
+
+export function createPurchase(purchaseData) {
+  const nowStr = new Date().toISOString();
+  const id = purchaseData.id || `PUR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const refNumber = purchaseData.refNumber || `FACT-${Math.floor(100000 + Math.random() * 900000)}`;
+  const supplierName = purchaseData.supplierName || 'تأمین‌کننده رافونه';
+  const purchaseDate = purchaseData.purchaseDate || nowStr;
+  const notes = purchaseData.notes || '';
+  const updateStock = purchaseData.updateStock !== false;
+
+  const rawItems = Array.isArray(purchaseData.items) ? purchaseData.items : [];
+  let totalAmount = 0;
+  let totalItemsCount = 0;
+
+  const items = rawItems.map(item => {
+    const pid = String(item.productId || item.id || '');
+    const name = item.name || 'محصول رافونه';
+    const qty = Math.max(1, Number(item.qty || item.quantity) || 1);
+    const buyPrice = Math.max(0, Number(item.buyPrice) || 0);
+    const rowTotal = qty * buyPrice;
+
+    totalAmount += rowTotal;
+    totalItemsCount += qty;
+
+    return {
+      productId: pid,
+      name,
+      qty,
+      buyPrice,
+      rowTotal
+    };
+  });
+
+  const newPurchase = {
+    id,
+    refNumber,
+    supplierName,
+    purchaseDate,
+    totalAmount,
+    totalItemsCount,
+    notes,
+    items,
+    createdAt: nowStr,
+    updatedAt: nowStr
+  };
+
+  // Automatically update stock in products dataset upon purchase registration!
+  if (updateStock && items.length > 0) {
+    const products = readProductsList();
+    let productsUpdated = false;
+
+    items.forEach(pItem => {
+      const pIdx = products.findIndex(p => String(p.id) === String(pItem.productId) || String(p.code) === String(pItem.productId));
+      if (pIdx !== -1) {
+        const currentStock = Number(products[pIdx].stock || 0);
+        products[pIdx].stock = currentStock + pItem.qty;
+        if (pItem.buyPrice > 0) {
+          products[pIdx].buyPrice = pItem.buyPrice;
+        }
+        if (products[pIdx].stock <= 0) {
+          products[pIdx].badge = 'ناموجود';
+        } else if (products[pIdx].stock <= 5) {
+          products[pIdx].badge = `تعداد محدود (${products[pIdx].stock} عدد)`;
+        } else {
+          products[pIdx].badge = null;
+        }
+        products[pIdx].updatedAt = nowStr;
+        productsUpdated = true;
+      }
+    });
+
+    if (productsUpdated) {
+      saveProductsList(products);
+    }
+  }
+
+  let purchases = readJson(PURCHASES_FILE, []);
+  purchases.unshift(newPurchase);
+  writeJson(PURCHASES_FILE, purchases);
+  writeJson(ROOT_PURCHASES_FILE, purchases);
+
+  try { savePurchaseSqlite(newPurchase); } catch (e) { console.error('SQLite save purchase notice:', e); }
+
+  return newPurchase;
+}
+
+export function deletePurchase(id) {
+  let purchases = readJson(PURCHASES_FILE, []);
+  const initialLen = purchases.length;
+  purchases = purchases.filter(p => String(p.id) !== String(id));
+  writeJson(PURCHASES_FILE, purchases);
+  writeJson(ROOT_PURCHASES_FILE, purchases);
+
+  try { deletePurchaseSqlite(id); } catch (e) { console.error('SQLite delete purchase notice:', e); }
+  return purchases.length !== initialLen;
 }
 
 export async function initDatabaseSync() {

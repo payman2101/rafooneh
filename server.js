@@ -23,6 +23,9 @@ import {
   listCompanyPayments,
   createCompanyPayment,
   deleteCompanyPayment,
+  listPurchases,
+  createPurchase,
+  deletePurchase,
   getAdminAlerts,
   listProducts,
   updateProduct,
@@ -718,6 +721,26 @@ app.post('/api/admin/company-payments', authMiddleware, (req, res) => {
 
 app.delete('/api/admin/company-payments/:id', authMiddleware, (req, res) => {
   const deleted = deleteCompanyPayment(req.params.id);
+  res.json({ success: deleted });
+});
+
+// CRM: Purchases / Purchase Invoices
+app.get('/api/admin/purchases', authMiddleware, (req, res) => {
+  const purchases = listPurchases();
+  res.json({ success: true, purchases });
+});
+
+app.post('/api/admin/purchases', authMiddleware, (req, res) => {
+  try {
+    const purchase = createPurchase(req.body);
+    res.json({ success: true, purchase, message: 'فاکتور خرید با موفقیت ثبت شد و موجودی انبار به روز رسانی گردید.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در ثبت فاکتور خرید: ' + err.message });
+  }
+});
+
+app.delete('/api/admin/purchases/:id', authMiddleware, (req, res) => {
+  const deleted = deletePurchase(req.params.id);
   res.json({ success: deleted });
 });
 

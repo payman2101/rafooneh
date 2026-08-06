@@ -93,6 +93,19 @@ export function getDb() {
       items TEXT,
       createdAt TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS purchases (
+      id TEXT PRIMARY KEY,
+      refNumber TEXT,
+      supplierName TEXT,
+      purchaseDate TEXT,
+      totalAmount REAL DEFAULT 0,
+      totalItemsCount INTEGER DEFAULT 0,
+      notes TEXT,
+      items TEXT,
+      createdAt TEXT,
+      updatedAt TEXT
+    );
   `);
 
   console.log('[SQLite Database] Database initialized successfully at', DB_PATH);
@@ -430,6 +443,60 @@ export function getAllCompanyPaymentsSqlite() {
 export function deleteCompanyPaymentSqlite(id) {
   const db = getDb();
   db.prepare('DELETE FROM company_payments WHERE id = ?').run(String(id));
+}
+
+export function savePurchaseSqlite(p, dbConn = null) {
+  const db = dbConn || getDb();
+  const id = String(p.id);
+  const itemsJson = typeof p.items === 'string' ? p.items : JSON.stringify(p.items || []);
+
+  const stmt = db.prepare(
+    `INSERT INTO purchases (
+      id, refNumber, supplierName, purchaseDate, totalAmount,
+      totalItemsCount, notes, items, createdAt, updatedAt
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      refNumber = excluded.refNumber,
+      supplierName = excluded.supplierName,
+      purchaseDate = excluded.purchaseDate,
+      totalAmount = excluded.totalAmount,
+      totalItemsCount = excluded.totalItemsCount,
+      notes = excluded.notes,
+      items = excluded.items,
+      createdAt = excluded.createdAt,
+      updatedAt = excluded.updatedAt;`
+  );
+
+  stmt.run(
+    id,
+    p.refNumber || '',
+    p.supplierName || 'تأمین‌کننده',
+    p.purchaseDate || new Date().toISOString(),
+    Number(p.totalAmount) || 0,
+    Number(p.totalItemsCount) || 0,
+    p.notes || '',
+    itemsJson,
+    p.createdAt || new Date().toISOString(),
+    p.updatedAt || new Date().toISOString()
+  );
+}
+
+export function getAllPurchasesSqlite() {
+  const db = getDb();
+  const rows = db.prepare('SELECT * FROM purchases ORDER BY datetime(purchaseDate) DESC, datetime(createdAt) DESC').all();
+  return rows.map(r => {
+    let items = [];
+    try { items = JSON.parse(r.items || '[]'); } catch (e) {}
+    return {
+      ...r,
+      items
+    };
+  });
+}
+
+export function deletePurchaseSqlite(id) {
+  const db = getDb();
+  db.prepare('DELETE FROM purchases WHERE id = ?').run(String(id));
 }
 
 export function checkpointSqlite() {
