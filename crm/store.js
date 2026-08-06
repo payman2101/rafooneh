@@ -1263,8 +1263,18 @@ export async function initDatabaseSync() {
       try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
     },
     writeJson: (file, data) => {
-      if (!fs.existsSync(path.dirname(file))) fs.mkdirSync(path.dirname(file), { recursive: true });
-      fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+      writeJson(file, data);
+      try {
+        if (file === ORDERS_FILE || file.endsWith('orders.json')) {
+          if (Array.isArray(data)) data.forEach(o => saveOrderSqlite(o));
+        } else if (file === CUSTOMERS_FILE || file.endsWith('customers.json')) {
+          if (Array.isArray(data)) data.forEach(c => saveCustomerSqlite(c));
+        } else if (file === COMPANY_PAYMENTS_FILE || file.endsWith('company_payments.json')) {
+          if (Array.isArray(data)) data.forEach(p => saveCompanyPaymentSqlite(p));
+        }
+      } catch (e) {
+        console.error('SQLite writeJson sync notice:', e);
+      }
     },
     ORDERS_FILE,
     CUSTOMERS_FILE,

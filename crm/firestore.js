@@ -183,51 +183,47 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
             return String(a.id).localeCompare(String(b.id));
           });
 
-          // Local SQLite/JSON products are the single source of truth for products.
-          // Local products always take precedence over remote Firestore products to prevent quota errors or stale overrides.
+          // Firestore products are the live source of truth for price, stock, and info updates.
           const localProds = readProductsList();
           const mergedMap = new Map();
 
-          // Load local products first
-          localProds.forEach(lp => {
-            const key = String(lp.id || lp.code || '');
-            if (key) mergedMap.set(key, lp);
-          });
-
-          // Only add missing products from Firestore if they don't exist locally
+          // 1. Load remote Firestore products first (holds live admin updates, custom prices, stock)
           firestoreProducts.forEach(fp => {
             const key = String(fp.id || fp.code || '');
             if (!key) return;
-            if (!mergedMap.has(key)) {
-              if (fp.category === 'home' || fp.category === 'car' || fp.id === '1057') {
-                fp.category = 'cleaners';
-                fp.categoryName = 'پاک‌کننده و اسپری';
+            if (fp.category === 'home' || fp.category === 'car' || fp.id === '1057') {
+              fp.category = 'cleaners';
+              fp.categoryName = 'پاک‌کننده و اسپری';
+            }
+            if (fp.brand === 'foreign' || fp.id === '2359' || fp.category === 'imported') {
+              fp.brand = 'foreign';
+              fp.brandName = 'محصولات خارجی';
+              fp.category = 'imported';
+              fp.categoryName = 'محصولات خارجی';
+            }
+            mergedMap.set(key, fp);
+          });
+
+          // 2. Add local catalog products only if they do not exist in Firestore
+          localProds.forEach(lp => {
+            const key = String(lp.id || lp.code || '');
+            if (key && !mergedMap.has(key)) {
+              if (lp.category === 'home' || lp.category === 'car' || lp.id === '1057') {
+                lp.category = 'cleaners';
+                lp.categoryName = 'پاک‌کننده و اسپری';
               }
-              if (fp.brand === 'foreign' || fp.id === '2359') {
-                fp.brand = 'foreign';
-                fp.brandName = 'محصولات خارجی';
-                fp.category = 'imported';
-                fp.categoryName = 'محصولات خارجی';
+              if (lp.brand === 'foreign' || lp.id === '2359' || lp.category === 'imported') {
+                lp.brand = 'foreign';
+                lp.brandName = 'محصولات خارجی';
+                lp.category = 'imported';
+                lp.categoryName = 'محصولات خارجی';
               }
-              mergedMap.set(key, fp);
+              mergedMap.set(key, lp);
             }
           });
 
-          const merged = Array.from(mergedMap.values()).map(p => {
-            if (p.category === 'home' || p.category === 'car' || p.id === '1057') {
-              p.category = 'cleaners';
-              p.categoryName = 'پاک‌کننده و اسپری';
-            }
-            if (p.brand === 'foreign' || p.id === '2359' || p.category === 'imported') {
-              p.brand = 'foreign';
-              p.brandName = 'محصولات خارجی';
-              p.category = 'imported';
-              p.categoryName = 'محصولات خارجی';
-            }
-            return p;
-          });
-
-          console.log(`[Firestore] Preserved ${merged.length} local SQLite products.`);
+          const merged = Array.from(mergedMap.values());
+          console.log(`[Firestore] Synced ${merged.length} products (remote Firestore takes precedence).`);
           saveProductsList(merged, true);
         }
       }
@@ -253,16 +249,23 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
         });
         if (firestoreOrders.length > 0) {
           const localOrders = readJson(ORDERS_FILE, []);
-          const localOrderMap = new Map();
-          localOrders.forEach(o => localOrderMap.set(String(o.id), o));
+          const orderMap = new Map();
+          
+          // 1. Remote Firestore orders take precedence
           firestoreOrders.forEach(fo => {
-            if (!localOrderMap.has(String(fo.id))) {
-              localOrderMap.set(String(fo.id), fo);
+            if (fo.id) orderMap.set(String(fo.id), fo);
+          });
+
+          // 2. Add local orders missing from Firestore
+          localOrders.forEach(lo => {
+            if (lo.id && !orderMap.has(String(lo.id))) {
+              orderMap.set(String(lo.id), lo);
             }
           });
-          const mergedOrders = Array.from(localOrderMap.values());
+
+          const mergedOrders = Array.from(orderMap.values());
           writeJson(ORDERS_FILE, mergedOrders);
-          console.log(`[Firestore] Loaded ${mergedOrders.length} orders from Firestore/Local.`);
+          console.log(`[Firestore] Loaded ${mergedOrders.length} live orders from Firestore.`);
         }
       }
     } catch (orderErr) {
@@ -288,14 +291,21 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
         if (firestoreCusts.length > 0) {
           const localCusts = readJson(CUSTOMERS_FILE, []);
           const custMap = new Map();
-          localCusts.forEach(c => custMap.set(String(c.id), c));
+
+          // 1. Remote Firestore customers take precedence
           firestoreCusts.forEach(fc => {
-            if (!custMap.has(String(fc.id))) {
-              custMap.set(String(fc.id), fc);
+            if (fc.id) custMap.set(String(fc.id), fc);
+          });
+
+          // 2. Add local customers missing from Firestore
+          localCusts.forEach(lc => {
+            if (lc.id && !custMap.has(String(lc.id))) {
+              custMap.set(String(lc.id), lc);
             }
           });
+
           writeJson(CUSTOMERS_FILE, Array.from(custMap.values()));
-          console.log(`[Firestore] Loaded ${custMap.size} customers from Firestore/Local.`);
+          console.log(`[Firestore] Loaded ${custMap.size} live customers from Firestore.`);
         }
       }
     } catch (custErr) {
@@ -322,14 +332,21 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
           if (firestorePays.length > 0) {
             const localPays = readJson(COMPANY_PAYMENTS_FILE, []);
             const payMap = new Map();
-            localPays.forEach(p => payMap.set(String(p.id), p));
+
+            // 1. Remote Firestore company payments take precedence
             firestorePays.forEach(fp => {
-              if (!payMap.has(String(fp.id))) {
-                payMap.set(String(fp.id), fp);
+              if (fp.id) payMap.set(String(fp.id), fp);
+            });
+
+            // 2. Add local payments missing from Firestore
+            localPays.forEach(lp => {
+              if (lp.id && !payMap.has(String(lp.id))) {
+                payMap.set(String(lp.id), lp);
               }
             });
+
             writeJson(COMPANY_PAYMENTS_FILE, Array.from(payMap.values()));
-            console.log(`[Firestore] Loaded ${payMap.size} company payments from Firestore/Local.`);
+            console.log(`[Firestore] Loaded ${payMap.size} live company payments from Firestore.`);
           }
         }
       } catch (payErr) {
