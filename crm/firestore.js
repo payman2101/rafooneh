@@ -24,11 +24,26 @@ export function getFirestoreDb() {
   return null;
 }
 
-function withTimeout(promise, ms = 3000) {
+function withTimeout(promise, ms = 10000) {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), ms))
   ]);
+}
+
+export async function syncSaveProduct(product) {
+  const firestore = getFirestoreDb();
+  if (!firestore || !product || (!product.id && !product.code)) return;
+
+  try {
+    const docId = String(product.id || product.code);
+    const docRef = doc(firestore, 'products', docId);
+    const cleanData = JSON.parse(JSON.stringify(product));
+    await withTimeout(setDoc(docRef, cleanData, { merge: true }), 8000);
+    console.log(`[Firestore] Saved single product ${docId} to Firestore.`);
+  } catch (err) {
+    console.warn(`[Firestore] Notice on saving product ${product.id} to Firestore:`, err.message);
+  }
 }
 
 export async function syncSaveProducts(list) {
@@ -36,7 +51,7 @@ export async function syncSaveProducts(list) {
   if (!firestore || !Array.isArray(list) || list.length === 0) return;
 
   try {
-    const CHUNK_SIZE = 200;
+    const CHUNK_SIZE = 50;
     for (let i = 0; i < list.length; i += CHUNK_SIZE) {
       const chunk = list.slice(i, i + CHUNK_SIZE);
       const batch = writeBatch(firestore);
@@ -47,7 +62,7 @@ export async function syncSaveProducts(list) {
         const cleanData = JSON.parse(JSON.stringify(prod));
         batch.set(docRef, cleanData, { merge: true });
       }
-      await withTimeout(batch.commit(), 5000);
+      await withTimeout(batch.commit(), 15000);
     }
     console.log(`[Firestore] Saved ${list.length} products to Firestore.`);
   } catch (err) {
@@ -250,21 +265,35 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
             mergedMap.set(key, fp);
           });
 
-          // 2. Add local catalog products only if they do not exist in Firestore and were not deleted
+          // 2. Compare local catalog products with Firestore
           localProds.forEach(lp => {
             const key = String(lp.id || lp.code || '');
-            if (key && !mergedMap.has(key)) {
-              if (lp.category === 'home' || lp.category === 'car' || lp.id === '1057') {
-                lp.category = 'cleaners';
-                lp.categoryName = 'پاک‌کننده و اسپری';
-              }
-              if (lp.brand === 'foreign' || lp.id === '2359' || lp.category === 'imported') {
-                lp.brand = 'foreign';
-                lp.brandName = 'محصولات خارجی';
-                lp.category = 'imported';
-                lp.categoryName = 'محصولات خارجی';
-              }
+            if (!key) return;
+            if (lp.category === 'home' || lp.category === 'car' || lp.id === '1057') {
+              lp.category = 'cleaners';
+              lp.categoryName = 'پاک‌کننده و اسپری';
+            }
+            if (lp.brand === 'foreign' || lp.id === '2359' || lp.category === 'imported') {
+              lp.brand = 'foreign';
+              lp.brandName = 'محصولات خارجی';
+              lp.category = 'imported';
+              lp.categoryName = 'محصولات خارجی';
+            }
+
+            if (!mergedMap.has(key)) {
               mergedMap.set(key, lp);
+            } else {
+              const existingFp = mergedMap.get(key);
+              if (existingFp && lp.updatedAt && existingFp.updatedAt) {
+                const localTime = new Date(lp.updatedAt).getTime();
+                const remoteTime = new Date(existingFp.updatedAt).getTime();
+                if (!isNaN(localTime) && !isNaN(remoteTime) && localTime > remoteTime) {
+                  // Local product has a newer update (e.g., description/price edited locally)
+                  const updatedProd = { ...existingFp, ...lp };
+                  mergedMap.set(key, updatedProd);
+                  syncSaveProduct(updatedProd);
+                }
+              }
             }
           });
 

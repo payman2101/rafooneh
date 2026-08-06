@@ -3,6 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import {
   syncSaveProducts,
+  syncSaveProduct,
   syncDeleteProduct,
   syncSaveOrder,
   syncDeleteOrder,
@@ -750,6 +751,7 @@ export function updateProduct(id, updates) {
   };
 
   saveProductsList(list);
+  syncSaveProduct(list[idx]);
   return list[idx];
 }
 
@@ -796,6 +798,7 @@ export function addProduct(productData) {
 
   list.unshift(newProd);
   saveProductsList(list);
+  syncSaveProduct(newProd);
   return newProd;
 }
 
