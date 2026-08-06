@@ -31,6 +31,14 @@ function withTimeout(promise, ms = 10000) {
   ]);
 }
 
+function handleFirestoreError(context, err) {
+  if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota limit exceeded')))) {
+    console.warn(`[Firestore] Quota limit exceeded on free tier during ${context}. Changes are saved locally.`);
+  } else {
+    console.warn(`[Firestore] Notice on ${context}:`, err ? err.message : err);
+  }
+}
+
 export async function syncSaveProduct(product) {
   const firestore = getFirestoreDb();
   if (!firestore || !product || (!product.id && !product.code)) return;
@@ -42,7 +50,7 @@ export async function syncSaveProduct(product) {
     await withTimeout(setDoc(docRef, cleanData, { merge: true }), 8000);
     console.log(`[Firestore] Saved single product ${docId} to Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on saving product ${product.id} to Firestore:`, err.message);
+    handleFirestoreError(`saving product ${product.id}`, err);
   }
 }
 
@@ -66,7 +74,7 @@ export async function syncSaveProducts(list) {
     }
     console.log(`[Firestore] Saved ${list.length} products to Firestore.`);
   } catch (err) {
-    console.warn('[Firestore] Notice on saving products to Firestore:', err.message);
+    handleFirestoreError('saving products list', err);
   }
 }
 
@@ -79,7 +87,7 @@ export async function syncDeleteProduct(productId) {
     await withTimeout(setDoc(docRef, { isDeleted: true }, { merge: true }), 3000);
     console.log(`[Firestore] Marked product ${productId} as deleted in Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on deleting product ${productId}:`, err.message);
+    handleFirestoreError(`deleting product ${productId}`, err);
   }
 }
 
@@ -92,7 +100,7 @@ export async function syncSaveOrder(order) {
     await withTimeout(setDoc(doc(firestore, 'orders', String(order.id)), cleanOrder, { merge: true }), 3000);
     console.log(`[Firestore] Saved order ${order.id} to Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on saving order ${order.id}:`, err.message);
+    handleFirestoreError(`saving order ${order.id}`, err);
   }
 }
 
@@ -104,7 +112,7 @@ export async function syncDeleteOrder(orderId) {
     await withTimeout(deleteDoc(doc(firestore, 'orders', String(orderId))), 3000);
     console.log(`[Firestore] Deleted order ${orderId} from Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on deleting order ${orderId}:`, err.message);
+    handleFirestoreError(`deleting order ${orderId}`, err);
   }
 }
 
@@ -117,7 +125,7 @@ export async function syncSaveCustomer(customer) {
     await withTimeout(setDoc(doc(firestore, 'customers', String(customer.id)), cleanCust, { merge: true }), 3000);
     console.log(`[Firestore] Saved customer ${customer.id} to Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on saving customer ${customer.id}:`, err.message);
+    handleFirestoreError(`saving customer ${customer.id}`, err);
   }
 }
 
@@ -129,7 +137,7 @@ export async function syncDeleteCustomer(customerId) {
     await withTimeout(deleteDoc(doc(firestore, 'customers', String(customerId))), 3000);
     console.log(`[Firestore] Deleted customer ${customerId} from Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on deleting customer ${customerId}:`, err.message);
+    handleFirestoreError(`deleting customer ${customerId}`, err);
   }
 }
 
@@ -151,7 +159,7 @@ export async function clearFirestoreTestData() {
       }
     }
   } catch (err) {
-    console.warn('[Firestore] Error clearing test data:', err.message);
+    handleFirestoreError('clearing test data', err);
   }
 }
 
@@ -164,7 +172,7 @@ export async function syncSaveCompanyPayment(payment) {
     await withTimeout(setDoc(doc(firestore, 'company_payments', String(payment.id)), cleanPayment, { merge: true }), 3000);
     console.log(`[Firestore] Saved company payment ${payment.id} to Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on saving company payment ${payment.id}:`, err.message);
+    handleFirestoreError(`saving company payment ${payment.id}`, err);
   }
 }
 
@@ -176,7 +184,7 @@ export async function syncDeleteCompanyPayment(paymentId) {
     await withTimeout(deleteDoc(doc(firestore, 'company_payments', String(paymentId))), 3000);
     console.log(`[Firestore] Deleted company payment ${paymentId} from Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on deleting company payment ${paymentId}:`, err.message);
+    handleFirestoreError(`deleting company payment ${paymentId}`, err);
   }
 }
 
@@ -189,7 +197,7 @@ export async function syncSavePurchase(purchase) {
     await withTimeout(setDoc(doc(firestore, 'purchases', String(purchase.id)), cleanPurchase, { merge: true }), 3000);
     console.log(`[Firestore] Saved purchase ${purchase.id} to Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on saving purchase ${purchase.id}:`, err.message);
+    handleFirestoreError(`saving purchase ${purchase.id}`, err);
   }
 }
 
@@ -201,7 +209,7 @@ export async function syncDeletePurchase(purchaseId) {
     await withTimeout(deleteDoc(doc(firestore, 'purchases', String(purchaseId))), 3000);
     console.log(`[Firestore] Deleted purchase ${purchaseId} from Firestore.`);
   } catch (err) {
-    console.warn(`[Firestore] Notice on deleting purchase ${purchaseId}:`, err.message);
+    handleFirestoreError(`deleting purchase ${purchaseId}`, err);
   }
 }
 
