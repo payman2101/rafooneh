@@ -71,7 +71,7 @@ export function saveProductsList(list, skipFirestoreSync = false) {
     productsMapCache = null;
 
     try { saveAllProductsSqlite(list); } catch (err) { console.error('SQLite save products error:', err); }
-    try { saveAllProductsCloudSql(list); } catch (err) { console.error('Cloud SQL save products error:', err); }
+    saveAllProductsCloudSql(list).catch(err => console.error('Cloud SQL save products error:', err));
   } catch (err) {
     console.error('Error saving products list:', err);
   }
@@ -457,10 +457,10 @@ export function createOrder(orderData) {
   writeJson(CUSTOMERS_FILE, customers);
 
   try { saveOrderSqlite(order); } catch (e) { console.error('SQLite save order notice:', e); }
-  try { saveOrderCloudSql(order); } catch (e) { console.error('Cloud SQL save order notice:', e); }
+  saveOrderCloudSql(order).catch(e => console.error('Cloud SQL save order notice:', e));
   if (customers[customerIdx]) {
     try { saveCustomerSqlite(customers[customerIdx]); } catch (e) { console.error('SQLite save customer notice:', e); }
-    try { saveCustomerCloudSql(customers[customerIdx]); } catch (e) { console.error('Cloud SQL save customer notice:', e); }
+    saveCustomerCloudSql(customers[customerIdx]).catch(e => console.error('Cloud SQL save customer notice:', e));
   }
 
   // Automatically update stock in products dataset upon order creation!
