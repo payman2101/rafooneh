@@ -85,6 +85,25 @@ export async function initCloudSql() {
       }
     }
 
+    // 5. Check & Seed Purchases
+    const existingPurchases = await db.select({ count: sql`count(*)` }).from(purchases);
+    if (Number(existingPurchases[0]?.count || 0) === 0) {
+      const jsonPath = path.join(DATA_DIR, 'purchases.json');
+      const rootJsonPath = path.join(process.cwd(), 'purchases.json');
+      let purchs = [];
+      if (fs.existsSync(jsonPath)) {
+        try { purchs = JSON.parse(fs.readFileSync(jsonPath, 'utf8')); } catch (e) {}
+      } else if (fs.existsSync(rootJsonPath)) {
+        try { purchs = JSON.parse(fs.readFileSync(rootJsonPath, 'utf8')); } catch (e) {}
+      }
+      if (Array.isArray(purchs) && purchs.length > 0) {
+        console.log(`[Cloud SQL Seeding] Migrating ${purchs.length} purchases to PostgreSQL...`);
+        for (const pu of purchs) {
+          await savePurchaseCloudSql(pu);
+        }
+      }
+    }
+
     console.log('[Cloud SQL] Database ready.');
   } catch (err) {
     console.error('[Cloud SQL Initialization Error]:', err.message);

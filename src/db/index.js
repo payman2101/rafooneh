@@ -2,11 +2,24 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import * as schema from './schema.js';
 
+function fixPgUrl(urlStr) {
+  if (!urlStr) return urlStr;
+  const match = urlStr.match(/^(postgres(?:ql)?:\/\/)([^:]+):(.*)@([^/@]+(?::\d+)?\/.*)$/);
+  if (match) {
+    const [, proto, user, pass, rest] = match;
+    const encodedPass = encodeURIComponent(decodeURIComponent(pass));
+    return proto + user + ":" + encodedPass + "@" + rest;
+  }
+  return urlStr;
+}
+
 function getPoolConfig() {
   if (process.env.DATABASE_URL) {
+    const connStr = fixPgUrl(process.env.DATABASE_URL);
+    const isLocal = connStr.includes('localhost') || connStr.includes('127.0.0.1');
     return {
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      connectionString: connStr,
+      ssl: isLocal ? false : { rejectUnauthorized: false },
     };
   }
 
