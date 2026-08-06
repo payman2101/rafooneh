@@ -17,6 +17,25 @@ import {
   initFirestoreSync
 } from './firestore.js';
 import {
+  initCloudSql,
+  saveProductCloudSql,
+  saveAllProductsCloudSql,
+  getAllProductsCloudSql,
+  deleteProductCloudSql,
+  saveCustomerCloudSql,
+  getAllCustomersCloudSql,
+  deleteCustomerCloudSql,
+  saveOrderCloudSql,
+  getAllOrdersCloudSql,
+  deleteOrderCloudSql,
+  saveCompanyPaymentCloudSql,
+  getAllCompanyPaymentsCloudSql,
+  deleteCompanyPaymentCloudSql,
+  savePurchaseCloudSql,
+  getAllPurchasesCloudSql,
+  deletePurchaseCloudSql
+} from './cloudsql.js';
+import {
   seedSqliteFromJson,
   saveAllProductsSqlite,
   getAllProductsSqlite,
@@ -67,6 +86,7 @@ export function saveProductsList(list, skipFirestoreSync = false) {
     productsMapCache = null;
 
     try { saveAllProductsSqlite(list); } catch (err) { console.error('SQLite save products error:', err); }
+    try { saveAllProductsCloudSql(list); } catch (err) { console.error('Cloud SQL save products error:', err); }
     if (!skipFirestoreSync) {
       syncSaveProducts(list);
     }
@@ -462,9 +482,11 @@ export function createOrder(orderData) {
   writeJson(CUSTOMERS_FILE, customers);
 
   try { saveOrderSqlite(order); } catch (e) { console.error('SQLite save order notice:', e); }
+  try { saveOrderCloudSql(order); } catch (e) { console.error('Cloud SQL save order notice:', e); }
   syncSaveOrder(order);
   if (customers[customerIdx]) {
     try { saveCustomerSqlite(customers[customerIdx]); } catch (e) { console.error('SQLite save customer notice:', e); }
+    try { saveCustomerCloudSql(customers[customerIdx]); } catch (e) { console.error('Cloud SQL save customer notice:', e); }
     syncSaveCustomer(customers[customerIdx]);
   }
 
@@ -521,6 +543,7 @@ export function deleteOrder(id) {
   if (orders.length !== initialLength) {
     writeJson(ORDERS_FILE, orders);
     try { deleteOrderSqlite(id); } catch (e) { console.error('SQLite delete order notice:', e); }
+    try { deleteOrderCloudSql(id); } catch (e) { console.error('Cloud SQL delete order notice:', e); }
     syncDeleteOrder(id);
     return true;
   }
@@ -813,6 +836,7 @@ export function deleteProduct(id) {
   if (list.length !== initialLength) {
     saveProductsList(list, true);
     try { deleteProductSqlite(id); } catch (e) { console.error('SQLite delete product notice:', e); }
+    try { deleteProductCloudSql(id); } catch (e) { console.error('Cloud SQL delete product notice:', e); }
     syncDeleteProduct(id);
     return true;
   }
@@ -884,6 +908,7 @@ export function deleteCustomer(id) {
   customers = customers.filter(c => c.id !== id && c.phone !== id);
   writeJson(CUSTOMERS_FILE, customers);
   try { deleteCustomerSqlite(id); } catch (e) { console.error('SQLite delete customer notice:', e.message); }
+  try { deleteCustomerCloudSql(id); } catch (e) { console.error('Cloud SQL delete customer notice:', e.message); }
   syncDeleteCustomer(id);
   return initialLen !== customers.length || true;
 }
@@ -1134,6 +1159,7 @@ export function createCompanyPayment(paymentData) {
   payments.unshift(newPayment);
   writeJson(COMPANY_PAYMENTS_FILE, payments);
   try { saveCompanyPaymentSqlite(newPayment); } catch (e) { console.error('SQLite save payment notice:', e); }
+  try { saveCompanyPaymentCloudSql(newPayment); } catch (e) { console.error('Cloud SQL save payment notice:', e); }
   syncSaveCompanyPayment(newPayment);
   return newPayment;
 }
@@ -1145,6 +1171,7 @@ export function deleteCompanyPayment(id) {
   if (payments.length !== initialLen) {
     writeJson(COMPANY_PAYMENTS_FILE, payments);
     try { deleteCompanyPaymentSqlite(id); } catch (e) { console.error('SQLite delete payment notice:', e); }
+    try { deleteCompanyPaymentCloudSql(id); } catch (e) { console.error('Cloud SQL delete payment notice:', e); }
     syncDeleteCompanyPayment(id);
     return true;
   }
@@ -1243,6 +1270,7 @@ export function createPurchase(purchaseData) {
   writeJson(ROOT_PURCHASES_FILE, purchases);
 
   try { savePurchaseSqlite(newPurchase); } catch (e) { console.error('SQLite save purchase notice:', e); }
+  try { savePurchaseCloudSql(newPurchase); } catch (e) { console.error('Cloud SQL save purchase notice:', e); }
   syncSavePurchase(newPurchase);
 
   return newPurchase;
@@ -1256,11 +1284,17 @@ export function deletePurchase(id) {
   writeJson(ROOT_PURCHASES_FILE, purchases);
 
   try { deletePurchaseSqlite(id); } catch (e) { console.error('SQLite delete purchase notice:', e); }
+  try { deletePurchaseCloudSql(id); } catch (e) { console.error('Cloud SQL delete purchase notice:', e); }
   syncDeletePurchase(id);
   return purchases.length !== initialLen;
 }
 
 export async function initDatabaseSync() {
+  try {
+    await initCloudSql();
+  } catch (e) {
+    console.error('Cloud SQL init notice:', e);
+  }
   try {
     await seedSqliteFromJson();
   } catch (e) {
@@ -1277,16 +1311,16 @@ export async function initDatabaseSync() {
       writeJson(file, data);
       try {
         if (file === ORDERS_FILE || file.endsWith('orders.json')) {
-          if (Array.isArray(data)) data.forEach(o => saveOrderSqlite(o));
+          if (Array.isArray(data)) data.forEach(o => { saveOrderSqlite(o); saveOrderCloudSql(o); });
         } else if (file === CUSTOMERS_FILE || file.endsWith('customers.json')) {
-          if (Array.isArray(data)) data.forEach(c => saveCustomerSqlite(c));
+          if (Array.isArray(data)) data.forEach(c => { saveCustomerSqlite(c); saveCustomerCloudSql(c); });
         } else if (file === COMPANY_PAYMENTS_FILE || file.endsWith('company_payments.json')) {
-          if (Array.isArray(data)) data.forEach(p => saveCompanyPaymentSqlite(p));
+          if (Array.isArray(data)) data.forEach(p => { saveCompanyPaymentSqlite(p); saveCompanyPaymentCloudSql(p); });
         } else if (file === PURCHASES_FILE || file.endsWith('purchases.json')) {
-          if (Array.isArray(data)) data.forEach(pu => savePurchaseSqlite(pu));
+          if (Array.isArray(data)) data.forEach(pu => { savePurchaseSqlite(pu); savePurchaseCloudSql(pu); });
         }
       } catch (e) {
-        console.error('SQLite writeJson sync notice:', e);
+        console.error('Database writeJson sync notice:', e);
       }
     },
     ORDERS_FILE,

@@ -9,10 +9,15 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@types/pg": "^8.20.4",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
     "express": "^4.22.2",
     "express-fileupload": "^1.5.2",
     "firebase": "^12.17.0",
     "firebase-admin": "^14.2.0",
+    "pg": "^8.22.0",
     "xlsx": "^0.18.5"
   }
 }
