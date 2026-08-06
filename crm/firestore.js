@@ -297,10 +297,9 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
                 const remoteTime = (existingFp && existingFp.updatedAt) ? new Date(existingFp.updatedAt).getTime() : 0;
 
                 if (!isNaN(localTime) && localTime > 0 && localTime >= remoteTime) {
-                  // Local product has a newer update -> preserve local changes and sync to Firestore
+                  // Local product has a newer update -> preserve local changes
                   const updatedProd = { ...existingFp, ...lp };
                   mergedMap.set(key, updatedProd);
-                  syncSaveProduct(updatedProd);
                 } else {
                   // Remote product is newer -> merge so non-conflicting fields (like descriptions) aren't erased
                   const mergedProd = { ...lp, ...existingFp };
