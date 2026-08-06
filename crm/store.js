@@ -2,21 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import {
-  syncSaveProducts,
-  syncSaveProduct,
-  syncDeleteProduct,
-  syncSaveOrder,
-  syncDeleteOrder,
-  syncSaveCustomer,
-  syncDeleteCustomer,
-  syncSaveCompanyPayment,
-  syncDeleteCompanyPayment,
-  syncSavePurchase,
-  syncDeletePurchase,
-  clearFirestoreTestData,
-  initFirestoreSync
-} from './firestore.js';
-import {
   initCloudSql,
   saveProductCloudSql,
   saveAllProductsCloudSql,
@@ -87,9 +72,6 @@ export function saveProductsList(list, skipFirestoreSync = false) {
 
     try { saveAllProductsSqlite(list); } catch (err) { console.error('SQLite save products error:', err); }
     try { saveAllProductsCloudSql(list); } catch (err) { console.error('Cloud SQL save products error:', err); }
-    if (!skipFirestoreSync) {
-      syncSaveProducts(list);
-    }
   } catch (err) {
     console.error('Error saving products list:', err);
   }
@@ -271,7 +253,6 @@ export function upsertCustomer({ name, phone, address }) {
 
   writeJson(CUSTOMERS_FILE, customers);
   try { saveCustomerSqlite(customer); } catch (e) { console.error('SQLite save customer notice:', e); }
-  syncSaveCustomer(customer);
   return customer;
 }
 
@@ -361,9 +342,6 @@ export function reduceProductStock(items) {
 
     if (modified) {
       saveProductsList(list, true);
-      if (changedProducts.length > 0) {
-        syncSaveProducts(changedProducts);
-      }
     }
   } catch (e) {
     console.error('Error reducing product stock:', e);
@@ -398,9 +376,6 @@ export function restoreProductStock(items) {
 
     if (modified) {
       saveProductsList(list, true);
-      if (changedProducts.length > 0) {
-        syncSaveProducts(changedProducts);
-      }
     }
   } catch (e) {
     console.error('Error restoring product stock:', e);
@@ -483,11 +458,9 @@ export function createOrder(orderData) {
 
   try { saveOrderSqlite(order); } catch (e) { console.error('SQLite save order notice:', e); }
   try { saveOrderCloudSql(order); } catch (e) { console.error('Cloud SQL save order notice:', e); }
-  syncSaveOrder(order);
   if (customers[customerIdx]) {
     try { saveCustomerSqlite(customers[customerIdx]); } catch (e) { console.error('SQLite save customer notice:', e); }
     try { saveCustomerCloudSql(customers[customerIdx]); } catch (e) { console.error('Cloud SQL save customer notice:', e); }
-    syncSaveCustomer(customers[customerIdx]);
   }
 
   // Automatically update stock in products dataset upon order creation!
@@ -544,7 +517,6 @@ export function deleteOrder(id) {
     writeJson(ORDERS_FILE, orders);
     try { deleteOrderSqlite(id); } catch (e) { console.error('SQLite delete order notice:', e); }
     try { deleteOrderCloudSql(id); } catch (e) { console.error('Cloud SQL delete order notice:', e); }
-    syncDeleteOrder(id);
     return true;
   }
   return false;
@@ -692,7 +664,6 @@ export function updateOrder(id, updates) {
 
   writeJson(ORDERS_FILE, orders);
   try { saveOrderSqlite(orders[idx]); } catch (e) { console.error('SQLite update order notice:', e); }
-  syncSaveOrder(orders[idx]);
 
   // If status changed to cancelled, restore stock!
   if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
@@ -774,7 +745,6 @@ export function updateProduct(id, updates) {
   };
 
   saveProductsList(list, true);
-  syncSaveProduct(list[idx]);
   return list[idx];
 }
 
@@ -821,7 +791,6 @@ export function addProduct(productData) {
 
   list.unshift(newProd);
   saveProductsList(list, true);
-  syncSaveProduct(newProd);
   return newProd;
 }
 
@@ -837,7 +806,6 @@ export function deleteProduct(id) {
     saveProductsList(list, true);
     try { deleteProductSqlite(id); } catch (e) { console.error('SQLite delete product notice:', e); }
     try { deleteProductCloudSql(id); } catch (e) { console.error('Cloud SQL delete product notice:', e); }
-    syncDeleteProduct(id);
     return true;
   }
   return false;
@@ -898,7 +866,6 @@ export function updateCustomer(id, updates) {
   }
 
   writeJson(CUSTOMERS_FILE, customers);
-  syncSaveCustomer(customers[idx]);
   return customers[idx];
 }
 
@@ -909,7 +876,6 @@ export function deleteCustomer(id) {
   writeJson(CUSTOMERS_FILE, customers);
   try { deleteCustomerSqlite(id); } catch (e) { console.error('SQLite delete customer notice:', e.message); }
   try { deleteCustomerCloudSql(id); } catch (e) { console.error('Cloud SQL delete customer notice:', e.message); }
-  syncDeleteCustomer(id);
   return initialLen !== customers.length || true;
 }
 
@@ -930,7 +896,6 @@ export function clearAllTestData() {
     console.error('SQLite clear test data notice:', e.message);
   }
 
-  clearFirestoreTestData();
   return true;
 }
 
@@ -1160,7 +1125,6 @@ export function createCompanyPayment(paymentData) {
   writeJson(COMPANY_PAYMENTS_FILE, payments);
   try { saveCompanyPaymentSqlite(newPayment); } catch (e) { console.error('SQLite save payment notice:', e); }
   try { saveCompanyPaymentCloudSql(newPayment); } catch (e) { console.error('Cloud SQL save payment notice:', e); }
-  syncSaveCompanyPayment(newPayment);
   return newPayment;
 }
 
@@ -1172,7 +1136,6 @@ export function deleteCompanyPayment(id) {
     writeJson(COMPANY_PAYMENTS_FILE, payments);
     try { deleteCompanyPaymentSqlite(id); } catch (e) { console.error('SQLite delete payment notice:', e); }
     try { deleteCompanyPaymentCloudSql(id); } catch (e) { console.error('Cloud SQL delete payment notice:', e); }
-    syncDeleteCompanyPayment(id);
     return true;
   }
   return false;
@@ -1271,7 +1234,6 @@ export function createPurchase(purchaseData) {
 
   try { savePurchaseSqlite(newPurchase); } catch (e) { console.error('SQLite save purchase notice:', e); }
   try { savePurchaseCloudSql(newPurchase); } catch (e) { console.error('Cloud SQL save purchase notice:', e); }
-  syncSavePurchase(newPurchase);
 
   return newPurchase;
 }
@@ -1285,7 +1247,6 @@ export function deletePurchase(id) {
 
   try { deletePurchaseSqlite(id); } catch (e) { console.error('SQLite delete purchase notice:', e); }
   try { deletePurchaseCloudSql(id); } catch (e) { console.error('Cloud SQL delete purchase notice:', e); }
-  syncDeletePurchase(id);
   return purchases.length !== initialLen;
 }
 
@@ -1300,32 +1261,4 @@ export async function initDatabaseSync() {
   } catch (e) {
     console.error('SQLite init notice:', e);
   }
-  await initFirestoreSync({
-    saveProductsList,
-    readProductsList,
-    readJson: (file, fallback) => {
-      if (!fs.existsSync(file)) return fallback;
-      try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
-    },
-    writeJson: (file, data) => {
-      writeJson(file, data);
-      try {
-        if (file === ORDERS_FILE || file.endsWith('orders.json')) {
-          if (Array.isArray(data)) data.forEach(o => { saveOrderSqlite(o); saveOrderCloudSql(o); });
-        } else if (file === CUSTOMERS_FILE || file.endsWith('customers.json')) {
-          if (Array.isArray(data)) data.forEach(c => { saveCustomerSqlite(c); saveCustomerCloudSql(c); });
-        } else if (file === COMPANY_PAYMENTS_FILE || file.endsWith('company_payments.json')) {
-          if (Array.isArray(data)) data.forEach(p => { saveCompanyPaymentSqlite(p); saveCompanyPaymentCloudSql(p); });
-        } else if (file === PURCHASES_FILE || file.endsWith('purchases.json')) {
-          if (Array.isArray(data)) data.forEach(pu => { savePurchaseSqlite(pu); savePurchaseCloudSql(pu); });
-        }
-      } catch (e) {
-        console.error('Database writeJson sync notice:', e);
-      }
-    },
-    ORDERS_FILE,
-    CUSTOMERS_FILE,
-    COMPANY_PAYMENTS_FILE,
-    PURCHASES_FILE
-  });
 }
