@@ -3,12 +3,15 @@ import path from 'path';
 import crypto from 'crypto';
 import {
   syncSaveProducts,
+  syncDeleteProduct,
   syncSaveOrder,
   syncDeleteOrder,
   syncSaveCustomer,
   syncDeleteCustomer,
   syncSaveCompanyPayment,
   syncDeleteCompanyPayment,
+  syncSavePurchase,
+  syncDeletePurchase,
   clearFirestoreTestData,
   initFirestoreSync
 } from './firestore.js';
@@ -16,6 +19,7 @@ import {
   seedSqliteFromJson,
   saveAllProductsSqlite,
   getAllProductsSqlite,
+  deleteProductSqlite,
   saveCustomerSqlite,
   deleteCustomerSqlite,
   saveOrderSqlite,
@@ -805,6 +809,8 @@ export function deleteProduct(id) {
 
   if (list.length !== initialLength) {
     saveProductsList(list);
+    try { deleteProductSqlite(id); } catch (e) { console.error('SQLite delete product notice:', e); }
+    syncDeleteProduct(id);
     return true;
   }
   return false;
@@ -1234,6 +1240,7 @@ export function createPurchase(purchaseData) {
   writeJson(ROOT_PURCHASES_FILE, purchases);
 
   try { savePurchaseSqlite(newPurchase); } catch (e) { console.error('SQLite save purchase notice:', e); }
+  syncSavePurchase(newPurchase);
 
   return newPurchase;
 }
@@ -1246,6 +1253,7 @@ export function deletePurchase(id) {
   writeJson(ROOT_PURCHASES_FILE, purchases);
 
   try { deletePurchaseSqlite(id); } catch (e) { console.error('SQLite delete purchase notice:', e); }
+  syncDeletePurchase(id);
   return purchases.length !== initialLen;
 }
 
@@ -1271,6 +1279,8 @@ export async function initDatabaseSync() {
           if (Array.isArray(data)) data.forEach(c => saveCustomerSqlite(c));
         } else if (file === COMPANY_PAYMENTS_FILE || file.endsWith('company_payments.json')) {
           if (Array.isArray(data)) data.forEach(p => saveCompanyPaymentSqlite(p));
+        } else if (file === PURCHASES_FILE || file.endsWith('purchases.json')) {
+          if (Array.isArray(data)) data.forEach(pu => savePurchaseSqlite(pu));
         }
       } catch (e) {
         console.error('SQLite writeJson sync notice:', e);
@@ -1278,6 +1288,7 @@ export async function initDatabaseSync() {
     },
     ORDERS_FILE,
     CUSTOMERS_FILE,
-    COMPANY_PAYMENTS_FILE
+    COMPANY_PAYMENTS_FILE,
+    PURCHASES_FILE
   });
 }

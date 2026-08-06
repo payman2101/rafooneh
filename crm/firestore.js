@@ -36,18 +36,35 @@ export async function syncSaveProducts(list) {
   if (!firestore || !Array.isArray(list) || list.length === 0) return;
 
   try {
-    const batch = writeBatch(firestore);
-    for (const prod of list) {
-      if (!prod || (!prod.id && !prod.code)) continue;
-      const docId = String(prod.id || prod.code);
-      const docRef = doc(firestore, 'products', docId);
-      const cleanData = JSON.parse(JSON.stringify(prod));
-      batch.set(docRef, cleanData, { merge: true });
+    const CHUNK_SIZE = 200;
+    for (let i = 0; i < list.length; i += CHUNK_SIZE) {
+      const chunk = list.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(firestore);
+      for (const prod of chunk) {
+        if (!prod || (!prod.id && !prod.code)) continue;
+        const docId = String(prod.id || prod.code);
+        const docRef = doc(firestore, 'products', docId);
+        const cleanData = JSON.parse(JSON.stringify(prod));
+        batch.set(docRef, cleanData, { merge: true });
+      }
+      await withTimeout(batch.commit(), 5000);
     }
-    await withTimeout(batch.commit(), 4000);
     console.log(`[Firestore] Saved ${list.length} products to Firestore.`);
   } catch (err) {
     console.warn('[Firestore] Notice on saving products to Firestore:', err.message);
+  }
+}
+
+export async function syncDeleteProduct(productId) {
+  const firestore = getFirestoreDb();
+  if (!firestore || !productId) return;
+
+  try {
+    const docRef = doc(firestore, 'products', String(productId));
+    await withTimeout(setDoc(docRef, { isDeleted: true }, { merge: true }), 3000);
+    console.log(`[Firestore] Marked product ${productId} as deleted in Firestore.`);
+  } catch (err) {
+    console.warn(`[Firestore] Notice on deleting product ${productId}:`, err.message);
   }
 }
 
@@ -106,7 +123,7 @@ export async function clearFirestoreTestData() {
   if (!firestore) return;
 
   try {
-    const collectionsToClear = ['orders', 'customers', 'company_payments'];
+    const collectionsToClear = ['orders', 'customers', 'company_payments', 'purchases'];
     for (const colName of collectionsToClear) {
       const snapshot = await withTimeout(getDocs(collection(firestore, colName)), 3000);
       if (!snapshot.empty) {
@@ -148,7 +165,32 @@ export async function syncDeleteCompanyPayment(paymentId) {
   }
 }
 
-export async function initFirestoreSync({ saveProductsList, readProductsList, readJson, writeJson, ORDERS_FILE, CUSTOMERS_FILE, COMPANY_PAYMENTS_FILE }) {
+export async function syncSavePurchase(purchase) {
+  const firestore = getFirestoreDb();
+  if (!firestore || !purchase || !purchase.id) return;
+
+  try {
+    const cleanPurchase = JSON.parse(JSON.stringify(purchase));
+    await withTimeout(setDoc(doc(firestore, 'purchases', String(purchase.id)), cleanPurchase, { merge: true }), 3000);
+    console.log(`[Firestore] Saved purchase ${purchase.id} to Firestore.`);
+  } catch (err) {
+    console.warn(`[Firestore] Notice on saving purchase ${purchase.id}:`, err.message);
+  }
+}
+
+export async function syncDeletePurchase(purchaseId) {
+  const firestore = getFirestoreDb();
+  if (!firestore || !purchaseId) return;
+
+  try {
+    await withTimeout(deleteDoc(doc(firestore, 'purchases', String(purchaseId))), 3000);
+    console.log(`[Firestore] Deleted purchase ${purchaseId} from Firestore.`);
+  } catch (err) {
+    console.warn(`[Firestore] Notice on deleting purchase ${purchaseId}:`, err.message);
+  }
+}
+
+export async function initFirestoreSync({ saveProductsList, readProductsList, readJson, writeJson, ORDERS_FILE, CUSTOMERS_FILE, COMPANY_PAYMENTS_FILE, PURCHASES_FILE }) {
   if (isInitialized) return;
   isInitialized = true;
 
@@ -191,6 +233,10 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
           firestoreProducts.forEach(fp => {
             const key = String(fp.id || fp.code || '');
             if (!key) return;
+            if (fp.isDeleted) {
+              mergedMap.set(key, null); // explicit deleted marker
+              return;
+            }
             if (fp.category === 'home' || fp.category === 'car' || fp.id === '1057') {
               fp.category = 'cleaners';
               fp.categoryName = 'پاک‌کننده و اسپری';
@@ -204,7 +250,7 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
             mergedMap.set(key, fp);
           });
 
-          // 2. Add local catalog products only if they do not exist in Firestore
+          // 2. Add local catalog products only if they do not exist in Firestore and were not deleted
           localProds.forEach(lp => {
             const key = String(lp.id || lp.code || '');
             if (key && !mergedMap.has(key)) {
@@ -222,7 +268,7 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
             }
           });
 
-          const merged = Array.from(mergedMap.values());
+          const merged = Array.from(mergedMap.values()).filter(p => p !== null && !p.isDeleted);
           console.log(`[Firestore] Synced ${merged.length} products (remote Firestore takes precedence).`);
           saveProductsList(merged, true);
         }
@@ -351,6 +397,48 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
         }
       } catch (payErr) {
         console.warn('[Firestore] Company payments sync notice:', payErr.message);
+      }
+    }
+
+    // 5. Sync Purchases
+    if (PURCHASES_FILE) {
+      try {
+        const purchaseSnapshot = await withTimeout(getDocs(collection(firestore, 'purchases')), 3000);
+        if (purchaseSnapshot.empty) {
+          const localPurchases = readJson(PURCHASES_FILE, []);
+          if (localPurchases && localPurchases.length > 0) {
+            console.log(`[Firestore] Seeding Firestore with ${localPurchases.length} local purchases...`);
+            for (const pur of localPurchases) {
+              await syncSavePurchase(pur);
+            }
+          }
+        } else {
+          const firestorePurchases = [];
+          purchaseSnapshot.forEach(docSnap => {
+            firestorePurchases.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          if (firestorePurchases.length > 0) {
+            const localPurchases = readJson(PURCHASES_FILE, []);
+            const purMap = new Map();
+
+            // 1. Remote Firestore purchases take precedence
+            firestorePurchases.forEach(fp => {
+              if (fp.id) purMap.set(String(fp.id), fp);
+            });
+
+            // 2. Add local purchases missing from Firestore
+            localPurchases.forEach(lp => {
+              if (lp.id && !purMap.has(String(lp.id))) {
+                purMap.set(String(lp.id), lp);
+              }
+            });
+
+            writeJson(PURCHASES_FILE, Array.from(purMap.values()));
+            console.log(`[Firestore] Loaded ${purMap.size} live purchases from Firestore.`);
+          }
+        }
+      } catch (purErr) {
+        console.warn('[Firestore] Purchases sync notice:', purErr.message);
       }
     }
 
