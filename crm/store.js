@@ -750,7 +750,7 @@ export function updateProduct(id, updates) {
     updatedAt: new Date().toISOString()
   };
 
-  saveProductsList(list);
+  saveProductsList(list, true);
   syncSaveProduct(list[idx]);
   return list[idx];
 }
@@ -797,7 +797,7 @@ export function addProduct(productData) {
   };
 
   list.unshift(newProd);
-  saveProductsList(list);
+  saveProductsList(list, true);
   syncSaveProduct(newProd);
   return newProd;
 }
@@ -811,7 +811,7 @@ export function deleteProduct(id) {
   list = list.filter(p => String(p.id) !== pid && String(p.code) !== pid);
 
   if (list.length !== initialLength) {
-    saveProductsList(list);
+    saveProductsList(list, true);
     try { deleteProductSqlite(id); } catch (e) { console.error('SQLite delete product notice:', e); }
     syncDeleteProduct(id);
     return true;

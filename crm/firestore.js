@@ -284,14 +284,19 @@ export async function initFirestoreSync({ saveProductsList, readProductsList, re
               mergedMap.set(key, lp);
             } else {
               const existingFp = mergedMap.get(key);
-              if (existingFp && lp.updatedAt && existingFp.updatedAt) {
-                const localTime = new Date(lp.updatedAt).getTime();
-                const remoteTime = new Date(existingFp.updatedAt).getTime();
-                if (!isNaN(localTime) && !isNaN(remoteTime) && localTime > remoteTime) {
-                  // Local product has a newer update (e.g., description/price edited locally)
+              if (existingFp) {
+                const localTime = (lp && lp.updatedAt) ? new Date(lp.updatedAt).getTime() : 0;
+                const remoteTime = (existingFp && existingFp.updatedAt) ? new Date(existingFp.updatedAt).getTime() : 0;
+
+                if (!isNaN(localTime) && localTime > 0 && localTime >= remoteTime) {
+                  // Local product has a newer update -> preserve local changes and sync to Firestore
                   const updatedProd = { ...existingFp, ...lp };
                   mergedMap.set(key, updatedProd);
                   syncSaveProduct(updatedProd);
+                } else {
+                  // Remote product is newer -> merge so non-conflicting fields (like descriptions) aren't erased
+                  const mergedProd = { ...lp, ...existingFp };
+                  mergedMap.set(key, mergedProd);
                 }
               }
             }
