@@ -13,31 +13,15 @@ function fixPgUrl(urlStr) {
   return urlStr;
 }
 
+const DEFAULT_SUPABASE_URL = 'postgres://postgres.agyerjkhtsqmdtcgamgq:M0habb%40t2026%2F8%2F1@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
+
 function getPoolConfig() {
-  if (process.env.DATABASE_URL) {
-    const connStr = fixPgUrl(process.env.DATABASE_URL);
-    const isLocal = connStr.includes('localhost') || connStr.includes('127.0.0.1');
-    return {
-      connectionString: connStr,
-      ssl: isLocal ? false : { rejectUnauthorized: false },
-    };
-  }
-
-  if (process.env.SQL_HOST) {
-    return {
-      user: process.env.SQL_ADMIN_USER || process.env.SQL_USER || 'ai_studio_app_user',
-      password: process.env.SQL_ADMIN_PASSWORD || process.env.SQL_PASSWORD || '',
-      database: process.env.SQL_DB_NAME || 'cloud_sql_development_database',
-      host: process.env.SQL_HOST,
-    };
-  }
-
+  const rawUrl = process.env.DATABASE_URL || DEFAULT_SUPABASE_URL;
+  const connStr = fixPgUrl(rawUrl);
+  const isLocal = connStr.includes('localhost') || connStr.includes('127.0.0.1');
   return {
-    host: '127.0.0.1',
-    port: 5432,
-    user: 'postgres',
-    password: 'postgres',
-    database: 'postgres',
+    connectionString: connStr,
+    ssl: isLocal ? false : { rejectUnauthorized: false },
   };
 }
 

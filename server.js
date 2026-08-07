@@ -38,6 +38,7 @@ import {
 } from './crm/store.js';
 import { checkpointSqlite } from './crm/sqlite.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
+import { getAllProductsCloudSql } from './crm/cloudsql.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -343,6 +344,27 @@ app.get('/api/products', async (req, res) => {
     return res.json({ success: true, count: products.length, products });
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطا در دریافت لیست محصولات' });
+  }
+});
+
+// API: Check Supabase DB Connection & Status
+app.get('/api/db-status', async (req, res) => {
+  try {
+    const cloudProducts = await getAllProductsCloudSql();
+    return res.json({
+      success: true,
+      message: 'ارتباط با دیتابیس Supabase برقرار است',
+      databaseHost: 'aws-1-eu-west-1.pooler.supabase.com',
+      supabaseProductCount: cloudProducts ? cloudProducts.length : 0,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'خطا در ارتباط با دیتابیس Supabase',
+      error: err.message,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
