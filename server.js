@@ -1067,8 +1067,16 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
-  initDatabaseSync().catch(err => console.error('Database sync error on startup:', err));
-});
+if (!process.env.NETLIFY && !process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    initDatabaseSync().catch(err => console.error('Database sync error on startup:', err));
+  });
+} else {
+  // In serverless environment, run initial sync asynchronously once loaded
+  initDatabaseSync().catch(err => console.error('Database sync error in serverless:', err));
+}
+
+export default app;
+export { app };
 
