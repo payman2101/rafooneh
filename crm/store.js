@@ -63,9 +63,9 @@ export function saveProductsList(list, skipFirestoreSync = false) {
   try {
     ensureDataDir();
     const jsonStr = JSON.stringify(list, null, 2);
-    fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8');
-    fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8');
-    fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8');
+    try { fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8'); } catch (e) {}
+    try { fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8'); } catch (e) {}
+    try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8'); } catch (e) {}
     
     productsListCache = list;
     productsMapCache = null;
@@ -211,22 +211,26 @@ function readJson(file, fallback) {
 }
 
 function writeJson(file, data) {
-  ensureDataDir();
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+  try {
+    ensureDataDir();
+    fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 
-  const rootFile = getRootEquivalentPath(file);
-  if (rootFile) {
-    try { fs.writeFileSync(rootFile, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
-    if (rootFile === ROOT_PRODUCTS_JSON) {
-      try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${JSON.stringify(data, null, 2)};\n`, 'utf8'); } catch (e) {}
+    const rootFile = getRootEquivalentPath(file);
+    if (rootFile) {
+      try { fs.writeFileSync(rootFile, JSON.stringify(data, null, 2), 'utf8'); } catch (e) {}
+      if (rootFile === ROOT_PRODUCTS_JSON) {
+        try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${JSON.stringify(data, null, 2)};\n`, 'utf8'); } catch (e) {}
+      }
     }
+  } catch (e) {
+    console.error(`[FS Write Notice] Could not write file ${file}:`, e.message);
   }
 
   try {
-    const stat = fs.statSync(file);
-    fileCacheMap.set(file, { mtime: stat.mtimeMs, data });
+    const stat = fs.existsSync(file) ? fs.statSync(file) : null;
+    fileCacheMap.set(file, { mtime: stat ? stat.mtimeMs : Date.now(), data });
   } catch (e) {
-    fileCacheMap.delete(file);
+    fileCacheMap.set(file, { mtime: Date.now(), data });
   }
 }
 

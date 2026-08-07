@@ -95,12 +95,16 @@ export function normalizePassword(str) {
 }
 
 function saveAdminPasswordToFile(newPass) {
-  ensureDataDir();
-  const configData = {
-    password: normalizePassword(newPass),
-    updatedAt: new Date().toISOString()
-  };
-  fs.writeFileSync(AUTH_CONFIG_FILE, JSON.stringify(configData, null, 2), 'utf8');
+  try {
+    ensureDataDir();
+    const configData = {
+      password: normalizePassword(newPass),
+      updatedAt: new Date().toISOString()
+    };
+    fs.writeFileSync(AUTH_CONFIG_FILE, JSON.stringify(configData, null, 2), 'utf8');
+  } catch (e) {
+    console.error('[Auth Config Write Notice]:', e.message);
+  }
 }
 
 export function getAdminPassword() {

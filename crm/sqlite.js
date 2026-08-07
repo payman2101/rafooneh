@@ -16,8 +16,21 @@ function ensureDataDir() {
 export function getDb() {
   if (dbInstance) return dbInstance;
 
-  ensureDataDir();
-  dbInstance = new DatabaseSync(DB_PATH);
+  try {
+    ensureDataDir();
+    dbInstance = new DatabaseSync(DB_PATH);
+  } catch (e) {
+    console.warn('[SQLite] Primary DB open warning:', e.message);
+    try {
+      const tmpPath = path.join('/tmp', 'rafooneh.db');
+      dbInstance = new DatabaseSync(tmpPath);
+    } catch (err) {
+      console.error('[SQLite] Could not open database:', err.message);
+      return null;
+    }
+  }
+
+  if (!dbInstance) return null;
 
   // Enable WAL mode for better performance and concurrency
   try {
@@ -27,7 +40,8 @@ export function getDb() {
   }
 
   // Create tables if they do not exist
-  dbInstance.exec(`
+  try {
+    dbInstance.exec(`
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY,
       code TEXT,
@@ -107,14 +121,17 @@ export function getDb() {
       updatedAt TEXT
     );
   `);
+  } catch (e) {
+    console.error('[SQLite] Table init warning:', e.message);
+  }
 
-  console.log('[SQLite Database] Database initialized successfully at', DB_PATH);
   return dbInstance;
 }
 
 // Seed SQLite DB from existing JSON files if SQLite tables are empty
 export async function seedSqliteFromJson() {
   const db = getDb();
+  if (!db) return;
 
   // 1. Seed Products
   const prodRow = db.prepare('SELECT COUNT(*) as count FROM products').get();
