@@ -158,14 +158,7 @@ export function login(password) {
     normCurrent,
     normalizePassword(process.env.ADMIN_PASSWORD || ''),
     normalizePassword('M0habb@t2026/8/1'),
-    normalizePassword('M0habb@t2026'),
-    normalizePassword('M0habbat2026'),
-    normalizePassword('M0habbat2026/8/1'),
-    normalizePassword('rafooneh1405'),
-    normalizePassword('rafooneh'),
-    normalizePassword('admin'),
-    normalizePassword('123456'),
-    normalizePassword('1234')
+    normalizePassword('M0habbat2026/8/1')
   ].filter(Boolean);
 
   const isValidPassword = normInput && validPasswords.includes(normInput);
