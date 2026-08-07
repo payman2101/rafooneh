@@ -47,6 +47,12 @@ const app = express();
 const PORT = 3000;
 
 app.use((req, res, next) => {
+  if (req.url && req.url.startsWith('/.netlify/functions/api')) {
+    req.url = req.url.replace(/^\/\.netlify\/functions\/api/, '');
+    if (!req.url.startsWith('/api')) {
+      req.url = '/api' + req.url;
+    }
+  }
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
