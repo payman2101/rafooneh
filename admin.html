@@ -1660,13 +1660,15 @@
 
     async function handleLogin(e) {
         e.preventDefault();
-        const password = document.getElementById('password').value;
+        const passwordInput = document.getElementById('password');
+        const password = passwordInput ? passwordInput.value : '';
         const errEl = document.getElementById('loginError');
-        errEl.style.display = 'none';
+        if (errEl) errEl.style.display = 'none';
 
         try {
-            const res = await api('/api/admin/login', {
+            const res = await fetch('/api/admin/login', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password })
             });
 
@@ -1674,17 +1676,20 @@
             if (res.ok && data.success) {
                 token = data.token;
                 localStorage.setItem('crm_token', token);
-                const passEl = document.getElementById('password');
-                if (passEl) passEl.value = '';
+                if (passwordInput) passwordInput.value = '';
                 showApp();
             } else {
-                errEl.textContent = data.message || 'کلمه عبور اشتباه است.';
-                errEl.style.display = 'block';
+                if (errEl) {
+                    errEl.textContent = data.message || 'کلمه عبور اشتباه است.';
+                    errEl.style.display = 'block';
+                }
             }
         } catch (err) {
             console.error('Login request failed:', err);
-            errEl.textContent = 'خطا در ارتباط با سرور.';
-            errEl.style.display = 'block';
+            if (errEl) {
+                errEl.textContent = 'خطا در ارتباط با سرور: ' + (err.message || '');
+                errEl.style.display = 'block';
+            }
         }
     }
 

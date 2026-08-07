@@ -697,7 +697,19 @@ app.get('/api/orders/track', (req, res) => {
 
 // CRM: Admin authentication
 app.post('/api/admin/login', (req, res) => {
-  const { password } = req.body || {};
+  let password = '';
+  if (req.body) {
+    if (typeof req.body === 'string') {
+      try {
+        const parsed = JSON.parse(req.body);
+        password = parsed.password || parsed.pass || '';
+      } catch (e) {
+        password = req.body;
+      }
+    } else if (typeof req.body === 'object') {
+      password = req.body.password || req.body.pass || '';
+    }
+  }
   const result = login(password);
   if (!result.success) {
     return res.status(401).json(result);
