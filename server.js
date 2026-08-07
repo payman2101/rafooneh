@@ -33,6 +33,7 @@ import {
   deleteProduct,
   readProductsList,
   saveProductsList,
+  refreshProductsFromCloudSql,
   initDatabaseSync
 } from './crm/store.js';
 import { checkpointSqlite } from './crm/sqlite.js';
@@ -329,9 +330,12 @@ const currentCatalog = readProductsList();
 console.log(`[Server Startup] Loaded ${currentCatalog ? currentCatalog.length : 0} products from persistent storage.`);
 
 // API: Get live products dataset
-app.get('/api/products', (req, res) => {
+app.get('/api/products', async (req, res) => {
   try {
-    const data = readProductsList();
+    let data = readProductsList();
+    if (!data || data.length === 0) {
+      data = await refreshProductsFromCloudSql();
+    }
     const includeAll = req.query.includeAll === 'true';
     const products = includeAll
       ? data
@@ -847,7 +851,8 @@ app.post('/api/admin/database/clear-test-data', authMiddleware, (req, res) => {
 });
 
 // API: Admin Inventory & Brand Products Management
-app.get('/api/admin/products', authMiddleware, (req, res) => {
+app.get('/api/admin/products', authMiddleware, async (req, res) => {
+  await refreshProductsFromCloudSql().catch(() => {});
   const { brand, category, search } = req.query;
   const products = listProducts({ brand, category, search });
   const allProducts = listProducts({});

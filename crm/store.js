@@ -71,10 +71,30 @@ export function saveProductsList(list, skipFirestoreSync = false) {
     productsMapCache = null;
 
     try { saveAllProductsSqlite(list); } catch (err) { console.error('SQLite save products error:', err); }
-    saveAllProductsCloudSql(list).catch(err => console.error('Cloud SQL save products error:', err));
   } catch (err) {
     console.error('Error saving products list:', err);
   }
+}
+
+export async function refreshProductsFromCloudSql() {
+  try {
+    const dbProducts = await getAllProductsCloudSql();
+    if (Array.isArray(dbProducts) && dbProducts.length > 0) {
+      productsListCache = dbProducts;
+      productsMapCache = null;
+      try {
+        ensureDataDir();
+        const jsonStr = JSON.stringify(dbProducts, null, 2);
+        fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8');
+        fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8');
+        fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8');
+      } catch (e) {}
+      return dbProducts;
+    }
+  } catch (e) {
+    console.error('Error refreshing products from Cloud SQL:', e);
+  }
+  return productsListCache || [];
 }
 
 export function readProductsList() {
@@ -745,6 +765,7 @@ export function updateProduct(id, updates) {
   };
 
   saveProductsList(list, true);
+  saveProductCloudSql(list[idx]).catch(e => console.error('Cloud SQL update product error:', e));
   return list[idx];
 }
 
@@ -791,6 +812,7 @@ export function addProduct(productData) {
 
   list.unshift(newProd);
   saveProductsList(list, true);
+  saveProductCloudSql(newProd).catch(e => console.error('Cloud SQL add product error:', e));
   return newProd;
 }
 
@@ -1253,6 +1275,8 @@ export function deletePurchase(id) {
 export async function initDatabaseSync() {
   try {
     await initCloudSql();
+    await refreshProductsFromCloudSql();
+    console.log('[Database Sync] Hydrated live product catalog from Supabase/Cloud SQL.');
   } catch (e) {
     console.error('Cloud SQL init notice:', e);
   }
