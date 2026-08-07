@@ -1034,15 +1034,31 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>کد / تصویر</th>
-                                    <th>نام محصول</th>
-                                    <th>برند</th>
-                                    <th>دسته‌بندی</th>
-                                    <th>موجودی</th>
-                                    <th>قیمت قدیم (فروش)</th>
-                                    <th>قیمت جدید بازار</th>
+                                    <th onclick="sortAdminProducts('id')" style="cursor:pointer; user-select:none;" title="کلیک برای مرتب‌سازی براساس کد محصول">
+                                        کد / تصویر <i id="sortIcon-id" class="fa-solid fa-sort-up" style="font-size:0.8rem; margin-right:4px; color:var(--primary);"></i>
+                                    </th>
+                                    <th onclick="sortAdminProducts('name')" style="cursor:pointer; user-select:none;" title="کلیک برای مرتب‌سازی براساس نام">
+                                        نام محصول <i id="sortIcon-name" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortAdminProducts('brand')" style="cursor:pointer; user-select:none;" title="کلیک برای مرتب‌سازی براساس برند">
+                                        برند <i id="sortIcon-brand" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortAdminProducts('category')" style="cursor:pointer; user-select:none;" title="کلیک برای مرتب‌سازی براساس دسته‌بندی">
+                                        دسته‌بندی <i id="sortIcon-category" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortAdminProducts('stock')" style="cursor:pointer; user-select:none;" title="کلیک برای مرتب‌سازی براساس موجودی">
+                                        موجودی <i id="sortIcon-stock" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortAdminProducts('price')" style="cursor:pointer; user-select:none;" title="کلیک برای مرتب‌سازی براساس قیمت قدیم">
+                                        قیمت قدیم (فروش) <i id="sortIcon-price" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortAdminProducts('newPrice')" style="cursor:pointer; user-select:none;" title="کلیک برای مرتب‌سازی براساس قیمت جدید">
+                                        قیمت جدید بازار <i id="sortIcon-newPrice" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
                                     <th>تخفیف خریدار</th>
-                                    <th>قیمت خرید</th>
+                                    <th onclick="sortAdminProducts('buyPrice')" style="cursor:pointer; user-select:none;" title="کلیک برای مرتب‌سازی براساس قیمت خرید">
+                                        قیمت خرید <i id="sortIcon-buyPrice" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
                                     <th>عملیات</th>
                                 </tr>
                             </thead>
@@ -2596,6 +2612,36 @@
 
     // Products & Inventory Management
     window.adminProductsMap = {};
+    window.productSortColumn = 'id';
+    window.productSortDir = 'asc';
+
+    window.sortAdminProducts = function(col) {
+        if (window.productSortColumn === col) {
+            window.productSortDir = window.productSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            window.productSortColumn = col;
+            window.productSortDir = 'asc';
+        }
+        updateProductSortHeaderIcons();
+        loadAdminProducts();
+    };
+
+    function updateProductSortHeaderIcons() {
+        const cols = ['id', 'name', 'brand', 'category', 'stock', 'price', 'newPrice', 'buyPrice'];
+        cols.forEach(col => {
+            const icon = document.getElementById(`sortIcon-${col}`);
+            if (!icon) return;
+            if (window.productSortColumn === col) {
+                icon.className = window.productSortDir === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+                icon.style.opacity = '1';
+                icon.style.color = 'var(--primary)';
+            } else {
+                icon.className = 'fa-solid fa-sort';
+                icon.style.opacity = '0.35';
+                icon.style.color = '';
+            }
+        });
+    }
 
     async function loadAdminProducts() {
         const brand = document.getElementById('productBrandFilter')?.value || 'all';
@@ -2643,6 +2689,38 @@
             counts.rafooneh = products.filter(p => p.brand === 'rafooneh').length;
             counts.foreign = products.filter(p => p.brand === 'foreign').length;
         }
+
+        // Apply Sorting
+        if (window.productSortColumn && products.length) {
+            const col = window.productSortColumn;
+            const dir = window.productSortDir === 'asc' ? 1 : -1;
+            products.sort((a, b) => {
+                let valA = a[col];
+                let valB = b[col];
+
+                if (col === 'id') {
+                    const numA = parseInt(valA, 10);
+                    const numB = parseInt(valB, 10);
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        return (numA - numB) * dir;
+                    }
+                    valA = String(valA || '');
+                    valB = String(valB || '');
+                } else if (col === 'price' || col === 'newPrice' || col === 'buyPrice' || col === 'stock') {
+                    valA = Number(valA || 0);
+                    valB = Number(valB || 0);
+                    return (valA - valB) * dir;
+                } else {
+                    valA = String(valA || '').toLowerCase();
+                    valB = String(valB || '').toLowerCase();
+                }
+
+                if (valA < valB) return -1 * dir;
+                if (valA > valB) return 1 * dir;
+                return 0;
+            });
+        }
+        updateProductSortHeaderIcons();
 
         window.adminProductsMap = {};
         products.forEach(p => { window.adminProductsMap[p.id] = p; });
