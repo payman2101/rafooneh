@@ -2968,17 +2968,26 @@
 
         async function loadProductsFromApi() {
             try {
-                let targetPath = '/api/products';
+                let targetUrl = '/api/products';
                 const stored = localStorage.getItem('crm_api_base_url');
-                if (stored && stored.startsWith('https://') && !stored.includes(window.location.hostname)) {
-                    targetPath = stored.trim().replace(/\/$/, '') + '/api/products';
+                if (stored && stored.startsWith('https://')) {
+                    try {
+                        const parsed = new URL(stored);
+                        if (parsed.hostname !== window.location.hostname && !window.location.hostname.includes('paymancare.ir')) {
+                            targetUrl = stored.trim().replace(/\/$/, '') + '/api/products';
+                        }
+                    } catch (e) {}
                 }
-                const urlObj = new URL(targetPath, window.location.origin);
+                const urlObj = new URL(targetUrl, window.location.origin);
                 urlObj.searchParams.set('_t', Date.now().toString());
 
-                const res = await fetch(urlObj.toString(), {
-                    cache: 'no-store'
-                });
+                let res = await fetch(urlObj.toString());
+                if (!res.ok && targetUrl !== '/api/products') {
+                    // Fallback to relative endpoint if external server returned non-200
+                    const fallbackObj = new URL('/api/products', window.location.origin);
+                    fallbackObj.searchParams.set('_t', Date.now().toString());
+                    res = await fetch(fallbackObj.toString());
+                }
                 if (!res.ok) return;
                 const contentType = res.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) return;
