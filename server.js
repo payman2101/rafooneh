@@ -918,18 +918,18 @@ app.get('/api/admin/products', authMiddleware, async (req, res) => {
   });
 });
 
-app.post('/api/admin/products', authMiddleware, (req, res) => {
+app.post('/api/admin/products', authMiddleware, async (req, res) => {
   try {
-    const product = addProduct(req.body);
+    const product = await addProduct(req.body);
     res.json({ success: true, message: 'محصول جدید با موفقیت اضافه شد', product });
   } catch (err) {
     res.status(400).json({ success: false, message: 'خطا در ثبت محصول جدید' });
   }
 });
 
-app.patch('/api/admin/products/:id', authMiddleware, (req, res) => {
+app.patch('/api/admin/products/:id', authMiddleware, async (req, res) => {
   try {
-    const product = updateProduct(req.params.id, req.body);
+    const product = await updateProduct(req.params.id, req.body);
     if (!product) {
       return res.status(404).json({ success: false, message: 'محصول یافت نشد' });
     }
@@ -939,9 +939,9 @@ app.patch('/api/admin/products/:id', authMiddleware, (req, res) => {
   }
 });
 
-app.delete('/api/admin/products/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/products/:id', authMiddleware, async (req, res) => {
   try {
-    const success = deleteProduct(req.params.id);
+    const success = await deleteProduct(req.params.id);
     if (!success) {
       return res.status(404).json({ success: false, message: 'محصول یافت نشد' });
     }

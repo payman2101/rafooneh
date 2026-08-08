@@ -899,9 +899,9 @@ export function listProducts(filters = {}) {
   return result;
 }
 
-export function updateProduct(id, updates) {
-  const list = readProductsList();
-  if (!list.length) return null;
+export async function updateProduct(id, updates) {
+  const list = await getFreshProductsFromFirestore();
+  if (!list || !list.length) return null;
   const pid = String(id);
   const idx = list.findIndex(p => String(p.id) === pid || String(p.code) === pid);
 
@@ -945,13 +945,13 @@ export function updateProduct(id, updates) {
   };
 
   saveProductsList(list, false);
-  saveProductToFirestore(list[idx]).catch(e => console.error('Firestore save product error:', e));
+  await saveProductToFirestore(list[idx]).catch(e => console.error('Firestore save product error:', e));
   saveProductCloudSql(list[idx]).catch(e => console.error('Cloud SQL update product error:', e));
   return list[idx];
 }
 
-export function addProduct(productData) {
-  const list = readProductsList();
+export async function addProduct(productData) {
+  const list = await getFreshProductsFromFirestore();
 
   const code = String(productData.id || productData.code || Date.now());
   const stock = Number(productData.stock) || 0;
@@ -993,14 +993,14 @@ export function addProduct(productData) {
 
   list.unshift(newProd);
   saveProductsList(list, false);
-  saveProductToFirestore(newProd).catch(e => console.error('Firestore save product error:', e));
+  await saveProductToFirestore(newProd).catch(e => console.error('Firestore save product error:', e));
   saveProductCloudSql(newProd).catch(e => console.error('Cloud SQL add product error:', e));
   return newProd;
 }
 
-export function deleteProduct(id) {
-  let list = readProductsList();
-  if (!list.length) return false;
+export async function deleteProduct(id) {
+  let list = await getFreshProductsFromFirestore();
+  if (!list || !list.length) return false;
   const pid = String(id);
   const initialLength = list.length;
 
@@ -1008,7 +1008,7 @@ export function deleteProduct(id) {
 
   if (list.length !== initialLength) {
     saveProductsList(list, false);
-    deleteProductFromFirestore(id).catch(e => console.error('Firestore delete product error:', e));
+    await deleteProductFromFirestore(id).catch(e => console.error('Firestore delete product error:', e));
     try { deleteProductSqlite(id); } catch (e) { console.error('SQLite delete product notice:', e); }
     try { deleteProductCloudSql(id); } catch (e) { console.error('Cloud SQL delete product notice:', e); }
     return true;

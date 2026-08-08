@@ -11,18 +11,34 @@ import {
 } from 'firebase/firestore';
 import fs from 'fs';
 import path from 'path';
+import { createRequire } from 'module';
 
 let db = null;
 
 export function getFirestoreDb() {
   if (db) return db;
   try {
-    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
-    if (!fs.existsSync(configPath)) {
+    let config = null;
+
+    try {
+      const req = createRequire(import.meta.url);
+      config = req('../firebase-applet-config.json');
+    } catch (e) {
+      // Ignore if require fails
+    }
+
+    if (!config) {
+      const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+      if (fs.existsSync(configPath)) {
+        config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      }
+    }
+
+    if (!config) {
       console.warn('[Firestore] firebase-applet-config.json not found');
       return null;
     }
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
     const app = getApps().length === 0 ? initializeApp(config) : getApp();
     const databaseId = config.firestoreDatabaseId || '(default)';
     db = getFirestore(app, databaseId);
