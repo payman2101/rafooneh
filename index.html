@@ -2099,10 +2099,15 @@
                     </div>
                     <div class="product-details" onclick="openProductDetailModal('${p.id}')">
                         <div>
-                            <span class="product-code-badge">کد: ${p.id}</span>
+                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
+                                <span class="product-code-badge">کد: ${p.id}</span>
+                                <span style="font-size:0.7rem; padding:2px 8px; border-radius:12px; font-weight:700; ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? 'background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;' : 'background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;'}">
+                                    ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند رافونه')}
+                                </span>
+                            </div>
                             <div class="product-title" onclick="openProductDetailModal('${p.id}')">${p.name}</div>
                         </div>
-                        <div class="product-desc" onclick="openProductDetailModal('${p.id}')" title="کلیک کنید تا مشخصات کامل را ببینید">${p.description || 'توضیحات محصول رافونه'}</div>
+                        <div class="product-desc" onclick="openProductDetailModal('${p.id}')" title="کلیک کنید تا مشخصات کامل را ببینید">${p.description || 'توضیحات و مشخصات کامل محصول رافونه'}</div>
                         <div class="product-price-row">
                             <div>
                                 ${hasOldPriceDiscount ? `
@@ -2161,8 +2166,8 @@
             currentDetailProductId = productId;
 
             document.getElementById('detailModalImg').src = p.image;
-            document.getElementById('detailModalCode').innerText = `کد کالا: ${p.id}`;
-            document.getElementById('detailModalCategory').innerText = p.categoryName || 'محصولات رافونه';
+            document.getElementById('detailModalCode').innerText = `کد کالا: ${p.id} | برند: ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند رافونه')}`;
+            document.getElementById('detailModalCategory').innerText = p.categoryName || (p.brand === 'foreign' ? 'محصولات خارجی' : 'محصولات رافونه');
             document.getElementById('detailModalTitle').innerText = p.name;
             document.getElementById('detailModalDesc').innerText = p.description || 'توضیحات و مشخصات کامل برای این محصول ثبت نشده است.';
             
@@ -2974,7 +2979,7 @@
                 if (!contentType || !contentType.includes('application/json')) return;
                 const data = await res.json();
                 if (data.success && Array.isArray(data.products) && data.products.length > 0) {
-                    const currentHash = JSON.stringify(data.products.map(p => ({ id: p.id, price: p.price, newPrice: p.newPrice || p.consumerPrice, consumerPrice: p.consumerPrice, buyPrice: p.buyPrice, name: p.name, stock: p.stock, badge: p.badge, desc: p.description, image: p.image, brand: p.brand, category: p.category, updatedAt: p.updatedAt })));
+                    const currentHash = JSON.stringify(data.products.map(p => ({ id: p.id, price: p.price, newPrice: p.newPrice || p.consumerPrice, consumerPrice: p.consumerPrice, buyPrice: p.buyPrice, name: p.name, stock: p.stock, badge: p.badge, description: p.description, desc: p.description, image: p.image, brand: p.brand, brandName: p.brandName, category: p.category, categoryName: p.categoryName, updatedAt: p.updatedAt })));
                     if (currentHash !== lastProductsHash) {
                         lastProductsHash = currentHash;
                         products = data.products;
