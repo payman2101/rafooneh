@@ -32,6 +32,7 @@ import {
   addProduct,
   deleteProduct,
   readProductsList,
+  getFreshProductsFromFirestore,
   saveProductsList,
   refreshProductsFromCloudSql,
   initDatabaseSync,
@@ -345,11 +346,11 @@ console.log(`[Server Startup] Loaded ${currentCatalog ? currentCatalog.length : 
 // API: Get live products dataset
 app.get('/api/products', async (req, res) => {
   try {
-    let data = readProductsList();
+    let data = await getFreshProductsFromFirestore();
     if (!data || data.length === 0) {
-      data = await refreshProductsFromCloudSql();
+      data = readProductsList();
     }
-    const includeAll = req.query.includeAll === 'true';
+    const includeAll = req.query.includeAll !== 'false';
     const products = includeAll
       ? data
       : data.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);

@@ -85,7 +85,7 @@ export async function ensureFirestoreLoaded() {
   firestoreLoadPromise = (async () => {
     try {
       if (!productsListCache) {
-        const fsProds = await getProductsFromFirestore();
+        const fsProds = await getFreshProductsFromFirestore();
         if (Array.isArray(fsProds) && fsProds.length > 0) {
           productsListCache = fsProds;
         } else {
@@ -167,12 +167,53 @@ export function saveProductsList(list, skipFirestoreSync = false) {
   }
 }
 
+export async function getFreshProductsFromFirestore() {
+  try {
+    const fsProds = await getProductsFromFirestore();
+    if (Array.isArray(fsProds) && fsProds.length > 0) {
+      const localList = readProductsListLocal();
+      const fsMap = new Map();
+      fsProds.forEach(p => {
+        if (p && (p.id || p.code)) {
+          fsMap.set(String(p.id || p.code), p);
+        }
+      });
+
+      const mergedList = [];
+      const handledKeys = new Set();
+
+      localList.forEach(localProd => {
+        const key = String(localProd.id || localProd.code);
+        if (fsMap.has(key)) {
+          mergedList.push({ ...localProd, ...fsMap.get(key) });
+          handledKeys.add(key);
+        } else {
+          mergedList.push(localProd);
+        }
+      });
+
+      fsProds.forEach(fsProd => {
+        const key = String(fsProd.id || fsProd.code);
+        if (!handledKeys.has(key)) {
+          mergedList.push(fsProd);
+          handledKeys.add(key);
+        }
+      });
+
+      productsListCache = mergedList;
+      productsMapCache = null;
+      return mergedList;
+    }
+  } catch (e) {
+    console.error('Error fetching fresh products from Firestore:', e);
+  }
+  return productsListCache || readProductsListLocal();
+}
+
 export async function refreshProductsFromCloudSql() {
   try {
-    const fsProducts = await getProductsFromFirestore();
+    const fsProducts = await getFreshProductsFromFirestore();
     if (Array.isArray(fsProducts) && fsProducts.length > 0) {
-      productsListCache = fsProducts;
-      productsMapCache = null;
       return fsProducts;
     }
 
@@ -904,6 +945,7 @@ export function updateProduct(id, updates) {
   };
 
   saveProductsList(list, false);
+  saveProductToFirestore(list[idx]).catch(e => console.error('Firestore save product error:', e));
   saveProductCloudSql(list[idx]).catch(e => console.error('Cloud SQL update product error:', e));
   return list[idx];
 }
@@ -951,6 +993,7 @@ export function addProduct(productData) {
 
   list.unshift(newProd);
   saveProductsList(list, false);
+  saveProductToFirestore(newProd).catch(e => console.error('Firestore save product error:', e));
   saveProductCloudSql(newProd).catch(e => console.error('Cloud SQL add product error:', e));
   return newProd;
 }
