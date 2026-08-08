@@ -40,20 +40,8 @@ import { checkpointSqlite } from './crm/sqlite.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
 import { getAllProductsCloudSql } from './crm/cloudsql.js';
 
-// تعریف امن __filename و __dirname برای هر دو محیط ESM و CommonJS
-let __filename, __dirname;
-try {
-  __filename = fileURLToPath(import.meta.url);
-  __dirname = path.dirname(__filename);
-} catch (e) {
-  // در محیط CommonJS (مثل Netlify Functions)، این متغیرها قبلاً تعریف شدهاند
-  if (typeof __filename === 'undefined') {
-    __filename = fileURLToPath(import.meta.url);
-  }
-  if (typeof __dirname === 'undefined') {
-    __dirname = path.dirname(__filename);
-  }
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
