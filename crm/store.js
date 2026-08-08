@@ -172,32 +172,18 @@ export async function getFreshProductsFromFirestore() {
     const fsProds = await getProductsFromFirestore();
     if (Array.isArray(fsProds) && fsProds.length > 0) {
       const localList = readProductsListLocal();
-      const fsMap = new Map();
-      fsProds.forEach(p => {
+      const localMap = new Map();
+      localList.forEach(p => {
         if (p && (p.id || p.code)) {
-          fsMap.set(String(p.id || p.code), p);
+          localMap.set(String(p.id || p.code), p);
         }
       });
 
-      const mergedList = [];
-      const handledKeys = new Set();
-
-      localList.forEach(localProd => {
-        const key = String(localProd.id || localProd.code);
-        if (fsMap.has(key)) {
-          mergedList.push({ ...localProd, ...fsMap.get(key) });
-          handledKeys.add(key);
-        } else {
-          mergedList.push(localProd);
-        }
-      });
-
-      fsProds.forEach(fsProd => {
+      // Use Firestore documents as authoritative list when present, enriching with static defaults if needed
+      const mergedList = fsProds.map(fsProd => {
         const key = String(fsProd.id || fsProd.code);
-        if (!handledKeys.has(key)) {
-          mergedList.push(fsProd);
-          handledKeys.add(key);
-        }
+        const localProd = localMap.get(key) || {};
+        return { ...localProd, ...fsProd };
       });
 
       productsListCache = mergedList;
@@ -875,8 +861,8 @@ export function updateOrder(id, updates) {
   return orders[idx];
 }
 
-export function listProducts(filters = {}) {
-  const { list } = getProductsMap();
+export async function listProducts(filters = {}) {
+  const list = await getFreshProductsFromFirestore();
   let result = [...list];
 
   if (filters.brand && filters.brand !== 'all') {

@@ -65,6 +65,13 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
@@ -901,8 +908,8 @@ app.post('/api/admin/database/clear-test-data', authMiddleware, (req, res) => {
 app.get('/api/admin/products', authMiddleware, async (req, res) => {
   await refreshProductsFromCloudSql().catch(() => {});
   const { brand, category, search } = req.query;
-  const products = listProducts({ brand, category, search });
-  const allProducts = listProducts({});
+  const products = await listProducts({ brand, category, search });
+  const allProducts = await listProducts({});
 
   const brandCounts = {
     rafooneh: allProducts.filter(p => p.brand === 'rafooneh').length,
