@@ -1,13 +1,11 @@
 import serverless from 'serverless-http';
-import app from '../../server.js';
+// اگر فایل شما netlify/functions/api/index.js است، مسیر باید ../../server.js باشد
+// اگر فایل شما netlify/functions/api.js است، مسیر باید ../server.js باشد
+import app from '../../server.js'; 
 
-export const handler = serverless(app, {
-  request: (request, event, context) => {
-    if (request.url && request.url.startsWith('/.netlify/functions/api')) {
-      request.url = request.url.replace(/^\/\.netlify\/functions\/api/, '');
-      if (!request.url.startsWith('/api')) {
-        request.url = '/api' + request.url;
-      }
-    }
-  }
-});
+const serverlessHandler = serverless(app);
+
+// Netlify فقط export با نام handler را میشناسد
+export const handler = async (event, context) => {
+  return await serverlessHandler(event, context);
+};
