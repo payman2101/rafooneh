@@ -1,6 +1,15 @@
-import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
 import fs from 'fs';
+import { createRequire } from 'module';
+
+let DatabaseSync = null;
+try {
+  const req = createRequire(import.meta.url);
+  const sqliteModule = req('node:' + 'sqlite');
+  DatabaseSync = sqliteModule?.DatabaseSync || sqliteModule?.default?.DatabaseSync || null;
+} catch (err) {
+  // node:sqlite is not available or supported in serverless runtime (e.g. Netlify Functions)
+}
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DATA_DIR, 'rafooneh.db');
@@ -15,6 +24,7 @@ function ensureDataDir() {
 
 export function getDb() {
   if (dbInstance) return dbInstance;
+  if (!DatabaseSync) return null;
 
   try {
     ensureDataDir();
