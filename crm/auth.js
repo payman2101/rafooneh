@@ -3,8 +3,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const authDir = typeof __dirname !== 'undefined'
+  ? __dirname
+  : path.dirname(fileURLToPath(import.meta.url));
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const AUTH_CONFIG_FILE = path.join(DATA_DIR, 'auth_config.json');
@@ -118,7 +119,7 @@ export function getAdminPassword() {
       }
     }
     // 2. Fallback to legacy crm/auth_config.json
-    const legacyFile = path.join(__dirname, 'auth_config.json');
+    const legacyFile = path.join(authDir, 'auth_config.json');
     if (fs.existsSync(legacyFile)) {
       const data = JSON.parse(fs.readFileSync(legacyFile, 'utf8'));
       if (data && data.password) {

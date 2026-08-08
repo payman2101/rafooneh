@@ -40,8 +40,9 @@ import { checkpointSqlite } from './crm/sqlite.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
 import { getAllProductsCloudSql } from './crm/cloudsql.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const appDir = typeof __dirname !== 'undefined'
+  ? __dirname
+  : path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = 3000;
@@ -65,7 +66,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
-app.use(express.static(__dirname));
+app.use(express.static(appDir));
 
 // Function to process Excel file 'سفارش 1405.xlsx' automatically on save/change
 function categorize(name) {
@@ -169,7 +170,7 @@ function findColumnIndices(headerRow) {
 
 function parseExcelAndBuildProducts() {
   try {
-    const excelPath = path.join(__dirname, 'سفارش 1405.xlsx');
+    const excelPath = path.join(appDir, 'سفارش 1405.xlsx');
     if (!fs.existsSync(excelPath)) {
       console.log('[Excel Watcher] File سفارش 1405.xlsx does not exist.');
       return null;
@@ -207,7 +208,7 @@ function parseExcelAndBuildProducts() {
     }
 
     let scraped = [];
-    const scrapedPath = path.join(__dirname, 'scraped_rafooneh.json');
+    const scrapedPath = path.join(appDir, 'scraped_rafooneh.json');
     if (fs.existsSync(scrapedPath)) {
       scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8'));
     }
@@ -377,7 +378,7 @@ app.get('/api/db-status', async (req, res) => {
 // Function to parse Google Sheet rows into product format
 function processRowsToProducts(rows) {
   let scraped = [];
-  const scrapedPath = path.join(__dirname, 'scraped_rafooneh.json');
+  const scrapedPath = path.join(appDir, 'scraped_rafooneh.json');
   if (fs.existsSync(scrapedPath)) {
     try {
       scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8'));
@@ -572,7 +573,7 @@ app.post('/api/upload-excel', (req, res) => {
     }
 
     const excelFile = req.files.excelFile;
-    const savePath = path.join(__dirname, 'سفارش 1405.xlsx');
+    const savePath = path.join(appDir, 'سفارش 1405.xlsx');
 
     excelFile.mv(savePath, (err) => {
       if (err) {
@@ -609,7 +610,7 @@ const handleImageUploadRoute = (req, res) => {
       imageUrl = `data:${mimeType};base64,${base64Data}`;
     }
 
-    const uploadsDir = path.join(__dirname, 'uploads', 'products');
+    const uploadsDir = path.join(appDir, 'uploads', 'products');
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -946,7 +947,7 @@ app.delete('/api/admin/products/:id', authMiddleware, (req, res) => {
 
 // API: Google Sheets CRM Status
 app.get('/api/admin/gsheets/status', authMiddleware, (req, res) => {
-  const productsPath = path.join(__dirname, 'products_data.json');
+  const productsPath = path.join(appDir, 'products_data.json');
   let productCount = 0;
   let lastSyncTime = null;
   if (fs.existsSync(productsPath)) {
@@ -970,7 +971,7 @@ app.get('/api/admin/gsheets/status', authMiddleware, (req, res) => {
 // API: Download SQLite database file
 app.get('/api/admin/database/download', authMiddleware, (req, res) => {
   checkpointSqlite();
-  const dbPath = path.join(__dirname, 'data', 'rafooneh.db');
+  const dbPath = path.join(appDir, 'data', 'rafooneh.db');
   if (fs.existsSync(dbPath)) {
     res.download(dbPath, 'rafooneh.db');
   } else {
@@ -1009,7 +1010,7 @@ app.get('/api/admin/database/export-json', authMiddleware, (req, res) => {
 });
 
 app.get(['/admin', '/admin.html'], (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  res.sendFile(path.join(appDir, 'admin.html'));
 });
 
 // Store active transactions in memory
@@ -1074,15 +1075,15 @@ app.post('/api/payment/verify', (req, res) => {
 });
 
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  res.sendFile(path.join(appDir, 'admin.html'));
 });
 
 app.get('/admin.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  res.sendFile(path.join(appDir, 'admin.html'));
 });
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(appDir, 'index.html'));
 });
 
 if (!process.env.NETLIFY && !process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {

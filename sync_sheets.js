@@ -3,8 +3,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const syncDir = typeof __dirname !== 'undefined'
+  ? __dirname
+  : path.dirname(fileURLToPath(import.meta.url));
 
 const SPREADSHEET_ID = '1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv`;
@@ -123,7 +124,7 @@ async function syncGoogleSheets() {
     }
 
     let scraped = [];
-    const scrapedPath = path.join(__dirname, 'scraped_rafooneh.json');
+    const scrapedPath = path.join(syncDir, 'scraped_rafooneh.json');
     if (fs.existsSync(scrapedPath)) {
       scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8'));
     }
@@ -204,8 +205,8 @@ async function syncGoogleSheets() {
       });
     }
 
-    fs.writeFileSync(path.join(__dirname, 'products_data.json'), JSON.stringify(products, null, 2));
-    fs.writeFileSync(path.join(__dirname, 'products_data.js'), `const productsData = ${JSON.stringify(products, null, 2)};\n`);
+    fs.writeFileSync(path.join(syncDir, 'products_data.json'), JSON.stringify(products, null, 2));
+    fs.writeFileSync(path.join(syncDir, 'products_data.js'), `const productsData = ${JSON.stringify(products, null, 2)};\n`);
 
     console.log(`✅ Google Sheet successfully synced! ${products.length} products written to products_data.json and products_data.js.`);
   } catch (err) {
