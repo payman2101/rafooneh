@@ -3,6 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 
+import { saveAdminAuthConfigToFirestore } from './firestore.js';
+
 const authDir = typeof __dirname !== 'undefined'
   ? __dirname
   : path.dirname(fileURLToPath(import.meta.url));
@@ -103,6 +105,7 @@ function saveAdminPasswordToFile(newPass) {
       updatedAt: new Date().toISOString()
     };
     fs.writeFileSync(AUTH_CONFIG_FILE, JSON.stringify(configData, null, 2), 'utf8');
+    saveAdminAuthConfigToFirestore(configData).catch(e => console.error('Firestore save admin password error:', e));
   } catch (e) {
     console.error('[Auth Config Write Notice]:', e.message);
   }

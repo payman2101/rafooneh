@@ -34,7 +34,8 @@ import {
   readProductsList,
   saveProductsList,
   refreshProductsFromCloudSql,
-  initDatabaseSync
+  initDatabaseSync,
+  ensureFirestoreLoaded
 } from './crm/store.js';
 import { checkpointSqlite } from './crm/sqlite.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
@@ -66,6 +67,10 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
+app.use(async (req, res, next) => {
+  await ensureFirestoreLoaded().catch(() => {});
+  next();
+});
 app.use(express.static(appDir));
 
 // Function to process Excel file 'سفارش 1405.xlsx' automatically on save/change

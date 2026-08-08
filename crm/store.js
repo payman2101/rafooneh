@@ -2,6 +2,24 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import {
+  getProductsFromFirestore,
+  saveProductToFirestore,
+  saveAllProductsToFirestore,
+  deleteProductFromFirestore,
+  getOrdersFromFirestore,
+  saveOrderToFirestore,
+  deleteOrderFromFirestore,
+  getCustomersFromFirestore,
+  saveCustomerToFirestore,
+  deleteCustomerFromFirestore,
+  getCompanyPaymentsFromFirestore,
+  saveCompanyPaymentToFirestore,
+  deleteCompanyPaymentFromFirestore,
+  getPurchasesFromFirestore,
+  savePurchaseToFirestore,
+  deletePurchaseFromFirestore
+} from './firestore.js';
+import {
   initCloudSql,
   saveProductCloudSql,
   saveAllProductsCloudSql,
@@ -53,6 +71,75 @@ const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
 
 let productsListCache = null;
 let productsMapCache = null;
+let ordersListCache = null;
+let customersListCache = null;
+let companyPaymentsListCache = null;
+let purchasesListCache = null;
+
+let isFirestoreLoading = false;
+let firestoreLoadPromise = null;
+
+export async function ensureFirestoreLoaded() {
+  if (firestoreLoadPromise) return firestoreLoadPromise;
+  
+  firestoreLoadPromise = (async () => {
+    try {
+      if (!productsListCache) {
+        const fsProds = await getProductsFromFirestore();
+        if (Array.isArray(fsProds) && fsProds.length > 0) {
+          productsListCache = fsProds;
+        } else {
+          // Seed Firestore with local JSON if Firestore is empty
+          const fallback = readProductsListLocal();
+          if (fallback.length > 0) {
+            productsListCache = fallback;
+            saveAllProductsToFirestore(fallback).catch(() => {});
+          }
+        }
+      }
+
+      if (!ordersListCache) {
+        const fsOrders = await getOrdersFromFirestore();
+        if (Array.isArray(fsOrders)) {
+          ordersListCache = fsOrders;
+        } else {
+          ordersListCache = readJsonLocal(ORDERS_FILE, []);
+        }
+      }
+
+      if (!customersListCache) {
+        const fsCusts = await getCustomersFromFirestore();
+        if (Array.isArray(fsCusts)) {
+          customersListCache = fsCusts;
+        } else {
+          customersListCache = readJsonLocal(CUSTOMERS_FILE, []);
+        }
+      }
+
+      if (!companyPaymentsListCache) {
+        const fsPays = await getCompanyPaymentsFromFirestore();
+        if (Array.isArray(fsPays)) {
+          companyPaymentsListCache = fsPays;
+        } else {
+          companyPaymentsListCache = readJsonLocal(COMPANY_PAYMENTS_FILE, []);
+        }
+      }
+
+      if (!purchasesListCache) {
+        const fsPurs = await getPurchasesFromFirestore();
+        if (Array.isArray(fsPurs)) {
+          purchasesListCache = fsPurs;
+        } else {
+          purchasesListCache = readJsonLocal(PURCHASES_FILE, []);
+        }
+      }
+    } catch (err) {
+      console.error('[Firestore Hydration Notice]:', err.message);
+    }
+  })();
+
+  return firestoreLoadPromise;
+}
 
 export function invalidateProductsCache() {
   productsListCache = null;
@@ -61,14 +148,18 @@ export function invalidateProductsCache() {
 
 export function saveProductsList(list, skipFirestoreSync = false) {
   try {
+    productsListCache = list;
+    productsMapCache = null;
+
+    if (!skipFirestoreSync) {
+      saveAllProductsToFirestore(list).catch(err => console.error('Firestore save products error:', err));
+    }
+
     ensureDataDir();
     const jsonStr = JSON.stringify(list, null, 2);
     try { fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8'); } catch (e) {}
     try { fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8'); } catch (e) {}
     try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8'); } catch (e) {}
-    
-    productsListCache = list;
-    productsMapCache = null;
 
     try { saveAllProductsSqlite(list); } catch (err) { console.error('SQLite save products error:', err); }
   } catch (err) {
@@ -78,37 +169,33 @@ export function saveProductsList(list, skipFirestoreSync = false) {
 
 export async function refreshProductsFromCloudSql() {
   try {
+    const fsProducts = await getProductsFromFirestore();
+    if (Array.isArray(fsProducts) && fsProducts.length > 0) {
+      productsListCache = fsProducts;
+      productsMapCache = null;
+      return fsProducts;
+    }
+
     const dbProducts = await getAllProductsCloudSql();
     if (Array.isArray(dbProducts) && dbProducts.length > 0) {
       productsListCache = dbProducts;
       productsMapCache = null;
-      try {
-        ensureDataDir();
-        const jsonStr = JSON.stringify(dbProducts, null, 2);
-        fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8');
-        fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8');
-        fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8');
-      } catch (e) {}
+      saveAllProductsToFirestore(dbProducts).catch(() => {});
       return dbProducts;
     }
   } catch (e) {
-    console.error('Error refreshing products from Cloud SQL:', e);
+    console.error('Error refreshing products from Cloud SQL / Firestore:', e);
   }
-  return productsListCache || [];
+  return productsListCache || readProductsListLocal();
 }
 
-export function readProductsList() {
-  if (productsListCache && Array.isArray(productsListCache) && productsListCache.length > 0) {
-    return productsListCache;
-  }
-
+function readProductsListLocal() {
   try {
     ensureDataDir();
     if (fs.existsSync(DATA_PRODUCTS_FILE)) {
       const data = fs.readFileSync(DATA_PRODUCTS_FILE, 'utf8');
       const list = JSON.parse(data);
       if (Array.isArray(list) && list.length > 0) {
-        productsListCache = list;
         return list;
       }
     }
@@ -117,7 +204,6 @@ export function readProductsList() {
   try {
     const sqliteProducts = getAllProductsSqlite();
     if (Array.isArray(sqliteProducts) && sqliteProducts.length > 0) {
-      productsListCache = sqliteProducts;
       return sqliteProducts;
     }
   } catch (e) {}
@@ -127,13 +213,23 @@ export function readProductsList() {
       const data = fs.readFileSync(ROOT_PRODUCTS_JSON, 'utf8');
       const list = JSON.parse(data);
       if (Array.isArray(list) && list.length > 0) {
-        productsListCache = list;
-        saveProductsList(list, true);
         return list;
       }
     }
   } catch (e) {}
 
+  return [];
+}
+
+export function readProductsList() {
+  if (productsListCache && Array.isArray(productsListCache) && productsListCache.length > 0) {
+    return productsListCache;
+  }
+  const fallback = readProductsListLocal();
+  if (fallback.length > 0) {
+    productsListCache = fallback;
+    return fallback;
+  }
   return [];
 }
 
@@ -165,6 +261,26 @@ function getRootEquivalentPath(file) {
 }
 
 function readJson(file, fallback) {
+  if (file === ORDERS_FILE || file?.endsWith('orders.json')) {
+    if (ordersListCache) return ordersListCache;
+  }
+  if (file === CUSTOMERS_FILE || file?.endsWith('customers.json')) {
+    if (customersListCache) return customersListCache;
+  }
+  if (file === COMPANY_PAYMENTS_FILE || file?.endsWith('company_payments.json')) {
+    if (companyPaymentsListCache) return companyPaymentsListCache;
+  }
+  if (file === PURCHASES_FILE || file?.endsWith('purchases.json')) {
+    if (purchasesListCache) return purchasesListCache;
+  }
+  if (file === DATA_PRODUCTS_FILE || file?.endsWith('products_data.json')) {
+    if (productsListCache) return productsListCache;
+  }
+
+  return readJsonLocal(file, fallback);
+}
+
+function readJsonLocal(file, fallback) {
   ensureDataDir();
   const rootFile = getRootEquivalentPath(file);
 
@@ -188,7 +304,6 @@ function readJson(file, fallback) {
       const rootData = JSON.parse(fs.readFileSync(rootFile, 'utf8'));
       if (Array.isArray(rootData) && rootData.length > 0) {
         resultData = rootData;
-        // Sync back to primary file
         try { fs.writeFileSync(file, JSON.stringify(resultData, null, 2), 'utf8'); } catch (e) {}
       }
     } catch (e) {}
@@ -211,6 +326,18 @@ function readJson(file, fallback) {
 }
 
 function writeJson(file, data) {
+  if (file === ORDERS_FILE || file?.endsWith('orders.json')) {
+    ordersListCache = data;
+  } else if (file === CUSTOMERS_FILE || file?.endsWith('customers.json')) {
+    customersListCache = data;
+  } else if (file === COMPANY_PAYMENTS_FILE || file?.endsWith('company_payments.json')) {
+    companyPaymentsListCache = data;
+  } else if (file === PURCHASES_FILE || file?.endsWith('purchases.json')) {
+    purchasesListCache = data;
+  } else if (file === DATA_PRODUCTS_FILE || file?.endsWith('products_data.json')) {
+    productsListCache = data;
+  }
+
   try {
     ensureDataDir();
     fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
@@ -276,6 +403,7 @@ export function upsertCustomer({ name, phone, address }) {
   }
 
   writeJson(CUSTOMERS_FILE, customers);
+  saveCustomerToFirestore(customer).catch(e => console.error('Firestore save customer error:', e));
   try { saveCustomerSqlite(customer); } catch (e) { console.error('SQLite save customer notice:', e); }
   return customer;
 }
@@ -480,6 +608,11 @@ export function createOrder(orderData) {
   writeJson(ORDERS_FILE, orders);
   writeJson(CUSTOMERS_FILE, customers);
 
+  saveOrderToFirestore(order).catch(e => console.error('Firestore save order error:', e));
+  if (customers[customerIdx]) {
+    saveCustomerToFirestore(customers[customerIdx]).catch(e => console.error('Firestore save customer error:', e));
+  }
+
   try { saveOrderSqlite(order); } catch (e) { console.error('SQLite save order notice:', e); }
   saveOrderCloudSql(order).catch(e => console.error('Cloud SQL save order notice:', e));
   if (customers[customerIdx]) {
@@ -539,6 +672,7 @@ export function deleteOrder(id) {
   orders = orders.filter(o => o.id !== id);
   if (orders.length !== initialLength) {
     writeJson(ORDERS_FILE, orders);
+    deleteOrderFromFirestore(id).catch(e => console.error('Firestore delete order error:', e));
     try { deleteOrderSqlite(id); } catch (e) { console.error('SQLite delete order notice:', e); }
     try { deleteOrderCloudSql(id); } catch (e) { console.error('Cloud SQL delete order notice:', e); }
     return true;
@@ -687,6 +821,7 @@ export function updateOrder(id, updates) {
   };
 
   writeJson(ORDERS_FILE, orders);
+  saveOrderToFirestore(orders[idx]).catch(e => console.error('Firestore update order error:', e));
   try { saveOrderSqlite(orders[idx]); } catch (e) { console.error('SQLite update order notice:', e); }
 
   // If status changed to cancelled, restore stock!
@@ -768,7 +903,7 @@ export function updateProduct(id, updates) {
     updatedAt: new Date().toISOString()
   };
 
-  saveProductsList(list, true);
+  saveProductsList(list, false);
   saveProductCloudSql(list[idx]).catch(e => console.error('Cloud SQL update product error:', e));
   return list[idx];
 }
@@ -815,7 +950,7 @@ export function addProduct(productData) {
   };
 
   list.unshift(newProd);
-  saveProductsList(list, true);
+  saveProductsList(list, false);
   saveProductCloudSql(newProd).catch(e => console.error('Cloud SQL add product error:', e));
   return newProd;
 }
@@ -829,7 +964,8 @@ export function deleteProduct(id) {
   list = list.filter(p => String(p.id) !== pid && String(p.code) !== pid);
 
   if (list.length !== initialLength) {
-    saveProductsList(list, true);
+    saveProductsList(list, false);
+    deleteProductFromFirestore(id).catch(e => console.error('Firestore delete product error:', e));
     try { deleteProductSqlite(id); } catch (e) { console.error('SQLite delete product notice:', e); }
     try { deleteProductCloudSql(id); } catch (e) { console.error('Cloud SQL delete product notice:', e); }
     return true;
@@ -892,6 +1028,7 @@ export function updateCustomer(id, updates) {
   }
 
   writeJson(CUSTOMERS_FILE, customers);
+  saveCustomerToFirestore(customers[idx]).catch(e => console.error('Firestore update customer error:', e));
   return customers[idx];
 }
 
@@ -900,6 +1037,7 @@ export function deleteCustomer(id) {
   const initialLen = customers.length;
   customers = customers.filter(c => c.id !== id && c.phone !== id);
   writeJson(CUSTOMERS_FILE, customers);
+  deleteCustomerFromFirestore(id).catch(e => console.error('Firestore delete customer error:', e));
   try { deleteCustomerSqlite(id); } catch (e) { console.error('SQLite delete customer notice:', e.message); }
   try { deleteCustomerCloudSql(id); } catch (e) { console.error('Cloud SQL delete customer notice:', e.message); }
   return initialLen !== customers.length || true;
@@ -1149,6 +1287,7 @@ export function createCompanyPayment(paymentData) {
 
   payments.unshift(newPayment);
   writeJson(COMPANY_PAYMENTS_FILE, payments);
+  saveCompanyPaymentToFirestore(newPayment).catch(e => console.error('Firestore save payment error:', e));
   try { saveCompanyPaymentSqlite(newPayment); } catch (e) { console.error('SQLite save payment notice:', e); }
   try { saveCompanyPaymentCloudSql(newPayment); } catch (e) { console.error('Cloud SQL save payment notice:', e); }
   return newPayment;
@@ -1160,6 +1299,7 @@ export function deleteCompanyPayment(id) {
   payments = payments.filter(p => String(p.id) !== String(id));
   if (payments.length !== initialLen) {
     writeJson(COMPANY_PAYMENTS_FILE, payments);
+    deleteCompanyPaymentFromFirestore(id).catch(e => console.error('Firestore delete payment error:', e));
     try { deleteCompanyPaymentSqlite(id); } catch (e) { console.error('SQLite delete payment notice:', e); }
     try { deleteCompanyPaymentCloudSql(id); } catch (e) { console.error('Cloud SQL delete payment notice:', e); }
     return true;
@@ -1257,7 +1397,7 @@ export function createPurchase(purchaseData) {
   purchases.unshift(newPurchase);
   writeJson(PURCHASES_FILE, purchases);
   writeJson(ROOT_PURCHASES_FILE, purchases);
-
+  savePurchaseToFirestore(newPurchase).catch(e => console.error('Firestore save purchase error:', e));
   try { savePurchaseSqlite(newPurchase); } catch (e) { console.error('SQLite save purchase notice:', e); }
   try { savePurchaseCloudSql(newPurchase); } catch (e) { console.error('Cloud SQL save purchase notice:', e); }
 
@@ -1268,12 +1408,15 @@ export function deletePurchase(id) {
   let purchases = readJson(PURCHASES_FILE, []);
   const initialLen = purchases.length;
   purchases = purchases.filter(p => String(p.id) !== String(id));
-  writeJson(PURCHASES_FILE, purchases);
-  writeJson(ROOT_PURCHASES_FILE, purchases);
-
-  try { deletePurchaseSqlite(id); } catch (e) { console.error('SQLite delete purchase notice:', e); }
-  try { deletePurchaseCloudSql(id); } catch (e) { console.error('Cloud SQL delete purchase notice:', e); }
-  return purchases.length !== initialLen;
+  if (purchases.length !== initialLen) {
+    writeJson(PURCHASES_FILE, purchases);
+    writeJson(ROOT_PURCHASES_FILE, purchases);
+    deletePurchaseFromFirestore(id).catch(e => console.error('Firestore delete purchase error:', e));
+    try { deletePurchaseSqlite(id); } catch (e) { console.error('SQLite delete purchase notice:', e); }
+    try { deletePurchaseCloudSql(id); } catch (e) { console.error('Cloud SQL delete purchase notice:', e); }
+    return true;
+  }
+  return false;
 }
 
 export async function initDatabaseSync() {
