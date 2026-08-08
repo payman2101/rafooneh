@@ -9,6 +9,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.2",
     "@types/pg": "^8.20.4",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
