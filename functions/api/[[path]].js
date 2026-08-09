@@ -3,24 +3,6 @@ const dbId = "ai-studio-rafooneh-11db6cb9-24d8-4d3d-97d0-9e826f57d0d4";
 const apiKey = "AIzaSyBW4FfCNNhXrRk39oy294xgLAP6NGPQxoo";
 
 import defaultProducts from '../../products_data.json';
-import {
-  saveProductCloudSql,
-  saveAllProductsCloudSql,
-  getAllProductsCloudSql,
-  deleteProductCloudSql,
-  saveCustomerCloudSql,
-  getAllCustomersCloudSql,
-  deleteCustomerCloudSql,
-  saveOrderCloudSql,
-  getAllOrdersCloudSql,
-  deleteOrderCloudSql,
-  saveCompanyPaymentCloudSql,
-  getAllCompanyPaymentsCloudSql,
-  deleteCompanyPaymentCloudSql,
-  savePurchaseCloudSql,
-  getAllPurchasesCloudSql,
-  deletePurchaseCloudSql
-} from '../../crm/cloudsql.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -96,7 +78,6 @@ function toFirestoreFields(obj) {
 }
 
 async function getCollectionDocs(collName) {
-  let docs = [];
   try {
     const queryUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents:runQuery?key=${apiKey}`;
     const res = await fetch(queryUrl, {
@@ -104,51 +85,34 @@ async function getCollectionDocs(collName) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ structuredQuery: { from: [{ collectionId: collName }] } })
     });
-    if (res.ok) {
-      const rows = await res.json();
-      if (Array.isArray(rows)) {
-        docs = rows.map(r => parseFirestoreDoc(r.document)).filter(Boolean);
+    if (!res.ok) {
+      if (collName === 'products' && Array.isArray(defaultProducts)) {
+        return defaultProducts;
       }
+      return [];
     }
+    const rows = await res.json();
+    if (!Array.isArray(rows)) {
+      if (collName === 'products' && Array.isArray(defaultProducts)) {
+        return defaultProducts;
+      }
+      return [];
+    }
+    const docs = rows.map(r => parseFirestoreDoc(r.document)).filter(Boolean);
+    if (collName === 'products' && docs.length === 0 && Array.isArray(defaultProducts)) {
+      return defaultProducts;
+    }
+    return docs;
   } catch (e) {
-    console.warn(`Firestore query notice for ${collName}:`, e.message);
-  }
-
-  // Fallback / primary read from Supabase PostgreSQL if Firestore returns empty or errors
-  if (!docs || docs.length === 0) {
-    try {
-      if (collName === 'products') docs = await getAllProductsCloudSql();
-      else if (collName === 'customers') docs = await getAllCustomersCloudSql();
-      else if (collName === 'orders') docs = await getAllOrdersCloudSql();
-      else if (collName === 'company_payments') docs = await getAllCompanyPaymentsCloudSql();
-      else if (collName === 'purchases') docs = await getAllPurchasesCloudSql();
-    } catch (e) {
-      console.warn(`CloudSQL read notice for ${collName}:`, e.message);
+    if (collName === 'products' && Array.isArray(defaultProducts)) {
+      return defaultProducts;
     }
+    return [];
   }
-
-  if ((!docs || docs.length === 0) && collName === 'products' && Array.isArray(defaultProducts)) {
-    return defaultProducts;
-  }
-
-  return docs || [];
 }
 
 async function saveDoc(collName, id, data) {
   if (!id) return false;
-
-  // Save to Supabase PostgreSQL (CloudSQL)
-  try {
-    if (collName === 'products') await saveProductCloudSql(data);
-    else if (collName === 'customers') await saveCustomerCloudSql(data);
-    else if (collName === 'orders') await saveOrderCloudSql(data);
-    else if (collName === 'company_payments') await saveCompanyPaymentCloudSql(data);
-    else if (collName === 'purchases') await savePurchaseCloudSql(data);
-  } catch (e) {
-    console.error(`[CloudSQL Save Error ${collName}/${id}]:`, e.message);
-  }
-
-  // Also sync to Firestore REST
   const docUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/${collName}/${encodeURIComponent(String(id))}?key=${apiKey}`;
   try {
     const fields = toFirestoreFields(data);
@@ -165,19 +129,6 @@ async function saveDoc(collName, id, data) {
 
 async function removeDoc(collName, id) {
   if (!id) return false;
-
-  // Delete from Supabase PostgreSQL (CloudSQL)
-  try {
-    if (collName === 'products') await deleteProductCloudSql(id);
-    else if (collName === 'customers') await deleteCustomerCloudSql(id);
-    else if (collName === 'orders') await deleteOrderCloudSql(id);
-    else if (collName === 'company_payments') await deleteCompanyPaymentCloudSql(id);
-    else if (collName === 'purchases') await deletePurchaseCloudSql(id);
-  } catch (e) {
-    console.error(`[CloudSQL Delete Error ${collName}/${id}]:`, e.message);
-  }
-
-  // Also try Firestore REST
   const docUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/${collName}/${encodeURIComponent(String(id))}?key=${apiKey}`;
   try {
     await fetch(docUrl, { method: 'DELETE' });
