@@ -1,36 +1,6 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import {
-  getFirestore,
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  setDoc,
-  deleteDoc
-} from 'firebase/firestore';
-
-const firebaseConfig = {
-  projectId: "ageless-fx-sdw77",
-  appId: "1:901632283769:web:a7f81e2c9a6be6a378b0a8",
-  apiKey: "AIzaSyBW4FfCNNhXrRk39oy294xgLAP6NGPQxoo",
-  authDomain: "ageless-fx-sdw77.firebaseapp.com",
-  firestoreDatabaseId: "ai-studio-rafooneh-11db6cb9-24d8-4d3d-97d0-9e826f57d0d4",
-  storageBucket: "ageless-fx-sdw77.firebasestorage.app",
-  messagingSenderId: "901632283769"
-};
-
-let db = null;
-function getDb() {
-  if (db) return db;
-  try {
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-    return db;
-  } catch (e) {
-    console.error('Firebase init error:', e);
-    return null;
-  }
-}
+const projectId = "ageless-fx-sdw77";
+const dbId = "ai-studio-rafooneh-11db6cb9-24d8-4d3d-97d0-9e826f57d0d4";
+const apiKey = "AIzaSyBW4FfCNNhXrRk39oy294xgLAP6NGPQxoo";
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -46,42 +16,108 @@ function jsonRes(data, status = 200) {
   });
 }
 
-// Helpers for Firestore collections
+function parseFirestoreVal(val) {
+  if (!val) return null;
+  if ('stringValue' in val) return val.stringValue;
+  if ('integerValue' in val) return Number(val.integerValue);
+  if ('doubleValue' in val) return Number(val.doubleValue);
+  if ('booleanValue' in val) return val.booleanValue;
+  if ('arrayValue' in val) return (val.arrayValue.values || []).map(parseFirestoreVal);
+  if ('mapValue' in val) {
+    const res = {};
+    for (const [k, v] of Object.entries(val.mapValue.fields || {})) {
+      res[k] = parseFirestoreVal(v);
+    }
+    return res;
+  }
+  return null;
+}
+
+function parseFirestoreDoc(doc) {
+  if (!doc || !doc.fields) return null;
+  const id = doc.name.split('/').pop();
+  const obj = { id };
+  for (const [key, val] of Object.entries(doc.fields)) {
+    obj[key] = parseFirestoreVal(val);
+  }
+  return obj;
+}
+
+function toFirestoreFields(obj) {
+  const fields = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined || v === null) continue;
+    if (typeof v === 'boolean') {
+      fields[k] = { booleanValue: v };
+    } else if (typeof v === 'number') {
+      if (Number.isInteger(v)) {
+        fields[k] = { integerValue: String(v) };
+      } else {
+        fields[k] = { doubleValue: v };
+      }
+    } else if (typeof v === 'string') {
+      fields[k] = { stringValue: v };
+    } else if (Array.isArray(v)) {
+      fields[k] = {
+        arrayValue: {
+          values: v.map(item => {
+            if (typeof item === 'object') return { mapValue: { fields: toFirestoreFields(item) } };
+            if (typeof item === 'number') return Number.isInteger(item) ? { integerValue: String(item) } : { doubleValue: item };
+            if (typeof item === 'boolean') return { booleanValue: item };
+            return { stringValue: String(item) };
+          })
+        }
+      };
+    } else if (typeof v === 'object') {
+      fields[k] = { mapValue: { fields: toFirestoreFields(v) } };
+    }
+  }
+  return fields;
+}
+
 async function getCollectionDocs(collName) {
-  const database = getDb();
-  if (!database) return [];
+  const queryUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents:runQuery?key=${apiKey}`;
   try {
-    const snap = await getDocs(collection(database, collName));
-    const items = [];
-    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
-    return items;
+    const res = await fetch(queryUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ structuredQuery: { from: [{ collectionId: collName }] } })
+    });
+    if (!res.ok) return [];
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return [];
+    return rows.map(r => parseFirestoreDoc(r.document)).filter(Boolean);
   } catch (e) {
-    console.error(`Error reading ${collName} from Firestore:`, e);
+    console.error(`Error reading ${collName} from Firestore REST:`, e);
     return [];
   }
 }
 
 async function saveDoc(collName, id, data) {
-  const database = getDb();
-  if (!database || !id) return false;
+  if (!id) return false;
+  const docUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/${collName}/${encodeURIComponent(String(id))}?key=${apiKey}`;
   try {
-    const docRef = doc(database, collName, String(id));
-    await setDoc(docRef, data, { merge: true });
-    return true;
+    const fields = toFirestoreFields(data);
+    const res = await fetch(docUrl, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields })
+    });
+    return res.ok;
   } catch (e) {
-    console.error(`Error saving to ${collName}:`, e);
+    console.error(`Error saving ${collName}/${id} via REST:`, e);
     return false;
   }
 }
 
 async function removeDoc(collName, id) {
-  const database = getDb();
-  if (!database || !id) return false;
+  if (!id) return false;
+  const docUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/${collName}/${encodeURIComponent(String(id))}?key=${apiKey}`;
   try {
-    await deleteDoc(doc(database, collName, String(id)));
-    return true;
+    const res = await fetch(docUrl, { method: 'DELETE' });
+    return res.ok;
   } catch (e) {
-    console.error(`Error deleting from ${collName}:`, e);
+    console.error(`Error deleting ${collName}/${id} via REST:`, e);
     return false;
   }
 }
