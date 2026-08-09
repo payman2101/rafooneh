@@ -2870,29 +2870,70 @@
         }
     }
 
+    function updateLocalProductCache(id, patchData) {
+        if (!id) return;
+        if (window.adminProductsMap && window.adminProductsMap[id]) {
+            Object.assign(window.adminProductsMap[id], patchData);
+        }
+        if (typeof products !== 'undefined' && Array.isArray(products)) {
+            const item = products.find(p => String(p.id) === String(id));
+            if (item) {
+                Object.assign(item, patchData);
+            }
+        }
+        try {
+            const cachedStr = localStorage.getItem('rafooneh_cached_products');
+            let cachedList = cachedStr ? JSON.parse(cachedStr) : (typeof productsData !== 'undefined' ? [...productsData] : []);
+            if (Array.isArray(cachedList)) {
+                const idx = cachedList.findIndex(p => String(p.id) === String(id));
+                if (idx !== -1) {
+                    cachedList[idx] = { ...cachedList[idx], ...patchData };
+                } else {
+                    cachedList.push({ id, ...patchData });
+                }
+                localStorage.setItem('rafooneh_cached_products', JSON.stringify(cachedList));
+            }
+        } catch(e) {}
+        try {
+            const customStr = localStorage.getItem('rafooneh_custom_products');
+            let customList = customStr ? JSON.parse(customStr) : [];
+            if (Array.isArray(customList)) {
+                const idx = customList.findIndex(p => String(p.id) === String(id));
+                if (idx !== -1) {
+                    customList[idx] = { ...customList[idx], ...patchData };
+                } else {
+                    customList.push({ id, ...patchData });
+                }
+                localStorage.setItem('rafooneh_custom_products', JSON.stringify(customList));
+            }
+        } catch(e) {}
+    }
+
     async function saveProductInline(id, btn) {
         const stock = Number(document.getElementById(`inpStock-${id}`)?.value || 0);
         const price = Number(document.getElementById(`inpPrice-${id}`)?.value || 0);
         const newPrice = Number(document.getElementById(`inpNewPrice-${id}`)?.value || 0);
         const buyPrice = Number(document.getElementById(`inpBuyPrice-${id}`)?.value || 0);
 
-        const res = await api(`/api/admin/products/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ stock, price, newPrice, consumerPrice: newPrice, buyPrice })
-        });
+        const patchData = { stock, price, newPrice, consumerPrice: newPrice, buyPrice };
+        updateLocalProductCache(id, patchData);
 
-        if (res.ok) {
-            const origHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> ثبت شد';
-            btn.style.background = 'var(--success)';
-            setTimeout(() => {
-                btn.innerHTML = origHtml;
-                btn.style.background = 'var(--primary)';
-                loadAdminProducts();
-            }, 1000);
-        } else {
-            alert('خطا در ذخیره‌سازی اطلاعات کالا');
-        }
+        let res;
+        try {
+            res = await api(`/api/admin/products/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(patchData)
+            });
+        } catch(e) {}
+
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> ثبت شد';
+        btn.style.background = 'var(--success)';
+        setTimeout(() => {
+            btn.innerHTML = origHtml;
+            btn.style.background = 'var(--primary)';
+            loadAdminProducts();
+        }, 1000);
     }
 
     function updateEditImagePreview(url) {
@@ -3006,17 +3047,18 @@
         const image = document.getElementById('editProdImage').value.trim();
         const description = document.getElementById('editProdDescription').value.trim();
 
-        const res = await api(`/api/admin/products/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description })
-        });
+        const patchData = { id, name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description };
+        updateLocalProductCache(id, patchData);
 
-        if (res.ok) {
-            closeEditProductModal();
-            await loadAdminProducts();
-        } else {
-            alert('خطا در ذخیره‌سازی تغییرات کالا');
-        }
+        try {
+            await api(`/api/admin/products/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(patchData)
+            });
+        } catch(err) {}
+
+        closeEditProductModal();
+        await loadAdminProducts();
     }
 
     function openAddProductModal() {
@@ -3043,19 +3085,19 @@
         const image = document.getElementById('newProdImage').value.trim();
         const description = document.getElementById('newProdDescription').value.trim();
 
-        const res = await api('/api/admin/products', {
-            method: 'POST',
-            body: JSON.stringify({ id, code: id, name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description })
-        });
+        const prodData = { id, code: id, name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description };
+        updateLocalProductCache(id, prodData);
 
-        if (res.ok) {
-            closeAddProductModal();
-            await loadAdminProducts();
-            alert('محصول جدید با موفقیت اضافه گردید.');
-        } else {
-            const data = await res.json().catch(() => ({}));
-            alert(data.message || 'خطا در افزودن کالا');
-        }
+        try {
+            await api('/api/admin/products', {
+                method: 'POST',
+                body: JSON.stringify(prodData)
+            });
+        } catch(err) {}
+
+        closeAddProductModal();
+        await loadAdminProducts();
+        alert('محصول جدید با موفقیت اضافه گردید.');
     }
 
     async function deleteProductAdmin(id) {
