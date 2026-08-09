@@ -162,6 +162,7 @@ export function saveProductsList(list, skipFirestoreSync = false) {
     try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8'); } catch (e) {}
 
     try { saveAllProductsSqlite(list); } catch (err) { console.error('SQLite save products error:', err); }
+    try { saveAllProductsCloudSql(list); } catch (err) { console.error('Cloud SQL save products error:', err); }
   } catch (err) {
     console.error('Error saving products list:', err);
   }
@@ -192,6 +193,16 @@ export async function getFreshProductsFromFirestore() {
     }
   } catch (e) {
     console.error('Error fetching fresh products from Firestore:', e);
+  }
+  try {
+    const cloudProds = await getAllProductsCloudSql();
+    if (Array.isArray(cloudProds) && cloudProds.length > 0) {
+      productsListCache = cloudProds;
+      productsMapCache = null;
+      return cloudProds;
+    }
+  } catch (e) {
+    console.error('Error fetching products from CloudSQL:', e);
   }
   return productsListCache || readProductsListLocal();
 }
@@ -850,6 +861,7 @@ export function updateOrder(id, updates) {
   writeJson(ORDERS_FILE, orders);
   saveOrderToFirestore(orders[idx]).catch(e => console.error('Firestore update order error:', e));
   try { saveOrderSqlite(orders[idx]); } catch (e) { console.error('SQLite update order notice:', e); }
+  try { saveOrderCloudSql(orders[idx]); } catch (e) { console.error('Cloud SQL update order notice:', e); }
 
   // If status changed to cancelled, restore stock!
   if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
@@ -1058,6 +1070,8 @@ export function updateCustomer(id, updates) {
 
   writeJson(CUSTOMERS_FILE, customers);
   saveCustomerToFirestore(customers[idx]).catch(e => console.error('Firestore update customer error:', e));
+  try { saveCustomerSqlite(customers[idx]); } catch (e) { console.error('SQLite update customer notice:', e); }
+  try { saveCustomerCloudSql(customers[idx]); } catch (e) { console.error('Cloud SQL update customer notice:', e); }
   return customers[idx];
 }
 
