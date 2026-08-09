@@ -1957,7 +1957,16 @@
     <script src="products_data.js"></script>
     <script>
         // Products Dataset from Excel and Rafooneh Catalog
-        let products = typeof productsData !== 'undefined' ? productsData : [];
+        let products = (function() {
+            try {
+                const cached = localStorage.getItem('rafooneh_cached_products');
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                }
+            } catch (e) {}
+            return typeof productsData !== 'undefined' ? productsData : [];
+        })();
 
         let cart = {};
         let currentCategory = 'all';
@@ -2997,6 +3006,9 @@
                     if (currentHash !== lastProductsHash) {
                         lastProductsHash = currentHash;
                         products = data.products;
+                        try {
+                            localStorage.setItem('rafooneh_cached_products', JSON.stringify(data.products));
+                        } catch (e) {}
                         renderProducts(currentCategory);
                     }
                 }
