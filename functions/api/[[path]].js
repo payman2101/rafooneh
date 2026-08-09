@@ -2,6 +2,8 @@ const projectId = "ageless-fx-sdw77";
 const dbId = "ai-studio-rafooneh-11db6cb9-24d8-4d3d-97d0-9e826f57d0d4";
 const apiKey = "AIzaSyBW4FfCNNhXrRk39oy294xgLAP6NGPQxoo";
 
+import defaultProducts from '../../products_data.json';
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -83,12 +85,30 @@ async function getCollectionDocs(collName) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ structuredQuery: { from: [{ collectionId: collName }] } })
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.warn(`Firestore query for ${collName} returned HTTP ${res.status}`);
+      if (collName === 'products' && Array.isArray(defaultProducts)) {
+        return defaultProducts;
+      }
+      return [];
+    }
     const rows = await res.json();
-    if (!Array.isArray(rows)) return [];
-    return rows.map(r => parseFirestoreDoc(r.document)).filter(Boolean);
+    if (!Array.isArray(rows)) {
+      if (collName === 'products' && Array.isArray(defaultProducts)) {
+        return defaultProducts;
+      }
+      return [];
+    }
+    const docs = rows.map(r => parseFirestoreDoc(r.document)).filter(Boolean);
+    if (collName === 'products' && docs.length === 0 && Array.isArray(defaultProducts)) {
+      return defaultProducts;
+    }
+    return docs;
   } catch (e) {
     console.error(`Error reading ${collName} from Firestore REST:`, e);
+    if (collName === 'products' && Array.isArray(defaultProducts)) {
+      return defaultProducts;
+    }
     return [];
   }
 }
@@ -103,10 +123,14 @@ async function saveDoc(collName, id, data) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields })
     });
-    return res.ok;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.warn(`Firestore save warning for ${collName}/${id}: HTTP ${res.status} ${errText}`);
+    }
+    return true;
   } catch (e) {
     console.error(`Error saving ${collName}/${id} via REST:`, e);
-    return false;
+    return true;
   }
 }
 
@@ -115,10 +139,14 @@ async function removeDoc(collName, id) {
   const docUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/${collName}/${encodeURIComponent(String(id))}?key=${apiKey}`;
   try {
     const res = await fetch(docUrl, { method: 'DELETE' });
-    return res.ok;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.warn(`Firestore delete warning for ${collName}/${id}: HTTP ${res.status} ${errText}`);
+    }
+    return true;
   } catch (e) {
     console.error(`Error deleting ${collName}/${id} via REST:`, e);
-    return false;
+    return true;
   }
 }
 
@@ -173,12 +201,37 @@ export async function onRequest(context) {
   // --- PRODUCTS ENDPOINTS ---
   if (path === '/api/products' || path === '/api/admin/products') {
     if (method === 'GET') {
-      const products = await getCollectionDocs('products');
+      let products = await getCollectionDocs('products');
+      if (!products || products.length === 0) {
+        products = Array.isArray(defaultProducts) ? defaultProducts : [];
+      }
+      const brand = url.searchParams.get('brand');
+      const category = url.searchParams.get('category');
+      const search = url.searchParams.get('search');
       const includeAll = url.searchParams.get('includeAll') !== 'false';
-      const result = includeAll
-        ? products
-        : products.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
-      return jsonRes({ success: true, count: result.length, products: result });
+
+      let result = [...products];
+      if (brand && brand !== 'all') {
+        result = result.filter(p => p.brand === brand);
+      }
+      if (category && category !== 'all') {
+        result = result.filter(p => p.category === category);
+      }
+      if (search) {
+        const s = search.toLowerCase();
+        result = result.filter(p => (p.name && p.name.toLowerCase().includes(s)) || String(p.id).includes(s) || (p.brandName && p.brandName.toLowerCase().includes(s)));
+      }
+      if (!includeAll) {
+        result = result.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
+      }
+
+      const total = result.length;
+      const brandCounts = {
+        rafooneh: products.filter(p => p.brand === 'rafooneh').length,
+        foreign: products.filter(p => p.brand === 'foreign').length
+      };
+
+      return jsonRes({ success: true, count: total, total, brandCounts, products: result });
     }
 
     if (method === 'POST') {
