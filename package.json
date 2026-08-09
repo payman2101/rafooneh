@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node server.js",
     "sync": "node sync_sheets.js",
-    "build": "echo 'Build complete'",
+    "build": "node build.js",
     "start": "node server.js"
   },
   "dependencies": {
