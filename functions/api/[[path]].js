@@ -3,6 +3,7 @@ const dbId = "ai-studio-rafooneh-11db6cb9-24d8-4d3d-97d0-9e826f57d0d4";
 const apiKey = "AIzaSyBW4FfCNNhXrRk39oy294xgLAP6NGPQxoo";
 
 import defaultProducts from '../../products_data.json';
+import { getAllProductsCloudSql, saveProductCloudSql, deleteProductCloudSql } from '../../crm/cloudsql.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -193,10 +194,45 @@ export async function onRequest(context) {
   // --- PRODUCTS ENDPOINTS ---
   if (path === '/api/products' || path === '/api/admin/products') {
     if (method === 'GET') {
-      let products = await getCollectionDocs('products');
-      if (!products || products.length === 0) {
-        products = Array.isArray(defaultProducts) ? defaultProducts : [];
+      let cloudProds = [];
+      try {
+        cloudProds = await getAllProductsCloudSql();
+      } catch (e) {
+        console.error('CloudSQL fetch error:', e);
       }
+
+      let fsProds = await getCollectionDocs('products');
+      if (!fsProds) fsProds = [];
+
+      const map = new Map();
+      if (Array.isArray(defaultProducts)) {
+        defaultProducts.forEach(p => {
+          if (p && (p.id || p.code)) map.set(String(p.id || p.code), p);
+        });
+      }
+      if (Array.isArray(cloudProds) && cloudProds.length > 0) {
+        cloudProds.forEach(cp => {
+          if (!cp || (!cp.id && !cp.code)) return;
+          const key = String(cp.id || cp.code);
+          const existing = map.get(key) || {};
+          map.set(key, { ...existing, ...cp });
+        });
+      }
+      if (Array.isArray(fsProds) && fsProds.length > 0) {
+        fsProds.forEach(fp => {
+          if (!fp || (!fp.id && !fp.code)) return;
+          const key = String(fp.id || fp.code);
+          const existing = map.get(key) || {};
+          map.set(key, { ...existing, ...fp });
+        });
+      }
+      customProductsStore.forEach((v, k) => {
+        const existing = map.get(k) || {};
+        map.set(k, { ...existing, ...v });
+      });
+
+      let products = Array.from(map.values());
+
       const brand = url.searchParams.get('brand');
       const category = url.searchParams.get('category');
       const search = url.searchParams.get('search');
@@ -220,7 +256,7 @@ export async function onRequest(context) {
       const total = result.length;
       const brandCounts = {
         rafooneh: products.filter(p => p.brand === 'rafooneh').length,
-        foreign: products.filter(p => p.brand === 'foreign').length
+        foreign: products.filter(p => p.brand === 'foreign' || p.brand !== 'rafooneh').length
       };
 
       return jsonRes({ success: true, count: total, total, brandCounts, products: result });
@@ -245,11 +281,15 @@ export async function onRequest(context) {
         buyPrice: Number(body.buyPrice) || 0,
         stock,
         badge,
+        isCustomized: true,
         updatedAt: new Date().toISOString(),
         ...body
       };
       customProductsStore.set(String(id), product);
-      await saveDoc('products', id, product);
+      await Promise.allSettled([
+        saveDoc('products', id, product),
+        saveProductCloudSql(product)
+      ]);
       return jsonRes({ success: true, message: 'محصول جدید با موفقیت اضافه شد', product });
     }
   }
@@ -257,8 +297,15 @@ export async function onRequest(context) {
   if (path.startsWith('/api/admin/products/')) {
     const id = path.replace('/api/admin/products/', '');
     if (method === 'PATCH' || method === 'PUT') {
+      let cloudProds = [];
+      try {
+        cloudProds = await getAllProductsCloudSql();
+      } catch (e) {}
       const existingProds = await getCollectionDocs('products');
-      const existing = existingProds.find(p => String(p.id) === id || String(p.code) === id) || {};
+      const existingCloud = cloudProds.find(p => String(p.id) === id || String(p.code) === id) || {};
+      const existingDoc = existingProds.find(p => String(p.id) === id || String(p.code) === id) || {};
+      const existing = { ...existingCloud, ...existingDoc, ...(customProductsStore.get(String(id)) || {}) };
+
       const stock = body.stock !== undefined ? Number(body.stock) : Number(existing.stock || 0);
       const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
       const newPriceVal = body.newPrice !== undefined ? Number(body.newPrice) : (body.consumerPrice !== undefined ? Number(body.consumerPrice) : Number(existing.newPrice || existing.consumerPrice || 0));
@@ -271,16 +318,23 @@ export async function onRequest(context) {
         badge,
         newPrice: newPriceVal,
         consumerPrice: newPriceVal,
+        isCustomized: true,
         updatedAt: new Date().toISOString()
       };
       customProductsStore.set(String(id), updatedProd);
-      await saveDoc('products', id, updatedProd);
+      await Promise.allSettled([
+        saveDoc('products', id, updatedProd),
+        saveProductCloudSql(updatedProd)
+      ]);
       return jsonRes({ success: true, message: 'اطلاعات محصول با موفقیت به روزرسانی شد', product: updatedProd });
     }
 
     if (method === 'DELETE') {
       customProductsStore.delete(String(id));
-      await removeDoc('products', id);
+      await Promise.allSettled([
+        removeDoc('products', id),
+        deleteProductCloudSql(id)
+      ]);
       return jsonRes({ success: true, message: 'محصول با موفقیت حذف شد' });
     }
   }
