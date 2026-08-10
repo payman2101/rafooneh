@@ -54,6 +54,15 @@ function docToData(d) {
   return { id: d.id, ...d.data() };
 }
 
+function handleFirestoreError(action, err) {
+  const msg = err && err.message ? err.message : String(err);
+  if (msg.includes('Quota limit exceeded') || msg.includes('Quota exceeded')) {
+    console.warn(`[Firestore] Quota limit exceeded on ${action}. Gracefully falling back.`);
+  } else {
+    console.error(`[Firestore] Error ${action}:`, msg);
+  }
+}
+
 // --- PRODUCTS ---
 export async function getProductsFromFirestore() {
   const database = getFirestoreDb();
@@ -65,7 +74,7 @@ export async function getProductsFromFirestore() {
     snap.forEach(d => products.push(docToData(d)));
     return products;
   } catch (err) {
-    console.error('[Firestore] Error getting products:', err.message);
+    handleFirestoreError('getting products', err);
     return null;
   }
 }
@@ -78,7 +87,7 @@ export async function saveProductToFirestore(product) {
     await setDoc(docRef, product, { merge: true });
     return true;
   } catch (err) {
-    console.error('[Firestore] Error saving product:', err.message);
+    handleFirestoreError('saving product', err);
     return false;
   }
 }
@@ -102,7 +111,7 @@ export async function saveAllProductsToFirestore(productsList) {
     }
     return true;
   } catch (err) {
-    console.error('[Firestore] Error saving all products:', err.message);
+    handleFirestoreError('saving all products', err);
     return false;
   }
 }
@@ -114,7 +123,7 @@ export async function deleteProductFromFirestore(id) {
     await deleteDoc(doc(database, 'products', String(id)));
     return true;
   } catch (err) {
-    console.error('[Firestore] Error deleting product:', err.message);
+    handleFirestoreError('deleting product', err);
     return false;
   }
 }
@@ -129,7 +138,7 @@ export async function getOrdersFromFirestore() {
     snap.forEach(d => orders.push(docToData(d)));
     return orders;
   } catch (err) {
-    console.error('[Firestore] Error getting orders:', err.message);
+    handleFirestoreError('getting orders', err);
     return null;
   }
 }
@@ -141,7 +150,7 @@ export async function saveOrderToFirestore(order) {
     await setDoc(doc(database, 'orders', String(order.id)), order, { merge: true });
     return true;
   } catch (err) {
-    console.error('[Firestore] Error saving order:', err.message);
+    handleFirestoreError('saving order', err);
     return false;
   }
 }
@@ -153,7 +162,7 @@ export async function deleteOrderFromFirestore(id) {
     await deleteDoc(doc(database, 'orders', String(id)));
     return true;
   } catch (err) {
-    console.error('[Firestore] Error deleting order:', err.message);
+    handleFirestoreError('deleting order', err);
     return false;
   }
 }
@@ -168,7 +177,7 @@ export async function getCustomersFromFirestore() {
     snap.forEach(d => customers.push(docToData(d)));
     return customers;
   } catch (err) {
-    console.error('[Firestore] Error getting customers:', err.message);
+    handleFirestoreError('getting customers', err);
     return null;
   }
 }
@@ -180,7 +189,7 @@ export async function saveCustomerToFirestore(customer) {
     await setDoc(doc(database, 'customers', String(customer.id)), customer, { merge: true });
     return true;
   } catch (err) {
-    console.error('[Firestore] Error saving customer:', err.message);
+    handleFirestoreError('saving customer', err);
     return false;
   }
 }
@@ -192,7 +201,7 @@ export async function deleteCustomerFromFirestore(id) {
     await deleteDoc(doc(database, 'customers', String(id)));
     return true;
   } catch (err) {
-    console.error('[Firestore] Error deleting customer:', err.message);
+    handleFirestoreError('deleting customer', err);
     return false;
   }
 }
@@ -207,7 +216,7 @@ export async function getCompanyPaymentsFromFirestore() {
     snap.forEach(d => payments.push(docToData(d)));
     return payments;
   } catch (err) {
-    console.error('[Firestore] Error getting company payments:', err.message);
+    handleFirestoreError('getting company payments', err);
     return null;
   }
 }
@@ -219,7 +228,7 @@ export async function saveCompanyPaymentToFirestore(payment) {
     await setDoc(doc(database, 'company_payments', String(payment.id)), payment, { merge: true });
     return true;
   } catch (err) {
-    console.error('[Firestore] Error saving company payment:', err.message);
+    handleFirestoreError('saving company payment', err);
     return false;
   }
 }
@@ -231,7 +240,7 @@ export async function deleteCompanyPaymentFromFirestore(id) {
     await deleteDoc(doc(database, 'company_payments', String(id)));
     return true;
   } catch (err) {
-    console.error('[Firestore] Error deleting company payment:', err.message);
+    handleFirestoreError('deleting company payment', err);
     return false;
   }
 }
@@ -246,7 +255,7 @@ export async function getPurchasesFromFirestore() {
     snap.forEach(d => purchases.push(docToData(d)));
     return purchases;
   } catch (err) {
-    console.error('[Firestore] Error getting purchases:', err.message);
+    handleFirestoreError('getting purchases', err);
     return null;
   }
 }
@@ -258,7 +267,7 @@ export async function savePurchaseToFirestore(purchase) {
     await setDoc(doc(database, 'purchases', String(purchase.id)), purchase, { merge: true });
     return true;
   } catch (err) {
-    console.error('[Firestore] Error saving purchase:', err.message);
+    handleFirestoreError('saving purchase', err);
     return false;
   }
 }
@@ -270,7 +279,7 @@ export async function deletePurchaseFromFirestore(id) {
     await deleteDoc(doc(database, 'purchases', String(id)));
     return true;
   } catch (err) {
-    console.error('[Firestore] Error deleting purchase:', err.message);
+    handleFirestoreError('deleting purchase', err);
     return false;
   }
 }
@@ -287,7 +296,7 @@ export async function getAdminAuthConfigFromFirestore() {
     }
     return null;
   } catch (err) {
-    console.error('[Firestore] Error getting admin auth config:', err.message);
+    handleFirestoreError('getting admin auth config', err);
     return null;
   }
 }
@@ -300,7 +309,7 @@ export async function saveAdminAuthConfigToFirestore(configData) {
     await setDoc(docRef, configData, { merge: true });
     return true;
   } catch (err) {
-    console.error('[Firestore] Error saving admin auth config:', err.message);
+    handleFirestoreError('saving admin auth config', err);
     return false;
   }
 }
