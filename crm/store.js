@@ -162,7 +162,6 @@ export function saveProductsList(list, skipFirestoreSync = false) {
     try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8'); } catch (e) {}
 
     try { saveAllProductsSqlite(list); } catch (err) { console.error('SQLite save products error:', err); }
-    try { saveAllProductsCloudSql(list); } catch (err) { console.error('Cloud SQL save products error:', err); }
   } catch (err) {
     console.error('Error saving products list:', err);
   }
@@ -839,7 +838,7 @@ export function getProfitStats(filters = {}) {
   };
 }
 
-export function updateOrder(id, updates) {
+export async function updateOrder(id, updates) {
   const orders = readJson(ORDERS_FILE, []);
   const idx = orders.findIndex(o => o.id === id);
   if (idx === -1) return null;
@@ -859,9 +858,9 @@ export function updateOrder(id, updates) {
   };
 
   writeJson(ORDERS_FILE, orders);
+  await saveOrderCloudSql(orders[idx]).catch(e => console.error('Cloud SQL update order notice:', e));
   saveOrderToFirestore(orders[idx]).catch(e => console.error('Firestore update order error:', e));
   try { saveOrderSqlite(orders[idx]); } catch (e) { console.error('SQLite update order notice:', e); }
-  try { saveOrderCloudSql(orders[idx]); } catch (e) { console.error('Cloud SQL update order notice:', e); }
 
   // If status changed to cancelled, restore stock!
   if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
@@ -942,9 +941,9 @@ export async function updateProduct(id, updates) {
     updatedAt: new Date().toISOString()
   };
 
+  await saveProductCloudSql(list[idx]).catch(e => console.error('Cloud SQL update product error:', e));
   saveProductsList(list, false);
-  await saveProductToFirestore(list[idx]).catch(e => console.error('Firestore save product error:', e));
-  saveProductCloudSql(list[idx]).catch(e => console.error('Cloud SQL update product error:', e));
+  saveProductToFirestore(list[idx]).catch(e => console.error('Firestore save product error:', e));
   return list[idx];
 }
 
@@ -989,10 +988,10 @@ export async function addProduct(productData) {
     updatedAt: new Date().toISOString()
   };
 
+  await saveProductCloudSql(newProd).catch(e => console.error('Cloud SQL add product error:', e));
   list.unshift(newProd);
   saveProductsList(list, false);
-  await saveProductToFirestore(newProd).catch(e => console.error('Firestore save product error:', e));
-  saveProductCloudSql(newProd).catch(e => console.error('Cloud SQL add product error:', e));
+  saveProductToFirestore(newProd).catch(e => console.error('Firestore save product error:', e));
   return newProd;
 }
 
@@ -1005,10 +1004,10 @@ export async function deleteProduct(id) {
   list = list.filter(p => String(p.id) !== pid && String(p.code) !== pid);
 
   if (list.length !== initialLength) {
+    await deleteProductCloudSql(id).catch(e => console.error('Cloud SQL delete product notice:', e));
     saveProductsList(list, false);
-    await deleteProductFromFirestore(id).catch(e => console.error('Firestore delete product error:', e));
+    deleteProductFromFirestore(id).catch(e => console.error('Firestore delete product error:', e));
     try { deleteProductSqlite(id); } catch (e) { console.error('SQLite delete product notice:', e); }
-    try { deleteProductCloudSql(id); } catch (e) { console.error('Cloud SQL delete product notice:', e); }
     return true;
   }
   return false;
@@ -1038,7 +1037,7 @@ export function getCustomerById(id) {
   return { ...customer, orders };
 }
 
-export function updateCustomer(id, updates) {
+export async function updateCustomer(id, updates) {
   const customers = readJson(CUSTOMERS_FILE, []);
   const idx = customers.findIndex(c => c.id === id || c.phone === id);
   if (idx === -1) return null;
@@ -1069,21 +1068,21 @@ export function updateCustomer(id, updates) {
   }
 
   writeJson(CUSTOMERS_FILE, customers);
+  await saveCustomerCloudSql(customers[idx]).catch(e => console.error('Cloud SQL update customer notice:', e));
   saveCustomerToFirestore(customers[idx]).catch(e => console.error('Firestore update customer error:', e));
   try { saveCustomerSqlite(customers[idx]); } catch (e) { console.error('SQLite update customer notice:', e); }
-  try { saveCustomerCloudSql(customers[idx]); } catch (e) { console.error('Cloud SQL update customer notice:', e); }
   return customers[idx];
 }
 
-export function deleteCustomer(id) {
+export async function deleteCustomer(id) {
   let customers = readJson(CUSTOMERS_FILE, []);
   const initialLen = customers.length;
   customers = customers.filter(c => c.id !== id && c.phone !== id);
   writeJson(CUSTOMERS_FILE, customers);
+  await deleteCustomerCloudSql(id).catch(e => console.error('Cloud SQL delete customer notice:', e.message));
   deleteCustomerFromFirestore(id).catch(e => console.error('Firestore delete customer error:', e));
   try { deleteCustomerSqlite(id); } catch (e) { console.error('SQLite delete customer notice:', e.message); }
-  try { deleteCustomerCloudSql(id); } catch (e) { console.error('Cloud SQL delete customer notice:', e.message); }
-  return initialLen !== customers.length || true;
+  return initialLen !== customers.length;
 }
 
 export function clearAllTestData() {

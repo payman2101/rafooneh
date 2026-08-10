@@ -827,10 +827,10 @@ app.get('/api/admin/orders/:id', authMiddleware, (req, res) => {
   });
 });
 
-app.patch('/api/admin/orders/:id', authMiddleware, (req, res) => {
+app.patch('/api/admin/orders/:id', authMiddleware, async (req, res) => {
   try {
     const { status, adminNotes, createdAt } = req.body || {};
-    const order = updateOrder(req.params.id, { status, adminNotes, createdAt });
+    const order = await updateOrder(req.params.id, { status, adminNotes, createdAt });
     if (!order) {
       return res.status(404).json({ success: false, message: 'سفارش یافت نشد' });
     }
@@ -874,18 +874,18 @@ app.get('/api/admin/customers/:id', authMiddleware, (req, res) => {
   });
 });
 
-app.patch('/api/admin/customers/:id', authMiddleware, (req, res) => {
+app.patch('/api/admin/customers/:id', authMiddleware, async (req, res) => {
   const { notes, name, phone, address } = req.body || {};
-  const customer = updateCustomer(req.params.id, { notes, name, phone, address });
+  const customer = await updateCustomer(req.params.id, { notes, name, phone, address });
   if (!customer) {
     return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
   }
   res.json({ success: true, customer });
 });
 
-app.delete('/api/admin/customers/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/customers/:id', authMiddleware, async (req, res) => {
   try {
-    const success = deleteCustomer(req.params.id);
+    const success = await deleteCustomer(req.params.id);
     if (!success) {
       return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
     }

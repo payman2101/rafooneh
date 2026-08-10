@@ -42,16 +42,9 @@ export function getDb() {
 
   if (!dbInstance) return null;
 
-  // Enable WAL mode for better performance and concurrency
-  try {
-    dbInstance.exec('PRAGMA journal_mode = WAL;');
-  } catch (e) {
-    console.warn('[SQLite] PRAGMA WAL warning:', e.message);
-  }
-
-  // Create tables if they do not exist
-  try {
-    dbInstance.exec(`
+  function initDbSchema(db) {
+    db.exec('PRAGMA journal_mode = WAL;');
+    db.exec(`
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY,
       code TEXT,
@@ -131,8 +124,25 @@ export function getDb() {
       updatedAt TEXT
     );
   `);
+  }
+
+  try {
+    initDbSchema(dbInstance);
   } catch (e) {
-    console.error('[SQLite] Table init warning:', e.message);
+    console.warn('[SQLite] Schema init warning:', e.message);
+    if (e.message && e.message.includes('malformed')) {
+      try {
+        dbInstance = null;
+        if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH);
+        if (fs.existsSync(DB_PATH + '-shm')) fs.unlinkSync(DB_PATH + '-shm');
+        if (fs.existsSync(DB_PATH + '-wal')) fs.unlinkSync(DB_PATH + '-wal');
+        dbInstance = new DatabaseSync(DB_PATH);
+        initDbSchema(dbInstance);
+        console.log('[SQLite] Successfully recreated database after malformed error.');
+      } catch (err) {
+        console.error('[SQLite] Could not recreate malformed database:', err.message);
+      }
+    }
   }
 
   return dbInstance;
