@@ -77,7 +77,10 @@ function toFirestoreFields(obj) {
   return fields;
 }
 
+const customProductsStore = new Map();
+
 async function getCollectionDocs(collName) {
+  let docs = [];
   try {
     const queryUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents:runQuery?key=${apiKey}`;
     const res = await fetch(queryUrl, {
@@ -85,30 +88,31 @@ async function getCollectionDocs(collName) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ structuredQuery: { from: [{ collectionId: collName }] } })
     });
-    if (!res.ok) {
-      if (collName === 'products' && Array.isArray(defaultProducts)) {
-        return defaultProducts;
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows)) {
+        docs = rows.map(r => parseFirestoreDoc(r.document)).filter(Boolean);
       }
-      return [];
     }
-    const rows = await res.json();
-    if (!Array.isArray(rows)) {
-      if (collName === 'products' && Array.isArray(defaultProducts)) {
-        return defaultProducts;
-      }
-      return [];
+  } catch (e) {}
+
+  if (collName === 'products') {
+    let finalDocs = docs;
+    if (!finalDocs || finalDocs.length === 0) {
+      finalDocs = Array.isArray(defaultProducts) ? [...defaultProducts] : [];
     }
-    const docs = rows.map(r => parseFirestoreDoc(r.document)).filter(Boolean);
-    if (collName === 'products' && docs.length === 0 && Array.isArray(defaultProducts)) {
-      return defaultProducts;
-    }
-    return docs;
-  } catch (e) {
-    if (collName === 'products' && Array.isArray(defaultProducts)) {
-      return defaultProducts;
-    }
-    return [];
+    const map = new Map();
+    finalDocs.forEach(d => {
+      if (d && (d.id || d.code)) map.set(String(d.id || d.code), d);
+    });
+    customProductsStore.forEach((v, k) => {
+      const existing = map.get(k) || {};
+      map.set(k, { ...existing, ...v });
+    });
+    return Array.from(map.values());
   }
+
+  return docs;
 }
 
 async function saveDoc(collName, id, data) {
@@ -244,6 +248,7 @@ export async function onRequest(context) {
         updatedAt: new Date().toISOString(),
         ...body
       };
+      customProductsStore.set(String(id), product);
       await saveDoc('products', id, product);
       return jsonRes({ success: true, message: 'محصول جدید با موفقیت اضافه شد', product });
     }
@@ -268,11 +273,13 @@ export async function onRequest(context) {
         consumerPrice: newPriceVal,
         updatedAt: new Date().toISOString()
       };
+      customProductsStore.set(String(id), updatedProd);
       await saveDoc('products', id, updatedProd);
       return jsonRes({ success: true, message: 'اطلاعات محصول با موفقیت به روزرسانی شد', product: updatedProd });
     }
 
     if (method === 'DELETE') {
+      customProductsStore.delete(String(id));
       await removeDoc('products', id);
       return jsonRes({ success: true, message: 'محصول با موفقیت حذف شد' });
     }

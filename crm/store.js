@@ -167,42 +167,79 @@ export function saveProductsList(list, skipFirestoreSync = false) {
   }
 }
 
-export async function getFreshProductsFromFirestore() {
-  try {
-    const fsProds = await getProductsFromFirestore();
-    if (Array.isArray(fsProds) && fsProds.length > 0) {
-      const localList = readProductsListLocal();
-      const localMap = new Map();
-      localList.forEach(p => {
-        if (p && (p.id || p.code)) {
-          localMap.set(String(p.id || p.code), p);
-        }
-      });
+function mergeSingleProduct(existing, incoming) {
+  if (!existing) return incoming;
+  if (!incoming) return existing;
 
-      // Use Firestore documents as authoritative list when present, enriching with static defaults if needed
-      const mergedList = fsProds.map(fsProd => {
-        const key = String(fsProd.id || fsProd.code);
-        const localProd = localMap.get(key) || {};
-        return { ...localProd, ...fsProd };
-      });
+  const existingTime = new Date(existing.updatedAt || 0).getTime();
+  const incomingTime = new Date(incoming.updatedAt || 0).getTime();
 
-      productsListCache = mergedList;
-      productsMapCache = null;
-      return mergedList;
-    }
-  } catch (e) {
-    console.error('Error fetching fresh products from Firestore:', e);
+  if (incomingTime > existingTime) {
+    return { ...existing, ...incoming };
+  } else if (existingTime > incomingTime) {
+    return { ...incoming, ...existing };
   }
+
+  const preferIncoming = incoming.isCustomized && !existing.isCustomized;
+  if (preferIncoming) {
+    return { ...existing, ...incoming };
+  }
+
+  return { ...incoming, ...existing };
+}
+
+export async function getFreshProductsFromFirestore() {
+  let cloudProds = [];
   try {
-    const cloudProds = await getAllProductsCloudSql();
-    if (Array.isArray(cloudProds) && cloudProds.length > 0) {
-      productsListCache = cloudProds;
-      productsMapCache = null;
-      return cloudProds;
-    }
+    const res = await getAllProductsCloudSql();
+    if (Array.isArray(res)) cloudProds = res;
   } catch (e) {
     console.error('Error fetching products from CloudSQL:', e);
   }
+
+  let fsProds = [];
+  try {
+    const res = await getProductsFromFirestore();
+    if (Array.isArray(res)) fsProds = res;
+  } catch (e) {
+    console.error('Error fetching fresh products from Firestore:', e);
+  }
+
+  const localList = readProductsListLocal();
+  const map = new Map();
+
+  // 1. Populate map with localList
+  localList.forEach(p => {
+    if (p && (p.id || p.code)) {
+      map.set(String(p.id || p.code), p);
+    }
+  });
+
+  // 2. Merge CloudSQL products (Supabase)
+  if (Array.isArray(cloudProds) && cloudProds.length > 0) {
+    cloudProds.forEach(cp => {
+      if (!cp || (!cp.id && !cp.code)) return;
+      const key = String(cp.id || cp.code);
+      map.set(key, mergeSingleProduct(map.get(key), cp));
+    });
+  }
+
+  // 3. Merge Firestore products
+  if (Array.isArray(fsProds) && fsProds.length > 0) {
+    fsProds.forEach(fp => {
+      if (!fp || (!fp.id && !fp.code)) return;
+      const key = String(fp.id || fp.code);
+      map.set(key, mergeSingleProduct(map.get(key), fp));
+    });
+  }
+
+  const mergedList = Array.from(map.values());
+  if (mergedList.length > 0) {
+    productsListCache = mergedList;
+    productsMapCache = null;
+    return mergedList;
+  }
+
   return productsListCache || readProductsListLocal();
 }
 
@@ -943,7 +980,7 @@ export async function updateProduct(id, updates) {
 
   await saveProductCloudSql(list[idx]).catch(e => console.error('Cloud SQL update product error:', e));
   saveProductsList(list, false);
-  saveProductToFirestore(list[idx]).catch(e => console.error('Firestore save product error:', e));
+  await saveProductToFirestore(list[idx]).catch(e => console.error('Firestore save product error:', e));
   return list[idx];
 }
 

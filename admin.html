@@ -2699,6 +2699,30 @@
             console.error('Error fetching admin products from API:', err);
         }
 
+        // Merge locally saved edits onto returned API products so recent UI updates are never reverted by stale server responses
+        if (products.length > 0) {
+            try {
+                const customProdsStr = localStorage.getItem('rafooneh_custom_products');
+                if (customProdsStr) {
+                    const parsed = JSON.parse(customProdsStr);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        const customMap = new Map();
+                        parsed.forEach(cp => {
+                            if (cp && (cp.id || cp.code)) customMap.set(String(cp.id || cp.code), cp);
+                        });
+                        products = products.map(p => {
+                            const pid = String(p.id || p.code);
+                            const custom = customMap.get(pid);
+                            if (custom) {
+                                return { ...p, ...custom };
+                            }
+                            return p;
+                        });
+                    }
+                }
+            } catch (e) {}
+        }
+
         // Offline / client fallback if API failed to return products
         if (!products.length && typeof productsData !== 'undefined' && Array.isArray(productsData)) {
             let list = [...productsData];
@@ -2872,13 +2896,14 @@
 
     function updateLocalProductCache(id, patchData) {
         if (!id) return;
+        const enrichedPatch = { ...patchData, isCustomized: true, updatedAt: new Date().toISOString() };
         if (window.adminProductsMap && window.adminProductsMap[id]) {
-            Object.assign(window.adminProductsMap[id], patchData);
+            Object.assign(window.adminProductsMap[id], enrichedPatch);
         }
         if (typeof products !== 'undefined' && Array.isArray(products)) {
             const item = products.find(p => String(p.id) === String(id));
             if (item) {
-                Object.assign(item, patchData);
+                Object.assign(item, enrichedPatch);
             }
         }
         try {
@@ -2887,9 +2912,9 @@
             if (Array.isArray(cachedList)) {
                 const idx = cachedList.findIndex(p => String(p.id) === String(id));
                 if (idx !== -1) {
-                    cachedList[idx] = { ...cachedList[idx], ...patchData };
+                    cachedList[idx] = { ...cachedList[idx], ...enrichedPatch };
                 } else {
-                    cachedList.push({ id, ...patchData });
+                    cachedList.push({ id, ...enrichedPatch });
                 }
                 localStorage.setItem('rafooneh_cached_products', JSON.stringify(cachedList));
             }
@@ -2900,9 +2925,9 @@
             if (Array.isArray(customList)) {
                 const idx = customList.findIndex(p => String(p.id) === String(id));
                 if (idx !== -1) {
-                    customList[idx] = { ...customList[idx], ...patchData };
+                    customList[idx] = { ...customList[idx], ...enrichedPatch };
                 } else {
-                    customList.push({ id, ...patchData });
+                    customList.push({ id, ...enrichedPatch });
                 }
                 localStorage.setItem('rafooneh_custom_products', JSON.stringify(customList));
             }
