@@ -18,7 +18,6 @@ function jsonRes(data, status = 200) {
 function normPass(str) {
   if (!str) return '';
   let s = String(str).trim();
-  // آرایه زیر اصلاح شد تا مشکل کامنت و سینتکس برطرف شود
   const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
   const arabicDigits  = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /۸/g, /٩/g];
   
@@ -26,6 +25,30 @@ function normPass(str) {
     s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
   }
   return s;
+}
+
+// --- تابع تبدیل نام فیلدها به فرمت دیتابیس (snake_case) ---
+function mapToDbSchema(product) {
+  return {
+    id: product.id,
+    code: product.code,
+    name: product.name,
+    brand: product.brand,
+    brand_name: product.brandName,
+    category: product.category,
+    category_name: product.categoryName,
+    price: product.price,
+    new_price: product.newPrice,
+    consumer_price: product.consumerPrice,
+    buy_price: product.buyPrice,       // حل مشکل اصلی
+    packing: product.packing,
+    stock: product.stock,
+    image: product.image,
+    badge: product.badge,
+    description: product.description,
+    is_customized: product.isCustomized,
+    updated_at: product.updatedAt
+  };
 }
 
 // --- SUPABASE HELPERS ---
@@ -39,9 +62,7 @@ function getSupabaseClient(env) {
 async function getAllProductsFromPg(env) {
   try {
     const supabase = getSupabaseClient(env);
-    const { data, error } = await supabase
-      .from('products')
-      .select('*');
+    const { data, error } = await supabase.from('products').select('*');
     
     if (error) {
       console.error('Error fetching products:', error.message);
@@ -56,24 +77,25 @@ async function getAllProductsFromPg(env) {
 
 async function saveProductToPg(env, product) {
   try {
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = getSupabaseClient(env);
     
-    // لاگ کردن آی‌دی برای اطمینان از وجود آن
-    console.log("📦 Attempting to save product ID:", product.id);
+    // تبدیل نام فیلدها به فرمت صحیح دیتابیس قبل از ارسال
+    const dbPayload = mapToDbSchema(product);
+    
+    console.log("📦 Attempting to save product ID:", dbPayload.id);
 
     const { data, error } = await supabase
       .from('products')
-      .upsert(product, { onConflict: 'id' });
+      .upsert(dbPayload, { onConflict: 'id' });
     
     if (error) {
-      // این خطوط خطای دقیق پستگرس را نشان می‌دهند
       console.error("❌ SUPABASE ERROR MESSAGE:", error.message);
       console.error("❌ SUPABASE ERROR DETAILS:", error.details);
       console.error("❌ SUPABASE ERROR HINT:", error.hint);
       return false;
     }
     
-    console.log("✅ Product saved successfully:", product.id);
+    console.log("✅ Product saved successfully:", dbPayload.id);
     return true;
   } catch (err) {
     console.error("❌ EXCEPTION IN SAVE:", err.message);
@@ -84,10 +106,7 @@ async function saveProductToPg(env, product) {
 async function deleteProductFromPg(env, id) {
   try {
     const supabase = getSupabaseClient(env);
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('products').delete().eq('id', id);
     
     if (error) {
       console.error('Error deleting product:', error.message);
@@ -184,7 +203,6 @@ export async function onRequest(context) {
       let pgProds = await getAllProductsFromPg(env);
       if (!pgProds) pgProds = [];
 
-      // Merge with default products from JSON
       const map = new Map();
       if (Array.isArray(defaultProducts)) {
         defaultProducts.forEach(p => {
@@ -236,6 +254,7 @@ export async function onRequest(context) {
       const stock = Number(body.stock) || 0;
       const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
       const newPriceVal = Number(body.newPrice || body.consumerPrice) || 0;
+      
       const product = {
         id,
         code: id,
@@ -248,8 +267,11 @@ export async function onRequest(context) {
         newPrice: newPriceVal,
         consumerPrice: newPriceVal,
         buyPrice: Number(body.buyPrice) || 0,
+        packing: body.packing || 1,
         stock,
         badge,
+        image: body.image || '',
+        description: body.description || '',
         isCustomized: true,
         updatedAt: new Date().toISOString(),
         ...body
@@ -268,7 +290,6 @@ export async function onRequest(context) {
     const id = path.replace('/api/admin/products/', '');
     
     if (method === 'PATCH' || method === 'PUT') {
-      // First fetch existing product from Supabase
       const pgProds = await getAllProductsFromPg(env);
       let existing = pgProds ? pgProds.find(p => String(p.id) === id || String(p.code) === id) : {};
       if (!existing) {
