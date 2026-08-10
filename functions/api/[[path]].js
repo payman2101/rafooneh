@@ -56,19 +56,27 @@ async function getAllProductsFromPg(env) {
 
 async function saveProductToPg(env, product) {
   try {
-    const supabase = getSupabaseClient(env);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    
+    // لاگ کردن آی‌دی برای اطمینان از وجود آن
+    console.log("📦 Attempting to save product ID:", product.id);
+
     const { data, error } = await supabase
       .from('products')
       .upsert(product, { onConflict: 'id' });
     
     if (error) {
-      console.error('Error saving product:', error.message);
+      // این خطوط خطای دقیق پستگرس را نشان می‌دهند
+      console.error("❌ SUPABASE ERROR MESSAGE:", error.message);
+      console.error("❌ SUPABASE ERROR DETAILS:", error.details);
+      console.error("❌ SUPABASE ERROR HINT:", error.hint);
       return false;
     }
-    console.log('✅ Product saved:', product.id);
+    
+    console.log("✅ Product saved successfully:", product.id);
     return true;
   } catch (err) {
-    console.error('Exception in saveProductToPg:', err.message);
+    console.error("❌ EXCEPTION IN SAVE:", err.message);
     return false;
   }
 }
