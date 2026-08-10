@@ -1,5 +1,5 @@
 import pg from 'pg';
-import defaultProducts from '../../products_data.json' with { type: 'json' };
+import defaultProducts from '../../products_data.json';
 
 const projectId = "ageless-fx-sdw77";
 const dbId = "ai-studio-rafooneh-11db6cb9-24d8-4d3d-97d0-9e826f57d0d4";
