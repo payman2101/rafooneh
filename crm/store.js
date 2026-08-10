@@ -215,21 +215,24 @@ export async function getFreshProductsFromFirestore() {
     }
   });
 
-  // 2. Merge CloudSQL products (Supabase)
-  if (Array.isArray(cloudProds) && cloudProds.length > 0) {
-    cloudProds.forEach(cp => {
-      if (!cp || (!cp.id && !cp.code)) return;
-      const key = String(cp.id || cp.code);
-      map.set(key, mergeSingleProduct(map.get(key), cp));
-    });
-  }
-
-  // 3. Merge Firestore products
+  // 2. Merge Firestore products
   if (Array.isArray(fsProds) && fsProds.length > 0) {
     fsProds.forEach(fp => {
       if (!fp || (!fp.id && !fp.code)) return;
       const key = String(fp.id || fp.code);
-      map.set(key, mergeSingleProduct(map.get(key), fp));
+      const existing = map.get(key) || {};
+      map.set(key, { ...existing, ...fp });
+    });
+  }
+
+  // 3. Supabase PostgreSQL is the HIGHEST PRIORITY SOURCE OF TRUTH!
+  // Any product data directly in Supabase DB overrides local JSON and Firestore!
+  if (Array.isArray(cloudProds) && cloudProds.length > 0) {
+    cloudProds.forEach(cp => {
+      if (!cp || (!cp.id && !cp.code)) return;
+      const key = String(cp.id || cp.code);
+      const existing = map.get(key) || {};
+      map.set(key, { ...existing, ...cp });
     });
   }
 

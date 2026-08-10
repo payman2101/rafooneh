@@ -2699,31 +2699,10 @@
             console.error('Error fetching admin products from API:', err);
         }
 
-        // Merge locally saved edits onto returned API products so recent UI updates are never reverted by stale server responses
-        if (products.length > 0) {
-            try {
-                const customProdsStr = localStorage.getItem('rafooneh_custom_products');
-                if (customProdsStr) {
-                    const parsed = JSON.parse(customProdsStr);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        const customMap = new Map();
-                        parsed.forEach(cp => {
-                            if (cp && (cp.id || cp.code)) customMap.set(String(cp.id || cp.code), cp);
-                        });
-                        products = products.map(p => {
-                            const pid = String(p.id || p.code);
-                            const custom = customMap.get(pid);
-                            if (custom) {
-                                return { ...p, ...custom };
-                            }
-                            return p;
-                        });
-                    }
-                }
-            } catch (e) {}
-        }
+        // Clear any old stale client-side custom product cache to ensure Supabase DB is 100% single source of truth
+        try { localStorage.removeItem('rafooneh_custom_products'); } catch (e) {}
 
-        // Offline / client fallback if API failed to return products
+        // Offline / client fallback ONLY if API failed or returned empty
         if (!products.length && typeof productsData !== 'undefined' && Array.isArray(productsData)) {
             let list = [...productsData];
             const customProds = localStorage.getItem('rafooneh_custom_products');
