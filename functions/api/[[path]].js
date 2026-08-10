@@ -1,8 +1,147 @@
+import pg from 'pg';
+import defaultProducts from '../../products_data.json' with { type: 'json' };
+
 const projectId = "ageless-fx-sdw77";
 const dbId = "ai-studio-rafooneh-11db6cb9-24d8-4d3d-97d0-9e826f57d0d4";
 const apiKey = "AIzaSyBW4FfCNNhXrRk39oy294xgLAP6NGPQxoo";
 
-import defaultProducts from '../../products_data.json';
+const DEFAULT_SUPABASE_URL = 'postgres://postgres.agyerjkhtsqmdtcgamgq:M0habb%40t2026%2F8%2F1@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
+
+function fixPgUrl(urlStr) {
+  if (!urlStr) return urlStr;
+  const match = urlStr.match(/^(postgres(?:ql)?:\/\/)([^:]+):(.*)@([^/@]+(?::\d+)?\/.*)$/);
+  if (match) {
+    const [, proto, user, pass, rest] = match;
+    const encodedPass = encodeURIComponent(decodeURIComponent(pass));
+    return proto + user + ":" + encodedPass + "@" + rest;
+  }
+  return urlStr;
+}
+
+let pgPool = null;
+function getPgPool(env) {
+  if (!pgPool) {
+    const connStr = fixPgUrl((env && env.DATABASE_URL) || DEFAULT_SUPABASE_URL);
+    const isLocal = connStr.includes('localhost') || connStr.includes('127.0.0.1');
+    pgPool = new pg.Pool({
+      connectionString: connStr,
+      ssl: isLocal ? false : { rejectUnauthorized: false },
+      max: 5,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 5000,
+    });
+  }
+  return pgPool;
+}
+
+function mapPgProductToJs(r) {
+  if (!r) return null;
+  return {
+    id: String(r.id),
+    code: String(r.code || r.id),
+    name: r.name || '',
+    brand: r.brand || 'rafooneh',
+    brandName: r.brand_name || (r.brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه'),
+    category: r.category || 'other',
+    categoryName: r.category_name || 'سایر شوینده‌ها',
+    price: r.price !== null ? Number(r.price) : 0,
+    consumerPrice: r.consumer_price !== null ? Number(r.consumer_price) : 0,
+    newPrice: r.new_price !== null ? Number(r.new_price) : 0,
+    buyPrice: r.buy_price !== null ? Number(r.buy_price) : 0,
+    packing: r.packing !== null ? Number(r.packing) : 1,
+    stock: r.stock !== null ? Number(r.stock) : 0,
+    image: r.image || '',
+    badge: r.badge || null,
+    description: r.description || '',
+    isCustomized: Boolean(r.is_customized),
+    updatedAt: r.updated_at || ''
+  };
+}
+
+async function getAllProductsFromPg(env) {
+  try {
+    const pool = getPgPool(env);
+    const res = await pool.query('SELECT * FROM products ORDER BY id ASC');
+    if (res && res.rows && res.rows.length > 0) {
+      return res.rows.map(mapPgProductToJs);
+    }
+  } catch (err) {
+    console.error('[Cloudflare Functions] Error querying Supabase products:', err.message);
+  }
+  return null;
+}
+
+async function saveProductToPg(env, p) {
+  if (!p || (!p.id && !p.code)) return false;
+  const id = String(p.id || p.code);
+  const code = String(p.code || id);
+  const name = p.name || '';
+  const brand = p.brand || 'rafooneh';
+  const brandName = p.brandName || (brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه');
+  const category = p.category || 'other';
+  const categoryName = p.categoryName || 'سایر شوینده‌ها';
+  const price = Number(p.price) || 0;
+  const consumerPrice = Number(p.consumerPrice || p.newPrice) || 0;
+  const newPrice = Number(p.newPrice || p.consumerPrice) || 0;
+  const buyPrice = Number(p.buyPrice) || 0;
+  const packing = Number(p.packing) || 1;
+  const stock = Number(p.stock) || 0;
+  const image = p.image || '';
+  const badge = p.badge || null;
+  const description = p.description || '';
+  const isCustomized = Boolean(p.isCustomized);
+  const updatedAt = p.updatedAt || new Date().toISOString();
+
+  try {
+    const pool = getPgPool(env);
+    const query = `
+      INSERT INTO products (
+        id, code, name, brand, brand_name, category, category_name,
+        price, consumer_price, new_price, buy_price, packing, stock,
+        image, badge, description, is_customized, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      ON CONFLICT (id) DO UPDATE SET
+        code = EXCLUDED.code,
+        name = EXCLUDED.name,
+        brand = EXCLUDED.brand,
+        brand_name = EXCLUDED.brand_name,
+        category = EXCLUDED.category,
+        category_name = EXCLUDED.category_name,
+        price = EXCLUDED.price,
+        consumer_price = EXCLUDED.consumer_price,
+        new_price = EXCLUDED.new_price,
+        buy_price = EXCLUDED.buy_price,
+        packing = EXCLUDED.packing,
+        stock = EXCLUDED.stock,
+        image = EXCLUDED.image,
+        badge = EXCLUDED.badge,
+        description = EXCLUDED.description,
+        is_customized = EXCLUDED.is_customized,
+        updated_at = EXCLUDED.updated_at
+    `;
+    await pool.query(query, [
+      id, code, name, brand, brandName, category, categoryName,
+      price, consumerPrice, newPrice, buyPrice, packing, stock,
+      image, badge, description, isCustomized, updatedAt
+    ]);
+    return true;
+  } catch (err) {
+    console.error('[Cloudflare Functions] Error saving product to Supabase:', err.message);
+    return false;
+  }
+}
+
+async function deleteProductFromPg(env, id) {
+  try {
+    const pool = getPgPool(env);
+    const pid = String(id);
+    await pool.query('DELETE FROM products WHERE id = $1 OR code = $1', [pid]);
+    return true;
+  } catch (err) {
+    console.error('[Cloudflare Functions] Error deleting product from Supabase:', err.message);
+    return false;
+  }
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -190,9 +329,39 @@ export async function onRequest(context) {
     return jsonRes({ success: true, message: 'خروج موفق' });
   }
 
+  // --- DB STATUS ENDPOINT ---
+  if (path === '/api/db-status') {
+    try {
+      const cloudProducts = await getAllProductsFromPg(context.env);
+      if (cloudProducts !== null) {
+        return jsonRes({
+          success: true,
+          message: 'ارتباط مستقیم کلادفلر با دیتابیس Supabase برقرار است',
+          databaseHost: 'aws-1-eu-west-1.pooler.supabase.com',
+          supabaseProductCount: cloudProducts.length,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        return jsonRes({
+          success: false,
+          message: 'خطا در ارتباط با دیتابیس Supabase',
+          timestamp: new Date().toISOString()
+        }, 500);
+      }
+    } catch (err) {
+      return jsonRes({
+        success: false,
+        message: 'خطا در دریافت وضعیت دیتابیس',
+        error: err.message,
+        timestamp: new Date().toISOString()
+      }, 500);
+    }
+  }
+
   // --- PRODUCTS ENDPOINTS ---
   if (path === '/api/products' || path === '/api/admin/products') {
     if (method === 'GET') {
+      let pgProds = await getAllProductsFromPg(context.env);
       let fsProds = await getCollectionDocs('products');
       if (!fsProds) fsProds = [];
 
@@ -208,6 +377,14 @@ export async function onRequest(context) {
           const key = String(fp.id || fp.code);
           const existing = map.get(key) || {};
           map.set(key, { ...existing, ...fp });
+        });
+      }
+      if (Array.isArray(pgProds) && pgProds.length > 0) {
+        pgProds.forEach(pp => {
+          if (!pp || (!pp.id && !pp.code)) return;
+          const key = String(pp.id || pp.code);
+          const existing = map.get(key) || {};
+          map.set(key, { ...existing, ...pp });
         });
       }
       customProductsStore.forEach((v, k) => {
@@ -270,7 +447,10 @@ export async function onRequest(context) {
         ...body
       };
       customProductsStore.set(String(id), product);
-      await saveDoc('products', id, product);
+      await Promise.all([
+        saveProductToPg(context.env, product),
+        saveDoc('products', id, product)
+      ]);
       return jsonRes({ success: true, message: 'محصول جدید با موفقیت اضافه شد', product });
     }
   }
@@ -278,9 +458,16 @@ export async function onRequest(context) {
   if (path.startsWith('/api/admin/products/')) {
     const id = path.replace('/api/admin/products/', '');
     if (method === 'PATCH' || method === 'PUT') {
-      const existingProds = await getCollectionDocs('products');
-      const existingDoc = existingProds.find(p => String(p.id) === id || String(p.code) === id) || {};
-      const existing = { ...existingDoc, ...(customProductsStore.get(String(id)) || {}) };
+      let existing = {};
+      const pgProds = await getAllProductsFromPg(context.env);
+      if (pgProds) {
+        existing = pgProds.find(p => String(p.id) === id || String(p.code) === id) || {};
+      }
+      if (!existing.id) {
+        const existingProds = await getCollectionDocs('products');
+        existing = existingProds.find(p => String(p.id) === id || String(p.code) === id) || {};
+      }
+      existing = { ...existing, ...(customProductsStore.get(String(id)) || {}) };
 
       const stock = body.stock !== undefined ? Number(body.stock) : Number(existing.stock || 0);
       const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
@@ -298,13 +485,19 @@ export async function onRequest(context) {
         updatedAt: new Date().toISOString()
       };
       customProductsStore.set(String(id), updatedProd);
-      await saveDoc('products', id, updatedProd);
+      await Promise.all([
+        saveProductToPg(context.env, updatedProd),
+        saveDoc('products', id, updatedProd)
+      ]);
       return jsonRes({ success: true, message: 'اطلاعات محصول با موفقیت به روزرسانی شد', product: updatedProd });
     }
 
     if (method === 'DELETE') {
       customProductsStore.delete(String(id));
-      await removeDoc('products', id);
+      await Promise.all([
+        deleteProductFromPg(context.env, id),
+        removeDoc('products', id)
+      ]);
       return jsonRes({ success: true, message: 'محصول با موفقیت حذف شد' });
     }
   }
