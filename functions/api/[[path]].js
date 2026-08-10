@@ -292,6 +292,16 @@ function normPass(str) {
   return s;
 }
 
+export default {
+  async fetch(request, env, ctx) {
+    return onRequest({
+      request,
+      env,
+      waitUntil: ctx?.waitUntil ? ctx.waitUntil.bind(ctx) : () => {}
+    });
+  }
+};
+
 export async function onRequest(context) {
   const { request } = context;
   const url = new URL(request.url);

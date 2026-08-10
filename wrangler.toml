@@ -1,4 +1,4 @@
 name = "rafooneh"
-pages_build_output_dir = "."
+main = "functions/api/[[path]].js"
 compatibility_date = "2024-09-23"
 compatibility_flags = [ "nodejs_compat" ]
