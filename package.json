@@ -6,6 +6,7 @@
     "dev": "node server.js",
     "sync": "node sync_sheets.js",
     "build": "echo 'Build complete'",
+    "deploy": "wrangler pages deploy .",
     "start": "node server.js"
   },
   "dependencies": {
