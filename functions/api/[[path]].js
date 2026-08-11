@@ -18,8 +18,8 @@ function jsonRes(data, status = 200) {
 function normPass(str) {
   if (!str) return '';
   let s = String(str).trim();
-  const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /٦/g, /۷/g, /۸/g, /۹/g];
-  const arabicDigits  = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /۸/g, /٩/g];
+  const persianDigits = [/0/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+  const arabicDigits  = [/0/g, /١/g, /2/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /8/g, /٩/g];
   
   for (let i = 0; i < 10; i++) {
     s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
@@ -57,7 +57,7 @@ function getSupabaseClient(env) {
   return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 }
 
-// --- PRODUCTS FUNCTIONS ---
+// ==================== PRODUCTS FUNCTIONS ====================
 async function getAllProductsFromPg(env) {
   try {
     const supabase = getSupabaseClient(env);
@@ -97,14 +97,14 @@ async function deleteProductFromPg(env, id) {
   }
 }
 
-// --- ORDERS FUNCTIONS ---
+// ==================== ORDERS FUNCTIONS ====================
 async function createOrder(env, orderData) {
   try {
     const supabase = getSupabaseClient(env);
     const { data, error } = await supabase
       .from('orders')
       .insert([{
-        id: orderData.id,
+        id: orderData.id || 'ord-' + Date.now(),
         customer_name: orderData.customerName,
         phone: orderData.phone,
         address: orderData.address,
@@ -126,13 +126,22 @@ async function createOrder(env, orderData) {
         const productId = item.productId || item.id || item.code;
         const qty = item.qty || 1;
         
-        await supabase.rpc('decrement_stock', {
-          product_id: productId,
-          quantity: qty
-        }).catch(() => {
-          // اگر تابع RPC وجود نداشت، به صورت مستقیم آپدیت کن
-          console.log('RPC not found, updating stock directly');
-        });
+        const { data: product } = await supabase
+          .from('products')
+          .select('stock')
+          .eq('id', productId)
+          .single();
+        
+        if (product) {
+          const newStock = Math.max(0, (product.stock || 0) - qty);
+          await supabase
+            .from('products')
+            .update({ 
+              stock: newStock,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', productId);
+        }
       }
     }
     
@@ -153,7 +162,6 @@ async function getOrders(env, filters = {}) {
     }
     
     if (filters.search) {
-      // جستجو در customer_name یا phone
       query = query.or(`customer_name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%`);
     }
     
@@ -189,8 +197,6 @@ async function updateOrder(env, id, updates) {
   try {
     const supabase = getSupabaseClient(env);
     const updateData = { ...updates };
-    
-    // حذف فیلدهایی که نباید آپدیت شوند
     delete updateData.id;
     
     const { data, error } = await supabase
@@ -220,19 +226,16 @@ async function deleteOrder(env, id) {
   }
 }
 
-// --- CUSTOMERS FUNCTIONS ---
+// ==================== CUSTOMERS FUNCTIONS ====================
 async function getCustomers(env, search = '') {
   try {
     const supabase = getSupabaseClient(env);
-    
-    // دریافت همه سفارشات برای محاسبه اطلاعات مشتریان
     const { data: orders, error } = await supabase
       .from('orders')
       .select('customer_name, phone, total_amount, created_at');
     
     if (error) throw error;
     
-    // گروه‌بندی بر اساس شماره تلفن
     const customerMap = new Map();
     
     orders.forEach(order => {
@@ -261,7 +264,6 @@ async function getCustomers(env, search = '') {
     
     let customers = Array.from(customerMap.values());
     
-    // فیلتر جستجو
     if (search) {
       const s = search.toLowerCase();
       customers = customers.filter(c => 
@@ -277,15 +279,13 @@ async function getCustomers(env, search = '') {
   }
 }
 
-// --- STATS FUNCTIONS ---
+// ==================== STATS FUNCTIONS ====================
 async function getStats(env, timeframe = 'all', fromDate = '', toDate = '') {
   try {
     const supabase = getSupabaseClient(env);
     
-    // دریافت همه سفارشات
     let query = supabase.from('orders').select('*');
     
-    // فیلتر بر اساس بازه زمانی
     if (timeframe === 'today') {
       const today = new Date().toISOString().split('T')[0];
       query = query.gte('created_at', today);
@@ -308,7 +308,6 @@ async function getStats(env, timeframe = 'all', fromDate = '', toDate = '') {
     const { data: orders, error } = await query;
     if (error) throw error;
     
-    // محاسبه آمار
     const totalOrders = orders.length;
     const revenueTotal = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
     const activeOrders = orders.filter(o => 
@@ -316,18 +315,14 @@ async function getStats(env, timeframe = 'all', fromDate = '', toDate = '') {
     ).length;
     
     const deliveredOrdersCount = orders.filter(o => o.status === 'delivered').length;
-    
-    // محاسبه سود (تقریبی - 30% فرض شده)
     const profitTotal = Math.round(revenueTotal * 0.3);
     const profitMarginTotal = 30;
     
-    // سفارشات امروز
     const todayStr = new Date().toISOString().split('T')[0];
     const todayOrders = orders.filter(o => o.created_at && o.created_at.startsWith(todayStr));
     const revenueToday = todayOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
     const profitToday = Math.round(revenueToday * 0.3);
     
-    // دریافت هشدارها
     const alerts = await getAlerts(env);
     
     return {
@@ -350,18 +345,16 @@ async function getStats(env, timeframe = 'all', fromDate = '', toDate = '') {
   }
 }
 
-// --- ALERTS FUNCTIONS ---
+// ==================== ALERTS FUNCTIONS ====================
 async function getAlerts(env) {
   try {
     const supabase = getSupabaseClient(env);
     
-    // موجودی کم
     const { data: lowStockProducts } = await supabase
       .from('products')
       .select('*')
       .lt('stock', 5);
     
-    // سفارشات با تأخیر
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
     const { data: delayedOrders } = await supabase
       .from('orders')
@@ -385,12 +378,11 @@ async function getAlerts(env) {
   }
 }
 
-// --- PURCHASES FUNCTIONS ---
+// ==================== PURCHASES FUNCTIONS ====================
 async function createPurchase(env, purchaseData) {
   try {
     const supabase = getSupabaseClient(env);
     
-    // محاسبه مجموع
     const totalAmount = purchaseData.items.reduce((sum, item) => {
       return sum + (item.qty * item.buyPrice);
     }, 0);
@@ -399,7 +391,6 @@ async function createPurchase(env, purchaseData) {
       return sum + item.qty;
     }, 0);
     
-    // ثبت فاکتور خرید
     const { data, error } = await supabase
       .from('purchases')
       .insert([{
@@ -418,14 +409,12 @@ async function createPurchase(env, purchaseData) {
     
     if (error) throw error;
     
-    // افزایش موجودی انبار
     if (purchaseData.updateStock !== false) {
       for (const item of purchaseData.items) {
         const productId = item.productId;
         const qty = item.qty;
         const buyPrice = item.buyPrice;
         
-        // دریافت محصول فعلی
         const { data: product } = await supabase
           .from('products')
           .select('stock, buy_price')
@@ -481,7 +470,7 @@ async function deletePurchase(env, id) {
   }
 }
 
-// --- COMPANY PAYMENTS FUNCTIONS ---
+// ==================== COMPANY PAYMENTS FUNCTIONS ====================
 async function getCompanyPayments(env) {
   try {
     const supabase = getSupabaseClient(env);
@@ -540,7 +529,7 @@ async function deleteCompanyPayment(env, id) {
   }
 }
 
-// --- MAIN REQUEST HANDLER ---
+// ==================== MAIN REQUEST HANDLER ====================
 export default {
   async fetch(request, env, ctx) {
     return onRequest({
@@ -557,12 +546,10 @@ export async function onRequest(context) {
   const method = request.method.toUpperCase();
   const path = url.pathname;
 
-  // Handle preflight
   if (method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  // Parse body for POST/PATCH/PUT
   let body = {};
   if (['POST', 'PATCH', 'PUT'].includes(method)) {
     try {
@@ -893,14 +880,4 @@ export async function onRequest(context) {
     path: path,
     method: method
   }, 404);
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
