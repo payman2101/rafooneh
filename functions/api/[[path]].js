@@ -28,30 +28,30 @@ function normPass(str) {
 }
 
 const STATUS_LABELS = {
-  pending: 'در انتظار بررسی',
-  new: 'در انتظار بررسی',
+  pending: 'سفارش جدید (در انتظار بررسی مدیر)',
+  new: 'سفارش جدید (در انتظار بررسی مدیر)',
   confirmed: 'تأیید شده',
-  preparing: 'در حال پردازش',
+  preparing: 'در حال آماده‌سازی',
   processing: 'در حال پردازش',
   shipped: 'ارسال شده',
-  delivering: 'ارسال شده',
+  delivering: 'در حال ارسال',
   delivered: 'تحویل شده',
   cancelled: 'لغو شده'
 };
 
 function getStatusLabel(status) {
   const norm = String(status || '').toLowerCase();
-  return STATUS_LABELS[norm] || STATUS_LABELS[status] || status || 'در انتظار بررسی';
+  return STATUS_LABELS[norm] || STATUS_LABELS[status] || status || 'سفارش جدید';
 }
 
 function getAllStatuses() {
   return [
-    { id: 'pending', name: 'در انتظار بررسی' },
-    { id: 'confirmed', name: 'تأیید شده' },
-    { id: 'processing', name: 'در حال پردازش' },
-    { id: 'shipped', name: 'ارسال شده' },
-    { id: 'delivered', name: 'تحویل شده' },
-    { id: 'cancelled', name: 'لغو شده' }
+    { id: 'pending', name: 'سفارش جدید (در انتظار بررسی مدیر)', label: 'سفارش جدید (در انتظار بررسی مدیر)' },
+    { id: 'confirmed', name: 'تأیید شده', label: 'تأیید شده' },
+    { id: 'processing', name: 'در حال پردازش', label: 'در حال پردازش' },
+    { id: 'shipped', name: 'ارسال شده', label: 'ارسال شده' },
+    { id: 'delivered', name: 'تحویل شده', label: 'تحویل شده' },
+    { id: 'cancelled', name: 'لغو شده', label: 'لغو شده' }
   ];
 }
 
@@ -707,6 +707,12 @@ export async function onRequest(context) {
     }
 
     if (method === 'DELETE') {
+      if (existing) {
+        // Restore stock for items in deleted order if order was active (not cancelled)
+        if (existing.status !== 'cancelled') {
+          await updateProductStockForOrder(env, existing.items, true);
+        }
+      }
       const memIdx = memoryOrders.findIndex(o => String(o.id) === id);
       if (memIdx !== -1) memoryOrders.splice(memIdx, 1);
       await deleteOrderFromPg(env, id);

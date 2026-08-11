@@ -1641,7 +1641,8 @@
     }
 
     function statusBadge(status, label) {
-        return `<span class="badge badge-${status}">${label || status}</span>`;
+        const text = (label && label !== 'undefined') ? label : getStatusLabel(status);
+        return `<span class="badge badge-${status}">${text}</span>`;
     }
 
     function getLocalOrders() {
@@ -2176,8 +2177,18 @@
 
     function getStatusLabel(status) {
         const found = orderStatuses.find(s => s.id === status);
-        const labels = { new:'جدید', confirmed:'تأیید', preparing:'آماده‌سازی', delivering:'ارسال', delivered:'تحویل', cancelled:'لغو' };
-        return found?.label || labels[status] || status;
+        const labels = {
+            pending: 'سفارش جدید (در انتظار بررسی مدیر)',
+            new: 'جدید',
+            confirmed: 'تأیید شده',
+            processing: 'در حال پردازش',
+            preparing: 'در حال آماده‌سازی',
+            shipped: 'ارسال شده',
+            delivering: 'در حال ارسال',
+            delivered: 'تحویل شده',
+            cancelled: 'لغو شده'
+        };
+        return found?.label || found?.name || labels[status] || status || 'جدید';
     }
 
     async function loadOrders() {
@@ -2439,9 +2450,10 @@
         document.getElementById('orderCreatedAtInput').value = `${year}-${month}-${day}T${hours}:${minutes}`;
 
         const pills = document.getElementById('statusPills');
-        pills.innerHTML = orderStatuses.map(s =>
-            `<button type="button" class="status-pill ${order.status === s.id ? 'active' : ''}" data-status="${s.id}" onclick="selectStatus('${s.id}')">${s.label}</button>`
-        ).join('');
+        pills.innerHTML = orderStatuses.map(s => {
+            const labelText = s.label || s.name || getStatusLabel(s.id);
+            return `<button type="button" class="status-pill ${order.status === s.id ? 'active' : ''}" data-status="${s.id}" onclick="selectStatus('${s.id}')">${labelText}</button>`;
+        }).join('');
 
         const waMsg = encodeURIComponent(`سلام ${order.customerName || 'مشتری محترم'}،\nسفارش شما (${order.id}) در حال پیگیری است.\nمبلغ: ${(order.totalAmount || 0).toLocaleString('fa-IR')} تومان`);
         document.getElementById('whatsappOrderLink').href = `https://wa.me/98${(order.phone || '').replace(/^0/, '')}?text=${waMsg}`;
