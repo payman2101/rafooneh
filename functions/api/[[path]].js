@@ -451,31 +451,172 @@ export async function onRequest(context) {
 
   // --- STATS, PROFIT & ALERTS ---
   if (path === '/api/admin/stats') {
+    const urlObj = new URL(request.url);
+    const timeframe = urlObj.searchParams.get('timeframe') || 'all';
+    const fromParam = urlObj.searchParams.get('from');
+    const toParam = urlObj.searchParams.get('to');
+
     const orders = await getCombinedOrders(env);
     const customers = await getCombinedCustomers(env);
-    const pgProds = await getAllProductsFromPg(env);
-    const products = (pgProds && pgProds.length > 0) ? pgProds : defaultProducts;
+    const pgProds = await getAllProductsFromPg(env) || [];
+    
+    const prodMap = new Map();
+    defaultProducts.forEach(p => {
+      if (p && (p.id || p.code)) prodMap.set(String(p.id || p.code), p);
+    });
+    pgProds.forEach(pp => {
+      if (pp && (pp.id || pp.code)) {
+        const key = String(pp.id || pp.code);
+        const existing = prodMap.get(key) || {};
+        prodMap.set(key, { ...existing, ...pp });
+      }
+    });
 
-    const totalSales = orders.reduce((sum, o) => sum + (o.status !== 'cancelled' ? Number(o.totalAmount || 0) : 0), 0);
-    const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'new').length;
-    const completedOrders = orders.filter(o => o.status === 'delivered' || o.status === 'shipped' || o.status === 'delivering').length;
-    const lowStockProductsCount = products.filter(p => Number(p.stock || 0) <= 5).length;
+    // Enrich all orders with cost and profit
+    const enrichedOrders = orders.map(o => {
+      let orderCost = 0;
+      let orderRevFromItems = 0;
+      const items = Array.isArray(o.items) ? o.items : [];
+      
+      items.forEach(item => {
+        const pKey = String(item.id || item.code || '');
+        const prod = prodMap.get(pKey) || {};
+        const qty = Number(item.quantity || item.qty || 1);
+        const itemPrice = Number(item.price || prod.price || 0);
+        const buyPrice = Number(item.buyPrice || prod.buyPrice || Math.round(itemPrice * 0.7));
+        
+        orderRevFromItems += itemPrice * qty;
+        orderCost += buyPrice * qty;
+      });
+
+      const orderRev = Number(o.totalAmount || orderRevFromItems || 0);
+      if (orderCost === 0 && orderRev > 0) {
+        orderCost = Math.round(orderRev * 0.7);
+      }
+      const orderProfit = orderRev - orderCost;
+      const orderMargin = orderRev > 0 ? Math.round((orderProfit / orderRev) * 100) : 0;
+
+      return {
+        ...o,
+        totalAmount: orderRev,
+        totalCost: orderCost,
+        totalProfit: orderProfit,
+        profitMargin: orderMargin
+      };
+    });
+
+    // Determine filter dates
+    const now = new Date();
+    let fromDate = null;
+    let toDate = null;
+
+    if (timeframe === 'today') {
+      fromDate = new Date(now);
+      fromDate.setHours(0, 0, 0, 0);
+    } else if (timeframe === 'yesterday') {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 1);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate = new Date(now);
+      toDate.setDate(toDate.getDate() - 1);
+      toDate.setHours(23, 59, 59, 999);
+    } else if (timeframe === 'week' || timeframe === '7days') {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 7);
+      fromDate.setHours(0, 0, 0, 0);
+    } else if (timeframe === 'month' || timeframe === '30days') {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 30);
+      fromDate.setHours(0, 0, 0, 0);
+    } else if (timeframe === 'year') {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 365);
+      fromDate.setHours(0, 0, 0, 0);
+    } else if (timeframe === 'custom') {
+      if (fromParam) {
+        fromDate = new Date(fromParam);
+        if (isNaN(fromDate.getTime())) fromDate = null;
+        else fromDate.setHours(0, 0, 0, 0);
+      }
+      if (toParam) {
+        toDate = new Date(toParam);
+        if (isNaN(toDate.getTime())) toDate = null;
+        else toDate.setHours(23, 59, 59, 999);
+      }
+    }
+
+    const filteredOrders = enrichedOrders.filter(o => {
+      if (!o.createdAt) return true;
+      const oDate = new Date(o.createdAt);
+      if (fromDate && oDate < fromDate) return false;
+      if (toDate && oDate > toDate) return false;
+      return true;
+    });
+
+    const validFilteredOrders = filteredOrders.filter(o => o.status !== 'cancelled');
+    const activeOrders = enrichedOrders.filter(o => !['delivered', 'cancelled'].includes(o.status));
+    const deliveredOrders = enrichedOrders.filter(o => o.status === 'delivered');
+
+    const revenueTotal = validFilteredOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const costTotal = validFilteredOrders.reduce((sum, o) => sum + (o.totalCost || 0), 0);
+    const profitTotal = revenueTotal - costTotal;
+    const profitMarginTotal = revenueTotal > 0 ? Math.round((profitTotal / revenueTotal) * 100) : 0;
+
+    // Today metrics
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayOrdersList = enrichedOrders.filter(o => new Date(o.createdAt) >= startOfToday);
+    const validTodayOrders = todayOrdersList.filter(o => o.status !== 'cancelled');
+    const revenueToday = validTodayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const costToday = validTodayOrders.reduce((sum, o) => sum + (o.totalCost || 0), 0);
+    const profitToday = revenueToday - costToday;
+
+    // Alerts
+    const products = (pgProds && pgProds.length > 0) ? pgProds : defaultProducts;
+    const lowStockCount = products.filter(p => Number(p.stock || 0) <= 5).length;
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const delayedOrdersCount = enrichedOrders.filter(o => {
+      if (['delivered', 'cancelled'].includes(o.status)) return false;
+      const elapsed = Date.now() - new Date(o.createdAt).getTime();
+      return elapsed >= SEVEN_DAYS_MS;
+    }).length;
+
+    const recentOrders = [...filteredOrders]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10);
 
     return jsonRes({
       success: true,
       stats: {
-        totalSales,
+        timeframe,
         totalOrders: orders.length,
-        pendingOrders,
-        completedOrders,
+        filteredOrdersCount: filteredOrders.length,
         totalCustomers: customers.length,
-        totalProducts: products.length,
-        lowStockProductsCount
+        todayOrders: todayOrdersList.length,
+        revenueToday,
+        profitToday,
+        activeOrders: activeOrders.length,
+        deliveredOrdersCount: deliveredOrders.length,
+        revenueTotal,
+        costTotal,
+        profitTotal,
+        profitMarginTotal,
+        recentOrders,
+        alerts: {
+          lowStockCount,
+          delayedOrdersCount,
+          totalAlertsCount: lowStockCount + delayedOrdersCount
+        }
       }
     });
   }
 
   if (path === '/api/admin/profit') {
+    const urlObj = new URL(request.url);
+    const timeframe = urlObj.searchParams.get('timeframe') || 'all';
+    const fromParam = urlObj.searchParams.get('from');
+    const toParam = urlObj.searchParams.get('to');
+
     const orders = await getCombinedOrders(env);
     const pgProds = await getAllProductsFromPg(env) || [];
     
@@ -491,7 +632,54 @@ export async function onRequest(context) {
       }
     });
 
-    const validOrders = orders.filter(o => o.status !== 'cancelled');
+    const now = new Date();
+    let fromDate = null;
+    let toDate = null;
+
+    if (timeframe === 'today') {
+      fromDate = new Date(now);
+      fromDate.setHours(0, 0, 0, 0);
+    } else if (timeframe === 'yesterday') {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 1);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate = new Date(now);
+      toDate.setDate(toDate.getDate() - 1);
+      toDate.setHours(23, 59, 59, 999);
+    } else if (timeframe === 'week' || timeframe === '7days') {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 7);
+      fromDate.setHours(0, 0, 0, 0);
+    } else if (timeframe === 'month' || timeframe === '30days') {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 30);
+      fromDate.setHours(0, 0, 0, 0);
+    } else if (timeframe === 'year') {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 365);
+      fromDate.setHours(0, 0, 0, 0);
+    } else if (timeframe === 'custom') {
+      if (fromParam) {
+        fromDate = new Date(fromParam);
+        if (isNaN(fromDate.getTime())) fromDate = null;
+        else fromDate.setHours(0, 0, 0, 0);
+      }
+      if (toParam) {
+        toDate = new Date(toParam);
+        if (isNaN(toDate.getTime())) toDate = null;
+        else toDate.setHours(23, 59, 59, 999);
+      }
+    }
+
+    const filteredOrders = orders.filter(o => {
+      if (!o.createdAt) return true;
+      const oDate = new Date(o.createdAt);
+      if (fromDate && oDate < fromDate) return false;
+      if (toDate && oDate > toDate) return false;
+      return true;
+    });
+
+    const validOrders = filteredOrders.filter(o => o.status !== 'cancelled');
     let totalRevenue = 0;
     let totalCost = 0;
 
@@ -500,6 +688,7 @@ export async function onRequest(context) {
 
     validOrders.forEach(o => {
       let orderCost = 0;
+      let orderRevFromItems = 0;
       const items = Array.isArray(o.items) ? o.items : [];
       
       items.forEach(item => {
@@ -513,6 +702,7 @@ export async function onRequest(context) {
         const itemCost = buyPrice * qty;
         const itemProfit = itemRev - itemCost;
 
+        orderRevFromItems += itemRev;
         orderCost += itemCost;
 
         if (pKey) {
@@ -537,7 +727,7 @@ export async function onRequest(context) {
         }
       });
 
-      const orderRev = Number(o.totalAmount || 0);
+      const orderRev = Number(o.totalAmount || orderRevFromItems || 0);
       if (orderCost === 0 && orderRev > 0) {
         orderCost = Math.round(orderRev * 0.7);
       }
@@ -549,6 +739,7 @@ export async function onRequest(context) {
 
       orderProfitList.push({
         ...o,
+        totalAmount: orderRev,
         totalCost: orderCost,
         totalProfit: orderProfit,
         profitMargin: orderMargin
