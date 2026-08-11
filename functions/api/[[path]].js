@@ -18,7 +18,7 @@ function jsonRes(data, status = 200) {
 function normPass(str) {
   if (!str) return '';
   let s = String(str).trim();
-  const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, //g, /۷/g, /۸/g, /۹/g];
+  const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /٦/g, /۷/g, /۸/g, /۹/g];
   const arabicDigits  = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /۸/g, /٩/g];
   
   for (let i = 0; i < 10; i++) {
