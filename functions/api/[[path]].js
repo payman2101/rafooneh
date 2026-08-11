@@ -29,19 +29,25 @@ function normPass(str) {
 
 const STATUS_LABELS = {
   pending: 'در انتظار بررسی',
+  new: 'در انتظار بررسی',
+  confirmed: 'تأیید شده',
+  preparing: 'در حال پردازش',
   processing: 'در حال پردازش',
   shipped: 'ارسال شده',
+  delivering: 'ارسال شده',
   delivered: 'تحویل شده',
   cancelled: 'لغو شده'
 };
 
 function getStatusLabel(status) {
-  return STATUS_LABELS[status] || status || 'در انتظار بررسی';
+  const norm = String(status || '').toLowerCase();
+  return STATUS_LABELS[norm] || STATUS_LABELS[status] || status || 'در انتظار بررسی';
 }
 
 function getAllStatuses() {
   return [
     { id: 'pending', name: 'در انتظار بررسی' },
+    { id: 'confirmed', name: 'تأیید شده' },
     { id: 'processing', name: 'در حال پردازش' },
     { id: 'shipped', name: 'ارسال شده' },
     { id: 'delivered', name: 'تحویل شده' },
@@ -198,11 +204,47 @@ function formatOrder(o) {
 async function getCombinedOrders(env) {
   const pgOrders = await getAllOrdersFromPg(env);
   const map = new Map();
-  memoryOrders.forEach(o => map.set(String(o.id), formatOrder(o)));
-  if (Array.isArray(pgOrders)) {
+  // DB orders are authoritative
+  if (Array.isArray(pgOrders) && pgOrders.length > 0) {
     pgOrders.forEach(po => map.set(String(po.id), formatOrder(po)));
   }
+  memoryOrders.forEach(o => {
+    if (!map.has(String(o.id))) {
+      map.set(String(o.id), formatOrder(o));
+    }
+  });
   return Array.from(map.values()).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+// Helper to deduct or restore product stock based on orders
+async function updateProductStockForOrder(env, orderItems, isRestore = false) {
+  if (!Array.isArray(orderItems) || orderItems.length === 0) return;
+  try {
+    const pgProds = await getAllProductsFromPg(env);
+    if (!pgProds || !Array.isArray(pgProds)) return;
+
+    for (const item of orderItems) {
+      const prodId = String(item.id || item.code || '');
+      if (!prodId) continue;
+
+      const prod = pgProds.find(p => String(p.id) === prodId || String(p.code) === prodId);
+      if (prod) {
+        const qty = Number(item.quantity || item.qty || 1);
+        let currStock = Number(prod.stock || 0);
+        if (isRestore) {
+          currStock += qty;
+        } else {
+          currStock = Math.max(0, currStock - qty);
+        }
+        prod.stock = currStock;
+        prod.badge = currStock <= 0 ? 'ناموجود' : (currStock <= 5 ? `تعداد محدود (${currStock} عدد)` : null);
+        prod.updated_at = new Date().toISOString();
+        await saveProductToPg(env, prod);
+      }
+    }
+  } catch (err) {
+    console.error('[Stock Update Error]:', err);
+  }
 }
 
 // Customers DB Helpers
@@ -230,7 +272,7 @@ async function saveCustomerToPg(env, cust) {
       total_spent: Number(cust.totalSpent || 0),
       created_at: cust.createdAt || new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      last_order_at: new Date().toISOString()
+      last_order_at: cust.lastOrderAt || new Date().toISOString()
     };
     const { error } = await supabase.from('customers').upsert(dbPayload, { onConflict: 'id' });
     if (error) {
@@ -254,20 +296,64 @@ async function deleteCustomerFromPg(env, id) {
 }
 
 async function getCombinedCustomers(env) {
-  const pgCusts = await getAllCustomersFromPg(env);
+  const pgCusts = await getAllCustomersFromPg(env) || [];
+  const orders = await getCombinedOrders(env);
+  
   const map = new Map();
-  memoryCustomers.forEach(c => map.set(String(c.id), c));
-  if (Array.isArray(pgCusts)) {
-    pgCusts.forEach(pc => map.set(String(pc.id), {
+
+  // First seed from DB customers
+  pgCusts.forEach(pc => {
+    const normPhone = String(pc.phone || '').replace(/\D/g, '');
+    const pKey = normPhone || String(pc.id);
+    map.set(pKey, {
       id: String(pc.id),
-      name: pc.name,
-      phone: pc.phone,
+      name: pc.name || 'مشتری',
+      phone: pc.phone || '',
       address: pc.address || '',
       notes: pc.notes || '',
+      totalOrders: Number(pc.total_orders || 0),
+      totalSpent: Number(pc.total_spent || 0),
+      lastOrderAt: pc.last_order_at || pc.created_at || new Date().toISOString(),
       createdAt: pc.created_at || new Date().toISOString()
-    }));
-  }
-  return Array.from(map.values());
+    });
+  });
+
+  // Dynamically group & aggregate metrics from ALL orders (deduplicated by phone)
+  orders.forEach(o => {
+    const rawPhone = String(o.phone || '');
+    const normPhone = rawPhone.replace(/\D/g, '');
+    const key = normPhone || String(o.customerId || o.id);
+
+    let cust = map.get(key);
+    if (!cust) {
+      cust = {
+        id: 'CUST-' + (normPhone || o.id),
+        name: o.customerName || 'مشتری',
+        phone: rawPhone,
+        address: o.address || '',
+        notes: '',
+        totalOrders: 0,
+        totalSpent: 0,
+        lastOrderAt: o.createdAt,
+        createdAt: o.createdAt
+      };
+      map.set(key, cust);
+    }
+
+    // Re-calculate accurately from active orders
+    if (o.status !== 'cancelled') {
+      cust.totalOrders = (cust.totalOrders || 0) + 1;
+      cust.totalSpent = (cust.totalSpent || 0) + Number(o.totalAmount || 0);
+    }
+
+    if (!cust.lastOrderAt || new Date(o.createdAt) >= new Date(cust.lastOrderAt)) {
+      cust.lastOrderAt = o.createdAt;
+      if (o.customerName && o.customerName !== 'مشتری') cust.name = o.customerName;
+      if (o.address) cust.address = o.address;
+    }
+  });
+
+  return Array.from(map.values()).sort((a,b) => new Date(b.lastOrderAt) - new Date(a.lastOrderAt));
 }
 
 // --- MAIN REQUEST HANDLER ---
@@ -368,11 +454,12 @@ export async function onRequest(context) {
     const orders = await getCombinedOrders(env);
     const customers = await getCombinedCustomers(env);
     const pgProds = await getAllProductsFromPg(env);
-    const prodsCount = (pgProds && pgProds.length > 0) ? pgProds.length : defaultProducts.length;
+    const products = (pgProds && pgProds.length > 0) ? pgProds : defaultProducts;
 
     const totalSales = orders.reduce((sum, o) => sum + (o.status !== 'cancelled' ? Number(o.totalAmount || 0) : 0), 0);
-    const pendingOrders = orders.filter(o => o.status === 'pending').length;
-    const completedOrders = orders.filter(o => o.status === 'delivered' || o.status === 'shipped').length;
+    const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'new').length;
+    const completedOrders = orders.filter(o => o.status === 'delivered' || o.status === 'shipped' || o.status === 'delivering').length;
+    const lowStockProductsCount = products.filter(p => Number(p.stock || 0) <= 5).length;
 
     return jsonRes({
       success: true,
@@ -382,26 +469,106 @@ export async function onRequest(context) {
         pendingOrders,
         completedOrders,
         totalCustomers: customers.length,
-        totalProducts: prodsCount,
-        lowStockProductsCount: 0
+        totalProducts: products.length,
+        lowStockProductsCount
       }
     });
   }
 
   if (path === '/api/admin/profit') {
     const orders = await getCombinedOrders(env);
-    const totalRevenue = orders.reduce((sum, o) => sum + (o.status !== 'cancelled' ? Number(o.totalAmount || 0) : 0), 0);
-    const totalCost = Math.round(totalRevenue * 0.75); // Approximate cost estimate
-    const netProfit = totalRevenue - totalCost;
+    const pgProds = await getAllProductsFromPg(env) || [];
+    
+    const prodMap = new Map();
+    defaultProducts.forEach(p => {
+      if (p && (p.id || p.code)) prodMap.set(String(p.id || p.code), p);
+    });
+    pgProds.forEach(pp => {
+      if (pp && (pp.id || pp.code)) {
+        const key = String(pp.id || pp.code);
+        const existing = prodMap.get(key) || {};
+        prodMap.set(key, { ...existing, ...pp });
+      }
+    });
+
+    const validOrders = orders.filter(o => o.status !== 'cancelled');
+    let totalRevenue = 0;
+    let totalCost = 0;
+
+    const productProfitMap = new Map();
+    const orderProfitList = [];
+
+    validOrders.forEach(o => {
+      let orderCost = 0;
+      const items = Array.isArray(o.items) ? o.items : [];
+      
+      items.forEach(item => {
+        const pKey = String(item.id || item.code || '');
+        const prod = prodMap.get(pKey) || {};
+        const qty = Number(item.quantity || item.qty || 1);
+        const itemPrice = Number(item.price || prod.price || 0);
+        const buyPrice = Number(item.buyPrice || prod.buyPrice || Math.round(itemPrice * 0.7));
+        
+        const itemRev = itemPrice * qty;
+        const itemCost = buyPrice * qty;
+        const itemProfit = itemRev - itemCost;
+
+        orderCost += itemCost;
+
+        if (pKey) {
+          let pEntry = productProfitMap.get(pKey);
+          if (!pEntry) {
+            pEntry = {
+              id: pKey,
+              name: item.name || prod.name || 'محصول',
+              unitsSold: 0,
+              totalRevenue: 0,
+              totalCost: 0,
+              totalProfit: 0,
+              profitMargin: 0
+            };
+            productProfitMap.set(pKey, pEntry);
+          }
+          pEntry.unitsSold += qty;
+          pEntry.totalRevenue += itemRev;
+          pEntry.totalCost += itemCost;
+          pEntry.totalProfit += itemProfit;
+          pEntry.profitMargin = pEntry.totalRevenue > 0 ? Math.round((pEntry.totalProfit / pEntry.totalRevenue) * 100) : 0;
+        }
+      });
+
+      const orderRev = Number(o.totalAmount || 0);
+      if (orderCost === 0 && orderRev > 0) {
+        orderCost = Math.round(orderRev * 0.7);
+      }
+      const orderProfit = orderRev - orderCost;
+      const orderMargin = orderRev > 0 ? Math.round((orderProfit / orderRev) * 100) : 0;
+
+      totalRevenue += orderRev;
+      totalCost += orderCost;
+
+      orderProfitList.push({
+        ...o,
+        totalCost: orderCost,
+        totalProfit: orderProfit,
+        profitMargin: orderMargin
+      });
+    });
+
+    const totalProfit = totalRevenue - totalCost;
+    const marginPercent = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0;
+    const productProfitList = Array.from(productProfitMap.values()).sort((a,b) => b.totalProfit - a.totalProfit);
 
     return jsonRes({
       success: true,
       profitStats: {
         totalRevenue,
         totalCost,
-        netProfit,
-        marginPercent: totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0,
-        itemCount: orders.length
+        totalProfit,
+        profitMargin: marginPercent,
+        ordersCount: validOrders.length,
+        products: productProfitList,
+        orders: orderProfitList
       }
     });
   }
@@ -473,13 +640,16 @@ export async function onRequest(context) {
         items: body.items || [],
         totalAmount: Number(body.totalAmount) || 0,
         paymentMethod: body.paymentMethod || 'cash',
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        source: 'website'
+        status: body.status || 'pending',
+        createdAt: body.createdAt || new Date().toISOString(),
+        source: body.source || 'website'
       });
 
       memoryOrders.unshift(order);
       await saveOrderToPg(env, order);
+
+      // Automatically deduct product inventory stock
+      await updateProductStockForOrder(env, order.items, false);
 
       // Auto save customer
       if (order.phone) {
@@ -512,6 +682,7 @@ export async function onRequest(context) {
     }
 
     if (method === 'PATCH' || method === 'PUT') {
+      const oldStatus = existing ? existing.status : null;
       const updatedOrder = formatOrder({
         ...existing,
         ...body,
@@ -524,6 +695,14 @@ export async function onRequest(context) {
       else memoryOrders.push(updatedOrder);
 
       await saveOrderToPg(env, updatedOrder);
+
+      // Handle stock adjustments on status changes
+      if (oldStatus !== 'cancelled' && updatedOrder.status === 'cancelled') {
+        await updateProductStockForOrder(env, updatedOrder.items, true); // Restore stock
+      } else if (oldStatus === 'cancelled' && updatedOrder.status !== 'cancelled') {
+        await updateProductStockForOrder(env, updatedOrder.items, false); // Re-deduct stock
+      }
+
       return jsonRes({ success: true, message: 'سفارش بروزرسانی شد', order: updatedOrder });
     }
 
