@@ -58,10 +58,11 @@ const memoryTransactions = new Map();
 
 // --- SUPABASE HELPERS ---
 function getSupabaseClient(env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-    throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY must be defined in environment variables');
+  const key = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
+  if (!env.SUPABASE_URL || !key) {
+    throw new Error('SUPABASE_URL and key must be defined in environment variables');
   }
-  return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+  return createClient(env.SUPABASE_URL, key);
 }
 
 function mapToDbSchema(product) {
@@ -134,22 +135,29 @@ async function getAllOrdersFromPg(env) {
 async function saveOrderToPg(env, order) {
   try {
     const supabase = getSupabaseClient(env);
-    const { error } = await supabase.from('orders').upsert({
+    const dbPayload = {
       id: String(order.id),
-      code: String(order.code || order.id),
-      customer_name: order.customerName,
-      phone: order.phone,
-      address: order.address,
-      note: order.note || '',
+      customer_id: String(order.customerId || order.phone || ''),
+      customer_name: String(order.customerName || order.customer_name || 'بدون نام'),
+      phone: String(order.phone || ''),
+      address: String(order.address || ''),
+      note: String(order.note || ''),
       items: typeof order.items === 'string' ? order.items : JSON.stringify(order.items || []),
-      total_amount: Number(order.totalAmount || 0),
-      payment_method: order.paymentMethod || 'cash',
-      status: order.status || 'pending',
-      admin_notes: order.adminNotes || '',
-      created_at: order.createdAt || new Date().toISOString()
-    }, { onConflict: 'id' });
+      total_amount: Number(order.totalAmount || order.total_amount || 0),
+      payment_method: String(order.paymentMethod || order.payment_method || 'cash'),
+      status: String(order.status || 'pending'),
+      admin_notes: String(order.adminNotes || order.admin_notes || ''),
+      source: String(order.source || 'website'),
+      created_at: order.createdAt || order.created_at || new Date().toISOString(),
+      updated_at: order.updatedAt || order.updated_at || new Date().toISOString()
+    };
+    const { error } = await supabase.from('orders').upsert(dbPayload, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase Save Order Error]:', error);
+    }
     return !error;
   } catch (err) {
+    console.error('[Supabase Save Order Exception]:', err);
     return false;
   }
 }
@@ -212,16 +220,25 @@ async function getAllCustomersFromPg(env) {
 async function saveCustomerToPg(env, cust) {
   try {
     const supabase = getSupabaseClient(env);
-    const { error } = await supabase.from('customers').upsert({
+    const dbPayload = {
       id: String(cust.id),
-      name: cust.name,
-      phone: cust.phone,
-      address: cust.address || '',
-      notes: cust.notes || '',
-      created_at: cust.createdAt || new Date().toISOString()
-    }, { onConflict: 'id' });
+      name: String(cust.name || 'مشتری'),
+      phone: String(cust.phone || ''),
+      address: String(cust.address || ''),
+      notes: String(cust.notes || ''),
+      total_orders: Number(cust.totalOrders || 1),
+      total_spent: Number(cust.totalSpent || 0),
+      created_at: cust.createdAt || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_order_at: new Date().toISOString()
+    };
+    const { error } = await supabase.from('customers').upsert(dbPayload, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase Save Customer Error]:', error);
+    }
     return !error;
   } catch (err) {
+    console.error('[Supabase Save Customer Exception]:', err);
     return false;
   }
 }
