@@ -3914,14 +3914,8 @@
     }
 
     async function openNewPurchaseModal() {
-        try {
-            const res = await api('/api/admin/products?brand=all&category=all');
-            if (res.ok) {
-                const data = await res.json();
-                purchaseProductsCatalog = data.products || [];
-            }
-        } catch (e) {
-            console.error('Error fetching products for purchase dropdown:', e);
+        if (typeof productsData !== 'undefined' && Array.isArray(productsData) && productsData.length > 0) {
+            purchaseProductsCatalog = [...productsData];
         }
 
         document.getElementById('pSupplierName').value = 'تأمین‌کننده رافونه';
@@ -3937,6 +3931,29 @@
         addPurchaseItemRow();
 
         document.getElementById('newPurchaseModal').style.display = 'flex';
+
+        // Async non-blocking refresh from API
+        api('/api/admin/products?brand=all&category=all').then(async res => {
+            if (res.ok) {
+                const data = await res.json();
+                if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+                    purchaseProductsCatalog = data.products;
+                    document.querySelectorAll('.p-prod-select').forEach(selectEl => {
+                        const currentVal = selectEl.value;
+                        let optionsHtml = '<option value="">-- انتخاب محصول از انبار --</option>';
+                        purchaseProductsCatalog.forEach(p => {
+                            const pId = p.id || p.code;
+                            const sel = String(currentVal) === String(pId) ? 'selected' : '';
+                            const buyP = Number(p.buyPrice) || 0;
+                            const stock = Number(p.stock) || 0;
+                            optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی فعلی: ${stock} - قیمت خرید فعلی: ${formatPrice(buyP)}</option>`;
+                        });
+                        selectEl.innerHTML = optionsHtml;
+                        selectEl.value = currentVal;
+                    });
+                }
+            }
+        }).catch(e => console.error('Background purchase catalog refresh error:', e));
     }
 
     function closeNewPurchaseModal() {
@@ -3955,10 +3972,11 @@
 
         let optionsHtml = '<option value="">-- انتخاب محصول از انبار --</option>';
         purchaseProductsCatalog.forEach(p => {
-            const sel = itemData && (String(itemData.productId) === String(p.id) || String(itemData.productId) === String(p.code)) ? 'selected' : '';
+            const pId = p.id || p.code;
+            const sel = itemData && (String(itemData.productId) === String(pId)) ? 'selected' : '';
             const buyP = Number(p.buyPrice) || 0;
             const stock = Number(p.stock) || 0;
-            optionsHtml += `<option value="${p.id}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" ${sel}>${escapeHtml(p.name)} (کد: ${p.id || p.code}) - موجودی فعلی: ${stock} - قیمت خرید فعلی: ${formatPrice(buyP)}</option>`;
+            optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی فعلی: ${stock} - قیمت خرید فعلی: ${formatPrice(buyP)}</option>`;
         });
 
         div.innerHTML = `

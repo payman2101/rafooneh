@@ -356,6 +356,90 @@ async function getCombinedCustomers(env) {
   return Array.from(map.values()).sort((a,b) => new Date(b.lastOrderAt) - new Date(a.lastOrderAt));
 }
 
+// Purchases DB Helpers
+async function getAllPurchasesFromPg(env) {
+  try {
+    const supabase = getSupabaseClient(env);
+    const { data, error } = await supabase.from('purchases').select('*');
+    if (error || !data) return null;
+    return data;
+  } catch (err) {
+    return null;
+  }
+}
+
+function formatPurchaseFromDb(p) {
+  if (!p) return null;
+  let itemsArr = [];
+  try {
+    itemsArr = typeof p.items === 'string' ? JSON.parse(p.items) : (Array.isArray(p.items) ? p.items : []);
+  } catch (e) {
+    itemsArr = [];
+  }
+  return {
+    id: String(p.id),
+    refNumber: p.ref_number || p.refNumber || p.id,
+    supplierName: p.supplier_name || p.supplierName || 'تأمین‌کننده رافونه',
+    purchaseDate: p.purchase_date || p.purchaseDate || p.created_at || p.createdAt,
+    notes: p.notes || '',
+    items: itemsArr,
+    totalAmount: Number(p.total_amount || p.totalAmount || 0),
+    totalItemsCount: Number(p.total_items_count || p.totalItemsCount || itemsArr.length),
+    createdAt: p.created_at || p.createdAt || new Date().toISOString()
+  };
+}
+
+async function getCombinedPurchases(env) {
+  const pgPurchases = await getAllPurchasesFromPg(env);
+  const map = new Map();
+
+  if (Array.isArray(pgPurchases) && pgPurchases.length > 0) {
+    pgPurchases.forEach(p => {
+      const formatted = formatPurchaseFromDb(p);
+      if (formatted && formatted.id) map.set(formatted.id, formatted);
+    });
+  }
+
+  memoryPurchases.forEach(p => {
+    if (p && p.id && !map.has(String(p.id))) {
+      map.set(String(p.id), p);
+    }
+  });
+
+  return Array.from(map.values()).sort((a, b) => new Date(b.purchaseDate || b.createdAt) - new Date(a.purchaseDate || a.createdAt));
+}
+
+async function savePurchaseToPg(env, purchase) {
+  try {
+    const supabase = getSupabaseClient(env);
+    const dbPayload = {
+      id: String(purchase.id),
+      ref_number: purchase.refNumber || '',
+      supplier_name: purchase.supplierName || '',
+      purchase_date: purchase.purchaseDate || new Date().toISOString(),
+      notes: purchase.notes || '',
+      items: purchase.items || [],
+      total_amount: Number(purchase.totalAmount || 0),
+      total_items_count: Number(purchase.totalItemsCount || 0),
+      created_at: purchase.createdAt || new Date().toISOString()
+    };
+    const { error } = await supabase.from('purchases').upsert(dbPayload, { onConflict: 'id' });
+    return !error;
+  } catch (err) {
+    return false;
+  }
+}
+
+async function deletePurchaseFromPg(env, id) {
+  try {
+    const supabase = getSupabaseClient(env);
+    const { error } = await supabase.from('purchases').delete().eq('id', id);
+    return !error;
+  } catch (err) {
+    return false;
+  }
+}
+
 // --- MAIN REQUEST HANDLER ---
 export default {
   async fetch(request, env, ctx) {
@@ -985,12 +1069,69 @@ export async function onRequest(context) {
   // --- PURCHASES ENDPOINTS ---
   if (path === '/api/admin/purchases') {
     if (method === 'GET') {
-      return jsonRes({ success: true, purchases: memoryPurchases });
+      const purchases = await getCombinedPurchases(env);
+      return jsonRes({ success: true, purchases });
     }
     if (method === 'POST') {
-      const purchase = { id: 'PUR-' + Date.now(), ...body, createdAt: new Date().toISOString() };
-      memoryPurchases.push(purchase);
-      return jsonRes({ success: true, purchase, message: 'فاکتور خرید با موفقیت ثبت شد' });
+      const items = Array.isArray(body.items) ? body.items : [];
+      let totalAmount = 0;
+      let totalItemsCount = 0;
+
+      items.forEach(it => {
+        const qty = Math.max(1, Number(it.qty || it.quantity || 1));
+        const buyPrice = Math.max(0, Number(it.buyPrice || 0));
+        totalAmount += qty * buyPrice;
+        totalItemsCount += qty;
+      });
+
+      const purchase = {
+        id: body.id || ('PUR-' + Date.now()),
+        refNumber: body.refNumber || `FACT-${Math.floor(100000 + Math.random() * 900000)}`,
+        supplierName: body.supplierName || 'تأمین‌کننده رافونه',
+        purchaseDate: body.purchaseDate || new Date().toISOString(),
+        notes: body.notes || '',
+        items,
+        totalAmount: body.totalAmount ? Number(body.totalAmount) : totalAmount,
+        totalItemsCount: body.totalItemsCount ? Number(body.totalItemsCount) : totalItemsCount,
+        createdAt: new Date().toISOString()
+      };
+
+      memoryPurchases.unshift(purchase);
+      await savePurchaseToPg(env, purchase);
+
+      // Concurrently update stock & buyPrice for each purchased item in Supabase DB!
+      if (items.length > 0) {
+        const pgProds = await getAllProductsFromPg(env) || [];
+        const updatePromises = items.map(async (item) => {
+          const prodId = String(item.productId || item.id || item.code || '');
+          if (!prodId) return;
+
+          const existing = pgProds.find(p => String(p.id) === prodId || String(p.code) === prodId) ||
+                           defaultProducts.find(p => String(p.id) === prodId || String(p.code) === prodId);
+          if (existing) {
+            const addedQty = Math.max(1, Number(item.qty || item.quantity || 1));
+            const currentStock = Number(existing.stock || 0);
+            const newStock = currentStock + addedQty;
+            const newBuyPrice = Number(item.buyPrice) > 0 ? Number(item.buyPrice) : Number(existing.buyPrice || 0);
+
+            const updatedProduct = {
+              ...existing,
+              id: prodId,
+              code: prodId,
+              stock: newStock,
+              buyPrice: newBuyPrice,
+              badge: newStock <= 0 ? 'ناموجود' : (newStock <= 5 ? `تعداد محدود (${newStock} عدد)` : null),
+              updatedAt: new Date().toISOString()
+            };
+
+            await saveProductToPg(env, updatedProduct);
+          }
+        });
+
+        await Promise.all(updatePromises);
+      }
+
+      return jsonRes({ success: true, purchase, message: 'فاکتور خرید با موفقیت ثبت شد و موجودی انبار به روز رسانی گردید.' });
     }
   }
 
@@ -999,7 +1140,8 @@ export async function onRequest(context) {
     if (method === 'DELETE') {
       const idx = memoryPurchases.findIndex(p => String(p.id) === id);
       if (idx !== -1) memoryPurchases.splice(idx, 1);
-      return jsonRes({ success: true });
+      await deletePurchaseFromPg(env, id);
+      return jsonRes({ success: true, message: 'فاکتور خرید با موفقیت حذف گردید.' });
     }
   }
 
