@@ -4067,12 +4067,190 @@
             optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}">${escapeHtml(p.name)} (کد: ${pId}) - موجودی فعلی: ${stock} - قیمت خرید فعلی: ${formatPrice(buyP)}</option>`;
         });
 
-        document.querySelectorAll('.p-prod-select').forEach(selectEl => {
-            const currentVal = selectEl.value;
-            selectEl.innerHTML = optionsHtml;
-            selectEl.value = currentVal;
+        document.querySelectorAll('.purchase-item-row').forEach(row => {
+            const selectEl = row.querySelector('.p-prod-select');
+            if (selectEl) {
+                const currentVal = selectEl.value;
+                selectEl.innerHTML = optionsHtml;
+                selectEl.value = currentVal;
+                renderPurchaseProductCombobox(row, currentVal);
+            }
         });
     }
+
+    // Filterable / Searchable Combobox for Purchase Products
+    function renderPurchaseProductCombobox(row, selectedProductId = '') {
+        const selectEl = row.querySelector('.p-prod-select');
+        const container = row.querySelector('.p-prod-combobox-container');
+        if (!container) return;
+
+        let selectedProduct = null;
+        if (selectedProductId) {
+            selectedProduct = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(selectedProductId));
+        }
+
+        const displayVal = selectedProduct 
+            ? `${selectedProduct.name} (کد: ${selectedProduct.id || selectedProduct.code})` 
+            : '';
+
+        container.innerHTML = `
+            <div style="position:relative; width:100%;">
+                <input type="text" 
+                       class="form-control p-prod-search-input" 
+                       placeholder="🔍 جستجو و انتخاب محصول (نام یا کد)..." 
+                       value="${escapeHtml(displayVal)}"
+                       onfocus="openPurchaseProductDropdown(this)" 
+                       oninput="filterPurchaseProductDropdown(this)" 
+                       autocomplete="off"
+                       style="font-size:0.85rem; padding-left:${selectedProduct ? '30px' : '10px'}; font-weight:${selectedProduct ? 'bold' : 'normal'}; color:${selectedProduct ? '#0f172a' : '#475569'};">
+                <button type="button" 
+                        class="p-prod-clear-btn" 
+                        onclick="clearPurchaseProductSelection(this)" 
+                        title="حذف انتخاب"
+                        style="position:absolute; left:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.1rem; line-height:1; display:${selectedProduct ? 'block' : 'none'};">
+                    &times;
+                </button>
+                <div class="p-prod-dropdown-menu" 
+                     style="display:none; position:absolute; top:calc(100% + 4px); right:0; left:0; max-height:240px; overflow-y:auto; background:white; border:1px solid #cbd5e1; border-radius:8px; z-index:9999; box-shadow:0 10px 25px -5px rgba(0,0,0,0.15);">
+                </div>
+            </div>
+        `;
+    }
+
+    function openPurchaseProductDropdown(inputEl) {
+        document.querySelectorAll('.p-prod-dropdown-menu').forEach(m => {
+            if (m !== inputEl.nextElementSibling?.nextElementSibling) {
+                m.style.display = 'none';
+            }
+        });
+        filterPurchaseProductDropdown(inputEl);
+    }
+
+    function filterPurchaseProductDropdown(inputEl) {
+        const row = inputEl.closest('.purchase-item-row');
+        if (!row) return;
+        const menu = row.querySelector('.p-prod-dropdown-menu');
+        if (!menu) return;
+
+        const q = inputEl.value.trim().toLowerCase();
+        const currentSelectVal = row.querySelector('.p-prod-select')?.value;
+
+        const filtered = purchaseProductsCatalog.filter(p => {
+            if (!q) return true;
+            const pId = String(p.id || p.code || '').toLowerCase();
+            const pName = String(p.name || '').toLowerCase();
+            const fullText = `${pName} ${pId}`;
+            return fullText.includes(q);
+        });
+
+        if (filtered.length === 0) {
+            menu.innerHTML = `<div style="padding:12px; text-align:center; color:#94a3b8; font-size:0.85rem;">محصولی با این مشخصات یافت نشد</div>`;
+        } else {
+            let html = '';
+            filtered.forEach(p => {
+                const pId = p.id || p.code;
+                const buyP = Number(p.buyPrice) || 0;
+                const stock = Number(p.stock) || 0;
+                const isSelected = String(pId) === String(currentSelectVal);
+
+                html += `
+                    <div class="p-prod-item-option" 
+                         onclick="selectPurchaseProductOption(this, '${escapeHtml(String(pId))}')" 
+                         style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:${isSelected ? '#f0fdf4' : 'white'}; transition:background 0.15s ease;"
+                         onmouseover="this.style.background='#f8fafc'"
+                         onmouseout="this.style.background='${isSelected ? '#f0fdf4' : 'white'}'">
+                        <div style="flex:1; min-width:0; margin-left:8px;">
+                            <div style="font-weight:bold; font-size:0.85rem; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                ${escapeHtml(p.name)}
+                            </div>
+                            <div style="font-size:0.75rem; color:#64748b;">
+                                کد کالا: <span style="font-family:monospace; font-weight:bold;">${escapeHtml(String(pId))}</span>
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
+                            <span style="font-size:0.72rem; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:bold;">
+                                موجودی: ${stock}
+                            </span>
+                            <span style="font-size:0.72rem; background:#f0fdf4; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold;">
+                                خرید: ${formatPrice(buyP)} تومان
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            menu.innerHTML = html;
+        }
+
+        menu.style.display = 'block';
+    }
+
+    function selectPurchaseProductOption(optionEl, productId) {
+        const row = optionEl.closest('.purchase-item-row');
+        if (!row) return;
+
+        const selectEl = row.querySelector('.p-prod-select');
+        const inputEl = row.querySelector('.p-prod-search-input');
+        const clearBtn = row.querySelector('.p-prod-clear-btn');
+        const menu = row.querySelector('.p-prod-dropdown-menu');
+
+        const product = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(productId));
+        if (!product) return;
+
+        if (selectEl) {
+            selectEl.value = productId;
+        }
+
+        if (inputEl) {
+            inputEl.value = `${product.name} (کد: ${product.id || product.code})`;
+            inputEl.style.fontWeight = 'bold';
+            inputEl.style.color = '#0f172a';
+            inputEl.style.paddingLeft = '30px';
+        }
+
+        if (clearBtn) {
+            clearBtn.style.display = 'block';
+        }
+
+        if (menu) {
+            menu.style.display = 'none';
+        }
+
+        if (selectEl) {
+            onPurchaseProductSelect(selectEl);
+        }
+    }
+
+    function clearPurchaseProductSelection(btnEl) {
+        const row = btnEl.closest('.purchase-item-row');
+        if (!row) return;
+
+        const selectEl = row.querySelector('.p-prod-select');
+        const inputEl = row.querySelector('.p-prod-search-input');
+        const menu = row.querySelector('.p-prod-dropdown-menu');
+
+        if (selectEl) selectEl.value = '';
+        if (inputEl) {
+            inputEl.value = '';
+            inputEl.style.fontWeight = 'normal';
+            inputEl.style.color = '#475569';
+            inputEl.style.paddingLeft = '10px';
+            inputEl.focus();
+        }
+
+        btnEl.style.display = 'none';
+
+        if (menu) {
+            filterPurchaseProductDropdown(inputEl);
+        }
+
+        calcPurchaseTotals();
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.p-prod-combobox-container')) {
+            document.querySelectorAll('.p-prod-dropdown-menu').forEach(m => m.style.display = 'none');
+        }
+    });
 
     function closeNewPurchaseModal() {
         document.getElementById('newPurchaseModal').style.display = 'none';
@@ -4088,19 +4266,22 @@
         div.id = rowId;
         div.style.cssText = 'display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:10px;';
 
+        const selectedPId = itemData ? itemData.productId : '';
+
         let optionsHtml = '<option value="">-- انتخاب محصول از انبار --</option>';
         purchaseProductsCatalog.forEach(p => {
             const pId = p.id || p.code;
-            const sel = itemData && (String(itemData.productId) === String(pId)) ? 'selected' : '';
+            const sel = (String(selectedPId) === String(pId)) ? 'selected' : '';
             const buyP = Number(p.buyPrice) || 0;
             const stock = Number(p.stock) || 0;
             optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی فعلی: ${stock} - قیمت خرید فعلی: ${formatPrice(buyP)}</option>`;
         });
 
         div.innerHTML = `
-            <div style="flex:2; min-width:220px;">
+            <div style="flex:2.5; min-width:240px;">
                 <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">محصول</label>
-                <select class="form-control p-prod-select" onchange="onPurchaseProductSelect(this)" style="font-size:0.85rem;">
+                <div class="p-prod-combobox-container"></div>
+                <select class="form-control p-prod-select" onchange="onPurchaseProductSelect(this)" style="display:none;">
                     ${optionsHtml}
                 </select>
             </div>
@@ -4124,6 +4305,7 @@
         `;
 
         container.appendChild(div);
+        renderPurchaseProductCombobox(div, selectedPId);
         calcPurchaseTotals();
     }
 
