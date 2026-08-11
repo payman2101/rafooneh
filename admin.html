@@ -1181,7 +1181,7 @@
                                         <th>شماره فاکتور / سند</th>
                                         <th>تامین‌کننده / شرکت</th>
                                         <th>تاریخ خرید</th>
-                                        <th>تعداد اقلام</th>
+                                        <th>لیست اقلام خریداری شده (دراپ‌داون)</th>
                                         <th>مبلغ کل قابل پرداخت (تومان)</th>
                                         <th>توضیحات</th>
                                         <th>عملیات</th>
@@ -3896,12 +3896,42 @@
                 }
             } catch (e) {}
 
+            const items = Array.isArray(p.items) ? p.items : [];
+            let totalQty = 0;
+            items.forEach(it => {
+                totalQty += Math.max(1, Number(it.qty || it.quantity || 1));
+            });
+            if (totalQty === 0 && p.totalItemsCount) totalQty = p.totalItemsCount;
+
+            let itemsCellHtml = '';
+            if (items.length > 0) {
+                let optionsHtml = `<option value="" disabled selected>📦 ${items.length} قلم کالا (مجموع: ${totalQty} عدد)</option>`;
+                items.forEach((it, idx) => {
+                    const q = Math.max(1, Number(it.qty || it.quantity || 1));
+                    const bp = Number(it.buyPrice || 0);
+                    const priceText = bp > 0 ? ` - ${formatPrice(bp)} تومان` : '';
+                    optionsHtml += `<option value="${escapeHtml(it.productId || idx)}">${idx + 1}. ${escapeHtml(it.name || 'محصول')} | تعداد: ${q} عدد${priceText}</option>`;
+                });
+                itemsCellHtml = `
+                    <div style="display:flex; flex-direction:column; gap:4px; min-width:220px;">
+                        <select class="form-control" style="font-size:0.83rem; padding:5px 8px; border-radius:8px; background:#f0f9ff; border:1px solid #bae6fd; color:#0369a1; font-weight:600; cursor:pointer; width:100%;">
+                            ${optionsHtml}
+                        </select>
+                        <span style="font-size:0.75rem; color:var(--muted); text-align:right;">تعداد کل اقلام: <strong style="color:#0284c7; font-size:0.82rem;">${totalQty} عدد</strong></span>
+                    </div>
+                `;
+            } else {
+                itemsCellHtml = `
+                    <span class="badge" style="background:#e0f2fe; color:#0369a1; padding:6px 12px; font-size:0.85rem;">${totalQty} عدد کالا</span>
+                `;
+            }
+
             html += `
                 <tr>
                     <td><strong style="color:var(--primary); font-family:monospace; font-size:0.95rem;">${escapeHtml(p.refNumber || p.id)}</strong></td>
                     <td><strong>${escapeHtml(p.supplierName || 'تأمین‌کننده')}</strong></td>
                     <td><span style="font-size:0.85rem; color:var(--muted);">${escapeHtml(dateStr)}</span></td>
-                    <td><span class="badge" style="background:#e0f2fe; color:#0369a1;">${p.totalItemsCount || (p.items ? p.items.length : 0)} عدد</span></td>
+                    <td>${itemsCellHtml}</td>
                     <td><strong style="color:#059669; font-size:1.05rem;">${formatPrice(amount)} تومان</strong></td>
                     <td><span style="font-size:0.85rem; color:var(--muted);">${escapeHtml(p.notes || '-')}</span></td>
                     <td>
