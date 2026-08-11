@@ -101,24 +101,46 @@ async function deleteProductFromPg(env, id) {
 async function createOrder(env, orderData) {
   try {
     const supabase = getSupabaseClient(env);
+    
+    console.log('[DEBUG] Creating order with data:', orderData);
+    
+    // ساخت customer_id اگر وجود نداشت
+    const customerId = orderData.customerId || `cust-${Date.now()}`;
+    
+    // آماده‌سازی داده‌ها با تمام فیلدهای مورد نیاز جدول
+    const orderPayload = {
+      id: orderData.id || `ord-${Date.now()}`,
+      customer_id: customerId,  // ⭐ اضافه شد
+      customer_name: orderData.customerName || '',
+      phone: orderData.phone || '',
+      address: orderData.address || '',
+      note: orderData.note || '',
+      items: orderData.items || [],
+      total_amount: Number(orderData.totalAmount) || 0,
+      payment_method: orderData.paymentMethod || 'cod',
+      status: orderData.status || 'new',
+      source: orderData.source || 'admin',  //  اضافه شد (website یا admin)
+      admin_notes: orderData.adminNotes || '',
+      created_at: orderData.createdAt || new Date().toISOString(),
+      updated_at: new Date().toISOString()  // ⭐ اضافه شد
+    };
+    
+    console.log('[DEBUG] Inserting order payload:', orderPayload);
+    
     const { data, error } = await supabase
       .from('orders')
-      .insert([{
-        id: orderData.id || 'ord-' + Date.now(),
-        customer_name: orderData.customerName,
-        phone: orderData.phone,
-        address: orderData.address,
-        note: orderData.note || '',
-        items: orderData.items || [],
-        total_amount: orderData.totalAmount,
-        payment_method: orderData.paymentMethod,
-        status: orderData.status || 'new',
-        created_at: orderData.createdAt || new Date().toISOString()
-      }])
+      .insert([orderPayload])
       .select()
       .single();
-    
-    if (error) throw error;
+
+    if (error) {
+      console.error('[ERROR] Supabase insert error:', error);
+      console.error('[ERROR] Error details:', error.details);
+      console.error('[ERROR] Error hint:', error.hint);
+      throw error;
+    }
+
+    console.log('[DEBUG] Order created successfully:', data.id);
     
     // کاهش موجودی محصولات
     if (orderData.items && orderData.items.length > 0) {
@@ -126,28 +148,30 @@ async function createOrder(env, orderData) {
         const productId = item.productId || item.id || item.code;
         const qty = item.qty || 1;
         
-        const { data: product } = await supabase
-          .from('products')
-          .select('stock')
-          .eq('id', productId)
-          .single();
-        
-        if (product) {
-          const newStock = Math.max(0, (product.stock || 0) - qty);
-          await supabase
+        if (productId) {
+          const { data: product } = await supabase
             .from('products')
-            .update({ 
-              stock: newStock,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', productId);
+            .select('stock')
+            .eq('id', productId)
+            .single();
+          
+          if (product) {
+            const newStock = Math.max(0, (product.stock || 0) - qty);
+            await supabase
+              .from('products')
+              .update({ 
+                stock: newStock,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', productId);
+          }
         }
       }
     }
     
     return data;
   } catch (err) {
-    console.error('Error creating order:', err.message);
+    console.error('[CRITICAL ERROR] Order creation failed:', err);
     throw err;
   }
 }
@@ -731,11 +755,34 @@ export async function onRequest(context) {
   // --- ORDERS ENDPOINTS ---
   if (path === '/api/orders' && method === 'POST') {
     try {
+      console.log('[DEBUG] POST /api/orders received:', body);
+      
+      if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+        return jsonRes({ 
+          success: false, 
+          message: 'پیکربندی سرور ناقص است'
+        }, 500);
+      }
+      
       const order = await createOrder(env, body);
-      return jsonRes({ success: true, message: 'سفارش با موفقیت ثبت شد', order });
-    } catch (err) {
-      console.error('Order creation error:', err);
-      return jsonRes({ success: false, message: err.message }, 500);
+      
+      return jsonRes({ 
+        success: true, 
+        message: 'سفارش با موفقیت ثبت شد',
+        order 
+      }, 201);
+      
+    } 
+    catch (err) {
+      console.error('[ERROR] Order creation failed:', err.message);
+      console.error('[ERROR] Full error:', JSON.stringify(err));
+      
+      return jsonRes({ 
+        success: false, 
+        message: 'خطا در ثبت سفارش: ' + err.message,
+        error: err.message,
+        details: err.details || null
+      }, 500);
     }
   }
 
