@@ -595,7 +595,7 @@
                 <label for="password">رمز عبور مدیریت</label>
                 <input type="password" id="password" class="form-control" autocomplete="new-password" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">
+            <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
                 <i class="fa-solid fa-right-to-bracket"></i> ورود به پنل
             </button>
         </form>
@@ -1615,17 +1615,12 @@
         try {
             res = await fetch(path, { ...options, headers });
         } catch (err) {
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 200));
             res = await fetch(path, { ...options, headers });
         }
-        if (res.status === 401 && path !== '/api/admin/login' && !token.startsWith('master_admin_session_')) {
-            await new Promise(r => setTimeout(r, 800));
-            const retryRes = await fetch(path, { ...options, headers });
-            if (retryRes.status === 401) {
-                handleLogout();
-                return retryRes;
-            }
-            return retryRes;
+        if (res && res.status === 401 && path !== '/api/admin/login' && !token.startsWith('master_admin_session_')) {
+            handleLogout();
+            return res;
         }
         return res;
     }
@@ -1676,40 +1671,67 @@
         const rawPassword = passwordInput ? passwordInput.value : '';
         const normInput = normPass(rawPassword);
         const errEl = document.getElementById('loginError');
+        const loginBtn = document.getElementById('loginBtn');
         if (errEl) errEl.style.display = 'none';
+
+        if (loginBtn) {
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ورود...';
+        }
 
         const targetPass1 = normPass('M0habb@t2026/8/1');
         const targetPass2 = normPass('M0habbat2026/8/1');
         const isMasterMatch = normInput && (normInput === targetPass1 || normInput === targetPass2);
 
-        try {
-            const res = await fetch('/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: rawPassword })
-            });
+        const resetBtn = () => {
+            if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> ورود به پنل';
+            }
+        };
 
-            const data = await res.json().catch(() => ({}));
-            if (res.ok && data.success) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+            let res = null, data = {};
+            try {
+                res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: rawPassword }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                data = await res.json().catch(() => ({}));
+            } catch (fetchErr) {
+                clearTimeout(timeoutId);
+            }
+
+            if (res && res.ok && data.success) {
                 token = data.token;
                 localStorage.setItem('crm_token', token);
                 if (passwordInput) passwordInput.value = '';
+                resetBtn();
                 showApp();
                 return;
             } else if (isMasterMatch) {
                 token = 'master_admin_session_' + Date.now();
                 localStorage.setItem('crm_token', token);
                 if (passwordInput) passwordInput.value = '';
+                resetBtn();
                 showApp();
                 return;
             } else {
+                resetBtn();
                 if (errEl) {
-                    errEl.textContent = data.message || 'کلمه عبور اشتباه است.';
+                    errEl.textContent = (data && data.message) ? data.message : 'کلمه عبور اشتباه است.';
                     errEl.style.display = 'block';
                 }
             }
         } catch (err) {
-            console.error('Login request failed:', err);
+            console.error('Login error:', err);
+            resetBtn();
             if (isMasterMatch) {
                 token = 'master_admin_session_' + Date.now();
                 localStorage.setItem('crm_token', token);
@@ -1718,7 +1740,7 @@
                 return;
             }
             if (errEl) {
-                errEl.textContent = 'خطا در ارتباط با سرور: ' + (err.message || '');
+                errEl.textContent = 'خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.';
                 errEl.style.display = 'block';
             }
         }
@@ -1796,12 +1818,15 @@
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
 
-        // Ensure any local orders are synced to server database so stats match
-        await syncLocalOrdersToServer();
+        // Background non-blocking sync of local orders so UI opens instantly
+        syncLocalOrdersToServer().catch(e => console.log('Local sync background notice:', e));
 
-        // 1. Instantly load active Dashboard stats & alerts
-        loadStats();
-        loadAlerts();
+        // 1. Instantly load active Dashboard stats & alerts in parallel
+        renderStatsSkeleton();
+        Promise.allSettled([
+            loadStats(),
+            loadAlerts()
+        ]);
 
         // 2. Load secondary sections in non-blocking background
         setTimeout(() => {
