@@ -3863,6 +3863,36 @@
         }
     }
 
+    function normalizeItemsArray(rawItems) {
+        if (!rawItems) return [];
+        if (Array.isArray(rawItems)) return rawItems;
+        if (typeof rawItems === 'string') {
+            try {
+                const parsed = JSON.parse(rawItems);
+                if (Array.isArray(parsed)) return parsed;
+            } catch (e) {
+                if (rawItems.includes(',')) {
+                    return rawItems.split(',').map(s => ({ name: s.trim(), qty: 1 }));
+                } else if (rawItems.trim()) {
+                    return [{ name: rawItems.trim(), qty: 1 }];
+                }
+            }
+        }
+        return [];
+    }
+
+    function normalizeItemObject(it) {
+        if (!it) return { name: 'کالا', qty: 1, buyPrice: 0, productId: '' };
+        if (typeof it === 'string') {
+            return { name: it, qty: 1, buyPrice: 0, productId: '' };
+        }
+        const name = it.name || it.productName || it.title || it.label || 'محصول';
+        const qty = Math.max(1, Number(it.qty || it.quantity || it.unitsSold || it.count || 1));
+        const buyPrice = Number(it.buyPrice || it.price || it.cost || 0);
+        const productId = it.productId || it.id || it.code || '';
+        return { name, qty, buyPrice, productId };
+    }
+
     function renderPurchasesTable(list) {
         const tbody = document.getElementById('purchasesTableBody');
         const countEl = document.getElementById('purchaseTotalCount');
@@ -3896,33 +3926,41 @@
                 }
             } catch (e) {}
 
-            const items = Array.isArray(p.items) ? p.items : [];
+            const items = normalizeItemsArray(p.items);
             let totalQty = 0;
-            items.forEach(it => {
-                totalQty += Math.max(1, Number(it.qty || it.quantity || 1));
+            items.forEach(rawIt => {
+                const it = normalizeItemObject(rawIt);
+                totalQty += it.qty;
             });
-            if (totalQty === 0 && p.totalItemsCount) totalQty = p.totalItemsCount;
+            if (totalQty === 0 && p.totalItemsCount) totalQty = Number(p.totalItemsCount) || 0;
 
             let itemsCellHtml = '';
             if (items.length > 0) {
-                let optionsHtml = `<option value="" disabled selected>📦 ${items.length} قلم کالا (مجموع: ${totalQty} عدد)</option>`;
-                items.forEach((it, idx) => {
-                    const q = Math.max(1, Number(it.qty || it.quantity || 1));
-                    const bp = Number(it.buyPrice || 0);
-                    const priceText = bp > 0 ? ` - ${formatPrice(bp)} تومان` : '';
-                    optionsHtml += `<option value="${escapeHtml(it.productId || idx)}">${idx + 1}. ${escapeHtml(it.name || 'محصول')} | تعداد: ${q} عدد${priceText}</option>`;
+                let optionsHtml = `<option value="" selected>📦 انتخاب از اقلام (${items.length} نوع کالا - مجموع ${totalQty} عدد)</option>`;
+                items.forEach((rawIt, idx) => {
+                    const it = normalizeItemObject(rawIt);
+                    const priceText = it.buyPrice > 0 ? ` | قیمت: ${formatPrice(it.buyPrice)} تومان` : '';
+                    optionsHtml += `<option value="${escapeHtml(it.productId || idx)}">${idx + 1}. ${escapeHtml(it.name)} ➔ تعداد: ${it.qty} عدد${priceText}</option>`;
                 });
                 itemsCellHtml = `
-                    <div style="display:flex; flex-direction:column; gap:4px; min-width:220px;">
-                        <select class="form-control" style="font-size:0.83rem; padding:5px 8px; border-radius:8px; background:#f0f9ff; border:1px solid #bae6fd; color:#0369a1; font-weight:600; cursor:pointer; width:100%;">
+                    <div style="display:flex; flex-direction:column; gap:6px; min-width:240px; max-width:320px;">
+                        <select class="form-control" style="font-size:0.85rem; padding:7px 10px; border-radius:8px; background:#f0f9ff; border:1.5px solid #0284c7; color:#0369a1; font-weight:bold; cursor:pointer; width:100%; box-shadow:0 1px 2px rgba(0,0,0,0.05);" onchange="this.style.borderColor = this.selectedIndex > 0 ? '#059669' : '#0284c7';">
                             ${optionsHtml}
                         </select>
-                        <span style="font-size:0.75rem; color:var(--muted); text-align:right;">تعداد کل اقلام: <strong style="color:#0284c7; font-size:0.82rem;">${totalQty} عدد</strong></span>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:#475569; background:#f1f5f9; padding:4px 8px; border-radius:6px; border:1px solid #e2e8f0;">
+                            <span>تنوع اقلام: <strong style="color:#0284c7;">${items.length} نوع</strong></span>
+                            <span>تعداد کل کالا: <strong style="color:#059669; font-size:0.85rem;">${totalQty} عدد</strong></span>
+                        </div>
                     </div>
                 `;
             } else {
                 itemsCellHtml = `
-                    <span class="badge" style="background:#e0f2fe; color:#0369a1; padding:6px 12px; font-size:0.85rem;">${totalQty} عدد کالا</span>
+                    <div style="display:flex; flex-direction:column; gap:4px; min-width:200px;">
+                        <select class="form-control" style="font-size:0.85rem; padding:6px 10px; border-radius:8px; background:#f8fafc; border:1px solid #cbd5e1; color:#64748b; font-weight:bold; cursor:pointer; width:100%;">
+                            <option value="" selected>📦 اقلام عمومی (${totalQty} عدد)</option>
+                        </select>
+                        <span style="font-size:0.78rem; color:var(--muted); text-align:right;">تعداد کل اقلام: <strong style="color:#0284c7;">${totalQty} عدد</strong></span>
+                    </div>
                 `;
             }
 
@@ -4220,14 +4258,15 @@
             }
         } catch (e) {}
 
-        const items = Array.isArray(purchase.items) ? purchase.items : [];
+        const items = normalizeItemsArray(purchase.items);
         let itemsRowsHtml = '';
         let totalQty = 0;
         let totalAmount = 0;
 
-        items.forEach((item, idx) => {
-            const qty = Number(item.qty || item.quantity) || 1;
-            const price = Number(item.buyPrice) || 0;
+        items.forEach((rawIt, idx) => {
+            const item = normalizeItemObject(rawIt);
+            const qty = item.qty;
+            const price = item.buyPrice;
             const lineTotal = qty * price;
 
             totalQty += qty;
@@ -4236,8 +4275,8 @@
             itemsRowsHtml += `
                 <tr style="border-bottom:1px solid #e2e8f0;">
                     <td style="padding:10px; text-align:center; font-size:0.85rem;">${idx + 1}</td>
-                    <td style="padding:10px; font-weight:bold; font-size:0.9rem;">${escapeHtml(item.name || 'محصول')} <span style="font-size:0.75rem; color:#64748b;">(کد: ${escapeHtml(item.productId || '-')})</span></td>
-                    <td style="padding:10px; text-align:center; font-weight:bold;">${qty}</td>
+                    <td style="padding:10px; font-weight:bold; font-size:0.9rem;">${escapeHtml(item.name)} ${item.productId ? `<span style="font-size:0.75rem; color:#64748b;">(کد: ${escapeHtml(item.productId)})</span>` : ''}</td>
+                    <td style="padding:10px; text-align:center; font-weight:bold; color:#0284c7; font-size:0.95rem;">${qty} عدد</td>
                     <td style="padding:10px; text-align:center;">${formatPrice(price)} تومان</td>
                     <td style="padding:10px; text-align:center; font-weight:bold; color:#059669;">${formatPrice(lineTotal)} تومان</td>
                 </tr>
