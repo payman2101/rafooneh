@@ -311,8 +311,8 @@ async function getCombinedCustomers(env) {
       phone: pc.phone || '',
       address: pc.address || '',
       notes: pc.notes || '',
-      totalOrders: Number(pc.total_orders || 0),
-      totalSpent: Number(pc.total_spent || 0),
+      totalOrders: 0, // Reset to 0 before aggregating from real orders
+      totalSpent: 0,   // Reset to 0 before aggregating from real orders
       lastOrderAt: pc.last_order_at || pc.created_at || new Date().toISOString(),
       createdAt: pc.created_at || new Date().toISOString()
     });
