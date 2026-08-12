@@ -960,6 +960,9 @@
                     <div class="panel-header">
                         <h2>لیست سفارشات</h2>
                         <div class="filters">
+                            <button class="btn btn-primary" onclick="openNewAdminOrderModal()" style="font-size:0.85rem; padding:8px 14px; margin-left:8px;">
+                                <i class="fa-solid fa-plus"></i> ثبت سفارش جدید
+                            </button>
                             <select id="orderStatusFilter" onchange="loadOrders()">
                                 <option value="all">همه وضعیت‌ها</option>
                             </select>
@@ -3946,32 +3949,13 @@
 
             let itemsCellHtml = '';
             if (items.length > 0) {
-                let optionsHtml = `<option value="" selected>📦 انتخاب از اقلام (${items.length} نوع کالا - مجموع ${totalQty} عدد)</option>`;
-                items.forEach((rawIt, idx) => {
+                const summaryText = items.map(rawIt => {
                     const it = normalizeItemObject(rawIt);
-                    const priceText = it.buyPrice > 0 ? ` | قیمت: ${formatPrice(it.buyPrice)} تومان` : '';
-                    optionsHtml += `<option value="${escapeHtml(it.productId || idx)}">${idx + 1}. ${escapeHtml(it.name)} ➔ تعداد: ${it.qty} عدد${priceText}</option>`;
-                });
-                itemsCellHtml = `
-                    <div style="display:flex; flex-direction:column; gap:6px; min-width:240px; max-width:320px;">
-                        <select class="form-control" style="font-size:0.85rem; padding:7px 10px; border-radius:8px; background:#f0f9ff; border:1.5px solid #0284c7; color:#0369a1; font-weight:bold; cursor:pointer; width:100%; box-shadow:0 1px 2px rgba(0,0,0,0.05);" onchange="this.style.borderColor = this.selectedIndex > 0 ? '#059669' : '#0284c7';">
-                            ${optionsHtml}
-                        </select>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:#475569; background:#f1f5f9; padding:4px 8px; border-radius:6px; border:1px solid #e2e8f0;">
-                            <span>تنوع اقلام: <strong style="color:#0284c7;">${items.length} نوع</strong></span>
-                            <span>تعداد کل کالا: <strong style="color:#059669; font-size:0.85rem;">${totalQty} عدد</strong></span>
-                        </div>
-                    </div>
-                `;
+                    return `${escapeHtml(it.name || 'کالا')} (${it.qty} عدد)`;
+                }).join('، ');
+                itemsCellHtml = `<div style="max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#334155; font-size:0.85rem;" title="${escapeHtml(summaryText)}">${summaryText}</div>`;
             } else {
-                itemsCellHtml = `
-                    <div style="display:flex; flex-direction:column; gap:4px; min-width:200px;">
-                        <select class="form-control" style="font-size:0.85rem; padding:6px 10px; border-radius:8px; background:#f8fafc; border:1px solid #cbd5e1; color:#64748b; font-weight:bold; cursor:pointer; width:100%;">
-                            <option value="" selected>📦 اقلام عمومی (${totalQty} عدد)</option>
-                        </select>
-                        <span style="font-size:0.78rem; color:var(--muted); text-align:right;">تعداد کل اقلام: <strong style="color:#0284c7;">${totalQty} عدد</strong></span>
-                    </div>
-                `;
+                itemsCellHtml = `<span style="color:var(--muted); font-size:0.85rem;">بدون کالا (${totalQty} عدد)</span>`;
             }
 
             html += `
@@ -4150,6 +4134,7 @@
             filtered.forEach(p => {
                 const pId = p.id || p.code;
                 const buyP = Number(p.buyPrice) || 0;
+                const consumerP = Number(p.price) || Number(p.consumerPrice) || 0;
                 const stock = Number(p.stock) || 0;
                 const isSelected = String(pId) === String(currentSelectVal);
 
@@ -4164,7 +4149,7 @@
                                 ${escapeHtml(p.name)}
                             </div>
                             <div style="font-size:0.75rem; color:#64748b;">
-                                کد کالا: <span style="font-family:monospace; font-weight:bold;">${escapeHtml(String(pId))}</span>
+                                کد: <span style="font-family:monospace; font-weight:bold;">${escapeHtml(String(pId))}</span> | مصرف‌کننده: ${formatPrice(consumerP)} تومان
                             </div>
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
@@ -4267,33 +4252,44 @@
         div.style.cssText = 'display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:10px;';
 
         const selectedPId = itemData ? itemData.productId : '';
+        const consumerP = itemData ? (itemData.consumerPrice || 0) : 0;
+        const mult = itemData ? (itemData.multiplier || '') : '';
 
         let optionsHtml = '<option value="">-- انتخاب محصول از انبار --</option>';
         purchaseProductsCatalog.forEach(p => {
             const pId = p.id || p.code;
             const sel = (String(selectedPId) === String(pId)) ? 'selected' : '';
             const buyP = Number(p.buyPrice) || 0;
+            const consumerPrice = Number(p.price) || Number(p.consumerPrice) || 0;
             const stock = Number(p.stock) || 0;
-            optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی فعلی: ${stock} - قیمت خرید فعلی: ${formatPrice(buyP)}</option>`;
+            optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" data-consumerprice="${consumerPrice}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی: ${stock}</option>`;
         });
 
         div.innerHTML = `
-            <div style="flex:2.5; min-width:240px;">
+            <div style="flex:2.2; min-width:200px;">
                 <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">محصول</label>
                 <div class="p-prod-combobox-container"></div>
                 <select class="form-control p-prod-select" onchange="onPurchaseProductSelect(this)" style="display:none;">
                     ${optionsHtml}
                 </select>
             </div>
-            <div style="flex:1; min-width:100px;">
-                <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">تعداد خرید</label>
+            <div style="flex:0.8; min-width:70px;">
+                <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">تعداد</label>
                 <input type="number" min="1" value="${itemData ? itemData.qty : 1}" class="form-control p-prod-qty" oninput="calcPurchaseTotals()" style="font-size:0.85rem; font-weight:bold; text-align:center;">
             </div>
-            <div style="flex:1.2; min-width:130px;">
-                <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">قیمت خرید واحد (تومان)</label>
-                <input type="number" min="0" value="${itemData ? itemData.buyPrice : 0}" class="form-control p-prod-price" oninput="calcPurchaseTotals()" style="font-size:0.85rem; text-align:center;">
+            <div style="flex:1.1; min-width:110px;">
+                <label style="font-size:0.75rem; color:#0284c7; font-weight:bold; display:block; margin-bottom:4px;">مصرف‌کننده (تومان)</label>
+                <input type="number" min="0" value="${consumerP}" class="form-control p-prod-consumer-price" oninput="onPurchasePriceOrMultiplierChange(this)" style="font-size:0.85rem; text-align:center; border-color:#93c5fd;">
             </div>
-            <div style="flex:1.2; min-width:130px;">
+            <div style="flex:0.8; min-width:75px;">
+                <label style="font-size:0.75rem; color:#d97706; font-weight:bold; display:block; margin-bottom:4px;">ضریب</label>
+                <input type="number" step="0.01" min="0" max="2" value="${mult}" placeholder="0.7" class="form-control p-prod-multiplier" oninput="onPurchasePriceOrMultiplierChange(this)" style="font-size:0.85rem; text-align:center; border-color:#fcd34d;">
+            </div>
+            <div style="flex:1.1; min-width:110px;">
+                <label style="font-size:0.75rem; color:#15803d; font-weight:bold; display:block; margin-bottom:4px;">خرید واحد (تومان)</label>
+                <input type="number" min="0" value="${itemData ? itemData.buyPrice : 0}" class="form-control p-prod-price" oninput="calcPurchaseTotals()" style="font-size:0.85rem; text-align:center; font-weight:bold;">
+            </div>
+            <div style="flex:1.1; min-width:110px;">
                 <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">جمع کل (تومان)</label>
                 <input type="text" readonly class="form-control p-prod-total" value="0" style="font-size:0.85rem; font-weight:bold; background:#e2e8f0; text-align:center; color:#059669;">
             </div>
@@ -4309,16 +4305,43 @@
         calcPurchaseTotals();
     }
 
+    function onPurchasePriceOrMultiplierChange(inputEl) {
+        const row = inputEl.closest('.purchase-item-row');
+        if (!row) return;
+
+        const consumerInput = row.querySelector('.p-prod-consumer-price');
+        const multInput = row.querySelector('.p-prod-multiplier');
+        const buyInput = row.querySelector('.p-prod-price');
+
+        const consumerP = Number(consumerInput?.value) || 0;
+        const mult = Number(multInput?.value) || 0;
+
+        if (consumerP > 0 && mult > 0 && buyInput) {
+            buyInput.value = Math.round(consumerP * mult);
+        }
+        calcPurchaseTotals();
+    }
+
     function onPurchaseProductSelect(selectEl) {
         const row = selectEl.closest('.purchase-item-row');
         if (!row) return;
 
         const opt = selectEl.options[selectEl.selectedIndex];
         if (opt && opt.value) {
-            const buyPrice = Number(opt.getAttribute('data-buyprice')) || 0;
-            const priceInput = row.querySelector('.p-prod-price');
-            if (priceInput && Number(priceInput.value) <= 0) {
-                priceInput.value = buyPrice;
+            const product = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(opt.value));
+            if (product) {
+                const buyPrice = Number(product.buyPrice) || 0;
+                const consumerPrice = Number(product.price) || Number(product.consumerPrice) || 0;
+
+                const priceInput = row.querySelector('.p-prod-price');
+                const consumerInput = row.querySelector('.p-prod-consumer-price');
+
+                if (consumerInput && (Number(consumerInput.value) <= 0 || !consumerInput.value)) {
+                    consumerInput.value = consumerPrice;
+                }
+                if (priceInput && (Number(priceInput.value) <= 0 || !priceInput.value)) {
+                    priceInput.value = buyPrice;
+                }
             }
         }
         calcPurchaseTotals();
@@ -4596,8 +4619,8 @@
 
     <!-- New Purchase Modal -->
     <div id="newPurchaseModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:15px;">
-        <div class="modal-card" style="background:white; border-radius:16px; max-width:900px; width:100%; max-height:92vh; overflow-y:auto; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.2);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+        <div class="modal-card" style="background:white; border-radius:16px; max-width:1150px; width:95vw; margin:auto; max-height:92vh; overflow-y:auto; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.2);">
+            <div style="display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:white; z-index:10; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:18px;">
                 <h3 style="font-size:1.15rem; color:var(--primary-dark); display:flex; align-items:center; gap:8px; margin:0;">
                     <i class="fa-solid fa-cart-flatbed"></i> ثبت فاکتور خرید جدید از تامین‌کننده
                 </h3>
@@ -4649,6 +4672,281 @@
             </div>
         </div>
     </div>
+
+    <!-- New Admin Order Modal -->
+    <div id="newAdminOrderModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:15px;">
+        <div class="modal-card" style="background:white; border-radius:16px; max-width:1150px; width:95vw; margin:auto; max-height:92vh; overflow-y:auto; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.2);">
+            <div style="display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:white; z-index:10; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:18px;">
+                <h3 style="font-size:1.15rem; color:var(--primary-dark); display:flex; align-items:center; gap:8px; margin:0;">
+                    <i class="fa-solid fa-plus-circle"></i> ثبت سفارش جدید دستی (مدیریت)
+                </h3>
+                <button onclick="closeNewAdminOrderModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--muted);">&times;</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:20px; background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #e2e8f0;">
+                <div>
+                    <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:4px;">نام مشتری *</label>
+                    <input type="text" id="adminOrderCustomerName" class="form-control" placeholder="نام و نام خانوادگی مشتری">
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:4px;">شماره همراه / تلفن *</label>
+                    <input type="text" id="adminOrderCustomerPhone" class="form-control" placeholder="0912...">
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:4px;">وضعیت سفارش</label>
+                    <select id="adminOrderStatus" class="form-control">
+                        <option value="تایید شده">تایید شده</option>
+                        <option value="در حال پردازش">در حال پردازش</option>
+                        <option value="ارسال شده">ارسال شده</option>
+                        <option value="تحویل شده">تحویل شده</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:4px;">وضعیت پرداخت</label>
+                    <select id="adminOrderPaymentStatus" class="form-control">
+                        <option value="پرداخت شده">پرداخت شده</option>
+                        <option value="پرداخت در محل">پرداخت در محل</option>
+                        <option value="در انتظار پرداخت">در انتظار پرداخت</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h4 style="margin:0; font-size:1rem; color:var(--text);"><i class="fa-solid fa-boxes-stacked"></i> اقلام سفارش</h4>
+                    <button type="button" class="btn btn-secondary" onclick="addAdminOrderItemRow()" style="padding:6px 12px; font-size:0.85rem;">
+                        <i class="fa-solid fa-plus"></i> افزودن کالا
+                    </button>
+                </div>
+
+                <div id="adminOrderItemsContainer"></div>
+            </div>
+
+            <div style="background:#f1f5f9; padding:16px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:20px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:16px; align-items:center;">
+                <div style="flex:1; min-width:250px;">
+                    <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:4px;">آدرس تحویل و یادداشت سفارش (اختیاری)</label>
+                    <input type="text" id="adminOrderAddress" class="form-control" placeholder="آدرس تحویل گیرنده، کد پستی یا یادداشت...">
+                </div>
+                <div style="text-align:left; background:white; padding:12px 18px; border-radius:10px; border:1px solid #cbd5e1;">
+                    <div style="font-size:0.85rem; color:#64748b;">تعداد کل اقلام: <strong id="adminOrderGrandQty" style="color:#0f172a;">0</strong> عدد</div>
+                    <div style="font-size:0.95rem; font-weight:bold; margin-top:4px;">مبلغ کل سفارش: <strong id="adminOrderGrandTotal" style="color:#059669; font-size:1.2rem;">0 تومان</strong></div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary" onclick="closeNewAdminOrderModal()">انصراف</button>
+                <button type="button" id="adminOrderSubmitBtn" class="btn btn-primary" onclick="submitNewAdminOrder()">
+                    <i class="fa-solid fa-check-circle"></i> ثبت نهایی سفارش
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    function openNewAdminOrderModal() {
+        document.getElementById('adminOrderCustomerName').value = '';
+        document.getElementById('adminOrderCustomerPhone').value = '';
+        document.getElementById('adminOrderAddress').value = '';
+        document.getElementById('adminOrderItemsContainer').innerHTML = '';
+        addAdminOrderItemRow();
+        document.getElementById('newAdminOrderModal').style.display = 'flex';
+    }
+
+    function closeNewAdminOrderModal() {
+        document.getElementById('newAdminOrderModal').style.display = 'none';
+    }
+
+    function addAdminOrderItemRow(itemData = null) {
+        const container = document.getElementById('adminOrderItemsContainer');
+        if (!container) return;
+
+        const rowId = `adminOrderItemRow_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+        const div = document.createElement('div');
+        div.className = 'admin-order-item-row';
+        div.id = rowId;
+        div.style.cssText = 'display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:10px;';
+
+        const selectedPId = itemData ? itemData.productId : '';
+
+        let optionsHtml = '<option value="">-- انتخاب کالا --</option>';
+        purchaseProductsCatalog.forEach(p => {
+            const pId = p.id || p.code;
+            const sel = (String(selectedPId) === String(pId)) ? 'selected' : '';
+            const price = Number(p.price) || Number(p.consumerPrice) || 0;
+            const stock = Number(p.stock) || 0;
+            optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-price="${price}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - قیمت: ${formatPrice(price)} تومان - موجودی: ${stock}</option>`;
+        });
+
+        div.innerHTML = `
+            <div style="flex:2.5; min-width:220px;">
+                <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">محصول</label>
+                <select class="form-control admin-order-prod-select" onchange="onAdminOrderProductSelect(this)" style="font-size:0.85rem;">
+                    ${optionsHtml}
+                </select>
+            </div>
+            <div style="flex:1; min-width:80px;">
+                <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">تعداد</label>
+                <input type="number" min="1" value="${itemData ? itemData.qty : 1}" class="form-control admin-order-prod-qty" oninput="calcAdminOrderTotals()" style="font-size:0.85rem; font-weight:bold; text-align:center;">
+            </div>
+            <div style="flex:1.2; min-width:120px;">
+                <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">قیمت واحد (تومان)</label>
+                <input type="number" min="0" value="${itemData ? itemData.price : 0}" class="form-control admin-order-prod-price" oninput="calcAdminOrderTotals()" style="font-size:0.85rem; text-align:center; font-weight:bold;">
+            </div>
+            <div style="flex:1.2; min-width:120px;">
+                <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">جمع ردیف (تومان)</label>
+                <input type="text" readonly class="form-control admin-order-prod-total" value="0" style="font-size:0.85rem; font-weight:bold; background:#e2e8f0; text-align:center; color:#059669;">
+            </div>
+            <div style="margin-top:18px;">
+                <button type="button" class="btn btn-secondary" onclick="removeAdminOrderItemRow('${rowId}')" style="background:#fee2e2; color:#dc2626; border-color:#fca5a5; padding:6px 12px;">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `;
+
+        container.appendChild(div);
+        calcAdminOrderTotals();
+    }
+
+    function onAdminOrderProductSelect(selectEl) {
+        const row = selectEl.closest('.admin-order-item-row');
+        if (!row) return;
+
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (opt && opt.value) {
+            const price = Number(opt.getAttribute('data-price')) || 0;
+            const priceInput = row.querySelector('.admin-order-prod-price');
+            if (priceInput) {
+                priceInput.value = price;
+            }
+        }
+        calcAdminOrderTotals();
+    }
+
+    function removeAdminOrderItemRow(rowId) {
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.remove();
+            calcAdminOrderTotals();
+        }
+    }
+
+    function calcAdminOrderTotals() {
+        const rows = document.querySelectorAll('.admin-order-item-row');
+        let grandTotal = 0;
+        let grandQty = 0;
+
+        rows.forEach(row => {
+            const qtyInput = row.querySelector('.admin-order-prod-qty');
+            const priceInput = row.querySelector('.admin-order-prod-price');
+            const totalInput = row.querySelector('.admin-order-prod-total');
+
+            const qty = Math.max(1, Number(qtyInput?.value) || 0);
+            const price = Math.max(0, Number(priceInput?.value) || 0);
+            const lineTotal = qty * price;
+
+            if (totalInput) totalInput.value = formatPrice(lineTotal);
+            grandTotal += lineTotal;
+            grandQty += qty;
+        });
+
+        const totalQtyEl = document.getElementById('adminOrderGrandQty');
+        const grandTotalEl = document.getElementById('adminOrderGrandTotal');
+
+        if (totalQtyEl) totalQtyEl.textContent = grandQty.toString();
+        if (grandTotalEl) grandTotalEl.textContent = formatPrice(grandTotal) + ' تومان';
+    }
+
+    async function submitNewAdminOrder() {
+        const name = document.getElementById('adminOrderCustomerName')?.value?.trim();
+        const phone = document.getElementById('adminOrderCustomerPhone')?.value?.trim();
+        const status = document.getElementById('adminOrderStatus')?.value || 'تایید شده';
+        const paymentStatus = document.getElementById('adminOrderPaymentStatus')?.value || 'پرداخت شده';
+        const address = document.getElementById('adminOrderAddress')?.value?.trim() || '';
+
+        if (!name) {
+            alert('لطفاً نام مشتری را وارد کنید.');
+            return;
+        }
+        if (!phone) {
+            alert('لطفاً شماره همراه مشتری را وارد کنید.');
+            return;
+        }
+
+        const rows = document.querySelectorAll('.admin-order-item-row');
+        const items = [];
+        let totalAmount = 0;
+
+        rows.forEach(row => {
+            const selectEl = row.querySelector('.admin-order-prod-select');
+            const qtyInput = row.querySelector('.admin-order-prod-qty');
+            const priceInput = row.querySelector('.admin-order-prod-price');
+
+            const productId = selectEl?.value;
+            const opt = selectEl?.options[selectEl.selectedIndex];
+            const title = opt?.getAttribute('data-name') || selectEl?.options[selectEl.selectedIndex]?.text?.split('(')[0]?.trim() || 'کالا';
+            const qty = Math.max(1, Number(qtyInput?.value) || 1);
+            const price = Math.max(0, Number(priceInput?.value) || 0);
+
+            if (productId) {
+                items.push({
+                    productId,
+                    id: productId,
+                    title,
+                    name: title,
+                    qty,
+                    quantity: qty,
+                    price,
+                    buyPrice: price
+                });
+                totalAmount += (qty * price);
+            }
+        });
+
+        if (items.length === 0) {
+            alert('لطفاً حداقل یک کالا به سفارش اضافه کنید.');
+            return;
+        }
+
+        const submitBtn = document.getElementById('adminOrderSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ثبت سفارش...';
+        }
+
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customerName: name,
+                    customerPhone: phone,
+                    items,
+                    totalAmount,
+                    status,
+                    paymentStatus,
+                    address,
+                    source: 'مدیریت'
+                })
+            });
+
+            if (res.ok) {
+                alert('سفارش جدید با موفقیت ثبت شد.');
+                closeNewAdminOrderModal();
+                loadOrders();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('خطا در ثبت سفارش: ' + (err.error || 'خطای نا مشخص'));
+            }
+        } catch (e) {
+            alert('خطا در ارتباط با سرور: ' + e.message);
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ثبت نهایی سفارش';
+            }
+        }
+    }
+</script>
 
     <!-- Purchase Invoice Printable Modal -->
     <div id="purchaseInvoiceModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:15px;">
