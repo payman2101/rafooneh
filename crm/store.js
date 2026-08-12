@@ -890,9 +890,33 @@ export async function updateOrder(id, updates) {
   const oldStatus = orders[idx].status;
   const newStatus = updates.status;
 
+  const { map: pMap } = getProductsMap();
+  let items = updates.items;
+  if (items && Array.isArray(items)) {
+    items = items.map(item => {
+      const pid = String(item.id || item.code || item.productId || '');
+      const prod = pMap[pid] || {};
+      const buyPrice = Number(item.buyPrice) || Number(prod.buyPrice) || Math.round((Number(item.price) || 0) * 0.7);
+      return {
+        ...item,
+        id: item.id || item.productId || item.code,
+        productId: item.productId || item.id || item.code,
+        buyPrice
+      };
+    });
+  }
+
   orders[idx] = {
     ...orders[idx],
     ...updates,
+    customerName: updates.customerName || orders[idx].customerName,
+    phone: updates.phone ? normalizePhone(updates.phone) : orders[idx].phone,
+    address: updates.address !== undefined ? updates.address : orders[idx].address,
+    items: (items && items.length) ? items : orders[idx].items,
+    totalAmount: updates.totalAmount !== undefined ? Number(updates.totalAmount) : orders[idx].totalAmount,
+    paymentMethod: updates.paymentMethod || orders[idx].paymentMethod,
+    note: updates.note !== undefined ? updates.note : orders[idx].note,
+    adminNotes: updates.adminNotes !== undefined ? updates.adminNotes : orders[idx].adminNotes,
     createdAt: updates.createdAt || orders[idx].createdAt,
     updatedAt: new Date().toISOString()
   };
@@ -909,7 +933,7 @@ export async function updateOrder(id, updates) {
     reduceProductStock(orders[idx].items);
   }
 
-  return orders[idx];
+  return enrichOrderWithProfit(orders[idx], pMap);
 }
 
 export async function listProducts(filters = {}) {
@@ -1484,6 +1508,56 @@ export function createPurchase(purchaseData) {
   try { savePurchaseCloudSql(newPurchase); } catch (e) { console.error('Cloud SQL save purchase notice:', e); }
 
   return newPurchase;
+}
+
+export function updatePurchase(id, updates) {
+  let purchases = readJson(PURCHASES_FILE, []);
+  const idx = purchases.findIndex(p => String(p.id) === String(id));
+  if (idx === -1) return null;
+
+  const nowStr = new Date().toISOString();
+  const rawItems = Array.isArray(updates.items) ? updates.items : purchases[idx].items;
+  let totalAmount = 0;
+  let totalItemsCount = 0;
+
+  const items = rawItems.map(item => {
+    const pid = String(item.productId || item.id || '');
+    const name = item.name || 'محصول رافونه';
+    const qty = Math.max(1, Number(item.qty || item.quantity) || 1);
+    const buyPrice = Math.max(0, Number(item.buyPrice) || 0);
+    const rowTotal = qty * buyPrice;
+
+    totalAmount += rowTotal;
+    totalItemsCount += qty;
+
+    return {
+      productId: pid,
+      name,
+      qty,
+      buyPrice,
+      rowTotal
+    };
+  });
+
+  purchases[idx] = {
+    ...purchases[idx],
+    supplierName: updates.supplierName || purchases[idx].supplierName,
+    refNumber: updates.refNumber || purchases[idx].refNumber,
+    purchaseDate: updates.purchaseDate || purchases[idx].purchaseDate,
+    notes: updates.notes !== undefined ? updates.notes : purchases[idx].notes,
+    items,
+    totalAmount: updates.totalAmount !== undefined ? Number(updates.totalAmount) : totalAmount,
+    totalItemsCount,
+    updatedAt: nowStr
+  };
+
+  writeJson(PURCHASES_FILE, purchases);
+  writeJson(ROOT_PURCHASES_FILE, purchases);
+  savePurchaseToFirestore(purchases[idx]).catch(e => console.error('Firestore save purchase error:', e));
+  try { savePurchaseSqlite(purchases[idx]); } catch (e) { console.error('SQLite save purchase notice:', e); }
+  try { savePurchaseCloudSql(purchases[idx]); } catch (e) { console.error('Cloud SQL save purchase notice:', e); }
+
+  return purchases[idx];
 }
 
 export function deletePurchase(id) {

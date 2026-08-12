@@ -25,6 +25,7 @@ import {
   deleteCompanyPayment,
   listPurchases,
   createPurchase,
+  updatePurchase,
   deletePurchase,
   getAdminAlerts,
   listProducts,
@@ -800,6 +801,30 @@ app.post('/api/admin/purchases', authMiddleware, (req, res) => {
 app.delete('/api/admin/purchases/:id', authMiddleware, (req, res) => {
   const deleted = deletePurchase(req.params.id);
   res.json({ success: deleted });
+});
+
+app.patch('/api/admin/purchases/:id', authMiddleware, (req, res) => {
+  try {
+    const purchase = updatePurchase(req.params.id, req.body);
+    if (!purchase) {
+      return res.status(404).json({ success: false, message: 'فاکتور خرید یافت نشد' });
+    }
+    res.json({ success: true, purchase, message: 'فاکتور خرید با موفقیت به روزرسانی شد.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در ویرایش فاکتور خرید: ' + err.message });
+  }
+});
+
+app.put('/api/admin/purchases/:id', authMiddleware, (req, res) => {
+  try {
+    const purchase = updatePurchase(req.params.id, req.body);
+    if (!purchase) {
+      return res.status(404).json({ success: false, message: 'فاکتور خرید یافت نشد' });
+    }
+    res.json({ success: true, purchase, message: 'فاکتور خرید با موفقیت به روزرسانی شد.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در ویرایش فاکتور خرید: ' + err.message });
+  }
 });
 
 app.get('/api/admin/alerts', authMiddleware, (req, res) => {

@@ -1198,6 +1198,167 @@
                     </div>
                 </div>
             </section>
+
+            <!-- New / Edit Purchase Invoice Dedicated Page -->
+            <section class="section" id="section-new-purchase">
+                <div class="panel" style="margin-bottom: 20px;">
+                    <div class="panel-header" style="flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 id="purchaseFormTitle"><i class="fa-solid fa-cart-flatbed"></i> ثبت فاکتور خرید جدید از تامین‌کننده</h2>
+                            <p style="font-size: 0.85rem; color: var(--muted); margin-top: 4px;" id="purchaseFormSubtitle">
+                                ثبت فاکتورهای خرید کالا، قیمت‌ها، میزان ورودی انبار و به روز رسانی خودکار کاتالوگ
+                            </p>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="showSection('purchases')">
+                            <i class="fa-solid fa-arrow-right"></i> بازگشت به لیست فاکتورهای خرید
+                        </button>
+                    </div>
+
+                    <div style="padding: 20px;">
+                        <input type="hidden" id="pFormEditId" value="">
+                        
+                        <!-- Header Inputs -->
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
+                            <div>
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">نام تامین‌کننده / فروشنده *</label>
+                                <input type="text" id="pagePSupplierName" class="form-control" placeholder="مثال: صنایع رافونه / بازرگانی نوری" style="font-size:0.9rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">شماره فاکتور / سند تامین *</label>
+                                <input type="text" id="pagePRefNumber" class="form-control" placeholder="مثال: FACT-849201" style="font-size:0.9rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">تاریخ و زمان خرید *</label>
+                                <input type="datetime-local" id="pagePPurchaseDate" class="form-control" style="font-family:inherit; font-size:0.9rem;">
+                            </div>
+                        </div>
+
+                        <!-- Items Section -->
+                        <div style="margin-bottom:24px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:#f0fdf4; padding:12px 18px; border-radius:10px; border:1px solid #bbf7d0;">
+                                <h3 style="margin:0; font-size:1.05rem; color:#166534; display:flex; align-items:center; gap:8px;">
+                                    <i class="fa-solid fa-boxes-stacked"></i> لیست اقلام خریداری شده
+                                </h3>
+                                <button type="button" class="btn btn-primary" onclick="addPagePurchaseItemRow()" style="padding:8px 16px; font-size:0.88rem; background:#166534; border-color:#166534;">
+                                    <i class="fa-solid fa-plus"></i> افزودن ردیف کالا
+                                </button>
+                            </div>
+
+                            <div id="pagePItemsContainer"></div>
+                        </div>
+
+                        <!-- Footer Summary & Notes -->
+                        <div style="background:#f1f5f9; padding:20px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:24px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:20px; align-items:center;">
+                            <div style="flex:1; min-width:280px;">
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#334155;">توضیحات و یادداشت خرید (اختیاری)</label>
+                                <input type="text" id="pagePNotes" class="form-control" placeholder="توضیحات نحوه پرداخت، باربری، انبار مقصد و..." style="font-size:0.9rem;">
+                            </div>
+                            <div style="text-align:left; background:white; padding:14px 22px; border-radius:10px; border:1px solid #cbd5e1; min-width:240px;">
+                                <div style="font-size:0.9rem; color:#64748b;">تعداد کل اقلام: <strong id="pagePGrandQty" style="color:#0f172a; font-size:1rem;">0</strong> عدد</div>
+                                <div style="font-size:1rem; font-weight:bold; margin-top:6px;">مبلغ کل فاکتور خرید: <strong id="pagePGrandTotal" style="color:#059669; font-size:1.3rem;">0 تومان</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display:flex; justify-content:flex-end; gap:12px; flex-wrap:wrap;">
+                            <button type="button" class="btn btn-secondary" onclick="showSection('purchases')" style="padding:10px 20px;">انصراف / بازگشت</button>
+                            <button type="button" id="pagePSubmitBtn" class="btn btn-primary" onclick="submitPagePurchase()" style="padding:10px 24px; font-size:0.95rem; background:#059669; border-color:#059669;">
+                                <i class="fa-solid fa-check-circle"></i> ذخیره فاکتور خرید و به روز رسانی انبار
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- New / Edit Customer Order Dedicated Page -->
+            <section class="section" id="section-new-order">
+                <div class="panel" style="margin-bottom: 20px;">
+                    <div class="panel-header" style="flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 id="orderFormTitle"><i class="fa-solid fa-cart-plus"></i> ثبت سفارش جدید مشتری</h2>
+                            <p style="font-size: 0.85rem; color: var(--muted); margin-top: 4px;" id="orderFormSubtitle">
+                                ثبت و ویرایش سفارش مشتری، انتخاب کالاها، محاسبه مجموع و به‌روزرسانی وضعیت
+                            </p>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="showSection('orders')">
+                            <i class="fa-solid fa-arrow-right"></i> بازگشت به لیست سفارشات
+                        </button>
+                    </div>
+
+                    <div style="padding: 20px;">
+                        <input type="hidden" id="orderFormEditId" value="">
+                        
+                        <!-- Customer Info Grid -->
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
+                            <div>
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">نام و نام خانوادگی مشتری *</label>
+                                <input type="text" id="pageOrderCustomerName" class="form-control" placeholder="نام مشتری..." style="font-size:0.9rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">شماره همراه / تلفن *</label>
+                                <input type="text" id="pageOrderCustomerPhone" class="form-control" placeholder="0912..." style="font-size:0.9rem;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">وضعیت سفارش</label>
+                                <select id="pageOrderStatus" class="form-control" style="font-size:0.9rem;">
+                                    <option value="new">جدید</option>
+                                    <option value="confirmed">تأیید شده</option>
+                                    <option value="preparing">در حال آماده‌سازی</option>
+                                    <option value="delivering">در حال ارسال</option>
+                                    <option value="delivered">تحویل شده</option>
+                                    <option value="cancelled">لغو شده</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">روش و وضعیت پرداخت</label>
+                                <select id="pageOrderPaymentMethod" class="form-control" style="font-size:0.9rem;">
+                                    <option value="cod">پرداخت در محل (تحویل درب منزل)</option>
+                                    <option value="card">کارت به کارت / آنلاین</option>
+                                    <option value="company">حساب شرکتی</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">تاریخ و زمان سفارش</label>
+                                <input type="datetime-local" id="pageOrderCreatedAt" class="form-control" style="font-family:inherit; font-size:0.9rem;">
+                            </div>
+                        </div>
+
+                        <!-- Items Section -->
+                        <div style="margin-bottom:24px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:#eff6ff; padding:12px 18px; border-radius:10px; border:1px solid #bfdbfe;">
+                                <h3 style="margin:0; font-size:1.05rem; color:#1e40af; display:flex; align-items:center; gap:8px;">
+                                    <i class="fa-solid fa-boxes-stacked"></i> اقلام سفارش مشتری
+                                </h3>
+                                <button type="button" class="btn btn-primary" onclick="addPageOrderItemRow()" style="padding:8px 16px; font-size:0.88rem; background:#1e40af; border-color:#1e40af;">
+                                    <i class="fa-solid fa-plus"></i> افزودن کالا
+                                </button>
+                            </div>
+
+                            <div id="pageOrderItemsContainer"></div>
+                        </div>
+
+                        <!-- Footer Summary & Address -->
+                        <div style="background:#f1f5f9; padding:20px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:24px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:20px; align-items:center;">
+                            <div style="flex:1; min-width:280px;">
+                                <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#334155;">آدرس تحویل و یادداشت سفارش (اختیاری)</label>
+                                <input type="text" id="pageOrderAddress" class="form-control" placeholder="آدرس تحویل‌گیرنده، کد پستی یا توضیحات پیگیری..." style="font-size:0.9rem;">
+                            </div>
+                            <div style="text-align:left; background:white; padding:14px 22px; border-radius:10px; border:1px solid #cbd5e1; min-width:240px;">
+                                <div style="font-size:0.9rem; color:#64748b;">تعداد کل اقلام: <strong id="pageOrderGrandQty" style="color:#0f172a; font-size:1rem;">0</strong> عدد</div>
+                                <div style="font-size:1rem; font-weight:bold; margin-top:6px;">مبلغ کل سفارش: <strong id="pageOrderGrandTotal" style="color:#059669; font-size:1.3rem;">0 تومان</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display:flex; justify-content:flex-end; gap:12px; flex-wrap:wrap;">
+                            <button type="button" class="btn btn-secondary" onclick="showSection('orders')" style="padding:10px 20px;">انصراف / بازگشت</button>
+                            <button type="button" id="pageOrderSubmitBtn" class="btn btn-primary" onclick="submitPageOrder()" style="padding:10px 24px; font-size:0.95rem;">
+                                <i class="fa-solid fa-check-circle"></i> ثبت نهایی و ذخیره سفارش
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 </div>
@@ -1222,6 +1383,9 @@
         <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="saveOrderChanges()">
                 <i class="fa-solid fa-floppy-disk"></i> ذخیره
+            </button>
+            <button class="btn btn-secondary" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1;" onclick="openOrderFormFromModal()">
+                <i class="fa-solid fa-pen-to-square"></i> ویرایش کامل سفارش
             </button>
             <button class="btn btn-primary" style="background:#0284c7;" onclick="printInvoiceFromAdminModal()">
                 <i class="fa-solid fa-print"></i> صدور / چاپ فاکتور مشتری
@@ -2311,6 +2475,9 @@
                 <td>
                     <div style="display:flex; gap:6px;">
                         <button class="btn btn-secondary" onclick="openOrder('${o.id}')">جزئیات</button>
+                        <button class="btn btn-secondary" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1; padding:6px 10px;" onclick="openOrderForm('${o.id}')" title="ویرایش کامل سفارش">
+                            <i class="fa-solid fa-pen-to-square"></i> ویرایش
+                        </button>
                         <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteOrder('${o.id}')" title="حذف سفارش">
                             <i class="fa-solid fa-trash"></i>
                         </button>
@@ -3971,6 +4138,9 @@
                             <button class="btn btn-secondary" onclick="viewPurchaseInvoice('${p.id}')" style="padding:4px 10px; font-size:0.8rem; background:#0284c7; color:white; border-color:#0284c7;">
                                 <i class="fa-solid fa-receipt"></i> فاکتور خرید
                             </button>
+                            <button class="btn btn-secondary" onclick="openPurchaseForm('${p.id}')" style="padding:4px 10px; font-size:0.8rem; background:#f1f5f9; color:#0f172a; border-color:#cbd5e1;" title="ویرایش فاکتور خرید">
+                                <i class="fa-solid fa-pen-to-square"></i> ویرایش
+                            </button>
                             <button class="btn btn-secondary" onclick="deletePurchaseRecord('${p.id}')" style="padding:4px 8px; font-size:0.8rem; background:#fee2e2; color:#dc2626; border-color:#fca5a5;">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
@@ -4001,44 +4171,7 @@
     }
 
     function openNewPurchaseModal() {
-        const modal = document.getElementById('newPurchaseModal');
-        if (modal) modal.style.display = 'flex';
-
-        if (typeof productsData !== 'undefined' && Array.isArray(productsData) && productsData.length > 0) {
-            if (!purchaseProductsCatalog || purchaseProductsCatalog.length === 0) {
-                purchaseProductsCatalog = [...productsData];
-            }
-        }
-
-        const supplierEl = document.getElementById('pSupplierName');
-        if (supplierEl) supplierEl.value = 'تأمین‌کننده رافونه';
-
-        const refEl = document.getElementById('pRefNumber');
-        if (refEl) refEl.value = `FACT-${Math.floor(100000 + Math.random() * 900000)}`;
-        
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        const dateEl = document.getElementById('pPurchaseDate');
-        if (dateEl) dateEl.value = now.toISOString().slice(0, 16);
-        
-        const notesEl = document.getElementById('pNotes');
-        if (notesEl) notesEl.value = '';
-
-        const container = document.getElementById('pItemsContainer');
-        if (container) container.innerHTML = '';
-
-        addPurchaseItemRow();
-
-        // Async non-blocking refresh from API in background
-        api('/api/admin/products?brand=all&category=all').then(async res => {
-            if (res.ok) {
-                const data = await res.json();
-                if (data.products && Array.isArray(data.products) && data.products.length > 0) {
-                    purchaseProductsCatalog = data.products;
-                    refreshPurchaseOptionsInDOM();
-                }
-            }
-        }).catch(e => console.error('Background purchase catalog refresh error:', e));
+        openPurchaseForm();
     }
 
     function refreshPurchaseOptionsInDOM() {
@@ -4456,7 +4589,10 @@
         }
     }
 
+    let activeViewingPurchaseId = null;
+
     function viewPurchaseInvoice(purchaseId) {
+        activeViewingPurchaseId = purchaseId;
         const purchase = allPurchasesData.find(p => String(p.id) === String(purchaseId));
         if (!purchase) {
             alert('اطلاعات فاکتور خرید یافت نشد.');
@@ -4744,12 +4880,7 @@
 
 <script>
     function openNewAdminOrderModal() {
-        document.getElementById('adminOrderCustomerName').value = '';
-        document.getElementById('adminOrderCustomerPhone').value = '';
-        document.getElementById('adminOrderAddress').value = '';
-        document.getElementById('adminOrderItemsContainer').innerHTML = '';
-        addAdminOrderItemRow();
-        document.getElementById('newAdminOrderModal').style.display = 'flex';
+        openOrderForm();
     }
 
     function closeNewAdminOrderModal() {
@@ -4946,6 +5077,785 @@
             }
         }
     }
+
+    // ==========================================
+    // UNIFIED SEARCHABLE PRODUCT COMBOBOX ("انتخاب کالا")
+    // ==========================================
+    function renderUnifiedProductCombobox(rowEl, selectedProductId = '', type = 'purchase') {
+        const container = rowEl.querySelector('.prod-combobox-container');
+        if (!container) return;
+
+        let selectedProduct = null;
+        if (selectedProductId) {
+            selectedProduct = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(selectedProductId));
+        }
+
+        const displayVal = selectedProduct 
+            ? `${selectedProduct.name} (کد: ${selectedProduct.id || selectedProduct.code})` 
+            : '';
+
+        container.innerHTML = `
+            <div style="position:relative; width:100%;">
+                <input type="text" 
+                       class="form-control prod-search-input" 
+                       placeholder="🔍 انتخاب کالا (جستجو با نام یا کد)..." 
+                       value="${escapeHtml(displayVal)}"
+                       onfocus="openUnifiedProductDropdown(this)" 
+                       oninput="filterUnifiedProductDropdown(this, '${type}')" 
+                       autocomplete="off"
+                       style="font-size:0.85rem; padding-left:${selectedProduct ? '30px' : '10px'}; font-weight:${selectedProduct ? 'bold' : 'normal'}; color:${selectedProduct ? '#0f172a' : '#475569'};">
+                <button type="button" 
+                        class="prod-clear-btn" 
+                        onclick="clearUnifiedProductSelection(this, '${type}')" 
+                        title="حذف انتخاب کالا"
+                        style="position:absolute; left:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.1rem; line-height:1; display:${selectedProduct ? 'block' : 'none'};">
+                    &times;
+                </button>
+                <div class="prod-dropdown-menu" 
+                     style="display:none; position:absolute; top:calc(100% + 4px); right:0; left:0; max-height:250px; overflow-y:auto; background:white; border:1px solid #cbd5e1; border-radius:8px; z-index:9999; box-shadow:0 10px 25px -5px rgba(0,0,0,0.15);">
+                </div>
+            </div>
+        `;
+    }
+
+    function openUnifiedProductDropdown(inputEl) {
+        document.querySelectorAll('.prod-dropdown-menu, .p-prod-dropdown-menu').forEach(m => {
+            if (m !== inputEl.nextElementSibling?.nextElementSibling) {
+                m.style.display = 'none';
+            }
+        });
+        const type = inputEl.closest('.page-purchase-item-row') ? 'purchase' : 'order';
+        filterUnifiedProductDropdown(inputEl, type);
+    }
+
+    function filterUnifiedProductDropdown(inputEl, type = 'purchase') {
+        const row = inputEl.closest('.page-purchase-item-row, .page-order-item-row, .purchase-item-row, .admin-order-item-row');
+        if (!row) return;
+        const menu = row.querySelector('.prod-dropdown-menu, .p-prod-dropdown-menu');
+        if (!menu) return;
+
+        const q = inputEl.value.trim().toLowerCase();
+        const hiddenSelect = row.querySelector('.prod-select, .p-prod-select, .admin-order-prod-select');
+        const currentVal = hiddenSelect?.value;
+
+        const filtered = purchaseProductsCatalog.filter(p => {
+            if (!q) return true;
+            const pId = String(p.id || p.code || '').toLowerCase();
+            const pName = String(p.name || '').toLowerCase();
+            const fullText = `${pName} ${pId}`;
+            return fullText.includes(q);
+        });
+
+        if (filtered.length === 0) {
+            menu.innerHTML = `<div style="padding:12px; text-align:center; color:#94a3b8; font-size:0.85rem;">کالایی با این مشخصات یافت نشد</div>`;
+        } else {
+            let html = '';
+            filtered.forEach(p => {
+                const pId = p.id || p.code;
+                const buyP = Number(p.buyPrice) || 0;
+                const priceP = Number(p.price) || Number(p.consumerPrice) || 0;
+                const stock = Number(p.stock) || 0;
+                const isSelected = String(pId) === String(currentVal);
+
+                const priceBadge = type === 'purchase'
+                    ? `<span style="font-size:0.72rem; background:#f0fdf4; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold;">خرید: ${formatPrice(buyP)} تومان</span>`
+                    : `<span style="font-size:0.72rem; background:#eff6ff; color:#1e40af; padding:2px 6px; border-radius:4px; font-weight:bold;">فروش: ${formatPrice(priceP)} تومان</span>`;
+
+                html += `
+                    <div class="prod-item-option" 
+                         onclick="selectUnifiedProductOption(this, '${escapeHtml(String(pId))}', '${type}')" 
+                         style="padding:10px 14px; cursor:pointer; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:${isSelected ? '#f0fdf4' : 'white'}; transition:background 0.15s ease;"
+                         onmouseover="this.style.background='#f8fafc'"
+                         onmouseout="this.style.background='${isSelected ? '#f0fdf4' : 'white'}'">
+                        <div style="flex:1; min-width:0; margin-left:8px;">
+                            <div style="font-weight:bold; font-size:0.88rem; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                ${escapeHtml(p.name)}
+                            </div>
+                            <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                                کد کالا: <span style="font-family:monospace; font-weight:bold;">${escapeHtml(String(pId))}</span> | قیمت مصرف‌کننده: ${formatPrice(priceP)} تومان
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0;">
+                            <span style="font-size:0.72rem; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:bold;">
+                                موجودی: ${stock} عدد
+                            </span>
+                            ${priceBadge}
+                        </div>
+                    </div>
+                `;
+            });
+            menu.innerHTML = html;
+        }
+
+        menu.style.display = 'block';
+    }
+
+    function selectUnifiedProductOption(optionEl, productId, type) {
+        const row = optionEl.closest('.page-purchase-item-row, .page-order-item-row, .purchase-item-row, .admin-order-item-row');
+        if (!row) return;
+
+        const hiddenSelect = row.querySelector('.prod-select, .p-prod-select, .admin-order-prod-select');
+        const inputEl = row.querySelector('.prod-search-input, .p-prod-search-input');
+        const clearBtn = row.querySelector('.prod-clear-btn, .p-prod-clear-btn');
+        const menu = row.querySelector('.prod-dropdown-menu, .p-prod-dropdown-menu');
+
+        if (hiddenSelect) {
+            hiddenSelect.value = productId;
+        }
+
+        const product = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(productId));
+        if (product && inputEl) {
+            inputEl.value = `${product.name} (کد: ${product.id || product.code})`;
+            inputEl.style.fontWeight = 'bold';
+            inputEl.style.color = '#0f172a';
+            inputEl.style.paddingLeft = '30px';
+        }
+
+        if (clearBtn) clearBtn.style.display = 'block';
+        if (menu) menu.style.display = 'none';
+
+        if (type === 'purchase') {
+            if (row.classList.contains('page-purchase-item-row')) {
+                onPagePurchaseProductSelect(hiddenSelect);
+            } else {
+                onPurchaseProductSelect(hiddenSelect);
+            }
+        } else {
+            if (row.classList.contains('page-order-item-row')) {
+                onPageOrderProductSelect(hiddenSelect);
+            } else {
+                onAdminOrderProductSelect(hiddenSelect);
+            }
+        }
+    }
+
+    function clearUnifiedProductSelection(btnEl, type) {
+        const row = btnEl.closest('.page-purchase-item-row, .page-order-item-row, .purchase-item-row, .admin-order-item-row');
+        if (!row) return;
+
+        const hiddenSelect = row.querySelector('.prod-select, .p-prod-select, .admin-order-prod-select');
+        const inputEl = row.querySelector('.prod-search-input, .p-prod-search-input');
+
+        if (hiddenSelect) hiddenSelect.value = '';
+        if (inputEl) {
+            inputEl.value = '';
+            inputEl.style.fontWeight = 'normal';
+            inputEl.style.color = '#475569';
+            inputEl.style.paddingLeft = '10px';
+        }
+        btnEl.style.display = 'none';
+
+        if (type === 'purchase') {
+            if (row.classList.contains('page-purchase-item-row')) calcPagePurchaseTotals();
+            else calcPurchaseTotals();
+        } else {
+            if (row.classList.contains('page-order-item-row')) calcPageOrderTotals();
+            else calcAdminOrderTotals();
+        }
+    }
+
+    // ==========================================
+    // PAGE PURCHASE INVOICE FORM (ثبت و ویرایش فاکتور خرید)
+    // ==========================================
+    let activeEditingPurchaseId = null;
+
+    async function openPurchaseForm(purchaseId = null) {
+        if (!purchaseProductsCatalog || purchaseProductsCatalog.length === 0) {
+            await loadAdminProducts();
+        }
+
+        activeEditingPurchaseId = purchaseId;
+        const editIdEl = document.getElementById('pFormEditId');
+        if (editIdEl) editIdEl.value = purchaseId || '';
+
+        const titleEl = document.getElementById('purchaseFormTitle');
+        const subtitleEl = document.getElementById('purchaseFormSubtitle');
+        const submitBtn = document.getElementById('pagePSubmitBtn');
+
+        if (purchaseId) {
+            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> ویرایش فاکتور خرید (شناسه: ${escapeHtml(purchaseId)})`;
+            if (subtitleEl) subtitleEl.textContent = 'تغییر اطلاعات تامین‌کننده، شماره سند و ویرایش اقلام فاکتور خرید';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره تغییرات فاکتور خرید';
+
+            const purchase = allPurchasesData.find(p => String(p.id) === String(purchaseId));
+            if (purchase) {
+                document.getElementById('pagePSupplierName').value = purchase.supplierName || '';
+                document.getElementById('pagePRefNumber').value = purchase.refNumber || '';
+                document.getElementById('pagePNotes').value = purchase.notes || '';
+
+                if (purchase.purchaseDate) {
+                    try {
+                        const d = new Date(purchase.purchaseDate);
+                        if (!isNaN(d.getTime())) {
+                            document.getElementById('pagePPurchaseDate').value = d.toISOString().slice(0, 16);
+                        }
+                    } catch (e) {}
+                }
+
+                const container = document.getElementById('pagePItemsContainer');
+                container.innerHTML = '';
+                const items = normalizeItemsArray(purchase.items);
+                if (items.length > 0) {
+                    items.forEach(rawIt => {
+                        const it = normalizeItemObject(rawIt);
+                        addPagePurchaseItemRow({
+                            productId: it.productId || it.id || it.code,
+                            qty: it.qty || it.quantity || 1,
+                            buyPrice: it.buyPrice || 0,
+                            consumerPrice: it.consumerPrice || it.price || 0
+                        });
+                    });
+                } else {
+                    addPagePurchaseItemRow();
+                }
+            } else {
+                alert('اطلاعات فاکتور خرید مورد نظر یافت نشد.');
+                showSection('purchases');
+                return;
+            }
+        } else {
+            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-cart-flatbed"></i> ثبت فاکتور خرید جدید از تامین‌کننده`;
+            if (subtitleEl) subtitleEl.textContent = 'ثبت فاکتورهای خرید کالا، قیمت‌ها، میزان ورودی انبار و به روز رسانی خودکار کاتالوگ';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره فاکتور خرید و به روز رسانی انبار';
+
+            document.getElementById('pagePSupplierName').value = 'تأمین‌کننده رافونه';
+            document.getElementById('pagePRefNumber').value = 'FACT-' + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('pagePNotes').value = '';
+
+            const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById('pagePPurchaseDate').value = nowLocal;
+
+            const container = document.getElementById('pagePItemsContainer');
+            container.innerHTML = '';
+            addPagePurchaseItemRow();
+        }
+
+        calcPagePurchaseTotals();
+        showSection('new-purchase');
+    }
+
+    function addPagePurchaseItemRow(itemData = null) {
+        const container = document.getElementById('pagePItemsContainer');
+        if (!container) return;
+
+        const rowId = `pagePRow_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+        const div = document.createElement('div');
+        div.className = 'page-purchase-item-row';
+        div.id = rowId;
+        div.style.cssText = 'display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:14px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:12px;';
+
+        const selectedPId = itemData ? itemData.productId : '';
+        const consumerP = itemData ? (itemData.consumerPrice || 0) : 0;
+        const mult = itemData ? (itemData.multiplier || '') : '';
+
+        let optionsHtml = '<option value="">-- انتخاب کالا --</option>';
+        purchaseProductsCatalog.forEach(p => {
+            const pId = p.id || p.code;
+            const sel = (String(selectedPId) === String(pId)) ? 'selected' : '';
+            const buyP = Number(p.buyPrice) || 0;
+            const consumerPrice = Number(p.price) || Number(p.consumerPrice) || 0;
+            const stock = Number(p.stock) || 0;
+            optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" data-consumerprice="${consumerPrice}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی: ${stock}</option>`;
+        });
+
+        div.innerHTML = `
+            <div style="flex:2.5; min-width:220px;">
+                <label style="font-size:0.78rem; color:#475569; font-weight:bold; display:block; margin-bottom:4px;">انتخاب کالا *</label>
+                <div class="prod-combobox-container"></div>
+                <select class="form-control prod-select" onchange="onPagePurchaseProductSelect(this)" style="display:none;">
+                    ${optionsHtml}
+                </select>
+            </div>
+            <div style="flex:0.8; min-width:75px;">
+                <label style="font-size:0.78rem; color:#475569; font-weight:bold; display:block; margin-bottom:4px;">تعداد</label>
+                <input type="number" min="1" value="${itemData ? itemData.qty : 1}" class="form-control p-prod-qty" oninput="calcPagePurchaseTotals()" style="font-size:0.9rem; font-weight:bold; text-align:center;">
+            </div>
+            <div style="flex:1.1; min-width:110px;">
+                <label style="font-size:0.78rem; color:#0284c7; font-weight:bold; display:block; margin-bottom:4px;">مصرف‌کننده (تومان)</label>
+                <input type="number" min="0" value="${consumerP}" class="form-control p-prod-consumer-price" oninput="onPagePurchasePriceOrMultiplierChange(this)" style="font-size:0.88rem; text-align:center; border-color:#93c5fd;">
+            </div>
+            <div style="flex:0.8; min-width:75px;">
+                <label style="font-size:0.78rem; color:#d97706; font-weight:bold; display:block; margin-bottom:4px;">ضریب</label>
+                <input type="number" step="0.01" min="0" max="2" value="${mult}" placeholder="0.7" class="form-control p-prod-multiplier" oninput="onPagePurchasePriceOrMultiplierChange(this)" style="font-size:0.88rem; text-align:center; border-color:#fcd34d;">
+            </div>
+            <div style="flex:1.1; min-width:110px;">
+                <label style="font-size:0.78rem; color:#15803d; font-weight:bold; display:block; margin-bottom:4px;">خرید واحد (تومان)</label>
+                <input type="number" min="0" value="${itemData ? itemData.buyPrice : 0}" class="form-control p-prod-price" oninput="calcPagePurchaseTotals()" style="font-size:0.88rem; text-align:center; font-weight:bold;">
+            </div>
+            <div style="flex:1.2; min-width:120px;">
+                <label style="font-size:0.78rem; color:#64748b; font-weight:bold; display:block; margin-bottom:4px;">جمع کل (تومان)</label>
+                <input type="text" readonly class="form-control p-prod-total" value="0" style="font-size:0.88rem; font-weight:bold; background:#e2e8f0; text-align:center; color:#059669;">
+            </div>
+            <div style="margin-top:20px;">
+                <button type="button" class="btn btn-secondary" onclick="removePagePurchaseItemRow('${rowId}')" style="background:#fee2e2; color:#dc2626; border-color:#fca5a5; padding:7px 12px;" title="حذف کالا">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `;
+
+        container.appendChild(div);
+        renderUnifiedProductCombobox(div, selectedPId, 'purchase');
+        calcPagePurchaseTotals();
+    }
+
+    function onPagePurchasePriceOrMultiplierChange(inputEl) {
+        const row = inputEl.closest('.page-purchase-item-row');
+        if (!row) return;
+
+        const consumerInput = row.querySelector('.p-prod-consumer-price');
+        const multInput = row.querySelector('.p-prod-multiplier');
+        const buyInput = row.querySelector('.p-prod-price');
+
+        const consumerP = Number(consumerInput?.value) || 0;
+        const mult = Number(multInput?.value) || 0;
+
+        if (consumerP > 0 && mult > 0 && buyInput) {
+            buyInput.value = Math.round(consumerP * mult);
+        }
+        calcPagePurchaseTotals();
+    }
+
+    function onPagePurchaseProductSelect(selectEl) {
+        const row = selectEl.closest('.page-purchase-item-row');
+        if (!row) return;
+
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (opt && opt.value) {
+            const product = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(opt.value));
+            if (product) {
+                const buyPrice = Number(product.buyPrice) || 0;
+                const consumerPrice = Number(product.price) || Number(product.consumerPrice) || 0;
+
+                const priceInput = row.querySelector('.p-prod-price');
+                const consumerInput = row.querySelector('.p-prod-consumer-price');
+
+                if (consumerInput && (Number(consumerInput.value) <= 0 || !consumerInput.value)) {
+                    consumerInput.value = consumerPrice;
+                }
+                if (priceInput && (Number(priceInput.value) <= 0 || !priceInput.value)) {
+                    priceInput.value = buyPrice;
+                }
+            }
+        }
+        calcPagePurchaseTotals();
+    }
+
+    function removePagePurchaseItemRow(rowId) {
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.remove();
+            calcPagePurchaseTotals();
+        }
+    }
+
+    function calcPagePurchaseTotals() {
+        const rows = document.querySelectorAll('.page-purchase-item-row');
+        let grandTotal = 0;
+        let grandQty = 0;
+
+        rows.forEach(row => {
+            const qtyInput = row.querySelector('.p-prod-qty');
+            const priceInput = row.querySelector('.p-prod-price');
+            const totalInput = row.querySelector('.p-prod-total');
+
+            const qty = Math.max(1, Number(qtyInput?.value) || 0);
+            const price = Math.max(0, Number(priceInput?.value) || 0);
+            const lineTotal = qty * price;
+
+            if (totalInput) totalInput.value = formatPrice(lineTotal);
+            grandTotal += lineTotal;
+            grandQty += qty;
+        });
+
+        const totalQtyEl = document.getElementById('pagePGrandQty');
+        const grandTotalEl = document.getElementById('pagePGrandTotal');
+
+        if (totalQtyEl) totalQtyEl.textContent = grandQty.toString();
+        if (grandTotalEl) grandTotalEl.textContent = formatPrice(grandTotal) + ' تومان';
+    }
+
+    async function submitPagePurchase() {
+        const editId = document.getElementById('pFormEditId')?.value;
+        const supplierName = document.getElementById('pagePSupplierName')?.value?.trim() || 'تأمین‌کننده';
+        const refNumber = document.getElementById('pagePRefNumber')?.value?.trim() || '';
+        const purchaseDate = document.getElementById('pagePPurchaseDate')?.value || new Date().toISOString();
+        const notes = document.getElementById('pagePNotes')?.value?.trim() || '';
+
+        const rows = document.querySelectorAll('.page-purchase-item-row');
+        const items = [];
+
+        rows.forEach(row => {
+            const selectEl = row.querySelector('.prod-select');
+            const qtyInput = row.querySelector('.p-prod-qty');
+            const priceInput = row.querySelector('.p-prod-price');
+
+            const productId = selectEl?.value;
+            const opt = selectEl?.options[selectEl.selectedIndex];
+            const name = opt?.getAttribute('data-name') || selectEl?.options[selectEl.selectedIndex]?.text?.split('(')[0]?.trim() || 'محصول';
+            const qty = Math.max(1, Number(qtyInput?.value) || 1);
+            const buyPrice = Math.max(0, Number(priceInput?.value) || 0);
+
+            if (productId) {
+                items.push({
+                    productId,
+                    name,
+                    qty,
+                    buyPrice
+                });
+            }
+        });
+
+        if (items.length === 0) {
+            alert('لطفاً حداقل یک کالا به لیست فاکتور خرید اضافه کنید.');
+            return;
+        }
+
+        const submitBtn = document.getElementById('pagePSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...';
+        }
+
+        try {
+            const endpoint = editId ? `/api/admin/purchases/${editId}` : '/api/admin/purchases';
+            const method = editId ? 'PATCH' : 'POST';
+
+            const res = await api(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    supplierName,
+                    refNumber,
+                    purchaseDate,
+                    notes,
+                    items,
+                    updateStock: true
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert(data.message || (editId ? 'فاکتور خرید با موفقیت ویرایش شد.' : 'فاکتور خرید با موفقیت ثبت گردید.'));
+                showSection('purchases');
+                loadPurchases();
+                loadAdminProducts();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert(err.message || 'خطا در ثبت / ویرایش فاکتور خرید.');
+            }
+        } catch (e) {
+            alert('خطا در ارتباط با سرور: ' + e.message);
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره فاکتور خرید و به روز رسانی انبار';
+            }
+        }
+    }
+
+    function openPurchaseFormFromInvoiceModal() {
+        closePurchaseInvoiceModal();
+        if (activeViewingPurchaseId) {
+            openPurchaseForm(activeViewingPurchaseId);
+        }
+    }
+
+    // ==========================================
+    // PAGE CUSTOMER ORDER FORM (ثبت و ویرایش سفارش مشتری)
+    // ==========================================
+    let activeEditingOrderId = null;
+
+    async function openOrderForm(orderId = null) {
+        if (!purchaseProductsCatalog || purchaseProductsCatalog.length === 0) {
+            await loadAdminProducts();
+        }
+
+        activeEditingOrderId = orderId;
+        const editIdEl = document.getElementById('orderFormEditId');
+        if (editIdEl) editIdEl.value = orderId || '';
+
+        const titleEl = document.getElementById('orderFormTitle');
+        const subtitleEl = document.getElementById('orderFormSubtitle');
+        const submitBtn = document.getElementById('pageOrderSubmitBtn');
+
+        if (orderId) {
+            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> ویرایش سفارش مشتری (کد: ${escapeHtml(orderId)})`;
+            if (subtitleEl) subtitleEl.textContent = 'تغییر اطلاعات مشتری، وضعیت سفارش، آدرس تحویل و ویرایش اقلام سفارش';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره تغییرات سفارش';
+
+            let order = allOrders.find(o => String(o.id) === String(orderId));
+            if (!order) {
+                try {
+                    const res = await api(`/api/admin/orders/${orderId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        order = data.order;
+                    }
+                } catch (e) {}
+            }
+
+            if (order) {
+                document.getElementById('pageOrderCustomerName').value = order.customerName || '';
+                document.getElementById('pageOrderCustomerPhone').value = order.phone || '';
+                document.getElementById('pageOrderStatus').value = order.status || 'new';
+                document.getElementById('pageOrderPaymentMethod').value = order.paymentMethod || 'cod';
+                document.getElementById('pageOrderAddress').value = order.address || order.note || order.adminNotes || '';
+
+                if (order.createdAt) {
+                    try {
+                        const d = new Date(order.createdAt);
+                        if (!isNaN(d.getTime())) {
+                            document.getElementById('pageOrderCreatedAt').value = d.toISOString().slice(0, 16);
+                        }
+                    } catch (e) {}
+                }
+
+                const container = document.getElementById('pageOrderItemsContainer');
+                container.innerHTML = '';
+                const items = order.items || [];
+                if (items.length > 0) {
+                    items.forEach(it => {
+                        addPageOrderItemRow({
+                            productId: it.productId || it.id || it.code,
+                            qty: it.qty || it.quantity || 1,
+                            price: it.price || 0
+                        });
+                    });
+                } else {
+                    addPageOrderItemRow();
+                }
+            } else {
+                alert('اطلاعات سفارش مورد نظر یافت نشد.');
+                showSection('orders');
+                return;
+            }
+        } else {
+            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-cart-plus"></i> ثبت سفارش جدید مشتری`;
+            if (subtitleEl) subtitleEl.textContent = 'ثبت و ویرایش سفارش مشتری، انتخاب کالاها، محاسبه مجموع و به‌روزرسانی وضعیت';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ثبت نهایی و ذخیره سفارش';
+
+            document.getElementById('pageOrderCustomerName').value = '';
+            document.getElementById('pageOrderCustomerPhone').value = '';
+            document.getElementById('pageOrderStatus').value = 'confirmed';
+            document.getElementById('pageOrderPaymentMethod').value = 'cod';
+            document.getElementById('pageOrderAddress').value = '';
+
+            const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById('pageOrderCreatedAt').value = nowLocal;
+
+            const container = document.getElementById('pageOrderItemsContainer');
+            container.innerHTML = '';
+            addPageOrderItemRow();
+        }
+
+        calcPageOrderTotals();
+        showSection('new-order');
+    }
+
+    function addPageOrderItemRow(itemData = null) {
+        const container = document.getElementById('pageOrderItemsContainer');
+        if (!container) return;
+
+        const rowId = `pageOrderRow_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+        const div = document.createElement('div');
+        div.className = 'page-order-item-row';
+        div.id = rowId;
+        div.style.cssText = 'display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:14px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:12px;';
+
+        const selectedPId = itemData ? itemData.productId : '';
+
+        let optionsHtml = '<option value="">-- انتخاب کالا --</option>';
+        purchaseProductsCatalog.forEach(p => {
+            const pId = p.id || p.code;
+            const sel = (String(selectedPId) === String(pId)) ? 'selected' : '';
+            const price = Number(p.price) || Number(p.consumerPrice) || 0;
+            const stock = Number(p.stock) || 0;
+            optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-price="${price}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - قیمت: ${formatPrice(price)} تومان - موجودی: ${stock}</option>`;
+        });
+
+        div.innerHTML = `
+            <div style="flex:2.8; min-width:240px;">
+                <label style="font-size:0.78rem; color:#475569; font-weight:bold; display:block; margin-bottom:4px;">انتخاب کالا *</label>
+                <div class="prod-combobox-container"></div>
+                <select class="form-control prod-select" onchange="onPageOrderProductSelect(this)" style="display:none;">
+                    ${optionsHtml}
+                </select>
+            </div>
+            <div style="flex:0.8; min-width:75px;">
+                <label style="font-size:0.78rem; color:#475569; font-weight:bold; display:block; margin-bottom:4px;">تعداد</label>
+                <input type="number" min="1" value="${itemData ? itemData.qty : 1}" class="form-control page-order-prod-qty" oninput="calcPageOrderTotals()" style="font-size:0.9rem; font-weight:bold; text-align:center;">
+            </div>
+            <div style="flex:1.2; min-width:120px;">
+                <label style="font-size:0.78rem; color:#475569; font-weight:bold; display:block; margin-bottom:4px;">قیمت واحد (تومان)</label>
+                <input type="number" min="0" value="${itemData ? itemData.price : 0}" class="form-control page-order-prod-price" oninput="calcPageOrderTotals()" style="font-size:0.88rem; text-align:center; font-weight:bold;">
+            </div>
+            <div style="flex:1.2; min-width:120px;">
+                <label style="font-size:0.78rem; color:#64748b; font-weight:bold; display:block; margin-bottom:4px;">جمع ردیف (تومان)</label>
+                <input type="text" readonly class="form-control page-order-prod-total" value="0" style="font-size:0.88rem; font-weight:bold; background:#e2e8f0; text-align:center; color:#059669;">
+            </div>
+            <div style="margin-top:20px;">
+                <button type="button" class="btn btn-secondary" onclick="removePageOrderItemRow('${rowId}')" style="background:#fee2e2; color:#dc2626; border-color:#fca5a5; padding:7px 12px;" title="حذف کالا">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `;
+
+        container.appendChild(div);
+        renderUnifiedProductCombobox(div, selectedPId, 'order');
+        calcPageOrderTotals();
+    }
+
+    function onPageOrderProductSelect(selectEl) {
+        const row = selectEl.closest('.page-order-item-row');
+        if (!row) return;
+
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (opt && opt.value) {
+            const price = Number(opt.getAttribute('data-price')) || 0;
+            const priceInput = row.querySelector('.page-order-prod-price');
+            if (priceInput) priceInput.value = price;
+        }
+        calcPageOrderTotals();
+    }
+
+    function removePageOrderItemRow(rowId) {
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.remove();
+            calcPageOrderTotals();
+        }
+    }
+
+    function calcPageOrderTotals() {
+        const rows = document.querySelectorAll('.page-order-item-row');
+        let grandTotal = 0;
+        let grandQty = 0;
+
+        rows.forEach(row => {
+            const qtyInput = row.querySelector('.page-order-prod-qty');
+            const priceInput = row.querySelector('.page-order-prod-price');
+            const totalInput = row.querySelector('.page-order-prod-total');
+
+            const qty = Math.max(1, Number(qtyInput?.value) || 0);
+            const price = Math.max(0, Number(priceInput?.value) || 0);
+            const lineTotal = qty * price;
+
+            if (totalInput) totalInput.value = formatPrice(lineTotal);
+            grandTotal += lineTotal;
+            grandQty += qty;
+        });
+
+        const totalQtyEl = document.getElementById('pageOrderGrandQty');
+        const grandTotalEl = document.getElementById('pageOrderGrandTotal');
+
+        if (totalQtyEl) totalQtyEl.textContent = grandQty.toString();
+        if (grandTotalEl) grandTotalEl.textContent = formatPrice(grandTotal) + ' تومان';
+    }
+
+    async function submitPageOrder() {
+        const editId = document.getElementById('orderFormEditId')?.value;
+        const name = document.getElementById('pageOrderCustomerName')?.value?.trim();
+        const phone = document.getElementById('pageOrderCustomerPhone')?.value?.trim();
+        const status = document.getElementById('pageOrderStatus')?.value || 'confirmed';
+        const paymentMethod = document.getElementById('pageOrderPaymentMethod')?.value || 'cod';
+        const address = document.getElementById('pageOrderAddress')?.value?.trim() || '';
+        const createdAt = document.getElementById('pageOrderCreatedAt')?.value || new Date().toISOString();
+
+        if (!name) {
+            alert('لطفاً نام مشتری را وارد کنید.');
+            return;
+        }
+        if (!phone) {
+            alert('لطفاً شماره همراه مشتری را وارد کنید.');
+            return;
+        }
+
+        const rows = document.querySelectorAll('.page-order-item-row');
+        const items = [];
+        let totalAmount = 0;
+
+        rows.forEach(row => {
+            const selectEl = row.querySelector('.prod-select');
+            const qtyInput = row.querySelector('.page-order-prod-qty');
+            const priceInput = row.querySelector('.page-order-prod-price');
+
+            const productId = selectEl?.value;
+            const opt = selectEl?.options[selectEl.selectedIndex];
+            const title = opt?.getAttribute('data-name') || selectEl?.options[selectEl.selectedIndex]?.text?.split('(')[0]?.trim() || 'کالا';
+            const qty = Math.max(1, Number(qtyInput?.value) || 1);
+            const price = Math.max(0, Number(priceInput?.value) || 0);
+
+            if (productId) {
+                items.push({
+                    productId,
+                    id: productId,
+                    title,
+                    name: title,
+                    qty,
+                    quantity: qty,
+                    price,
+                    buyPrice: Math.round(price * 0.7)
+                });
+                totalAmount += (qty * price);
+            }
+        });
+
+        if (items.length === 0) {
+            alert('لطفاً حداقل یک کالا به سفارش اضافه کنید.');
+            return;
+        }
+
+        const submitBtn = document.getElementById('pageOrderSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...';
+        }
+
+        try {
+            const endpoint = editId ? `/api/admin/orders/${editId}` : '/api/orders';
+            const method = editId ? 'PATCH' : 'POST';
+
+            const res = await api(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customerName: name,
+                    customerPhone: phone,
+                    phone,
+                    items,
+                    totalAmount,
+                    status,
+                    paymentMethod,
+                    address,
+                    createdAt,
+                    source: 'مدیریت'
+                })
+            });
+
+            if (res.ok) {
+                alert(editId ? 'سفارش با موفقیت ویرایش شد.' : 'سفارش جدید با موفقیت ثبت شد.');
+                showSection('orders');
+                loadOrders();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('خطا در ذخیره سفارش: ' + (err.message || err.error || 'خطای نا مشخص'));
+            }
+        } catch (e) {
+            alert('خطا در ارتباط با سرور: ' + e.message);
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ثبت نهایی و ذخیره سفارش';
+            }
+        }
+    }
+
+    function openOrderFormFromModal() {
+        closeOrderModal();
+        if (currentOrder && currentOrder.id) {
+            openOrderForm(currentOrder.id);
+        }
+    }
 </script>
 
     <!-- Purchase Invoice Printable Modal -->
@@ -4958,6 +5868,9 @@
                 <div style="display:flex; gap:10px;">
                     <button class="btn btn-primary" style="background:#0284c7;" onclick="window.print()">
                         <i class="fa-solid fa-print"></i> چاپ A4 / دریافت PDF فاکتور
+                    </button>
+                    <button class="btn btn-secondary" onclick="openPurchaseFormFromInvoiceModal()" title="ویرایش فاکتور خرید">
+                        <i class="fa-solid fa-pen-to-square"></i> ویرایش فاکتور
                     </button>
                     <button class="btn btn-secondary" onclick="closePurchaseInvoiceModal()">بستن</button>
                 </div>
