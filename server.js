@@ -803,6 +803,15 @@ app.delete('/api/admin/purchases/:id', authMiddleware, (req, res) => {
   res.json({ success: deleted });
 });
 
+app.get('/api/admin/purchases/:id', authMiddleware, (req, res) => {
+  const purchases = listPurchases();
+  const purchase = purchases.find(p => String(p.id) === String(req.params.id));
+  if (!purchase) {
+    return res.status(404).json({ success: false, message: 'فاکتور خرید یافت نشد' });
+  }
+  res.json({ success: true, purchase });
+});
+
 app.patch('/api/admin/purchases/:id', authMiddleware, (req, res) => {
   try {
     const purchase = updatePurchase(req.params.id, req.body);

@@ -5120,9 +5120,9 @@
 
         let selectedProduct = null;
         if (selectedProductId) {
-            selectedProduct = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(selectedProductId));
+            selectedProduct = (purchaseProductsCatalog || []).find(p => String(p.id || p.code) === String(selectedProductId));
             if (!selectedProduct) {
-                selectedProduct = purchaseProductsCatalog.find(p => String(p.name) === String(selectedProductId));
+                selectedProduct = (purchaseProductsCatalog || []).find(p => String(p.name) === String(selectedProductId));
             }
         }
 
@@ -5155,6 +5155,30 @@
                 </div>
             </div>
         `;
+
+        const hiddenSelect = rowEl.querySelector('.prod-select, .p-prod-select, .admin-order-prod-select');
+        if (hiddenSelect) {
+            const finalId = selectedProduct ? (selectedProduct.id || selectedProduct.code) : selectedProductId;
+            if (finalId) {
+                let opt = hiddenSelect.querySelector(`option[value="${CSS.escape(String(finalId))}"]`);
+                if (!opt) {
+                    opt = document.createElement('option');
+                    opt.value = finalId;
+                    if (selectedProduct) {
+                        opt.setAttribute('data-name', selectedProduct.name);
+                        opt.setAttribute('data-buyprice', selectedProduct.buyPrice || 0);
+                        opt.setAttribute('data-consumerprice', selectedProduct.price || selectedProduct.consumerPrice || 0);
+                        opt.setAttribute('data-price', selectedProduct.price || selectedProduct.consumerPrice || 0);
+                        opt.textContent = `${selectedProduct.name} (کد: ${selectedProduct.id || selectedProduct.code})`;
+                    } else {
+                        opt.textContent = String(selectedProductId);
+                    }
+                    hiddenSelect.appendChild(opt);
+                }
+                opt.selected = true;
+                hiddenSelect.value = finalId;
+            }
+        }
     }
 
     function openUnifiedProductDropdown(inputEl) {
@@ -5347,7 +5371,16 @@
             if (subtitleEl) subtitleEl.textContent = 'تغییر اطلاعات تامین‌کننده، شماره سند و ویرایش اقلام فاکتور خرید';
             if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره تغییرات فاکتور خرید';
 
-            let purchase = allPurchasesData.find(p => String(p.id) === String(purchaseId));
+            let purchase = (allPurchasesData || []).find(p => String(p.id) === String(purchaseId));
+            if (!purchase) {
+                try {
+                    const res = await api(`/api/admin/purchases/${purchaseId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        purchase = data.purchase || data;
+                    }
+                } catch (e) {}
+            }
             if (!purchase) {
                 try {
                     const res = await api('/api/admin/purchases');
@@ -5360,15 +5393,16 @@
             }
 
             if (purchase) {
-                document.getElementById('pagePSupplierName').value = purchase.supplierName || '';
+                document.getElementById('pagePSupplierName').value = purchase.supplierName || 'تأمین‌کننده رافونه';
                 document.getElementById('pagePRefNumber').value = purchase.refNumber || '';
                 document.getElementById('pagePNotes').value = purchase.notes || '';
 
-                if (purchase.purchaseDate) {
+                if (purchase.purchaseDate || purchase.createdAt) {
                     try {
-                        const d = new Date(purchase.purchaseDate);
+                        const d = new Date(purchase.purchaseDate || purchase.createdAt);
                         if (!isNaN(d.getTime())) {
-                            document.getElementById('pagePPurchaseDate').value = d.toISOString().slice(0, 16);
+                            const localIso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                            document.getElementById('pagePPurchaseDate').value = localIso;
                         }
                     } catch (e) {}
                 }
@@ -5384,6 +5418,7 @@
                             qty: it.qty || it.quantity || 1,
                             buyPrice: it.buyPrice || 0,
                             consumerPrice: it.consumerPrice || it.price || 0,
+                            multiplier: it.multiplier || '',
                             name: it.name
                         });
                     });
@@ -5704,6 +5739,16 @@
                     }
                 } catch (e) {}
             }
+            if (!order) {
+                try {
+                    const res = await api('/api/admin/orders');
+                    if (res.ok) {
+                        const data = await res.json();
+                        allOrdersData = data.orders || [];
+                        order = allOrdersData.find(o => String(o.id) === String(orderId));
+                    }
+                } catch (e) {}
+            }
 
             if (order) {
                 document.getElementById('pageOrderCustomerName').value = order.customerName || order.name || order.fullName || '';
@@ -5716,7 +5761,8 @@
                     try {
                         const d = new Date(order.createdAt);
                         if (!isNaN(d.getTime())) {
-                            document.getElementById('pageOrderCreatedAt').value = d.toISOString().slice(0, 16);
+                            const localIso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                            document.getElementById('pageOrderCreatedAt').value = localIso;
                         }
                     } catch (e) {}
                 }
@@ -5730,7 +5776,7 @@
                         addPageOrderItemRow({
                             productId: it.productId || it.id || it.code || it.name,
                             qty: it.qty || it.quantity || 1,
-                            price: it.price || 0,
+                            price: it.price || it.buyPrice || 0,
                             name: it.name || it.title || ''
                         });
                     });
