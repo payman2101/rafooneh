@@ -633,7 +633,7 @@ export function createOrder(orderData) {
   });
 
   const orderId = orderData.id || generateId('ord');
-  const existingIdx = orders.findIndex(o => o.id === orderId);
+  const existingIdx = orders.findIndex(o => String(o.id) === String(orderId));
 
   let order;
   if (existingIdx !== -1) {
@@ -670,7 +670,7 @@ export function createOrder(orderData) {
   }
 
   const customers = readJson(CUSTOMERS_FILE, []);
-  const customerIdx = customers.findIndex(c => c.id === customer.id);
+  const customerIdx = customers.findIndex(c => String(c.id) === String(customer.id));
   if (customerIdx !== -1) {
     if (existingIdx === -1) {
       customers[customerIdx].totalOrders += 1;
@@ -737,7 +737,7 @@ export function listOrders(filters = {}) {
 
 export function getOrderById(id) {
   const orders = readJson(ORDERS_FILE, []);
-  const order = orders.find(o => o.id === id);
+  const order = orders.find(o => String(o.id) === String(id));
   if (!order) return null;
   const { map: pMap } = getProductsMap();
   return enrichOrderWithProfit(order, pMap);
@@ -746,7 +746,7 @@ export function getOrderById(id) {
 export function deleteOrder(id) {
   let orders = readJson(ORDERS_FILE, []);
   const initialLength = orders.length;
-  orders = orders.filter(o => o.id !== id);
+  orders = orders.filter(o => String(o.id) !== String(id));
   if (orders.length !== initialLength) {
     writeJson(ORDERS_FILE, orders);
     deleteOrderFromFirestore(id).catch(e => console.error('Firestore delete order error:', e));
@@ -880,7 +880,7 @@ export function getProfitStats(filters = {}) {
 
 export async function updateOrder(id, updates) {
   const orders = readJson(ORDERS_FILE, []);
-  const idx = orders.findIndex(o => o.id === id);
+  const idx = orders.findIndex(o => String(o.id) === String(id));
   if (idx === -1) return null;
 
   if (updates.status && !ORDER_STATUSES.includes(updates.status)) {
@@ -909,12 +909,13 @@ export async function updateOrder(id, updates) {
   orders[idx] = {
     ...orders[idx],
     ...updates,
-    customerName: updates.customerName || orders[idx].customerName,
-    phone: updates.phone ? normalizePhone(updates.phone) : orders[idx].phone,
+    customerName: updates.customerName || updates.name || orders[idx].customerName,
+    phone: updates.phone ? normalizePhone(updates.phone) : (updates.customerPhone ? normalizePhone(updates.customerPhone) : orders[idx].phone),
     address: updates.address !== undefined ? updates.address : orders[idx].address,
     items: (items && items.length) ? items : orders[idx].items,
     totalAmount: updates.totalAmount !== undefined ? Number(updates.totalAmount) : orders[idx].totalAmount,
     paymentMethod: updates.paymentMethod || orders[idx].paymentMethod,
+    status: updates.status || orders[idx].status,
     note: updates.note !== undefined ? updates.note : orders[idx].note,
     adminNotes: updates.adminNotes !== undefined ? updates.adminNotes : orders[idx].adminNotes,
     createdAt: updates.createdAt || orders[idx].createdAt,

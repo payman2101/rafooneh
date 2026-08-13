@@ -2442,7 +2442,8 @@
             }
         });
 
-        let allOrders = deduplicated;
+        allOrdersData = deduplicated;
+        let allOrders = [...allOrdersData];
 
         if (status && status !== 'all') {
             allOrders = allOrders.filter(o => o.status === status);
@@ -4021,6 +4022,7 @@
     }
 
     // Purchases / Supplier Invoices Management
+    let allOrdersData = [];
     let allPurchasesData = [];
     let purchaseProductsCatalog = [];
 
@@ -5256,6 +5258,20 @@
         const menu = row.querySelector('.prod-dropdown-menu, .p-prod-dropdown-menu');
 
         if (hiddenSelect) {
+            let opt = hiddenSelect.querySelector(`option[value="${CSS.escape(String(productId))}"]`);
+            if (!opt) {
+                opt = document.createElement('option');
+                opt.value = productId;
+                hiddenSelect.appendChild(opt);
+            }
+            const product = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(productId));
+            if (product) {
+                opt.setAttribute('data-name', product.name);
+                opt.setAttribute('data-buyprice', product.buyPrice || 0);
+                opt.setAttribute('data-consumerprice', product.price || product.consumerPrice || 0);
+                opt.setAttribute('data-price', product.price || product.consumerPrice || 0);
+                opt.textContent = `${product.name} (کد: ${product.id || product.code})`;
+            }
             hiddenSelect.value = productId;
         }
 
@@ -5553,20 +5569,49 @@
         const items = [];
 
         rows.forEach(row => {
-            const selectEl = row.querySelector('.prod-select');
+            const selectEl = row.querySelector('.prod-select, .p-prod-select');
+            const searchInput = row.querySelector('.prod-search-input, .p-prod-search-input');
             const qtyInput = row.querySelector('.p-prod-qty');
             const priceInput = row.querySelector('.p-prod-price');
 
-            const productId = selectEl?.value;
-            const opt = selectEl?.options[selectEl.selectedIndex];
-            const name = opt?.getAttribute('data-name') || selectEl?.options[selectEl.selectedIndex]?.text?.split('(')[0]?.trim() || 'محصول';
+            let productId = selectEl?.value;
+            let name = '';
+
+            if (productId) {
+                const catalogItem = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(productId));
+                if (catalogItem) name = catalogItem.name;
+            }
+
+            if (searchInput?.value?.trim()) {
+                const typedVal = searchInput.value.trim();
+                if (typedVal.includes('(کد:')) {
+                    const parts = typedVal.split('(کد:');
+                    if (!name) name = parts[0].trim();
+                    const extractedCode = parts[1].replace(')', '').trim();
+                    if (!productId) productId = extractedCode;
+                } else {
+                    if (!name) name = typedVal;
+                }
+            }
+
+            if (!productId && name) {
+                const catalogItem = purchaseProductsCatalog.find(p => String(p.name).toLowerCase() === name.toLowerCase());
+                if (catalogItem) {
+                    productId = catalogItem.id || catalogItem.code;
+                    name = catalogItem.name;
+                } else {
+                    productId = name;
+                }
+            }
+
             const qty = Math.max(1, Number(qtyInput?.value) || 1);
             const buyPrice = Math.max(0, Number(priceInput?.value) || 0);
 
-            if (productId) {
+            if (productId || name) {
                 items.push({
-                    productId,
-                    name,
+                    productId: productId || name,
+                    id: productId || name,
+                    name: name || 'محصول',
                     qty,
                     buyPrice
                 });
@@ -5649,7 +5694,7 @@
             if (subtitleEl) subtitleEl.textContent = 'تغییر اطلاعات مشتری، وضعیت سفارش، آدرس تحویل و ویرایش اقلام سفارش';
             if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره تغییرات سفارش';
 
-            let order = allOrders.find(o => String(o.id) === String(orderId));
+            let order = (typeof allOrdersData !== 'undefined' ? allOrdersData : []).find(o => String(o.id) === String(orderId));
             if (!order) {
                 try {
                     const res = await api(`/api/admin/orders/${orderId}`);
