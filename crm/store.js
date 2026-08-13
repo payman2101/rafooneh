@@ -552,7 +552,7 @@ export function reduceProductStock(items) {
 
     (items || []).forEach(item => {
       const pid = String(item.id || item.code || item.productId || '');
-      const qty = Number(item.qty) || 1;
+      const qty = Number(item.qty || item.quantity) || 1;
       const product = list.find(p =>
         (pid && (String(p.id) === pid || String(p.code) === pid)) ||
         (item.name && String(p.name).trim().toLowerCase() === String(item.name).trim().toLowerCase())
@@ -570,7 +570,10 @@ export function reduceProductStock(items) {
     });
 
     if (modified) {
-      saveProductsList(list, true);
+      saveProductsList(list, false);
+      changedProducts.forEach(p => {
+        saveProductCloudSql(p).catch(e => console.error('Cloud SQL save product stock notice:', e));
+      });
     }
   } catch (e) {
     console.error('Error reducing product stock:', e);
@@ -586,7 +589,7 @@ export function restoreProductStock(items) {
 
     (items || []).forEach(item => {
       const pid = String(item.id || item.code || item.productId || '');
-      const qty = Number(item.qty) || 1;
+      const qty = Number(item.qty || item.quantity) || 1;
       const product = list.find(p =>
         (pid && (String(p.id) === pid || String(p.code) === pid)) ||
         (item.name && String(p.name).trim().toLowerCase() === String(item.name).trim().toLowerCase())
@@ -604,7 +607,10 @@ export function restoreProductStock(items) {
     });
 
     if (modified) {
-      saveProductsList(list, true);
+      saveProductsList(list, false);
+      changedProducts.forEach(p => {
+        saveProductCloudSql(p).catch(e => console.error('Cloud SQL save product stock notice:', e));
+      });
     }
   } catch (e) {
     console.error('Error restoring product stock:', e);
@@ -636,7 +642,9 @@ export function createOrder(orderData) {
   const existingIdx = orders.findIndex(o => String(o.id) === String(orderId));
 
   let order;
+  let oldOrder = null;
   if (existingIdx !== -1) {
+    oldOrder = JSON.parse(JSON.stringify(orders[existingIdx]));
     order = {
       ...orders[existingIdx],
       customerName: orderData.customerName || orders[existingIdx].customerName,
@@ -697,9 +705,27 @@ export function createOrder(orderData) {
     saveCustomerCloudSql(customers[customerIdx]).catch(e => console.error('Cloud SQL save customer notice:', e));
   }
 
-  // Automatically update stock in products dataset upon order creation!
+  // Stock Adjustment for Order Creation or Update
   if (existingIdx === -1) {
-    reduceProductStock(items);
+    if (order.status !== 'cancelled') {
+      reduceProductStock(items);
+    }
+  } else if (oldOrder) {
+    const oldStatus = oldOrder.status;
+    const newStatus = order.status;
+    const oldItems = oldOrder.items || [];
+    const newItems = order.items || [];
+
+    if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
+      restoreProductStock(oldItems);
+    } else if (oldStatus === 'cancelled' && newStatus !== 'cancelled') {
+      reduceProductStock(newItems);
+    } else if (oldStatus !== 'cancelled' && newStatus !== 'cancelled') {
+      if (orderData.items && Array.isArray(orderData.items)) {
+        restoreProductStock(oldItems);
+        reduceProductStock(newItems);
+      }
+    }
   }
 
   return enrichOrderWithProfit(order, pMap);
@@ -746,8 +772,12 @@ export function getOrderById(id) {
 export function deleteOrder(id) {
   let orders = readJson(ORDERS_FILE, []);
   const initialLength = orders.length;
+  const orderToDelete = orders.find(o => String(o.id) === String(id));
   orders = orders.filter(o => String(o.id) !== String(id));
   if (orders.length !== initialLength) {
+    if (orderToDelete && orderToDelete.status !== 'cancelled') {
+      restoreProductStock(orderToDelete.items);
+    }
     writeJson(ORDERS_FILE, orders);
     deleteOrderFromFirestore(id).catch(e => console.error('Firestore delete order error:', e));
     try { deleteOrderSqlite(id); } catch (e) { console.error('SQLite delete order notice:', e); }
@@ -887,8 +917,10 @@ export async function updateOrder(id, updates) {
     throw new Error('وضعیت سفارش نامعتبر است');
   }
 
-  const oldStatus = orders[idx].status;
-  const newStatus = updates.status;
+  const oldOrder = orders[idx];
+  const oldStatus = oldOrder.status;
+  const newStatus = updates.status || oldStatus;
+  const oldItems = oldOrder.items ? JSON.parse(JSON.stringify(oldOrder.items)) : [];
 
   const { map: pMap } = getProductsMap();
   let items = updates.items;
@@ -915,7 +947,7 @@ export async function updateOrder(id, updates) {
     items: (items && items.length) ? items : orders[idx].items,
     totalAmount: updates.totalAmount !== undefined ? Number(updates.totalAmount) : orders[idx].totalAmount,
     paymentMethod: updates.paymentMethod || orders[idx].paymentMethod,
-    status: updates.status || orders[idx].status,
+    status: newStatus,
     note: updates.note !== undefined ? updates.note : orders[idx].note,
     adminNotes: updates.adminNotes !== undefined ? updates.adminNotes : orders[idx].adminNotes,
     createdAt: updates.createdAt || orders[idx].createdAt,
@@ -927,11 +959,21 @@ export async function updateOrder(id, updates) {
   saveOrderToFirestore(orders[idx]).catch(e => console.error('Firestore update order error:', e));
   try { saveOrderSqlite(orders[idx]); } catch (e) { console.error('SQLite update order notice:', e); }
 
-  // If status changed to cancelled, restore stock!
+  const newItems = orders[idx].items || [];
+
+  // Stock Adjustment Logic
   if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
-    restoreProductStock(orders[idx].items);
-  } else if (oldStatus === 'cancelled' && newStatus && newStatus !== 'cancelled') {
-    reduceProductStock(orders[idx].items);
+    // Active -> Cancelled: Restore stock for previous items
+    restoreProductStock(oldItems);
+  } else if (oldStatus === 'cancelled' && newStatus !== 'cancelled') {
+    // Cancelled -> Active: Reduce stock for new items
+    reduceProductStock(newItems);
+  } else if (oldStatus !== 'cancelled' && newStatus !== 'cancelled') {
+    // Active -> Active: If items were updated, restore old items stock and reduce new items stock
+    if (updates.items && Array.isArray(updates.items)) {
+      restoreProductStock(oldItems);
+      reduceProductStock(newItems);
+    }
   }
 
   return enrichOrderWithProfit(orders[idx], pMap);
