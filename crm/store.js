@@ -1564,6 +1564,30 @@ export function updatePurchase(id, updates) {
     updatedAt: nowStr
   };
 
+  if (items.length > 0) {
+    const products = readJson(PRODUCTS_FILE, []);
+    let productsUpdated = false;
+
+    items.forEach(pItem => {
+      const pIdx = products.findIndex(p => String(p.id) === String(pItem.productId) || String(p.code) === String(pItem.productId));
+      if (pIdx !== -1) {
+        if (pItem.buyPrice > 0) {
+          products[pIdx].buyPrice = pItem.buyPrice;
+        }
+        if (pItem.consumerPrice > 0) {
+          products[pIdx].price = pItem.consumerPrice;
+          products[pIdx].consumerPrice = pItem.consumerPrice;
+        }
+        products[pIdx].updatedAt = nowStr;
+        productsUpdated = true;
+      }
+    });
+
+    if (productsUpdated) {
+      saveProductsList(products);
+    }
+  }
+
   writeJson(PURCHASES_FILE, purchases);
   writeJson(ROOT_PURCHASES_FILE, purchases);
   savePurchaseToFirestore(purchases[idx]).catch(e => console.error('Firestore save purchase error:', e));

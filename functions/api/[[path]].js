@@ -1205,11 +1205,14 @@ export async function onRequest(context) {
                               defaultProducts.find(p => String(p.id) === prodId || String(p.code) === prodId);
           if (prodExisting) {
             const newBuyPrice = Number(item.buyPrice) > 0 ? Number(item.buyPrice) : Number(prodExisting.buyPrice || 0);
+            const newConsumerPrice = Number(item.consumerPrice) > 0 ? Number(item.consumerPrice) : Number(prodExisting.price || prodExisting.consumerPrice || 0);
             const updatedProduct = {
               ...prodExisting,
               id: prodId,
               code: prodId,
               buyPrice: newBuyPrice,
+              price: newConsumerPrice > 0 ? newConsumerPrice : prodExisting.price,
+              consumerPrice: newConsumerPrice > 0 ? newConsumerPrice : prodExisting.consumerPrice,
               updatedAt: new Date().toISOString()
             };
             await saveProductToPg(env, updatedProduct);
