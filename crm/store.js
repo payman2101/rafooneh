@@ -1443,6 +1443,16 @@ export function createPurchase(purchaseData) {
     const name = item.name || 'محصول رافونه';
     const qty = Math.max(1, Number(item.qty || item.quantity) || 1);
     const buyPrice = Math.max(0, Number(item.buyPrice) || 0);
+    let consumerPrice = Math.max(0, Number(item.consumerPrice !== undefined ? item.consumerPrice : (item.price || 0)));
+    let multiplier = item.multiplier !== undefined && item.multiplier !== null ? String(item.multiplier).trim() : '';
+
+    if (!consumerPrice && buyPrice > 0 && Number(multiplier) > 0) {
+      consumerPrice = Math.round(buyPrice / Number(multiplier));
+    }
+    if (!multiplier && consumerPrice > 0 && buyPrice > 0) {
+      multiplier = parseFloat((buyPrice / consumerPrice).toFixed(2)).toString();
+    }
+
     const rowTotal = qty * buyPrice;
 
     totalAmount += rowTotal;
@@ -1450,9 +1460,12 @@ export function createPurchase(purchaseData) {
 
     return {
       productId: pid,
+      id: pid,
       name,
       qty,
       buyPrice,
+      consumerPrice,
+      multiplier,
       rowTotal
     };
   });
@@ -1482,6 +1495,10 @@ export function createPurchase(purchaseData) {
         products[pIdx].stock = currentStock + pItem.qty;
         if (pItem.buyPrice > 0) {
           products[pIdx].buyPrice = pItem.buyPrice;
+        }
+        if (pItem.consumerPrice > 0) {
+          products[pIdx].price = pItem.consumerPrice;
+          products[pIdx].consumerPrice = pItem.consumerPrice;
         }
         if (products[pIdx].stock <= 0) {
           products[pIdx].badge = 'ناموجود';
@@ -1526,6 +1543,16 @@ export function updatePurchase(id, updates) {
     const name = item.name || 'محصول رافونه';
     const qty = Math.max(1, Number(item.qty || item.quantity) || 1);
     const buyPrice = Math.max(0, Number(item.buyPrice) || 0);
+    let consumerPrice = Math.max(0, Number(item.consumerPrice !== undefined ? item.consumerPrice : (item.price || 0)));
+    let multiplier = item.multiplier !== undefined && item.multiplier !== null ? String(item.multiplier).trim() : '';
+
+    if (!consumerPrice && buyPrice > 0 && Number(multiplier) > 0) {
+      consumerPrice = Math.round(buyPrice / Number(multiplier));
+    }
+    if (!multiplier && consumerPrice > 0 && buyPrice > 0) {
+      multiplier = parseFloat((buyPrice / consumerPrice).toFixed(2)).toString();
+    }
+
     const rowTotal = qty * buyPrice;
 
     totalAmount += rowTotal;
@@ -1533,9 +1560,12 @@ export function updatePurchase(id, updates) {
 
     return {
       productId: pid,
+      id: pid,
       name,
       qty,
       buyPrice,
+      consumerPrice,
+      multiplier,
       rowTotal
     };
   });
@@ -1551,6 +1581,30 @@ export function updatePurchase(id, updates) {
     totalItemsCount,
     updatedAt: nowStr
   };
+
+  if (items.length > 0) {
+    const products = readJson(PRODUCTS_FILE, []);
+    let productsUpdated = false;
+
+    items.forEach(pItem => {
+      const pIdx = products.findIndex(p => String(p.id) === String(pItem.productId) || String(p.code) === String(pItem.productId));
+      if (pIdx !== -1) {
+        if (pItem.buyPrice > 0) {
+          products[pIdx].buyPrice = pItem.buyPrice;
+        }
+        if (pItem.consumerPrice > 0) {
+          products[pIdx].price = pItem.consumerPrice;
+          products[pIdx].consumerPrice = pItem.consumerPrice;
+        }
+        products[pIdx].updatedAt = nowStr;
+        productsUpdated = true;
+      }
+    });
+
+    if (productsUpdated) {
+      saveProductsList(products);
+    }
+  }
 
   writeJson(PURCHASES_FILE, purchases);
   writeJson(ROOT_PURCHASES_FILE, purchases);
