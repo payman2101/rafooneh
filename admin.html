@@ -1255,7 +1255,7 @@
                             </div>
                             <div style="text-align:left; background:white; padding:14px 22px; border-radius:10px; border:1px solid #cbd5e1; min-width:240px;">
                                 <div style="font-size:0.9rem; color:#64748b;">تعداد کل اقلام: <strong id="pagePGrandQty" style="color:#0f172a; font-size:1rem;">0</strong> عدد</div>
-                                <div style="font-size:1rem; font-weight:bold; margin-top:6px;">مبلغ کل فاکتور خرید: <strong id="pagePGrandTotal" style="color:#059669; font-size:1.3rem;">0 تومان</strong></div>
+                                <div style="font-size:1rem; font-weight:bold; margin-top:6px;">مبلغ کل فاکتور خرید: <strong id="pagePGrandTotal" style="color:#059669; font-size:1.3rem;">0</strong> تومان</div>
                             </div>
                         </div>
 
@@ -4419,9 +4419,37 @@
         div.id = rowId;
         div.style.cssText = 'display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:10px;';
 
-        const selectedPId = itemData ? itemData.productId : '';
-        const consumerP = itemData ? (itemData.consumerPrice || 0) : 0;
-        const mult = itemData ? (itemData.multiplier || '') : '';
+        const selectedPId = itemData ? (itemData.productId || itemData.id || itemData.code || itemData.name || '') : '';
+        let buyP = itemData ? (Number(itemData.buyPrice) || 0) : 0;
+        let consumerP = itemData ? (Number(itemData.consumerPrice) || 0) : 0;
+        let mult = itemData ? (itemData.multiplier !== undefined && itemData.multiplier !== null ? String(itemData.multiplier) : '') : '';
+
+        // Find catalog product to populate consumer price / buy price if zero
+        let catalogProduct = null;
+        if (selectedPId) {
+            catalogProduct = (purchaseProductsCatalog || []).find(p => 
+                String(p.id || p.code) === String(selectedPId) || 
+                String(p.name).toLowerCase() === String(selectedPId).toLowerCase()
+            );
+        }
+
+        if (catalogProduct) {
+            if (!consumerP) consumerP = Number(catalogProduct.price || catalogProduct.consumerPrice) || 0;
+            if (!buyP && catalogProduct.buyPrice) buyP = Number(catalogProduct.buyPrice) || 0;
+        }
+
+        if (!consumerP && buyP > 0 && Number(mult) > 0) {
+            consumerP = Math.round(buyP / Number(mult));
+        }
+
+        if (!buyP && consumerP > 0 && Number(mult) > 0) {
+            buyP = Math.round(consumerP * Number(mult));
+        }
+
+        if (!mult && consumerP > 0 && buyP > 0) {
+            const rawMult = (buyP / consumerP).toFixed(2);
+            mult = parseFloat(rawMult).toString();
+        }
 
         let optionsHtml = '<option value="">-- انتخاب محصول از انبار --</option>';
         purchaseProductsCatalog.forEach(p => {
@@ -4455,7 +4483,7 @@
             </div>
             <div style="flex:1.1; min-width:110px;">
                 <label style="font-size:0.75rem; color:#15803d; font-weight:bold; display:block; margin-bottom:4px;">خرید واحد (تومان)</label>
-                <input type="number" min="0" value="${itemData ? itemData.buyPrice : 0}" class="form-control p-prod-price" oninput="calcPurchaseTotals()" style="font-size:0.85rem; text-align:center; font-weight:bold;">
+                <input type="number" min="0" value="${buyP}" class="form-control p-prod-price" oninput="onPurchasePriceOrMultiplierChange(this)" style="font-size:0.85rem; text-align:center; font-weight:bold;">
             </div>
             <div style="flex:1.1; min-width:110px;">
                 <label style="font-size:0.75rem; color:var(--muted); font-weight:bold; display:block; margin-bottom:4px;">جمع کل (تومان)</label>
@@ -4559,7 +4587,7 @@
         const grandTotalEl = document.getElementById('pGrandTotal');
 
         if (totalQtyEl) totalQtyEl.textContent = grandQty.toString();
-        if (grandTotalEl) grandTotalEl.textContent = formatPrice(grandTotal) + ' تومان';
+        if (grandTotalEl) grandTotalEl.textContent = formatPrice(grandTotal);
     }
 
     async function submitNewPurchase() {
@@ -4850,7 +4878,7 @@
                 </div>
                 <div style="text-align:left; background:white; padding:12px 18px; border-radius:10px; border:1px solid #cbd5e1;">
                     <div style="font-size:0.85rem; color:#64748b;">تعداد کل اقلام: <strong id="pGrandQty" style="color:#0f172a;">0</strong> عدد</div>
-                    <div style="font-size:0.95rem; font-weight:bold; margin-top:4px;">مبلغ کل فاکتور خرید: <strong id="pGrandTotal" style="color:#059669; font-size:1.2rem;">0 تومان</strong></div>
+                    <div style="font-size:0.95rem; font-weight:bold; margin-top:4px;">مبلغ کل فاکتور خرید: <strong id="pGrandTotal" style="color:#059669; font-size:1.2rem;">0</strong> تومان</div>
                 </div>
             </div>
 
@@ -5500,7 +5528,7 @@
         const selectedPId = itemData ? (itemData.productId || itemData.id || itemData.code || itemData.name || '') : '';
         let buyP = itemData ? (Number(itemData.buyPrice) || 0) : 0;
         let consumerP = itemData ? (Number(itemData.consumerPrice) || 0) : 0;
-        let mult = itemData ? (itemData.multiplier || '') : '';
+        let mult = itemData ? (itemData.multiplier !== undefined && itemData.multiplier !== null ? String(itemData.multiplier) : '') : '';
 
         // Find catalog product to populate consumer price / buy price if zero
         let catalogProduct = null;
@@ -5514,6 +5542,14 @@
         if (catalogProduct) {
             if (!consumerP) consumerP = Number(catalogProduct.price || catalogProduct.consumerPrice) || 0;
             if (!buyP && catalogProduct.buyPrice) buyP = Number(catalogProduct.buyPrice) || 0;
+        }
+
+        if (!consumerP && buyP > 0 && Number(mult) > 0) {
+            consumerP = Math.round(buyP / Number(mult));
+        }
+
+        if (!buyP && consumerP > 0 && Number(mult) > 0) {
+            buyP = Math.round(consumerP * Number(mult));
         }
 
         if (!mult && consumerP > 0 && buyP > 0) {
@@ -5555,7 +5591,7 @@
             </div>
             <div style="flex:1.1; min-width:110px;">
                 <label style="font-size:0.78rem; color:#15803d; font-weight:bold; display:block; margin-bottom:4px;">خرید واحد (تومان)</label>
-                <input type="number" min="0" value="${buyP}" class="form-control p-prod-price" oninput="calcPagePurchaseTotals()" style="font-size:0.88rem; text-align:center; font-weight:bold;">
+                <input type="number" min="0" value="${buyP}" class="form-control p-prod-price" oninput="onPagePurchasePriceOrMultiplierChange(this)" style="font-size:0.88rem; text-align:center; font-weight:bold;">
             </div>
             <div style="flex:1.2; min-width:120px;">
                 <label style="font-size:0.78rem; color:#64748b; font-weight:bold; display:block; margin-bottom:4px;">جمع کل (تومان)</label>
@@ -5574,7 +5610,7 @@
     }
 
     function onPagePurchasePriceOrMultiplierChange(inputEl) {
-        const row = inputEl.closest('.page-purchase-item-row');
+        const row = inputEl.closest('.page-purchase-item-row') || inputEl.closest('.purchase-item-row');
         if (!row) return;
 
         const consumerInput = row.querySelector('.p-prod-consumer-price');
@@ -5583,19 +5619,31 @@
 
         const consumerP = Number(consumerInput?.value) || 0;
         const mult = Number(multInput?.value) || 0;
+        const buyP = Number(buyInput?.value) || 0;
 
-        if (inputEl.classList.contains('p-prod-price')) {
-            if (consumerP > 0 && buyInput && Number(buyInput.value) >= 0) {
-                const calculatedMult = (Number(buyInput.value) / consumerP).toFixed(2);
-                if (multInput) multInput.value = parseFloat(calculatedMult).toString();
+        if (inputEl.classList.contains('p-prod-consumer-price')) {
+            if (consumerP > 0 && mult > 0) {
+                if (buyInput) buyInput.value = Math.round(consumerP * mult);
+            } else if (consumerP > 0 && buyP > 0) {
+                if (multInput) multInput.value = parseFloat((buyP / consumerP).toFixed(2)).toString();
             }
-        } else {
-            if (consumerP > 0 && mult > 0 && buyInput) {
-                buyInput.value = Math.round(consumerP * mult);
+        } else if (inputEl.classList.contains('p-prod-multiplier')) {
+            if (consumerP > 0 && mult > 0) {
+                if (buyInput) buyInput.value = Math.round(consumerP * mult);
+            } else if (buyP > 0 && mult > 0) {
+                if (consumerInput) consumerInput.value = Math.round(buyP / mult);
+            }
+        } else if (inputEl.classList.contains('p-prod-price')) {
+            if (consumerP > 0 && buyP > 0) {
+                if (multInput) multInput.value = parseFloat((buyP / consumerP).toFixed(2)).toString();
+            } else if (mult > 0 && buyP > 0) {
+                if (consumerInput) consumerInput.value = Math.round(buyP / mult);
             }
         }
         calcPagePurchaseTotals();
+        calcPurchaseTotals();
     }
+    window.onPurchasePriceOrMultiplierChange = onPagePurchasePriceOrMultiplierChange;
 
     function onPagePurchaseProductSelect(selectEl) {
         const row = selectEl.closest('.page-purchase-item-row');
@@ -5659,7 +5707,7 @@
         const grandTotalEl = document.getElementById('pagePGrandTotal');
 
         if (totalQtyEl) totalQtyEl.textContent = grandQty.toString();
-        if (grandTotalEl) grandTotalEl.textContent = formatPrice(grandTotal) + ' تومان';
+        if (grandTotalEl) grandTotalEl.textContent = formatPrice(grandTotal);
     }
 
     async function submitPagePurchase() {
