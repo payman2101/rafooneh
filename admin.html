@@ -2015,12 +2015,13 @@
             btn.classList.add('active');
         }
         if (name === 'products') loadAdminProducts();
-        if (name === 'purchases') loadPurchases();
+        if (name === 'purchases') { loadPurchases(); ensureProductsCatalogLoaded(); }
         if (name === 'gsheets') loadGSheetsStatus();
         if (name === 'profit') loadProfitStats();
         if (name === 'company-payments') initCompanyPaymentsSection();
         if (name === 'customers') loadCustomers();
-        if (name === 'orders') loadOrders();
+        if (name === 'orders') { loadOrders(); ensureProductsCatalogLoaded(); }
+        if (name === 'new-purchase' || name === 'new-order') ensureProductsCatalogLoaded();
         if (name === 'alerts') loadAlerts();
         if (name === 'dashboard') loadStats();
     }
@@ -2985,6 +2986,12 @@
 
         window.adminProductsMap = {};
         products.forEach(p => { window.adminProductsMap[p.id] = p; });
+
+        if (products && products.length > 0) {
+            if (!purchaseProductsCatalog || purchaseProductsCatalog.length === 0 || brand === 'all') {
+                purchaseProductsCatalog = [...products];
+            }
+        }
 
         // Update Stats
         const statTotal = document.getElementById('statTotalProducts');
@@ -4016,6 +4023,30 @@
     // Purchases / Supplier Invoices Management
     let allPurchasesData = [];
     let purchaseProductsCatalog = [];
+
+    async function ensureProductsCatalogLoaded() {
+        if (purchaseProductsCatalog && purchaseProductsCatalog.length > 0) {
+            return purchaseProductsCatalog;
+        }
+
+        if (typeof productsData !== 'undefined' && Array.isArray(productsData) && productsData.length > 0) {
+            purchaseProductsCatalog = [...productsData];
+        }
+
+        try {
+            const res = await api('/api/admin/products?brand=all&category=all');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+                    purchaseProductsCatalog = data.products;
+                }
+            }
+        } catch (e) {
+            console.error('Error loading products catalog:', e);
+        }
+
+        return purchaseProductsCatalog;
+    }
 
     async function loadPurchases() {
         try {
@@ -5088,11 +5119,17 @@
         let selectedProduct = null;
         if (selectedProductId) {
             selectedProduct = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(selectedProductId));
+            if (!selectedProduct) {
+                selectedProduct = purchaseProductsCatalog.find(p => String(p.name) === String(selectedProductId));
+            }
         }
 
-        const displayVal = selectedProduct 
-            ? `${selectedProduct.name} (کد: ${selectedProduct.id || selectedProduct.code})` 
-            : '';
+        let displayVal = '';
+        if (selectedProduct) {
+            displayVal = `${selectedProduct.name} (کد: ${selectedProduct.id || selectedProduct.code})`;
+        } else if (selectedProductId) {
+            displayVal = String(selectedProductId);
+        }
 
         container.innerHTML = `
             <div style="position:relative; width:100%;">
@@ -5103,12 +5140,12 @@
                        onfocus="openUnifiedProductDropdown(this)" 
                        oninput="filterUnifiedProductDropdown(this, '${type}')" 
                        autocomplete="off"
-                       style="font-size:0.85rem; padding-left:${selectedProduct ? '30px' : '10px'}; font-weight:${selectedProduct ? 'bold' : 'normal'}; color:${selectedProduct ? '#0f172a' : '#475569'};">
+                       style="font-size:0.85rem; padding-left:${displayVal ? '30px' : '10px'}; font-weight:${displayVal ? 'bold' : 'normal'}; color:${displayVal ? '#0f172a' : '#475569'};">
                 <button type="button" 
                         class="prod-clear-btn" 
                         onclick="clearUnifiedProductSelection(this, '${type}')" 
                         title="حذف انتخاب کالا"
-                        style="position:absolute; left:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.1rem; line-height:1; display:${selectedProduct ? 'block' : 'none'};">
+                        style="position:absolute; left:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.1rem; line-height:1; display:${displayVal ? 'block' : 'none'};">
                     &times;
                 </button>
                 <div class="prod-dropdown-menu" 
@@ -5119,8 +5156,9 @@
     }
 
     function openUnifiedProductDropdown(inputEl) {
+        const targetMenu = inputEl.parentElement ? inputEl.parentElement.querySelector('.prod-dropdown-menu') : null;
         document.querySelectorAll('.prod-dropdown-menu, .p-prod-dropdown-menu').forEach(m => {
-            if (m !== inputEl.nextElementSibling?.nextElementSibling) {
+            if (m !== targetMenu) {
                 m.style.display = 'none';
             }
         });
@@ -5131,8 +5169,17 @@
     function filterUnifiedProductDropdown(inputEl, type = 'purchase') {
         const row = inputEl.closest('.page-purchase-item-row, .page-order-item-row, .purchase-item-row, .admin-order-item-row');
         if (!row) return;
-        const menu = row.querySelector('.prod-dropdown-menu, .p-prod-dropdown-menu');
+        const menu = row.querySelector('.prod-dropdown-menu') || row.querySelector('.p-prod-dropdown-menu');
         if (!menu) return;
+
+        if (!purchaseProductsCatalog || purchaseProductsCatalog.length === 0) {
+            menu.innerHTML = `<div style="padding:12px; text-align:center; color:#0284c7; font-size:0.85rem;"><i class="fa-solid fa-spinner fa-spin"></i> در حال بارگذاری لیست کالاها...</div>`;
+            menu.style.display = 'block';
+            ensureProductsCatalogLoaded().then(() => {
+                filterUnifiedProductDropdown(inputEl, type);
+            });
+            return;
+        }
 
         const q = inputEl.value.trim().toLowerCase();
         const hiddenSelect = row.querySelector('.prod-select, .p-prod-select, .admin-order-prod-select');
@@ -5155,7 +5202,7 @@
                 const buyP = Number(p.buyPrice) || 0;
                 const priceP = Number(p.price) || Number(p.consumerPrice) || 0;
                 const stock = Number(p.stock) || 0;
-                const isSelected = String(pId) === String(currentVal);
+                const isSelected = String(pId) === String(currentVal) || String(p.name) === String(currentVal);
 
                 const priceBadge = type === 'purchase'
                     ? `<span style="font-size:0.72rem; background:#f0fdf4; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold;">خرید: ${formatPrice(buyP)} تومان</span>`
@@ -5189,6 +5236,15 @@
 
         menu.style.display = 'block';
     }
+
+    // Close combobox dropdowns on outside click
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.prod-combobox-container') && !e.target.closest('.p-prod-combobox-container')) {
+            document.querySelectorAll('.prod-dropdown-menu, .p-prod-dropdown-menu').forEach(m => {
+                m.style.display = 'none';
+            });
+        }
+    });
 
     function selectUnifiedProductOption(optionEl, productId, type) {
         const row = optionEl.closest('.page-purchase-item-row, .page-order-item-row, .purchase-item-row, .admin-order-item-row');
@@ -5260,9 +5316,7 @@
     let activeEditingPurchaseId = null;
 
     async function openPurchaseForm(purchaseId = null) {
-        if (!purchaseProductsCatalog || purchaseProductsCatalog.length === 0) {
-            await loadAdminProducts();
-        }
+        await ensureProductsCatalogLoaded();
 
         activeEditingPurchaseId = purchaseId;
         const editIdEl = document.getElementById('pFormEditId');
@@ -5277,7 +5331,18 @@
             if (subtitleEl) subtitleEl.textContent = 'تغییر اطلاعات تامین‌کننده، شماره سند و ویرایش اقلام فاکتور خرید';
             if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره تغییرات فاکتور خرید';
 
-            const purchase = allPurchasesData.find(p => String(p.id) === String(purchaseId));
+            let purchase = allPurchasesData.find(p => String(p.id) === String(purchaseId));
+            if (!purchase) {
+                try {
+                    const res = await api('/api/admin/purchases');
+                    if (res.ok) {
+                        const data = await res.json();
+                        allPurchasesData = data.purchases || [];
+                        purchase = allPurchasesData.find(p => String(p.id) === String(purchaseId));
+                    }
+                } catch (e) {}
+            }
+
             if (purchase) {
                 document.getElementById('pagePSupplierName').value = purchase.supplierName || '';
                 document.getElementById('pagePRefNumber').value = purchase.refNumber || '';
@@ -5299,10 +5364,11 @@
                     items.forEach(rawIt => {
                         const it = normalizeItemObject(rawIt);
                         addPagePurchaseItemRow({
-                            productId: it.productId || it.id || it.code,
+                            productId: it.productId || it.id || it.code || it.name,
                             qty: it.qty || it.quantity || 1,
                             buyPrice: it.buyPrice || 0,
-                            consumerPrice: it.consumerPrice || it.price || 0
+                            consumerPrice: it.consumerPrice || it.price || 0,
+                            name: it.name
                         });
                     });
                 } else {
@@ -5344,19 +5410,21 @@
         div.id = rowId;
         div.style.cssText = 'display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:14px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:12px;';
 
-        const selectedPId = itemData ? itemData.productId : '';
+        const selectedPId = itemData ? (itemData.productId || itemData.id || itemData.code || itemData.name || '') : '';
         const consumerP = itemData ? (itemData.consumerPrice || 0) : 0;
         const mult = itemData ? (itemData.multiplier || '') : '';
 
         let optionsHtml = '<option value="">-- انتخاب کالا --</option>';
-        purchaseProductsCatalog.forEach(p => {
-            const pId = p.id || p.code;
-            const sel = (String(selectedPId) === String(pId)) ? 'selected' : '';
-            const buyP = Number(p.buyPrice) || 0;
-            const consumerPrice = Number(p.price) || Number(p.consumerPrice) || 0;
-            const stock = Number(p.stock) || 0;
-            optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" data-consumerprice="${consumerPrice}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی: ${stock}</option>`;
-        });
+        if (purchaseProductsCatalog && purchaseProductsCatalog.length > 0) {
+            purchaseProductsCatalog.forEach(p => {
+                const pId = p.id || p.code;
+                const sel = (String(selectedPId) === String(pId) || String(selectedPId) === String(p.name)) ? 'selected' : '';
+                const buyP = Number(p.buyPrice) || 0;
+                const consumerPrice = Number(p.price) || Number(p.consumerPrice) || 0;
+                const stock = Number(p.stock) || 0;
+                optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" data-consumerprice="${consumerPrice}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی: ${stock}</option>`;
+            });
+        }
 
         div.innerHTML = `
             <div style="flex:2.5; min-width:220px;">
@@ -5566,9 +5634,7 @@
     let activeEditingOrderId = null;
 
     async function openOrderForm(orderId = null) {
-        if (!purchaseProductsCatalog || purchaseProductsCatalog.length === 0) {
-            await loadAdminProducts();
-        }
+        await ensureProductsCatalogLoaded();
 
         activeEditingOrderId = orderId;
         const editIdEl = document.getElementById('orderFormEditId');
@@ -5589,14 +5655,14 @@
                     const res = await api(`/api/admin/orders/${orderId}`);
                     if (res.ok) {
                         const data = await res.json();
-                        order = data.order;
+                        order = data.order || data;
                     }
                 } catch (e) {}
             }
 
             if (order) {
-                document.getElementById('pageOrderCustomerName').value = order.customerName || '';
-                document.getElementById('pageOrderCustomerPhone').value = order.phone || '';
+                document.getElementById('pageOrderCustomerName').value = order.customerName || order.name || order.fullName || '';
+                document.getElementById('pageOrderCustomerPhone').value = order.phone || order.customerPhone || order.mobile || '';
                 document.getElementById('pageOrderStatus').value = order.status || 'new';
                 document.getElementById('pageOrderPaymentMethod').value = order.paymentMethod || 'cod';
                 document.getElementById('pageOrderAddress').value = order.address || order.note || order.adminNotes || '';
@@ -5612,13 +5678,15 @@
 
                 const container = document.getElementById('pageOrderItemsContainer');
                 container.innerHTML = '';
-                const items = order.items || [];
+                const items = normalizeItemsArray(order.items);
                 if (items.length > 0) {
-                    items.forEach(it => {
+                    items.forEach(rawIt => {
+                        const it = normalizeItemObject(rawIt);
                         addPageOrderItemRow({
-                            productId: it.productId || it.id || it.code,
+                            productId: it.productId || it.id || it.code || it.name,
                             qty: it.qty || it.quantity || 1,
-                            price: it.price || 0
+                            price: it.price || 0,
+                            name: it.name || it.title || ''
                         });
                     });
                 } else {
@@ -5662,16 +5730,18 @@
         div.id = rowId;
         div.style.cssText = 'display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:14px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:12px;';
 
-        const selectedPId = itemData ? itemData.productId : '';
+        const selectedPId = itemData ? (itemData.productId || itemData.id || itemData.code || itemData.name || '') : '';
 
         let optionsHtml = '<option value="">-- انتخاب کالا --</option>';
-        purchaseProductsCatalog.forEach(p => {
-            const pId = p.id || p.code;
-            const sel = (String(selectedPId) === String(pId)) ? 'selected' : '';
-            const price = Number(p.price) || Number(p.consumerPrice) || 0;
-            const stock = Number(p.stock) || 0;
-            optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-price="${price}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - قیمت: ${formatPrice(price)} تومان - موجودی: ${stock}</option>`;
-        });
+        if (purchaseProductsCatalog && purchaseProductsCatalog.length > 0) {
+            purchaseProductsCatalog.forEach(p => {
+                const pId = p.id || p.code;
+                const sel = (String(selectedPId) === String(pId) || String(selectedPId) === String(p.name)) ? 'selected' : '';
+                const price = Number(p.price) || Number(p.consumerPrice) || 0;
+                const stock = Number(p.stock) || 0;
+                optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-price="${price}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - قیمت: ${formatPrice(price)} تومان - موجودی: ${stock}</option>`;
+            });
+        }
 
         div.innerHTML = `
             <div style="flex:2.8; min-width:240px;">
@@ -5713,7 +5783,9 @@
         if (opt && opt.value) {
             const price = Number(opt.getAttribute('data-price')) || 0;
             const priceInput = row.querySelector('.page-order-prod-price');
-            if (priceInput) priceInput.value = price;
+            if (priceInput && (Number(priceInput.value) <= 0 || !priceInput.value)) {
+                priceInput.value = price;
+            }
         }
         calcPageOrderTotals();
     }
@@ -5776,21 +5848,37 @@
 
         rows.forEach(row => {
             const selectEl = row.querySelector('.prod-select');
+            const searchInput = row.querySelector('.prod-search-input');
             const qtyInput = row.querySelector('.page-order-prod-qty');
             const priceInput = row.querySelector('.page-order-prod-price');
 
-            const productId = selectEl?.value;
-            const opt = selectEl?.options[selectEl.selectedIndex];
-            const title = opt?.getAttribute('data-name') || selectEl?.options[selectEl.selectedIndex]?.text?.split('(')[0]?.trim() || 'کالا';
+            let productId = selectEl?.value;
+            let title = '';
+
+            if (productId) {
+                const catalogItem = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(productId));
+                if (catalogItem) title = catalogItem.name;
+            }
+
+            if (!title && searchInput?.value?.trim()) {
+                const typedVal = searchInput.value.trim();
+                title = typedVal.split('(کد:')[0].trim();
+                if (!productId) {
+                    const catalogItem = purchaseProductsCatalog.find(p => String(p.name).toLowerCase() === title.toLowerCase());
+                    if (catalogItem) productId = catalogItem.id || catalogItem.code;
+                    else productId = title;
+                }
+            }
+
             const qty = Math.max(1, Number(qtyInput?.value) || 1);
             const price = Math.max(0, Number(priceInput?.value) || 0);
 
-            if (productId) {
+            if (productId || title) {
                 items.push({
-                    productId,
-                    id: productId,
-                    title,
-                    name: title,
+                    productId: productId || title,
+                    id: productId || title,
+                    title: title || 'کالا',
+                    name: title || 'کالا',
                     qty,
                     quantity: qty,
                     price,

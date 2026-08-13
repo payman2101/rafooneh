@@ -854,14 +854,30 @@ app.get('/api/admin/orders/:id', authMiddleware, (req, res) => {
 
 app.patch('/api/admin/orders/:id', authMiddleware, async (req, res) => {
   try {
-    const { status, adminNotes, createdAt } = req.body || {};
-    const order = await updateOrder(req.params.id, { status, adminNotes, createdAt });
+    const order = await updateOrder(req.params.id, req.body || {});
     if (!order) {
       return res.status(404).json({ success: false, message: 'سفارش یافت نشد' });
     }
     res.json({
       success: true,
-      order: { ...order, statusLabel: getStatusLabel(order.status) }
+      order: { ...order, statusLabel: getStatusLabel(order.status) },
+      message: 'سفارش با موفقیت به روزرسانی شد'
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+app.put('/api/admin/orders/:id', authMiddleware, async (req, res) => {
+  try {
+    const order = await updateOrder(req.params.id, req.body || {});
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'سفارش یافت نشد' });
+    }
+    res.json({
+      success: true,
+      order: { ...order, statusLabel: getStatusLabel(order.status) },
+      message: 'سفارش با موفقیت به روزرسانی شد'
     });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
