@@ -1127,6 +1127,7 @@ export async function onRequest(context) {
             const currentStock = Number(existing.stock || 0);
             const newStock = currentStock + addedQty;
             const newBuyPrice = Number(item.buyPrice) > 0 ? Number(item.buyPrice) : Number(existing.buyPrice || 0);
+            const newConsumerPrice = Number(item.consumerPrice) > 0 ? Number(item.consumerPrice) : Number(existing.price || existing.consumerPrice || 0);
 
             const updatedProduct = {
               ...existing,
@@ -1134,6 +1135,8 @@ export async function onRequest(context) {
               code: prodId,
               stock: newStock,
               buyPrice: newBuyPrice,
+              price: newConsumerPrice > 0 ? newConsumerPrice : existing.price,
+              consumerPrice: newConsumerPrice > 0 ? newConsumerPrice : existing.consumerPrice,
               badge: newStock <= 0 ? 'ناموجود' : (newStock <= 5 ? `تعداد محدود (${newStock} عدد)` : null),
               updatedAt: new Date().toISOString()
             };

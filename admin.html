@@ -4484,8 +4484,15 @@
         const consumerP = Number(consumerInput?.value) || 0;
         const mult = Number(multInput?.value) || 0;
 
-        if (consumerP > 0 && mult > 0 && buyInput) {
-            buyInput.value = Math.round(consumerP * mult);
+        if (inputEl.classList.contains('p-prod-price')) {
+            if (consumerP > 0 && buyInput && Number(buyInput.value) >= 0) {
+                const calculatedMult = (Number(buyInput.value) / consumerP).toFixed(2);
+                if (multInput) multInput.value = parseFloat(calculatedMult).toString();
+            }
+        } else {
+            if (consumerP > 0 && mult > 0 && buyInput) {
+                buyInput.value = Math.round(consumerP * mult);
+            }
         }
         calcPurchaseTotals();
     }
@@ -4494,21 +4501,27 @@
         const row = selectEl.closest('.purchase-item-row');
         if (!row) return;
 
-        const opt = selectEl.options[selectEl.selectedIndex];
-        if (opt && opt.value) {
-            const product = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(opt.value));
+        const val = selectEl ? selectEl.value : '';
+        if (val) {
+            const product = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(val) || String(p.name).toLowerCase() === String(val).toLowerCase());
             if (product) {
                 const buyPrice = Number(product.buyPrice) || 0;
                 const consumerPrice = Number(product.price) || Number(product.consumerPrice) || 0;
 
                 const priceInput = row.querySelector('.p-prod-price');
                 const consumerInput = row.querySelector('.p-prod-consumer-price');
+                const multInput = row.querySelector('.p-prod-multiplier');
 
-                if (consumerInput && (Number(consumerInput.value) <= 0 || !consumerInput.value)) {
+                if (consumerInput) {
                     consumerInput.value = consumerPrice;
                 }
-                if (priceInput && (Number(priceInput.value) <= 0 || !priceInput.value)) {
+                if (priceInput) {
                     priceInput.value = buyPrice;
+                }
+                if (multInput) {
+                    if (consumerPrice > 0 && buyPrice > 0) {
+                        multInput.value = parseFloat((buyPrice / consumerPrice).toFixed(2)).toString();
+                    }
                 }
             }
         }
@@ -4561,12 +4574,16 @@
         rows.forEach(row => {
             const selectEl = row.querySelector('.p-prod-select');
             const qtyInput = row.querySelector('.p-prod-qty');
+            const consumerPriceInput = row.querySelector('.p-prod-consumer-price');
+            const multiplierInput = row.querySelector('.p-prod-multiplier');
             const priceInput = row.querySelector('.p-prod-price');
 
             const productId = selectEl?.value;
             const opt = selectEl?.options[selectEl.selectedIndex];
             const name = opt?.getAttribute('data-name') || selectEl?.options[selectEl.selectedIndex]?.text?.split('(')[0]?.trim() || 'محصول';
             const qty = Math.max(1, Number(qtyInput?.value) || 1);
+            const consumerPrice = Math.max(0, Number(consumerPriceInput?.value) || 0);
+            const multiplier = multiplierInput?.value !== undefined ? String(multiplierInput.value).trim() : '';
             const buyPrice = Math.max(0, Number(priceInput?.value) || 0);
 
             if (productId) {
@@ -4574,6 +4591,8 @@
                     productId,
                     name,
                     qty,
+                    consumerPrice,
+                    multiplier,
                     buyPrice
                 });
             }
@@ -5565,8 +5584,15 @@
         const consumerP = Number(consumerInput?.value) || 0;
         const mult = Number(multInput?.value) || 0;
 
-        if (consumerP > 0 && mult > 0 && buyInput) {
-            buyInput.value = Math.round(consumerP * mult);
+        if (inputEl.classList.contains('p-prod-price')) {
+            if (consumerP > 0 && buyInput && Number(buyInput.value) >= 0) {
+                const calculatedMult = (Number(buyInput.value) / consumerP).toFixed(2);
+                if (multInput) multInput.value = parseFloat(calculatedMult).toString();
+            }
+        } else {
+            if (consumerP > 0 && mult > 0 && buyInput) {
+                buyInput.value = Math.round(consumerP * mult);
+            }
         }
         calcPagePurchaseTotals();
     }
@@ -5575,21 +5601,27 @@
         const row = selectEl.closest('.page-purchase-item-row');
         if (!row) return;
 
-        const opt = selectEl.options[selectEl.selectedIndex];
-        if (opt && opt.value) {
-            const product = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(opt.value));
+        const val = selectEl ? selectEl.value : '';
+        if (val) {
+            const product = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(val) || String(p.name).toLowerCase() === String(val).toLowerCase());
             if (product) {
                 const buyPrice = Number(product.buyPrice) || 0;
                 const consumerPrice = Number(product.price) || Number(product.consumerPrice) || 0;
 
                 const priceInput = row.querySelector('.p-prod-price');
                 const consumerInput = row.querySelector('.p-prod-consumer-price');
+                const multInput = row.querySelector('.p-prod-multiplier');
 
-                if (consumerInput && (Number(consumerInput.value) <= 0 || !consumerInput.value)) {
+                if (consumerInput) {
                     consumerInput.value = consumerPrice;
                 }
-                if (priceInput && (Number(priceInput.value) <= 0 || !priceInput.value)) {
+                if (priceInput) {
                     priceInput.value = buyPrice;
+                }
+                if (multInput) {
+                    if (consumerPrice > 0 && buyPrice > 0) {
+                        multInput.value = parseFloat((buyPrice / consumerPrice).toFixed(2)).toString();
+                    }
                 }
             }
         }
@@ -5644,6 +5676,8 @@
             const selectEl = row.querySelector('.prod-select, .p-prod-select');
             const searchInput = row.querySelector('.prod-search-input, .p-prod-search-input');
             const qtyInput = row.querySelector('.p-prod-qty');
+            const consumerPriceInput = row.querySelector('.p-prod-consumer-price');
+            const multiplierInput = row.querySelector('.p-prod-multiplier');
             const priceInput = row.querySelector('.p-prod-price');
 
             let productId = selectEl?.value;
@@ -5677,6 +5711,8 @@
             }
 
             const qty = Math.max(1, Number(qtyInput?.value) || 1);
+            const consumerPrice = Math.max(0, Number(consumerPriceInput?.value) || 0);
+            const multiplier = multiplierInput?.value !== undefined ? String(multiplierInput.value).trim() : '';
             const buyPrice = Math.max(0, Number(priceInput?.value) || 0);
 
             if (productId || name) {
@@ -5685,6 +5721,8 @@
                     id: productId || name,
                     name: name || 'محصول',
                     qty,
+                    consumerPrice,
+                    multiplier,
                     buyPrice
                 });
             }

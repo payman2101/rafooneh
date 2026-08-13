@@ -1443,6 +1443,8 @@ export function createPurchase(purchaseData) {
     const name = item.name || 'محصول رافونه';
     const qty = Math.max(1, Number(item.qty || item.quantity) || 1);
     const buyPrice = Math.max(0, Number(item.buyPrice) || 0);
+    const consumerPrice = Math.max(0, Number(item.consumerPrice !== undefined ? item.consumerPrice : (item.price || 0)));
+    const multiplier = item.multiplier !== undefined && item.multiplier !== null ? String(item.multiplier) : '';
     const rowTotal = qty * buyPrice;
 
     totalAmount += rowTotal;
@@ -1453,6 +1455,8 @@ export function createPurchase(purchaseData) {
       name,
       qty,
       buyPrice,
+      consumerPrice,
+      multiplier,
       rowTotal
     };
   });
@@ -1482,6 +1486,10 @@ export function createPurchase(purchaseData) {
         products[pIdx].stock = currentStock + pItem.qty;
         if (pItem.buyPrice > 0) {
           products[pIdx].buyPrice = pItem.buyPrice;
+        }
+        if (pItem.consumerPrice > 0) {
+          products[pIdx].price = pItem.consumerPrice;
+          products[pIdx].consumerPrice = pItem.consumerPrice;
         }
         if (products[pIdx].stock <= 0) {
           products[pIdx].badge = 'ناموجود';
@@ -1526,6 +1534,8 @@ export function updatePurchase(id, updates) {
     const name = item.name || 'محصول رافونه';
     const qty = Math.max(1, Number(item.qty || item.quantity) || 1);
     const buyPrice = Math.max(0, Number(item.buyPrice) || 0);
+    const consumerPrice = Math.max(0, Number(item.consumerPrice !== undefined ? item.consumerPrice : (item.price || 0)));
+    const multiplier = item.multiplier !== undefined && item.multiplier !== null ? String(item.multiplier) : '';
     const rowTotal = qty * buyPrice;
 
     totalAmount += rowTotal;
@@ -1536,6 +1546,8 @@ export function updatePurchase(id, updates) {
       name,
       qty,
       buyPrice,
+      consumerPrice,
+      multiplier,
       rowTotal
     };
   });
