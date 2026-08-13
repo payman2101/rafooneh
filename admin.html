@@ -4095,15 +4095,17 @@
     }
 
     function normalizeItemObject(it) {
-        if (!it) return { name: 'کالا', qty: 1, buyPrice: 0, productId: '' };
+        if (!it) return { name: 'کالا', qty: 1, buyPrice: 0, consumerPrice: 0, multiplier: '', productId: '' };
         if (typeof it === 'string') {
-            return { name: it, qty: 1, buyPrice: 0, productId: '' };
+            return { name: it, qty: 1, buyPrice: 0, consumerPrice: 0, multiplier: '', productId: '' };
         }
         const name = it.name || it.productName || it.title || it.label || 'محصول';
         const qty = Math.max(1, Number(it.qty || it.quantity || it.unitsSold || it.count || 1));
-        const buyPrice = Number(it.buyPrice || it.price || it.cost || 0);
+        const buyPrice = Number(it.buyPrice !== undefined ? it.buyPrice : (it.cost !== undefined ? it.cost : (it.price || 0)));
+        const consumerPrice = Number(it.consumerPrice !== undefined ? it.consumerPrice : (it.price || 0));
+        const multiplier = it.multiplier !== undefined ? it.multiplier : '';
         const productId = it.productId || it.id || it.code || '';
-        return { name, qty, buyPrice, productId };
+        return { ...it, name, qty, buyPrice, consumerPrice, multiplier, productId };
     }
 
     function renderPurchasesTable(list) {
@@ -5160,7 +5162,7 @@
         if (hiddenSelect) {
             const finalId = selectedProduct ? (selectedProduct.id || selectedProduct.code) : selectedProductId;
             if (finalId) {
-                let opt = hiddenSelect.querySelector(`option[value="${CSS.escape(String(finalId))}"]`);
+                let opt = Array.from(hiddenSelect.options).find(o => String(o.value) === String(finalId));
                 if (!opt) {
                     opt = document.createElement('option');
                     opt.value = finalId;
@@ -5371,13 +5373,13 @@
             if (subtitleEl) subtitleEl.textContent = 'تغییر اطلاعات تامین‌کننده، شماره سند و ویرایش اقلام فاکتور خرید';
             if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره تغییرات فاکتور خرید';
 
-            let purchase = (allPurchasesData || []).find(p => String(p.id) === String(purchaseId));
+            let purchase = (allPurchasesData || []).find(p => String(p.id) === String(purchaseId) || String(p.refNumber) === String(purchaseId));
             if (!purchase) {
                 try {
                     const res = await api(`/api/admin/purchases/${purchaseId}`);
                     if (res.ok) {
                         const data = await res.json();
-                        purchase = data.purchase || data;
+                        purchase = data.purchase || (data.id ? data : null);
                     }
                 } catch (e) {}
             }
@@ -5386,44 +5388,52 @@
                     const res = await api('/api/admin/purchases');
                     if (res.ok) {
                         const data = await res.json();
-                        allPurchasesData = data.purchases || [];
-                        purchase = allPurchasesData.find(p => String(p.id) === String(purchaseId));
+                        allPurchasesData = data.purchases || (Array.isArray(data) ? data : []);
+                        purchase = allPurchasesData.find(p => String(p.id) === String(purchaseId) || String(p.refNumber) === String(purchaseId));
                     }
                 } catch (e) {}
             }
 
             if (purchase) {
-                document.getElementById('pagePSupplierName').value = purchase.supplierName || 'تأمین‌کننده رافونه';
-                document.getElementById('pagePRefNumber').value = purchase.refNumber || '';
-                document.getElementById('pagePNotes').value = purchase.notes || '';
+                const supplierInput = document.getElementById('pagePSupplierName');
+                const refInput = document.getElementById('pagePRefNumber');
+                const notesInput = document.getElementById('pagePNotes');
 
-                if (purchase.purchaseDate || purchase.createdAt) {
+                if (supplierInput) supplierInput.value = purchase.supplierName || purchase.supplier_name || 'تأمین‌کننده رافونه';
+                if (refInput) refInput.value = purchase.refNumber || purchase.ref_number || '';
+                if (notesInput) notesInput.value = purchase.notes || '';
+
+                const pDate = purchase.purchaseDate || purchase.purchase_date || purchase.createdAt || purchase.created_at;
+                if (pDate) {
                     try {
-                        const d = new Date(purchase.purchaseDate || purchase.createdAt);
+                        const d = new Date(pDate);
                         if (!isNaN(d.getTime())) {
                             const localIso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                            document.getElementById('pagePPurchaseDate').value = localIso;
+                            const dateInput = document.getElementById('pagePPurchaseDate');
+                            if (dateInput) dateInput.value = localIso;
                         }
                     } catch (e) {}
                 }
 
                 const container = document.getElementById('pagePItemsContainer');
-                container.innerHTML = '';
-                const items = normalizeItemsArray(purchase.items);
-                if (items.length > 0) {
-                    items.forEach(rawIt => {
-                        const it = normalizeItemObject(rawIt);
-                        addPagePurchaseItemRow({
-                            productId: it.productId || it.id || it.code || it.name,
-                            qty: it.qty || it.quantity || 1,
-                            buyPrice: it.buyPrice || 0,
-                            consumerPrice: it.consumerPrice || it.price || 0,
-                            multiplier: it.multiplier || '',
-                            name: it.name
+                if (container) {
+                    container.innerHTML = '';
+                    const items = normalizeItemsArray(purchase.items);
+                    if (items.length > 0) {
+                        items.forEach(rawIt => {
+                            const it = normalizeItemObject(rawIt);
+                            addPagePurchaseItemRow({
+                                productId: it.productId || it.id || it.code || it.name,
+                                qty: it.qty || it.quantity || 1,
+                                buyPrice: it.buyPrice || 0,
+                                consumerPrice: it.consumerPrice || it.price || 0,
+                                multiplier: it.multiplier || '',
+                                name: it.name || it.title || ''
+                            });
                         });
-                    });
-                } else {
-                    addPagePurchaseItemRow();
+                    } else {
+                        addPagePurchaseItemRow();
+                    }
                 }
             } else {
                 alert('اطلاعات فاکتور خرید مورد نظر یافت نشد.');
@@ -5435,16 +5445,23 @@
             if (subtitleEl) subtitleEl.textContent = 'ثبت فاکتورهای خرید کالا، قیمت‌ها، میزان ورودی انبار و به روز رسانی خودکار کاتالوگ';
             if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره فاکتور خرید و به روز رسانی انبار';
 
-            document.getElementById('pagePSupplierName').value = 'تأمین‌کننده رافونه';
-            document.getElementById('pagePRefNumber').value = 'FACT-' + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('pagePNotes').value = '';
+            const supplierInput = document.getElementById('pagePSupplierName');
+            const refInput = document.getElementById('pagePRefNumber');
+            const notesInput = document.getElementById('pagePNotes');
+            const dateInput = document.getElementById('pagePPurchaseDate');
+
+            if (supplierInput) supplierInput.value = 'تأمین‌کننده رافونه';
+            if (refInput) refInput.value = 'FACT-' + Math.floor(100000 + Math.random() * 900000);
+            if (notesInput) notesInput.value = '';
 
             const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-            document.getElementById('pagePPurchaseDate').value = nowLocal;
+            if (dateInput) dateInput.value = nowLocal;
 
             const container = document.getElementById('pagePItemsContainer');
-            container.innerHTML = '';
-            addPagePurchaseItemRow();
+            if (container) {
+                container.innerHTML = '';
+                addPagePurchaseItemRow();
+            }
         }
 
         calcPagePurchaseTotals();
@@ -5462,18 +5479,38 @@
         div.style.cssText = 'display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:14px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:12px;';
 
         const selectedPId = itemData ? (itemData.productId || itemData.id || itemData.code || itemData.name || '') : '';
-        const consumerP = itemData ? (itemData.consumerPrice || 0) : 0;
-        const mult = itemData ? (itemData.multiplier || '') : '';
+        let buyP = itemData ? (Number(itemData.buyPrice) || 0) : 0;
+        let consumerP = itemData ? (Number(itemData.consumerPrice) || 0) : 0;
+        let mult = itemData ? (itemData.multiplier || '') : '';
+
+        // Find catalog product to populate consumer price / buy price if zero
+        let catalogProduct = null;
+        if (selectedPId) {
+            catalogProduct = (purchaseProductsCatalog || []).find(p => 
+                String(p.id || p.code) === String(selectedPId) || 
+                String(p.name).toLowerCase() === String(selectedPId).toLowerCase()
+            );
+        }
+
+        if (catalogProduct) {
+            if (!consumerP) consumerP = Number(catalogProduct.price || catalogProduct.consumerPrice) || 0;
+            if (!buyP && catalogProduct.buyPrice) buyP = Number(catalogProduct.buyPrice) || 0;
+        }
+
+        if (!mult && consumerP > 0 && buyP > 0) {
+            const rawMult = (buyP / consumerP).toFixed(2);
+            mult = parseFloat(rawMult).toString();
+        }
 
         let optionsHtml = '<option value="">-- انتخاب کالا --</option>';
         if (purchaseProductsCatalog && purchaseProductsCatalog.length > 0) {
             purchaseProductsCatalog.forEach(p => {
                 const pId = p.id || p.code;
                 const sel = (String(selectedPId) === String(pId) || String(selectedPId) === String(p.name)) ? 'selected' : '';
-                const buyP = Number(p.buyPrice) || 0;
-                const consumerPrice = Number(p.price) || Number(p.consumerPrice) || 0;
+                const pBuyP = Number(p.buyPrice) || 0;
+                const pConsumerPrice = Number(p.price) || Number(p.consumerPrice) || 0;
                 const stock = Number(p.stock) || 0;
-                optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${buyP}" data-consumerprice="${consumerPrice}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی: ${stock}</option>`;
+                optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-buyprice="${pBuyP}" data-consumerprice="${pConsumerPrice}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - موجودی: ${stock}</option>`;
             });
         }
 
@@ -5487,7 +5524,7 @@
             </div>
             <div style="flex:0.8; min-width:75px;">
                 <label style="font-size:0.78rem; color:#475569; font-weight:bold; display:block; margin-bottom:4px;">تعداد</label>
-                <input type="number" min="1" value="${itemData ? itemData.qty : 1}" class="form-control p-prod-qty" oninput="calcPagePurchaseTotals()" style="font-size:0.9rem; font-weight:bold; text-align:center;">
+                <input type="number" min="1" value="${itemData ? (itemData.qty || itemData.quantity || 1) : 1}" class="form-control p-prod-qty" oninput="calcPagePurchaseTotals()" style="font-size:0.9rem; font-weight:bold; text-align:center;">
             </div>
             <div style="flex:1.1; min-width:110px;">
                 <label style="font-size:0.78rem; color:#0284c7; font-weight:bold; display:block; margin-bottom:4px;">مصرف‌کننده (تومان)</label>
@@ -5499,7 +5536,7 @@
             </div>
             <div style="flex:1.1; min-width:110px;">
                 <label style="font-size:0.78rem; color:#15803d; font-weight:bold; display:block; margin-bottom:4px;">خرید واحد (تومان)</label>
-                <input type="number" min="0" value="${itemData ? itemData.buyPrice : 0}" class="form-control p-prod-price" oninput="calcPagePurchaseTotals()" style="font-size:0.88rem; text-align:center; font-weight:bold;">
+                <input type="number" min="0" value="${buyP}" class="form-control p-prod-price" oninput="calcPagePurchaseTotals()" style="font-size:0.88rem; text-align:center; font-weight:bold;">
             </div>
             <div style="flex:1.2; min-width:120px;">
                 <label style="font-size:0.78rem; color:#64748b; font-weight:bold; display:block; margin-bottom:4px;">جمع کل (تومان)</label>
