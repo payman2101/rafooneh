@@ -1443,8 +1443,16 @@ export function createPurchase(purchaseData) {
     const name = item.name || 'محصول رافونه';
     const qty = Math.max(1, Number(item.qty || item.quantity) || 1);
     const buyPrice = Math.max(0, Number(item.buyPrice) || 0);
-    const consumerPrice = Math.max(0, Number(item.consumerPrice !== undefined ? item.consumerPrice : (item.price || 0)));
-    const multiplier = item.multiplier !== undefined && item.multiplier !== null ? String(item.multiplier) : '';
+    let consumerPrice = Math.max(0, Number(item.consumerPrice !== undefined ? item.consumerPrice : (item.price || 0)));
+    let multiplier = item.multiplier !== undefined && item.multiplier !== null ? String(item.multiplier).trim() : '';
+
+    if (!consumerPrice && buyPrice > 0 && Number(multiplier) > 0) {
+      consumerPrice = Math.round(buyPrice / Number(multiplier));
+    }
+    if (!multiplier && consumerPrice > 0 && buyPrice > 0) {
+      multiplier = parseFloat((buyPrice / consumerPrice).toFixed(2)).toString();
+    }
+
     const rowTotal = qty * buyPrice;
 
     totalAmount += rowTotal;
@@ -1452,6 +1460,7 @@ export function createPurchase(purchaseData) {
 
     return {
       productId: pid,
+      id: pid,
       name,
       qty,
       buyPrice,
@@ -1534,8 +1543,16 @@ export function updatePurchase(id, updates) {
     const name = item.name || 'محصول رافونه';
     const qty = Math.max(1, Number(item.qty || item.quantity) || 1);
     const buyPrice = Math.max(0, Number(item.buyPrice) || 0);
-    const consumerPrice = Math.max(0, Number(item.consumerPrice !== undefined ? item.consumerPrice : (item.price || 0)));
-    const multiplier = item.multiplier !== undefined && item.multiplier !== null ? String(item.multiplier) : '';
+    let consumerPrice = Math.max(0, Number(item.consumerPrice !== undefined ? item.consumerPrice : (item.price || 0)));
+    let multiplier = item.multiplier !== undefined && item.multiplier !== null ? String(item.multiplier).trim() : '';
+
+    if (!consumerPrice && buyPrice > 0 && Number(multiplier) > 0) {
+      consumerPrice = Math.round(buyPrice / Number(multiplier));
+    }
+    if (!multiplier && consumerPrice > 0 && buyPrice > 0) {
+      multiplier = parseFloat((buyPrice / consumerPrice).toFixed(2)).toString();
+    }
+
     const rowTotal = qty * buyPrice;
 
     totalAmount += rowTotal;
@@ -1543,6 +1560,7 @@ export function updatePurchase(id, updates) {
 
     return {
       productId: pid,
+      id: pid,
       name,
       qty,
       buyPrice,

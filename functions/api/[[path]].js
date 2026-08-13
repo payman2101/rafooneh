@@ -384,15 +384,41 @@ function formatPurchaseFromDb(p) {
   } catch (e) {
     itemsArr = [];
   }
+
+  const normalizedItems = itemsArr.map(it => {
+    const qty = Math.max(1, Number(it.qty || it.quantity || 1));
+    const buyPrice = Math.max(0, Number(it.buyPrice || 0));
+    let consumerPrice = Math.max(0, Number(it.consumerPrice !== undefined ? it.consumerPrice : (it.price || 0)));
+    let multiplier = it.multiplier !== undefined && it.multiplier !== null ? String(it.multiplier).trim() : '';
+
+    if (!consumerPrice && buyPrice > 0 && Number(multiplier) > 0) {
+      consumerPrice = Math.round(buyPrice / Number(multiplier));
+    }
+    if (!multiplier && consumerPrice > 0 && buyPrice > 0) {
+      multiplier = parseFloat((buyPrice / consumerPrice).toFixed(2)).toString();
+    }
+
+    return {
+      ...it,
+      productId: String(it.productId || it.id || it.code || ''),
+      id: String(it.productId || it.id || it.code || ''),
+      name: it.name || 'محصول',
+      qty,
+      buyPrice,
+      consumerPrice,
+      multiplier
+    };
+  });
+
   return {
     id: String(p.id),
     refNumber: p.ref_number || p.refNumber || p.id,
     supplierName: p.supplier_name || p.supplierName || 'تأمین‌کننده رافونه',
     purchaseDate: p.purchase_date || p.purchaseDate || p.created_at || p.createdAt,
     notes: p.notes || '',
-    items: itemsArr,
+    items: normalizedItems,
     totalAmount: Number(p.total_amount || p.totalAmount || 0),
-    totalItemsCount: Number(p.total_items_count || p.totalItemsCount || itemsArr.length),
+    totalItemsCount: Number(p.total_items_count || p.totalItemsCount || normalizedItems.length),
     createdAt: p.created_at || p.createdAt || new Date().toISOString()
   };
 }
@@ -1087,15 +1113,36 @@ export async function onRequest(context) {
       return jsonRes({ success: true, purchases });
     }
     if (method === 'POST') {
-      const items = Array.isArray(body.items) ? body.items : [];
+      const rawItems = Array.isArray(body.items) ? body.items : [];
       let totalAmount = 0;
       let totalItemsCount = 0;
 
-      items.forEach(it => {
+      const items = rawItems.map(it => {
         const qty = Math.max(1, Number(it.qty || it.quantity || 1));
         const buyPrice = Math.max(0, Number(it.buyPrice || 0));
+        let consumerPrice = Math.max(0, Number(it.consumerPrice !== undefined ? it.consumerPrice : (it.price || 0)));
+        let multiplier = it.multiplier !== undefined && it.multiplier !== null ? String(it.multiplier).trim() : '';
+
+        if (!consumerPrice && buyPrice > 0 && Number(multiplier) > 0) {
+          consumerPrice = Math.round(buyPrice / Number(multiplier));
+        }
+        if (!multiplier && consumerPrice > 0 && buyPrice > 0) {
+          multiplier = parseFloat((buyPrice / consumerPrice).toFixed(2)).toString();
+        }
+
         totalAmount += qty * buyPrice;
         totalItemsCount += qty;
+
+        return {
+          productId: String(it.productId || it.id || it.code || ''),
+          id: String(it.productId || it.id || it.code || ''),
+          name: it.name || 'محصول',
+          qty,
+          buyPrice,
+          consumerPrice,
+          multiplier,
+          rowTotal: qty * buyPrice
+        };
       });
 
       const purchase = {
@@ -1163,15 +1210,36 @@ export async function onRequest(context) {
     }
 
     if (method === 'PATCH' || method === 'PUT') {
-      const items = Array.isArray(body.items) ? body.items : (existing ? existing.items : []);
+      const rawItems = Array.isArray(body.items) ? body.items : (existing ? existing.items : []);
       let totalAmount = 0;
       let totalItemsCount = 0;
 
-      items.forEach(it => {
+      const items = rawItems.map(it => {
         const qty = Math.max(1, Number(it.qty || it.quantity || 1));
         const buyPrice = Math.max(0, Number(it.buyPrice || 0));
+        let consumerPrice = Math.max(0, Number(it.consumerPrice !== undefined ? it.consumerPrice : (it.price || 0)));
+        let multiplier = it.multiplier !== undefined && it.multiplier !== null ? String(it.multiplier).trim() : '';
+
+        if (!consumerPrice && buyPrice > 0 && Number(multiplier) > 0) {
+          consumerPrice = Math.round(buyPrice / Number(multiplier));
+        }
+        if (!multiplier && consumerPrice > 0 && buyPrice > 0) {
+          multiplier = parseFloat((buyPrice / consumerPrice).toFixed(2)).toString();
+        }
+
         totalAmount += qty * buyPrice;
         totalItemsCount += qty;
+
+        return {
+          productId: String(it.productId || it.id || it.code || ''),
+          id: String(it.productId || it.id || it.code || ''),
+          name: it.name || 'محصول',
+          qty,
+          buyPrice,
+          consumerPrice,
+          multiplier,
+          rowTotal: qty * buyPrice
+        };
       });
 
       const updatedPurchase = {
