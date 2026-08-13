@@ -63,12 +63,20 @@ const memoryPurchases = [];
 const memoryTransactions = new Map();
 
 // --- SUPABASE HELPERS ---
-function getSupabaseClient(env) {
-  const key = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
-  if (!env.SUPABASE_URL || !key) {
-    throw new Error('SUPABASE_URL and key must be defined in environment variables');
+function getSupabaseClient(env = {}) {
+  const url = env?.SUPABASE_URL || process.env?.SUPABASE_URL || 'https://agyerjkhtsqmdtcgamgq.supabase.co';
+  const key = env?.SUPABASE_SERVICE_ROLE_KEY || env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY ||
+              process.env?.SUPABASE_SERVICE_ROLE_KEY || process.env?.SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    console.warn('[Supabase Client Warning]: Missing SUPABASE_URL or key');
+    return null;
   }
-  return createClient(env.SUPABASE_URL, key);
+  try {
+    return createClient(url, key);
+  } catch (err) {
+    console.error('[Supabase Client Exception]:', err.message);
+    return null;
+  }
 }
 
 function mapToDbSchema(product) {
@@ -412,20 +420,26 @@ async function getCombinedPurchases(env) {
 async function savePurchaseToPg(env, purchase) {
   try {
     const supabase = getSupabaseClient(env);
+    if (!supabase) return false;
     const dbPayload = {
       id: String(purchase.id),
       ref_number: purchase.refNumber || '',
       supplier_name: purchase.supplierName || '',
       purchase_date: purchase.purchaseDate || new Date().toISOString(),
       notes: purchase.notes || '',
-      items: purchase.items || [],
+      items: typeof purchase.items === 'string' ? purchase.items : JSON.stringify(purchase.items || []),
       total_amount: Number(purchase.totalAmount || 0),
       total_items_count: Number(purchase.totalItemsCount || 0),
-      created_at: purchase.createdAt || new Date().toISOString()
+      created_at: purchase.createdAt || new Date().toISOString(),
+      updated_at: purchase.updatedAt || new Date().toISOString()
     };
     const { error } = await supabase.from('purchases').upsert(dbPayload, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase Save Purchase Error]:', error);
+    }
     return !error;
   } catch (err) {
+    console.error('[Supabase Save Purchase Exception]:', err);
     return false;
   }
 }
@@ -1137,6 +1151,73 @@ export async function onRequest(context) {
 
   if (path.startsWith('/api/admin/purchases/')) {
     const id = path.replace('/api/admin/purchases/', '');
+    const purchases = await getCombinedPurchases(env);
+    let existing = purchases.find(p => String(p.id) === id);
+
+    if (method === 'GET') {
+      if (!existing) return jsonRes({ success: false, message: 'فاکتور خرید یافت نشد' }, 404);
+      return jsonRes({ success: true, purchase: existing });
+    }
+
+    if (method === 'PATCH' || method === 'PUT') {
+      const items = Array.isArray(body.items) ? body.items : (existing ? existing.items : []);
+      let totalAmount = 0;
+      let totalItemsCount = 0;
+
+      items.forEach(it => {
+        const qty = Math.max(1, Number(it.qty || it.quantity || 1));
+        const buyPrice = Math.max(0, Number(it.buyPrice || 0));
+        totalAmount += qty * buyPrice;
+        totalItemsCount += qty;
+      });
+
+      const updatedPurchase = {
+        ...(existing || {}),
+        ...body,
+        id: id,
+        refNumber: body.refNumber || (existing ? existing.refNumber : `FACT-${Math.floor(100000 + Math.random() * 900000)}`),
+        supplierName: body.supplierName || (existing ? existing.supplierName : 'تأمین‌کننده رافونه'),
+        purchaseDate: body.purchaseDate || (existing ? existing.purchaseDate : new Date().toISOString()),
+        notes: body.notes !== undefined ? body.notes : (existing ? existing.notes : ''),
+        items,
+        totalAmount: body.totalAmount !== undefined ? Number(body.totalAmount) : totalAmount,
+        totalItemsCount: body.totalItemsCount !== undefined ? Number(body.totalItemsCount) : totalItemsCount,
+        updatedAt: new Date().toISOString()
+      };
+
+      const memIdx = memoryPurchases.findIndex(p => String(p.id) === id);
+      if (memIdx !== -1) memoryPurchases[memIdx] = updatedPurchase;
+      else memoryPurchases.unshift(updatedPurchase);
+
+      await savePurchaseToPg(env, updatedPurchase);
+
+      // Concurrently update buyPrice for each item in Supabase DB
+      if (items.length > 0) {
+        const pgProds = await getAllProductsFromPg(env) || [];
+        const updatePromises = items.map(async (item) => {
+          const prodId = String(item.productId || item.id || item.code || '');
+          if (!prodId) return;
+
+          const prodExisting = pgProds.find(p => String(p.id) === prodId || String(p.code) === prodId) ||
+                              defaultProducts.find(p => String(p.id) === prodId || String(p.code) === prodId);
+          if (prodExisting) {
+            const newBuyPrice = Number(item.buyPrice) > 0 ? Number(item.buyPrice) : Number(prodExisting.buyPrice || 0);
+            const updatedProduct = {
+              ...prodExisting,
+              id: prodId,
+              code: prodId,
+              buyPrice: newBuyPrice,
+              updatedAt: new Date().toISOString()
+            };
+            await saveProductToPg(env, updatedProduct);
+          }
+        });
+        await Promise.all(updatePromises);
+      }
+
+      return jsonRes({ success: true, purchase: updatedPurchase, message: 'فاکتور خرید با موفقیت به روزرسانی شد.' });
+    }
+
     if (method === 'DELETE') {
       const idx = memoryPurchases.findIndex(p => String(p.id) === id);
       if (idx !== -1) memoryPurchases.splice(idx, 1);
