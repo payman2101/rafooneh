@@ -997,30 +997,51 @@ export async function onRequest(context) {
     }
 
     if (method === 'PATCH' || method === 'PUT') {
+      // ۱. ذخیره اطلاعات قدیمی قبل از آپدیت برای محاسبه اختلاف موجودی
       const oldStatus = existing ? existing.status : null;
+      const oldItems = existing ? existing.items : []; 
+
       const updatedOrder = formatOrder({
         ...existing,
         ...body,
         id: id,
         updatedAt: new Date().toISOString()
       });
+      
+      const newItems = updatedOrder.items || [];
+      const newStatus = updatedOrder.status;
 
+      // ذخیره در حافظه و دیتابیس
       const memIdx = memoryOrders.findIndex(o => String(o.id) === id);
       if (memIdx !== -1) memoryOrders[memIdx] = updatedOrder;
       else memoryOrders.push(updatedOrder);
 
       await saveOrderToPg(env, updatedOrder);
 
-      // Handle stock adjustments on status changes
-      if (oldStatus !== 'cancelled' && updatedOrder.status === 'cancelled') {
-        await updateProductStockForOrder(env, updatedOrder.items, true); // Restore stock
-      } else if (oldStatus === 'cancelled' && updatedOrder.status !== 'cancelled') {
-        await updateProductStockForOrder(env, updatedOrder.items, false); // Re-deduct stock
+      // ==========================================
+      // ۲. منطق هوشمند و جدید اصلاح موجودی انبار
+      // ==========================================
+      const wasActive = oldStatus !== 'cancelled';
+      const isActive = newStatus !== 'cancelled';
+
+      // الف) اگر سفارش قبلاً فعال بوده، موجودی اقلام قدیمی را به انبار برگردان
+      if (wasActive && oldItems && oldItems.length > 0) {
+        await updateProductStockForOrder(env, oldItems, true); // true یعنی بازگرداندن به انبار
       }
+      
+      // ب) اگر سفارش الان فعال است، موجودی اقلام جدید (ویرایش‌شده) را از انبار کسر کن
+      if (isActive && newItems && newItems.length > 0) {
+        await updateProductStockForOrder(env, newItems, false); // false یعنی کسر از انبار
+      }
+      // ==========================================
 
-      return jsonRes({ success: true, message: 'سفارش بروزرسانی شد', order: updatedOrder });
+      return jsonRes({ 
+        success: true, 
+        message: 'سفارش بروزرسانی شد و موجودی انبار به‌صورت خودکار اصلاح گردید', 
+        order: updatedOrder 
+      });
     }
-
+    
     if (method === 'DELETE') {
       if (existing) {
         // Restore stock for items in deleted order if order was active (not cancelled)
