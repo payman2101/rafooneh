@@ -2683,7 +2683,7 @@
 
         try {
             await api(`/api/admin/orders/${currentOrderId}`, {
-                method: 'PATCH',
+                method: 'PUT',
                 body: JSON.stringify({ status, adminNotes, createdAt })
             });
         } catch (err) {
@@ -6115,26 +6115,35 @@
 
         try {
             const endpoint = editId ? `/api/admin/orders/${editId}` : '/api/orders';
-            const method = editId ? 'PATCH' : 'POST';
+            const method = editId ? 'PUT' : 'POST';
+
+            const payload = {
+                id: editId || undefined,
+                customerName: name,
+                customerPhone: phone,
+                phone,
+                items,
+                totalAmount,
+                status,
+                paymentMethod,
+                address,
+                createdAt,
+                source: 'مدیریت'
+            };
 
             const res = await api(endpoint, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    customerName: name,
-                    customerPhone: phone,
-                    phone,
-                    items,
-                    totalAmount,
-                    status,
-                    paymentMethod,
-                    address,
-                    createdAt,
-                    source: 'مدیریت'
-                })
+                body: JSON.stringify(payload)
             });
 
             if (res.ok) {
+                const data = await res.json().catch(() => ({}));
+                if (data.order) {
+                    saveLocalOrder(data.order);
+                } else if (editId) {
+                    saveLocalOrder({ id: editId, ...payload });
+                }
                 alert(editId ? 'سفارش با موفقیت ویرایش شد.' : 'سفارش جدید با موفقیت ثبت شد.');
                 showSection('orders');
                 loadOrders();

@@ -686,6 +686,39 @@ app.post('/api/orders', (req, res) => {
   }
 });
 
+// Update order endpoint (PUT/PATCH for public & client integration)
+app.put('/api/orders/:id', async (req, res) => {
+  try {
+    const order = await updateOrder(req.params.id, req.body || {});
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'سفارش یافت نشد' });
+    }
+    res.json({
+      success: true,
+      order: { ...order, statusLabel: getStatusLabel(order.status) },
+      message: 'سفارش با موفقیت به روزرسانی شد'
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+app.patch('/api/orders/:id', async (req, res) => {
+  try {
+    const order = await updateOrder(req.params.id, req.body || {});
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'سفارش یافت نشد' });
+    }
+    res.json({
+      success: true,
+      order: { ...order, statusLabel: getStatusLabel(order.status) },
+      message: 'سفارش با موفقیت به روزرسانی شد'
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
 // Public API: Track/Lookup orders EXCLUSIVELY by order tracking ID (کد پیگیری سفارش)
 app.get('/api/orders/track', (req, res) => {
   try {
