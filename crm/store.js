@@ -543,25 +543,73 @@ export function enrichOrderWithProfit(order, productsMap) {
   };
 }
 
-export function reduceProductStock(items) {
+export function findProductInList(list, item) {
+  if (!item || !Array.isArray(list)) return null;
+  const idStr = item.id !== undefined && item.id !== null ? String(item.id).trim().toLowerCase() : '';
+  const codeStr = item.code !== undefined && item.code !== null ? String(item.code).trim().toLowerCase() : '';
+  const prodIdStr = item.productId !== undefined && item.productId !== null ? String(item.productId).trim().toLowerCase() : '';
+  const nameStr = item.name ? String(item.name).trim().toLowerCase() : '';
+
+  return list.find(p => {
+    const pId = p.id !== undefined && p.id !== null ? String(p.id).trim().toLowerCase() : '';
+    const pCode = p.code !== undefined && p.code !== null ? String(p.code).trim().toLowerCase() : '';
+    const pName = p.name ? String(p.name).trim().toLowerCase() : '';
+
+    if (idStr && (pId === idStr || pCode === idStr)) return true;
+    if (codeStr && (pCode === codeStr || pId === codeStr)) return true;
+    if (prodIdStr && (pId === prodIdStr || pCode === prodIdStr)) return true;
+    if (nameStr && pName === nameStr) return true;
+    return false;
+  });
+}
+
+export function adjustStockForOrderUpdate(oldOrder, newOrder) {
   try {
     const list = readProductsList();
-    if (!list.length) return;
+    if (!list || !list.length) return;
+
+    const oldStatus = oldOrder ? oldOrder.status : 'cancelled';
+    const newStatus = newOrder ? newOrder.status : 'cancelled';
+
+    const oldIsActive = oldStatus !== 'cancelled';
+    const newIsActive = newStatus !== 'cancelled';
+
+    const oldItems = (oldIsActive && oldOrder && Array.isArray(oldOrder.items)) ? oldOrder.items : [];
+    const newItems = (newIsActive && newOrder && Array.isArray(newOrder.items)) ? newOrder.items : [];
+
+    const productDeltas = new Map();
+
+    oldItems.forEach(item => {
+      const product = findProductInList(list, item);
+      if (product) {
+        const qty = Number(item.qty || item.quantity) || 1;
+        const entry = productDeltas.get(product) || { oldQty: 0, newQty: 0 };
+        entry.oldQty += qty;
+        productDeltas.set(product, entry);
+      }
+    });
+
+    newItems.forEach(item => {
+      const product = findProductInList(list, item);
+      if (product) {
+        const qty = Number(item.qty || item.quantity) || 1;
+        const entry = productDeltas.get(product) || { oldQty: 0, newQty: 0 };
+        entry.newQty += qty;
+        productDeltas.set(product, entry);
+      }
+    });
+
     let modified = false;
     const changedProducts = [];
 
-    (items || []).forEach(item => {
-      const pid = String(item.id || item.code || item.productId || '');
-      const qty = Number(item.qty || item.quantity) || 1;
-      const product = list.find(p =>
-        (pid && (String(p.id) === pid || String(p.code) === pid)) ||
-        (item.name && String(p.name).trim().toLowerCase() === String(item.name).trim().toLowerCase())
-      );
-      if (product) {
-        let currentStock = product.stock !== undefined && product.stock !== null && !isNaN(Number(product.stock))
+    productDeltas.forEach((quantities, product) => {
+      const delta = quantities.newQty - quantities.oldQty; // positive => order increased => stock decreases
+      if (delta !== 0) {
+        let currentStock = (product.stock !== undefined && product.stock !== null && !isNaN(Number(product.stock)))
           ? Number(product.stock)
-          : 10;
-        product.stock = Math.max(0, currentStock - qty);
+          : 0;
+
+        product.stock = Math.max(0, currentStock - delta);
         product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
         product.updatedAt = new Date().toISOString();
         modified = true;
@@ -576,45 +624,16 @@ export function reduceProductStock(items) {
       });
     }
   } catch (e) {
-    console.error('Error reducing product stock:', e);
+    console.error('Error adjusting stock for order update:', e);
   }
 }
 
+export function reduceProductStock(items) {
+  adjustStockForOrderUpdate(null, { status: 'new', items });
+}
+
 export function restoreProductStock(items) {
-  try {
-    const list = readProductsList();
-    if (!list.length) return;
-    let modified = false;
-    const changedProducts = [];
-
-    (items || []).forEach(item => {
-      const pid = String(item.id || item.code || item.productId || '');
-      const qty = Number(item.qty || item.quantity) || 1;
-      const product = list.find(p =>
-        (pid && (String(p.id) === pid || String(p.code) === pid)) ||
-        (item.name && String(p.name).trim().toLowerCase() === String(item.name).trim().toLowerCase())
-      );
-      if (product) {
-        let currentStock = product.stock !== undefined && product.stock !== null && !isNaN(Number(product.stock))
-          ? Number(product.stock)
-          : 0;
-        product.stock = currentStock + qty;
-        product.badge = product.stock <= 0 ? 'ناموجود' : (product.stock <= 5 ? `تعداد محدود (${product.stock} عدد)` : null);
-        product.updatedAt = new Date().toISOString();
-        modified = true;
-        changedProducts.push(product);
-      }
-    });
-
-    if (modified) {
-      saveProductsList(list, false);
-      changedProducts.forEach(p => {
-        saveProductCloudSql(p).catch(e => console.error('Cloud SQL save product stock notice:', e));
-      });
-    }
-  } catch (e) {
-    console.error('Error restoring product stock:', e);
-  }
+  adjustStockForOrderUpdate({ status: 'new', items }, null);
 }
 
 export function createOrder(orderData) {
@@ -706,27 +725,7 @@ export function createOrder(orderData) {
   }
 
   // Stock Adjustment for Order Creation or Update
-  if (existingIdx === -1) {
-    if (order.status !== 'cancelled') {
-      reduceProductStock(items);
-    }
-  } else if (oldOrder) {
-    const oldStatus = oldOrder.status;
-    const newStatus = order.status;
-    const oldItems = oldOrder.items || [];
-    const newItems = order.items || [];
-
-    if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
-      restoreProductStock(oldItems);
-    } else if (oldStatus === 'cancelled' && newStatus !== 'cancelled') {
-      reduceProductStock(newItems);
-    } else if (oldStatus !== 'cancelled' && newStatus !== 'cancelled') {
-      if (orderData.items && Array.isArray(orderData.items)) {
-        restoreProductStock(oldItems);
-        reduceProductStock(newItems);
-      }
-    }
-  }
+  adjustStockForOrderUpdate(oldOrder, order);
 
   return enrichOrderWithProfit(order, pMap);
 }
@@ -775,8 +774,8 @@ export function deleteOrder(id) {
   const orderToDelete = orders.find(o => String(o.id) === String(id));
   orders = orders.filter(o => String(o.id) !== String(id));
   if (orders.length !== initialLength) {
-    if (orderToDelete && orderToDelete.status !== 'cancelled') {
-      restoreProductStock(orderToDelete.items);
+    if (orderToDelete) {
+      adjustStockForOrderUpdate(orderToDelete, null);
     }
     writeJson(ORDERS_FILE, orders);
     deleteOrderFromFirestore(id).catch(e => console.error('Firestore delete order error:', e));
@@ -959,22 +958,8 @@ export async function updateOrder(id, updates) {
   saveOrderToFirestore(orders[idx]).catch(e => console.error('Firestore update order error:', e));
   try { saveOrderSqlite(orders[idx]); } catch (e) { console.error('SQLite update order notice:', e); }
 
-  const newItems = orders[idx].items || [];
-
-  // Stock Adjustment Logic
-  if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
-    // Active -> Cancelled: Restore stock for previous items
-    restoreProductStock(oldItems);
-  } else if (oldStatus === 'cancelled' && newStatus !== 'cancelled') {
-    // Cancelled -> Active: Reduce stock for new items
-    reduceProductStock(newItems);
-  } else if (oldStatus !== 'cancelled' && newStatus !== 'cancelled') {
-    // Active -> Active: If items were updated, restore old items stock and reduce new items stock
-    if (updates.items && Array.isArray(updates.items)) {
-      restoreProductStock(oldItems);
-      reduceProductStock(newItems);
-    }
-  }
+  // Stock Adjustment for Order Update
+  adjustStockForOrderUpdate(oldOrder, orders[idx]);
 
   return enrichOrderWithProfit(orders[idx], pMap);
 }
