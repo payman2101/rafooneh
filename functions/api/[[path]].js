@@ -236,17 +236,28 @@ async function getCombinedOrders(env) {
 async function updateProductStockForOrder(env, orderItems, isRestore = false) {
   if (!Array.isArray(orderItems) || orderItems.length === 0) return;
   try {
-    const pgProds = await getAllProductsFromPg(env);
-    if (!pgProds || !Array.isArray(pgProds)) return;
+    let pgProds = await getAllProductsFromPg(env);
+    if (!pgProds || !Array.isArray(pgProds) || pgProds.length === 0) {
+      pgProds = defaultProducts;
+    }
 
     for (const item of orderItems) {
-      const prodId = String(item.id || item.code || '');
-      if (!prodId) continue;
+      const prodId = String(item.productId || item.id || item.code || '').trim();
+      const prodName = String(item.name || item.title || '').trim().toLowerCase();
+      if (!prodId && !prodName) continue;
 
-      const prod = pgProds.find(p => String(p.id) === prodId || String(p.code) === prodId);
+      const prod = pgProds.find(p => {
+        const pId = String(p.id || '').trim();
+        const pCode = String(p.code || '').trim();
+        const pName = String(p.name || '').trim().toLowerCase();
+        if (prodId && (pId === prodId || pCode === prodId)) return true;
+        if (prodName && pName === prodName) return true;
+        return false;
+      });
+
       if (prod) {
         const qty = Number(item.quantity || item.qty || 1);
-        let currStock = Number(prod.stock || 0);
+        let currStock = Number(prod.stock !== undefined && prod.stock !== null && !isNaN(Number(prod.stock)) ? prod.stock : 0);
         if (isRestore) {
           currStock += qty;
         } else {
@@ -255,6 +266,7 @@ async function updateProductStockForOrder(env, orderItems, isRestore = false) {
         prod.stock = currStock;
         prod.badge = currStock <= 0 ? 'ناموجود' : (currStock <= 5 ? `تعداد محدود (${currStock} عدد)` : null);
         prod.updated_at = new Date().toISOString();
+        prod.updatedAt = new Date().toISOString();
         await saveProductToPg(env, prod);
       }
     }
@@ -992,8 +1004,9 @@ export async function onRequest(context) {
     }
   }
 
-  if (path.startsWith('/api/admin/orders/')) {
-    const id = path.replace('/api/admin/orders/', '');
+  const isOrderById = path.startsWith('/api/admin/orders/') || (path.startsWith('/api/orders/') && !path.startsWith('/api/orders/track'));
+  if (isOrderById) {
+    const id = path.replace('/api/admin/orders/', '').replace('/api/orders/', '');
     const orders = await getCombinedOrders(env);
     let existing = orders.find(o => String(o.id) === id || String(o.code) === id);
 
@@ -1005,7 +1018,9 @@ export async function onRequest(context) {
     }
 
     if (method === 'PATCH' || method === 'PUT') {
-      const oldStatus = existing ? existing.status : null;
+      const oldStatus = existing ? existing.status : 'pending';
+      const oldItems = existing && Array.isArray(existing.items) ? existing.items : [];
+
       const updatedOrder = formatOrder({
         ...existing,
         ...body,
@@ -1013,30 +1028,47 @@ export async function onRequest(context) {
         updatedAt: new Date().toISOString()
       });
 
-      const memIdx = memoryOrders.findIndex(o => String(o.id) === id);
+      const newStatus = updatedOrder.status || 'pending';
+      const newItems = Array.isArray(updatedOrder.items) ? updatedOrder.items : [];
+
+      const memIdx = memoryOrders.findIndex(o => String(o.id) === id || String(o.code) === id);
       if (memIdx !== -1) memoryOrders[memIdx] = updatedOrder;
       else memoryOrders.push(updatedOrder);
 
       await saveOrderToPg(env, updatedOrder);
 
-      // Handle stock adjustments on status changes
-      if (oldStatus !== 'cancelled' && updatedOrder.status === 'cancelled') {
-        await updateProductStockForOrder(env, updatedOrder.items, true); // Restore stock
-      } else if (oldStatus === 'cancelled' && updatedOrder.status !== 'cancelled') {
-        await updateProductStockForOrder(env, updatedOrder.items, false); // Re-deduct stock
-      }
+      // ==========================================
+      // منطق هوشمند و خودکار اصلاح موجودی انبار هنگام ویرایش سفارش
+      // ==========================================
+      const wasActive = oldStatus !== 'cancelled';
+      const isActive = newStatus !== 'cancelled';
 
-      return jsonRes({ success: true, message: 'سفارش بروزرسانی شد', order: updatedOrder });
+      // الف) اگر سفارش قبلاً فعال بوده، موجودی اقلام قدیمی را به انبار بازگردان
+      if (wasActive && oldItems && oldItems.length > 0) {
+        await updateProductStockForOrder(env, oldItems, true); // true یعنی بازگرداندن به انبار
+      }
+      
+      // ب) اگر سفارش الان فعال است، موجودی اقلام جدید (ویرایش‌شده) را از انبار کسر کن
+      if (isActive && newItems && newItems.length > 0) {
+        await updateProductStockForOrder(env, newItems, false); // false یعنی کسر از انبار
+      }
+      // ==========================================
+
+      return jsonRes({
+        success: true,
+        message: 'سفارش بروزرسانی شد و موجودی انبار به‌صورت خودکار اصلاح گردید',
+        order: updatedOrder
+      });
     }
 
     if (method === 'DELETE') {
       if (existing) {
         // Restore stock for items in deleted order if order was active (not cancelled)
-        if (existing.status !== 'cancelled') {
+        if (existing.status !== 'cancelled' && Array.isArray(existing.items)) {
           await updateProductStockForOrder(env, existing.items, true);
         }
       }
-      const memIdx = memoryOrders.findIndex(o => String(o.id) === id);
+      const memIdx = memoryOrders.findIndex(o => String(o.id) === id || String(o.code) === id);
       if (memIdx !== -1) memoryOrders.splice(memIdx, 1);
       await deleteOrderFromPg(env, id);
       return jsonRes({ success: true, message: 'سفارش با موفقیت حذف شد' });
