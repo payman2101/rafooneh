@@ -3970,6 +3970,17 @@
     }
 
     async function loadBankSettings(force = false) {
+        // Load instantly from localStorage cache if available for zero-latency UI
+        try {
+            const localSaved = localStorage.getItem('rafooneh_bank_settings');
+            if (localSaved) {
+                const parsed = JSON.parse(localSaved);
+                if (parsed && parsed.cardNumber) {
+                    currentBankSettings = { ...currentBankSettings, ...parsed };
+                }
+            }
+        } catch (e) {}
+
         // If user is currently focusing or typing inside the bank form and it's not a forced reload, skip overwriting
         const formEl = document.getElementById('bankSettingsForm');
         const isEditing = formEl && formEl.contains(document.activeElement);
@@ -3980,6 +3991,9 @@
                 const data = await res.json();
                 if (data && data.settings) {
                     currentBankSettings = { ...currentBankSettings, ...data.settings };
+                    try {
+                        localStorage.setItem('rafooneh_bank_settings', JSON.stringify(currentBankSettings));
+                    } catch (e) {}
                 }
             }
         } catch (e) {
@@ -4073,6 +4087,10 @@
                     currentBankSettings = { ...currentBankSettings, ...payload };
                 }
 
+                try {
+                    localStorage.setItem('rafooneh_bank_settings', JSON.stringify(currentBankSettings));
+                } catch (e) {}
+
                 // Update input formatting
                 if (document.getElementById('cardNumberInput')) {
                     document.getElementById('cardNumberInput').value = formatCardDigits(currentBankSettings.cardNumber);
@@ -4089,7 +4107,7 @@
                     msgBox.style.background = '#dcfce7';
                     msgBox.style.color = '#15803d';
                     msgBox.style.border = '1px solid #86efac';
-                    msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.message || 'مشخصات بانکی با موفقیت ذخیره گردید.'}`;
+                    msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.message || 'مشخصات بانکی با موفقیت در دیتابیس و حافظه ذخیره گردید.'}`;
                     setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
                 }
             } else {

@@ -1,5 +1,5 @@
 import { db } from '../src/db/index.js';
-import { products, customers, orders, companyPayments, purchases } from '../src/db/schema.js';
+import { products, customers, orders, companyPayments, purchases, settings, bankSettings } from '../src/db/schema.js';
 import { eq, or, sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
@@ -432,3 +432,65 @@ export async function deletePurchaseCloudSql(id) {
     console.error('[Cloud SQL] Error deleting purchase:', err.message);
   }
 }
+
+export async function getBankSettingsCloudSql() {
+  try {
+    const rows = await db.select().from(bankSettings).limit(1);
+    if (rows && rows.length > 0) {
+      const b = rows[0];
+      return {
+        bankName: b.bankName || 'بانک ملی ایران',
+        cardHolder: b.cardHolder || 'پیمان نوری',
+        cardNumber: b.cardNumber || '6037991823456789',
+        shabaNumber: b.shabaNumber || 'IR120170000000123456789012',
+        accountNumber: b.accountNumber || '',
+        description: b.description || 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.',
+        updatedAt: b.updatedAt
+      };
+    }
+    const sRows = await db.select().from(settings).where(eq(settings.key, 'bank_settings')).limit(1);
+    if (sRows && sRows.length > 0) {
+      try {
+        const parsed = JSON.parse(sRows[0].value);
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (e) {}
+    }
+  } catch (err) {
+    console.error('[Cloud SQL] Error getting bank settings:', err.message);
+  }
+  return null;
+}
+
+export async function saveBankSettingsCloudSql(settingObj) {
+  try {
+    const payload = {
+      id: 'default',
+      bankName: settingObj.bankName || 'بانک ملی ایران',
+      cardHolder: settingObj.cardHolder || 'پیمان نوری',
+      cardNumber: settingObj.cardNumber || '6037991823456789',
+      shabaNumber: settingObj.shabaNumber || 'IR120170000000123456789012',
+      accountNumber: settingObj.accountNumber || '',
+      description: settingObj.description || '',
+      updatedAt: settingObj.updatedAt || new Date().toISOString()
+    };
+    await db.insert(bankSettings).values(payload)
+      .onConflictDoUpdate({
+        target: bankSettings.id,
+        set: payload
+      });
+
+    const sPayload = {
+      key: 'bank_settings',
+      value: JSON.stringify(settingObj),
+      updatedAt: settingObj.updatedAt || new Date().toISOString()
+    };
+    await db.insert(settings).values(sPayload)
+      .onConflictDoUpdate({
+        target: settings.key,
+        set: sPayload
+      });
+  } catch (err) {
+    console.error('[Cloud SQL] Error saving bank settings:', err.message);
+  }
+}
+

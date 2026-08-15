@@ -500,6 +500,79 @@ async function deletePurchaseFromPg(env, id) {
   }
 }
 
+// Bank Settings DB Helpers
+async function getBankSettingsFromPg(env) {
+  try {
+    const supabase = getSupabaseClient(env);
+    if (!supabase) return null;
+
+    // 1. Try bank_settings table
+    const { data: bankData, error: bankErr } = await supabase.from('bank_settings').select('*').limit(1);
+    if (!bankErr && bankData && bankData.length > 0) {
+      const b = bankData[0];
+      return {
+        bankName: b.bank_name || b.bankName || 'بانک ملی ایران',
+        cardHolder: b.card_holder || b.cardHolder || 'پیمان نوری',
+        cardNumber: b.card_number || b.cardNumber || '6037991823456789',
+        shabaNumber: b.shaba_number || b.shabaNumber || 'IR120170000000123456789012',
+        accountNumber: b.account_number || b.accountNumber || '',
+        description: b.description !== undefined ? b.description : 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.',
+        updatedAt: b.updated_at || b.updatedAt || new Date().toISOString()
+      };
+    }
+
+    // 2. Fallback: try settings table with key 'bank_settings'
+    const { data: sData, error: sErr } = await supabase.from('settings').select('*').eq('key', 'bank_settings').limit(1);
+    if (!sErr && sData && sData.length > 0) {
+      try {
+        const val = typeof sData[0].value === 'string' ? JSON.parse(sData[0].value) : sData[0].value;
+        if (val && typeof val === 'object') return val;
+      } catch (e) {}
+    }
+    return null;
+  } catch (err) {
+    console.error('[Supabase Get Bank Settings Error]:', err);
+    return null;
+  }
+}
+
+async function saveBankSettingsToPg(env, settings) {
+  try {
+    const supabase = getSupabaseClient(env);
+    if (!supabase) return false;
+
+    const payload = {
+      id: 'default',
+      bank_name: settings.bankName || 'بانک ملی ایران',
+      card_holder: settings.cardHolder || 'پیمان نوری',
+      card_number: settings.cardNumber || '6037991823456789',
+      shaba_number: settings.shabaNumber || 'IR120170000000123456789012',
+      account_number: settings.accountNumber || '',
+      description: settings.description !== undefined ? settings.description : '',
+      updated_at: settings.updatedAt || new Date().toISOString()
+    };
+
+    // Save to bank_settings table
+    const { error: bankErr } = await supabase.from('bank_settings').upsert(payload, { onConflict: 'id' });
+    if (bankErr) {
+      console.warn('[Supabase Bank Settings Upsert Warning]:', bankErr.message);
+    }
+
+    // Also save to settings table as key-value JSON
+    const sPayload = {
+      key: 'bank_settings',
+      value: JSON.stringify(settings),
+      updated_at: settings.updatedAt || new Date().toISOString()
+    };
+    await supabase.from('settings').upsert(sPayload, { onConflict: 'key' });
+
+    return true;
+  } catch (err) {
+    console.error('[Supabase Save Bank Settings Exception]:', err);
+    return false;
+  }
+}
+
 // --- MAIN REQUEST HANDLER ---
 export default {
   async fetch(request, env, ctx) {
@@ -1367,7 +1440,13 @@ export async function onRequest(context) {
         description: body.description !== undefined ? String(body.description).trim() : 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.',
         updatedAt: new Date().toISOString()
       };
-      return jsonRes({ success: true, message: 'مشخصات حساب بانکی و کارت با موفقیت ذخیره شد.', settings: memoryBankSettings });
+      await saveBankSettingsToPg(env, memoryBankSettings);
+      return jsonRes({ success: true, message: 'مشخصات حساب بانکی و کارت با موفقیت در دیتابیس ذخیره شد.', settings: memoryBankSettings });
+    }
+
+    const pgBank = await getBankSettingsFromPg(env);
+    if (pgBank && pgBank.cardNumber) {
+      memoryBankSettings = { ...memoryBankSettings, ...pgBank };
     }
     return jsonRes({ success: true, settings: memoryBankSettings });
   }

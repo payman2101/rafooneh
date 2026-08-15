@@ -36,7 +36,9 @@ import {
   deleteCompanyPaymentCloudSql,
   savePurchaseCloudSql,
   getAllPurchasesCloudSql,
-  deletePurchaseCloudSql
+  deletePurchaseCloudSql,
+  getBankSettingsCloudSql,
+  saveBankSettingsCloudSql
 } from './cloudsql.js';
 import {
   seedSqliteFromJson,
@@ -1703,6 +1705,9 @@ export function saveBankSettings(settings) {
   } catch (e) {
     console.error('Error writing bank settings file:', e);
   }
+  saveBankSettingsCloudSql(updated).catch(e => {
+    console.error('[Cloud SQL] Save bank settings error:', e.message);
+  });
   return updated;
 }
 
@@ -1711,6 +1716,17 @@ export async function initDatabaseSync() {
     await initCloudSql();
     await refreshProductsFromCloudSql();
     console.log('[Database Sync] Hydrated live product catalog from Supabase/Cloud SQL.');
+    try {
+      const sqlBank = await getBankSettingsCloudSql();
+      if (sqlBank && sqlBank.cardNumber) {
+        bankSettingsCache = { ...DEFAULT_BANK_SETTINGS, ...sqlBank };
+        writeJson(BANK_SETTINGS_FILE, bankSettingsCache);
+        writeJson(ROOT_BANK_SETTINGS_FILE, bankSettingsCache);
+        console.log('[Database Sync] Hydrated bank settings from Supabase/Cloud SQL.');
+      }
+    } catch (bErr) {
+      console.error('[Database Sync] Bank settings hydrate error:', bErr.message);
+    }
   } catch (e) {
     console.error('Cloud SQL init notice:', e);
   }
@@ -1720,3 +1736,4 @@ export async function initDatabaseSync() {
     console.error('SQLite init notice:', e);
   }
 }
+

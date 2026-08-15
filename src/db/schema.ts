@@ -78,3 +78,21 @@ export const purchases = pgTable('purchases', {
   createdAt: text('created_at'),
   updatedAt: text('updated_at'),
 });
+
+export const settings = pgTable('settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: text('updated_at'),
+});
+
+export const bankSettings = pgTable('bank_settings', {
+  id: text('id').primaryKey(),
+  bankName: text('bank_name'),
+  cardHolder: text('card_holder'),
+  cardNumber: text('card_number'),
+  shabaNumber: text('shaba_number'),
+  accountNumber: text('account_number'),
+  description: text('description'),
+  updatedAt: text('updated_at'),
+});
+

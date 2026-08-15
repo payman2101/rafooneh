@@ -3205,11 +3205,25 @@
 
         async function loadCustomerBankSettings() {
             try {
+                const localSaved = localStorage.getItem('rafooneh_bank_settings');
+                if (localSaved) {
+                    const parsed = JSON.parse(localSaved);
+                    if (parsed && parsed.cardNumber) {
+                        customerBankSettings = { ...customerBankSettings, ...parsed };
+                        populateCustomerInvoiceBank();
+                    }
+                }
+            } catch (e) {}
+
+            try {
                 const res = await fetch(getApiUrl('/api/settings/bank'));
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.settings) {
                         customerBankSettings = { ...customerBankSettings, ...data.settings };
+                        try {
+                            localStorage.setItem('rafooneh_bank_settings', JSON.stringify(customerBankSettings));
+                        } catch (e) {}
                     }
                 }
             } catch (e) {
