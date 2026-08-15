@@ -61,6 +61,14 @@ const memoryCustomers = [];
 const memoryCompanyPayments = [];
 const memoryPurchases = [];
 const memoryTransactions = new Map();
+let memoryBankSettings = {
+  bankName: 'بانک ملی ایران',
+  cardHolder: 'پیمان نوری',
+  cardNumber: '6037991823456789',
+  shabaNumber: 'IR120170000000123456789012',
+  accountNumber: '',
+  description: 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
+};
 
 // --- SUPABASE HELPERS ---
 function getSupabaseClient(env = {}) {
@@ -1301,15 +1309,6 @@ export async function onRequest(context) {
   }
 
   // --- BANK SETTINGS ENDPOINTS ---
-  let memoryBankSettings = {
-    bankName: 'بانک ملی ایران',
-    cardHolder: 'پیمان نوری',
-    cardNumber: '6037991823456789',
-    shabaNumber: 'IR120170000000123456789012',
-    accountNumber: '',
-    description: 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
-  };
-
   if (path === '/api/settings/bank' || path === '/api/admin/settings/bank') {
     if (method === 'POST') {
       let cleanCard = (body.cardNumber || '').replace(/[^0-9۰-۹]/g, '');

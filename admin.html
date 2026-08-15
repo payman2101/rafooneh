@@ -1503,8 +1503,8 @@
                         </p>
                     </div>
                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button class="btn btn-secondary" onclick="loadBankSettings()" style="padding:8px 14px; font-size:0.85rem;">
-                            <i class="fa-solid fa-rotate"></i> بازخوانی اطلاعات
+                        <button type="button" class="btn btn-secondary" onclick="loadBankSettings(true)" style="padding:8px 14px; font-size:0.85rem;" title="بازخوانی آخرین اطلاعات ثبت شده در سرور">
+                            <i class="fa-solid fa-rotate"></i> بازخوانی از سرور
                         </button>
                     </div>
                 </div>
@@ -2367,8 +2367,6 @@
                 tasks.push(loadCompanyPaymentHistory());
             } else if (activeSec === 'gsheets') {
                 tasks.push(loadGSheetsStatus());
-            } else if (activeSec === 'bank-settings') {
-                tasks.push(loadBankSettings());
             }
 
             await Promise.allSettled(tasks);
@@ -3971,12 +3969,16 @@
         }
     }
 
-    async function loadBankSettings() {
+    async function loadBankSettings(force = false) {
+        // If user is currently focusing or typing inside the bank form and it's not a forced reload, skip overwriting
+        const formEl = document.getElementById('bankSettingsForm');
+        const isEditing = formEl && formEl.contains(document.activeElement);
+        
         try {
             const res = await api('/api/settings/bank');
             if (res.ok) {
                 const data = await res.json();
-                if (data.settings) {
+                if (data && data.settings) {
                     currentBankSettings = { ...currentBankSettings, ...data.settings };
                 }
             }
@@ -3984,20 +3986,35 @@
             console.log('Load bank settings notice:', e);
         }
 
-        if (document.getElementById('bankNameInput')) document.getElementById('bankNameInput').value = currentBankSettings.bankName || 'بانک ملی ایران';
-        if (document.getElementById('cardHolderInput')) document.getElementById('cardHolderInput').value = currentBankSettings.cardHolder || 'پیمان نوری';
-        if (document.getElementById('cardNumberInput')) {
-            document.getElementById('cardNumberInput').value = formatCardDigits(currentBankSettings.cardNumber || '6037991823456789');
-            if (document.getElementById('bankDetectedBadge')) {
-                document.getElementById('bankDetectedBadge').innerText = detectBankFromCard(currentBankSettings.cardNumber);
+        // Only populate inputs if it's a forced reload, or if the form is not currently being edited
+        if (force || !isEditing) {
+            if (document.getElementById('bankNameInput')) document.getElementById('bankNameInput').value = currentBankSettings.bankName || 'بانک ملی ایران';
+            if (document.getElementById('cardHolderInput')) document.getElementById('cardHolderInput').value = currentBankSettings.cardHolder || 'پیمان نوری';
+            if (document.getElementById('cardNumberInput')) {
+                document.getElementById('cardNumberInput').value = formatCardDigits(currentBankSettings.cardNumber || '6037991823456789');
+                if (document.getElementById('bankDetectedBadge')) {
+                    document.getElementById('bankDetectedBadge').innerText = detectBankFromCard(currentBankSettings.cardNumber);
+                }
+            }
+            if (document.getElementById('shabaNumberInput')) document.getElementById('shabaNumberInput').value = currentBankSettings.shabaNumber || 'IR120170000000123456789012';
+            if (document.getElementById('accountNumberInput')) document.getElementById('accountNumberInput').value = currentBankSettings.accountNumber || '';
+            if (document.getElementById('bankDescriptionInput')) document.getElementById('bankDescriptionInput').value = currentBankSettings.description || 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.';
+            
+            updateLiveBankCardPreview();
+            populateInvoiceBankElements();
+
+            if (force) {
+                const msgBox = document.getElementById('bankSaveMsg');
+                if (msgBox) {
+                    msgBox.style.display = 'block';
+                    msgBox.style.background = '#f0f9ff';
+                    msgBox.style.color = '#0369a1';
+                    msgBox.style.border = '1px solid #bae6fd';
+                    msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> اطلاعات حساب بانکی با موفقیت از سرور بازخوانی شد.`;
+                    setTimeout(() => { msgBox.style.display = 'none'; }, 3000);
+                }
             }
         }
-        if (document.getElementById('shabaNumberInput')) document.getElementById('shabaNumberInput').value = currentBankSettings.shabaNumber || 'IR120170000000123456789012';
-        if (document.getElementById('accountNumberInput')) document.getElementById('accountNumberInput').value = currentBankSettings.accountNumber || '';
-        if (document.getElementById('bankDescriptionInput')) document.getElementById('bankDescriptionInput').value = currentBankSettings.description || 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.';
-
-        updateLiveBankCardPreview();
-        populateInvoiceBankElements();
     }
 
     function populateInvoiceBankElements() {
@@ -4021,24 +4038,52 @@
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...`;
         }
 
+        const rawCard = document.getElementById('cardNumberInput') ? document.getElementById('cardNumberInput').value : '';
+        const cleanCard = String(rawCard || '').replace(/[^0-9۰-۹]/g, '');
+
+        const rawShaba = document.getElementById('shabaNumberInput') ? document.getElementById('shabaNumberInput').value.trim() : '';
+
         const payload = {
-            bankName: document.getElementById('bankNameInput').value.trim(),
-            cardHolder: document.getElementById('cardHolderInput').value.trim(),
-            cardNumber: document.getElementById('cardNumberInput').value.replace(/[^0-9]/g, ''),
-            shabaNumber: document.getElementById('shabaNumberInput').value.trim(),
-            accountNumber: document.getElementById('accountNumberInput').value.trim(),
-            description: document.getElementById('bankDescriptionInput').value.trim()
+            bankName: document.getElementById('bankNameInput') ? document.getElementById('bankNameInput').value.trim() : '',
+            cardHolder: document.getElementById('cardHolderInput') ? document.getElementById('cardHolderInput').value.trim() : '',
+            cardNumber: cleanCard,
+            shabaNumber: rawShaba,
+            accountNumber: document.getElementById('accountNumberInput') ? document.getElementById('accountNumberInput').value.trim() : '',
+            description: document.getElementById('bankDescriptionInput') ? document.getElementById('bankDescriptionInput').value.trim() : ''
         };
 
         try {
-            const res = await api('/api/settings/bank', {
+            let res = await api('/api/admin/settings/bank', {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
-            const data = await res.json();
-            if (data && data.success) {
-                currentBankSettings = { ...currentBankSettings, ...data.settings };
+
+            if (!res || !res.ok) {
+                res = await api('/api/settings/bank', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            const data = await res.json().catch(() => ({}));
+            if (data && (data.success || data.settings)) {
+                if (data.settings) {
+                    currentBankSettings = { ...currentBankSettings, ...data.settings };
+                } else {
+                    currentBankSettings = { ...currentBankSettings, ...payload };
+                }
+
+                // Update input formatting
+                if (document.getElementById('cardNumberInput')) {
+                    document.getElementById('cardNumberInput').value = formatCardDigits(currentBankSettings.cardNumber);
+                }
+                if (document.getElementById('shabaNumberInput')) {
+                    document.getElementById('shabaNumberInput').value = currentBankSettings.shabaNumber;
+                }
+
+                updateLiveBankCardPreview();
                 populateInvoiceBankElements();
+
                 if (msgBox) {
                     msgBox.style.display = 'block';
                     msgBox.style.background = '#dcfce7';
@@ -4048,7 +4093,7 @@
                     setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
                 }
             } else {
-                throw new Error(data.message || 'خطا در ذخیره سازی');
+                throw new Error(data.message || 'خطا در ذخیره سازی اطلاعات');
             }
         } catch (err) {
             if (msgBox) {

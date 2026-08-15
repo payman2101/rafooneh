@@ -1086,8 +1086,8 @@ app.get('/api/admin/settings/bank', authMiddleware, (req, res) => {
   }
 });
 
-// API: Update Bank Settings (Admin)
-app.post('/api/admin/settings/bank', authMiddleware, (req, res) => {
+// API: Update Bank Settings (Handler for both public and admin paths)
+function handleUpdateBankSettings(req, res) {
   try {
     const { bankName, cardHolder, cardNumber, shabaNumber, accountNumber, description } = req.body || {};
     
@@ -1123,7 +1123,10 @@ app.post('/api/admin/settings/bank', authMiddleware, (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطا در ذخیره مشخصات حساب بانکی' });
   }
-});
+}
+
+app.post('/api/admin/settings/bank', authMiddleware, handleUpdateBankSettings);
+app.post('/api/settings/bank', handleUpdateBankSettings);
 
 // API: Download SQLite database file
 app.get('/api/admin/database/download', authMiddleware, (req, res) => {
