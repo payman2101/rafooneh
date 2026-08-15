@@ -37,7 +37,9 @@ import {
   saveProductsList,
   refreshProductsFromCloudSql,
   initDatabaseSync,
-  ensureFirestoreLoaded
+  ensureFirestoreLoaded,
+  getBankSettings,
+  saveBankSettings
 } from './crm/store.js';
 import { checkpointSqlite } from './crm/sqlite.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
@@ -1062,6 +1064,65 @@ app.get('/api/admin/gsheets/status', authMiddleware, (req, res) => {
     productCount,
     lastSyncTime
   });
+});
+
+// API: Get Bank Card & Account Settings (Public / Storefront / Invoices)
+app.get('/api/settings/bank', (req, res) => {
+  try {
+    const settings = getBankSettings();
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت اطلاعات حساب بانکی' });
+  }
+});
+
+// API: Get Bank Settings (Admin)
+app.get('/api/admin/settings/bank', authMiddleware, (req, res) => {
+  try {
+    const settings = getBankSettings();
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت اطلاعات حساب بانکی' });
+  }
+});
+
+// API: Update Bank Settings (Admin)
+app.post('/api/admin/settings/bank', authMiddleware, (req, res) => {
+  try {
+    const { bankName, cardHolder, cardNumber, shabaNumber, accountNumber, description } = req.body || {};
+    
+    // Clean and validate card number (16 digits)
+    let cleanCard = (cardNumber || '').replace(/[^0-9۰-۹]/g, '');
+    const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+    for (let i = 0; i < 10; i++) {
+      cleanCard = cleanCard.replace(persianDigits[i], String(i));
+    }
+
+    let cleanShaba = (shabaNumber || '').trim().toUpperCase();
+    for (let i = 0; i < 10; i++) {
+      cleanShaba = cleanShaba.replace(persianDigits[i], String(i));
+    }
+    if (cleanShaba && !cleanShaba.startsWith('IR') && /^[0-9]+$/.test(cleanShaba)) {
+      cleanShaba = 'IR' + cleanShaba;
+    }
+
+    const updated = saveBankSettings({
+      bankName: bankName ? String(bankName).trim() : 'بانک ملی ایران',
+      cardHolder: cardHolder ? String(cardHolder).trim() : 'پیمان نوری',
+      cardNumber: cleanCard || '6037991823456789',
+      shabaNumber: cleanShaba || 'IR120170000000123456789012',
+      accountNumber: accountNumber ? String(accountNumber).trim() : '',
+      description: description !== undefined ? String(description).trim() : 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
+    });
+
+    res.json({
+      success: true,
+      message: 'مشخصات حساب بانکی و کارت با موفقیت ذخیره شد.',
+      settings: updated
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در ذخیره مشخصات حساب بانکی' });
+  }
 });
 
 // API: Download SQLite database file

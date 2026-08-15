@@ -580,6 +580,133 @@
                 border: 2px solid #000 !important;
                 padding: 15px !important;
             }
+            .inv-bank-section {
+                margin: 16px 0 10px 0;
+                page-break-inside: avoid;
+            }
+            .inv-bank-card {
+                background: #f8fafc !important;
+                border: 1.5px solid #00897b !important;
+                border-radius: 10px;
+                padding: 12px 14px;
+            }
+            .inv-bank-header {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                color: #00695c;
+                font-size: 0.9rem;
+                font-weight: 800;
+                margin-bottom: 10px;
+                border-bottom: 1px dashed #cbd5e1;
+                padding-bottom: 6px;
+            }
+            .inv-bank-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px 14px;
+                font-size: 0.84rem;
+            }
+            .inv-bank-full-row {
+                grid-column: 1 / -1;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 6px;
+                background: #ffffff;
+                padding: 6px 10px;
+                border-radius: 6px;
+                border: 1px solid #e2e8f0;
+            }
+            .inv-card-digits {
+                color: #166534;
+                font-weight: 800;
+            }
+            .inv-shaba-digits {
+                color: #0369a1;
+                font-weight: 800;
+            }
+            .inv-copy-btn {
+                background: #e0f2fe;
+                color: #0369a1;
+                border: 1px solid #bae6fd;
+                padding: 3px 8px;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                font-weight: bold;
+                cursor: pointer;
+            }
+            .inv-bank-notice {
+                margin-top: 8px;
+                padding-top: 6px;
+                border-top: 1px dotted #cbd5e1;
+                font-size: 0.78rem;
+                color: #475569;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+        }
+
+        /* Bank Settings Live Card Styles */
+        .bank-preview-card {
+            background: linear-gradient(135deg, #065f46 0%, #047857 50%, #059669 100%);
+            border-radius: 18px;
+            padding: 24px;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 35px -5px rgba(5, 150, 105, 0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            max-width: 440px;
+            margin: 0 auto;
+        }
+        .bank-preview-card::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            pointer-events: none;
+        }
+        .bank-preview-chip {
+            width: 44px;
+            height: 34px;
+            background: linear-gradient(135deg, #fef08a 0%, #ca8a04 100%);
+            border-radius: 6px;
+            border: 1px solid #eab308;
+            display: inline-block;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+        .bank-preview-number {
+            font-family: monospace;
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            direction: ltr;
+            text-align: center;
+            margin: 12px 0 16px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.25);
+            background: rgba(0,0,0,0.15);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .bank-preview-shaba {
+            direction: ltr;
+            font-family: monospace;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            background: rgba(0,0,0,0.2);
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -628,6 +755,7 @@
         <button class="active" onclick="showSection('dashboard', this)">داشبورد</button>
         <button onclick="showSection('orders', this)">سفارشات</button>
         <button onclick="showSection('products', this)">انبار و برندها</button>
+        <button onclick="showSection('bank-settings', this)">کارت و حساب</button>
         <button onclick="showSection('gsheets', this)">گوگل شیت</button>
         <button onclick="showSection('profit', this)">تحلیل سود</button>
         <button onclick="showSection('company-payments', this)">پرداختی شرکت</button>
@@ -646,6 +774,9 @@
             </button>
             <button class="nav-item" data-section="products" onclick="showSection('products', this)">
                 <i class="fa-solid fa-boxes-stacked"></i> مدیریت انبار و برندها
+            </button>
+            <button class="nav-item" data-section="bank-settings" onclick="showSection('bank-settings', this)">
+                <i class="fa-solid fa-credit-card"></i> حساب بانکی و کارت به کارت
             </button>
             <button class="nav-item" data-section="purchases" onclick="showSection('purchases', this)">
                 <i class="fa-solid fa-cart-flatbed"></i> مدیریت خرید و فاکتور تامین
@@ -1359,6 +1490,148 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Bank & Card Settings Section -->
+            <section class="section" id="section-bank-settings">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <h2 style="margin:0; font-size:1.35rem; color:#0f172a; display:flex; align-items:center; gap:10px;">
+                            <i class="fa-solid fa-credit-card" style="color:#059669;"></i> تنظیمات مشخصات حساب و کارت بانکی
+                        </h2>
+                        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">
+                            اطلاعات وارد شده در این بخش، مستقیماً در فاکتور رسمی مشتری (چاپ/PDF) و متن آماده ارسال واتساپ سفارشات قرار می‌گیرد.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn btn-secondary" onclick="loadBankSettings()" style="padding:8px 14px; font-size:0.85rem;">
+                            <i class="fa-solid fa-rotate"></i> بازخوانی اطلاعات
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;">
+                    <!-- Right Column: Settings Form -->
+                    <div class="card" style="padding:24px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
+                        <h3 style="margin:0 0 16px 0; font-size:1.05rem; color:#1e293b; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+                            <i class="fa-solid fa-pen-to-square" style="color:#0284c7;"></i> ویرایش اطلاعات کارت و شبا
+                        </h3>
+
+                        <form onsubmit="saveBankSettingsForm(event)" id="bankSettingsForm">
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label for="bankNameInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                    <i class="fa-solid fa-building-columns" style="color:#059669; margin-left:4px;"></i> نام بانک:
+                                </label>
+                                <input type="text" id="bankNameInput" class="form-control" placeholder="مثال: بانک ملی ایران / ملت / سامان / بلو" required oninput="updateLiveBankCardPreview()">
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label for="cardHolderInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                    <i class="fa-solid fa-user-check" style="color:#0284c7; margin-left:4px;"></i> نام و نام خانوادگی صاحب حساب / کارت:
+                                </label>
+                                <input type="text" id="cardHolderInput" class="form-control" placeholder="مثال: پیمان نوری" required oninput="updateLiveBankCardPreview()">
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label for="cardNumberInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:flex; justify-content:space-between;">
+                                    <span><i class="fa-solid fa-credit-card" style="color:#e11d48; margin-left:4px;"></i> شماره کارت ۱۶ رقمی:</span>
+                                    <span id="bankDetectedBadge" style="font-size:0.75rem; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:6px;">شتاب</span>
+                                </label>
+                                <input type="text" id="cardNumberInput" class="form-control" placeholder="6037-XXXX-XXXX-XXXX" maxlength="19" required style="direction:ltr; text-align:left; font-family:monospace; font-size:1.05rem; letter-spacing:2px;" oninput="handleCardNumberInput(this)">
+                                <small style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;">شماره کارت ۱۶ رقمی را با یا بدون خط تیره وارد کنید.</small>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label for="shabaNumberInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                    <i class="fa-solid fa-receipt" style="color:#7c3aed; margin-left:4px;"></i> شماره شبا (IBAN - با یا بدون IR):
+                                </label>
+                                <input type="text" id="shabaNumberInput" class="form-control" placeholder="IR120170000000123456789012" maxlength="28" required style="direction:ltr; text-align:left; font-family:monospace; font-size:0.95rem; letter-spacing:1px;" oninput="handleShabaInput(this)">
+                                <small style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;">شماره شبا ۲۴ رقم پس از IR است (مخصوص حواله پایا و ساتنا).</small>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label for="accountNumberInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                    <i class="fa-solid fa-hashtag" style="color:#ea580c; margin-left:4px;"></i> شماره حساب بانکی (اختیاری):
+                                </label>
+                                <input type="text" id="accountNumberInput" class="form-control" placeholder="مثال: 0102030405006" style="direction:ltr; text-align:left; font-family:monospace; font-size:0.9rem;" oninput="updateLiveBankCardPreview()">
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:20px;">
+                                <label for="bankDescriptionInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                    <i class="fa-solid fa-comment-dots" style="color:#059669; margin-left:4px;"></i> متن راهنمای پرداخت در واتساپ و فاکتور:
+                                </label>
+                                <textarea id="bankDescriptionInput" class="form-control" rows="2" placeholder="لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید." oninput="updateLiveBankCardPreview()"></textarea>
+                            </div>
+
+                            <div id="bankSaveMsg" style="display:none; padding:10px 14px; border-radius:8px; margin-bottom:16px; font-size:0.88rem; font-weight:bold;"></div>
+
+                            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                                <button type="submit" class="btn btn-primary" id="btnSaveBankSettings" style="padding:10px 24px; font-size:0.95rem; background:#059669; border-color:#059669;">
+                                    <i class="fa-solid fa-check"></i> ذخیره مشخصات بانکی
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Left Column: Live Card Preview & WhatsApp Simulation -->
+                    <div style="display:flex; flex-direction:column; gap:20px;">
+                        <!-- Visual Card Preview -->
+                        <div class="card" style="padding:24px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
+                            <h3 style="margin:0 0 16px 0; font-size:1.05rem; color:#1e293b; display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-eye" style="color:#059669;"></i> پیش‌نمایش زنده کارت بانکی
+                            </h3>
+
+                            <div class="bank-preview-card" id="bankPreviewCardBox">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                                    <strong id="previewBankName" style="font-size:1.15rem; font-weight:800; letter-spacing:0.5px;">بانک ملی ایران</strong>
+                                    <span style="font-size:0.8rem; background:rgba(255,255,255,0.25); padding:3px 10px; border-radius:12px; font-weight:bold;">عضو شتاب</span>
+                                </div>
+
+                                <div class="bank-preview-chip"></div>
+
+                                <div class="bank-preview-number" id="previewCardNumber">
+                                    6037-9918-2345-6789
+                                </div>
+
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.88rem; border-top:1px solid rgba(255,255,255,0.15); padding-top:10px; margin-top:8px;">
+                                    <div>
+                                        <div style="font-size:0.7rem; opacity:0.8;">صاحب حساب:</div>
+                                        <strong id="previewCardHolder" style="font-size:0.98rem;">پیمان نوری</strong>
+                                    </div>
+                                    <div id="previewAccountBox" style="text-align:left; display:none;">
+                                        <div style="font-size:0.7rem; opacity:0.8;">شماره حساب:</div>
+                                        <span id="previewAccountNumber" style="font-family:monospace; font-weight:bold;">-</span>
+                                    </div>
+                                </div>
+
+                                <div class="bank-preview-shaba">
+                                    <span style="opacity:0.8; font-size:0.75rem; margin-right:4px;">IBAN:</span>
+                                    <strong id="previewShabaNumber">IR120170000000123456789012</strong>
+                                </div>
+                            </div>
+
+                            <!-- Quick Copy Actions -->
+                            <div style="display:flex; gap:10px; margin-top:18px; justify-content:center; flex-wrap:wrap;">
+                                <button type="button" class="btn btn-secondary" onclick="copyCardFromSettings()" style="font-size:0.82rem; padding:6px 14px; background:#f0fdf4; color:#166534; border-color:#86efac;">
+                                    <i class="fa-regular fa-copy"></i> کپی شماره کارت
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="copyShabaFromSettings()" style="font-size:0.82rem; padding:6px 14px; background:#f0f9ff; color:#0369a1; border-color:#7dd3fc;">
+                                    <i class="fa-regular fa-copy"></i> کپی شماره شبا
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- WhatsApp Message Preview -->
+                        <div class="card" style="padding:20px; border-radius:16px; border:1px solid #cbd5e1; background:#f8fafc;">
+                            <h4 style="margin:0 0 10px 0; font-size:0.95rem; color:#1e293b; display:flex; align-items:center; gap:8px;">
+                                <i class="fa-brands fa-whatsapp" style="color:#16a34a; font-size:1.15rem;"></i> پیش‌نمایش پیام ارسال به مشتری در واتساپ:
+                            </h4>
+                            <div id="previewWhatsAppTextBox" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; font-size:0.82rem; line-height:1.7; color:#334155; white-space:pre-wrap; max-height:220px; overflow-y:auto; font-family:tahoma,sans-serif;">
+                                <!-- Live WhatsApp text -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 </div>
@@ -1484,6 +1757,48 @@
                     </div>
                     <div class="inv-total-words" id="invGrandTotalWords">
                         مبلغ به حروف: صفر تومان
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Details Box in Official Invoice -->
+            <div class="inv-bank-section" id="invBankDetailsSection">
+                <div class="inv-bank-card">
+                    <div class="inv-bank-header">
+                        <i class="fa-solid fa-building-columns"></i>
+                        <span>اطلاعات حساب بانکی جهت واریز و کارت به کارت</span>
+                    </div>
+                    <div class="inv-bank-grid">
+                        <div>
+                            <span style="color:#64748b;">نام بانک:</span>
+                            <strong id="invBankName" style="margin-right:4px;">بانک ملی ایران</strong>
+                        </div>
+                        <div>
+                            <span style="color:#64748b;">به نام:</span>
+                            <strong id="invCardHolder" style="margin-right:4px;">پیمان نوری</strong>
+                        </div>
+                        <div class="inv-bank-full-row">
+                            <span><strong>شماره کارت (۱۶ رقمی):</strong></span>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <strong id="invCardNumber" class="inv-card-digits" style="direction:ltr; font-family:monospace; letter-spacing:1.5px; font-size:1rem;">6037-9918-2345-6789</strong>
+                                <button type="button" class="no-print inv-copy-btn" onclick="copyInvoiceText('invCardNumber', this)" title="کپی شماره کارت">
+                                    <i class="fa-regular fa-copy"></i> کپی
+                                </button>
+                            </div>
+                        </div>
+                        <div class="inv-bank-full-row">
+                            <span><strong>شماره شبا (IBAN):</strong></span>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <strong id="invShabaNumber" class="inv-shaba-digits" style="direction:ltr; font-family:monospace; letter-spacing:1px; font-size:0.92rem;">IR120170000000123456789012</strong>
+                                <button type="button" class="no-print inv-copy-btn" onclick="copyInvoiceText('invShabaNumber', this)" title="کپی شماره شبا">
+                                    <i class="fa-regular fa-copy"></i> کپی
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inv-bank-notice" id="invBankDesc">
+                        <i class="fa-solid fa-circle-info" style="color:#0284c7;"></i>
+                        <span>لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.</span>
                     </div>
                 </div>
             </div>
@@ -2002,6 +2317,7 @@
             loadProfitStats().catch(() => {});
             loadAdminProducts().catch(() => {});
             loadGSheetsStatus().catch(() => {});
+            loadBankSettings().catch(() => {});
         }, 50);
     }
 
@@ -2022,6 +2338,7 @@
         if (name === 'customers') loadCustomers();
         if (name === 'orders') { loadOrders(); ensureProductsCatalogLoaded(); }
         if (name === 'new-purchase' || name === 'new-order') ensureProductsCatalogLoaded();
+        if (name === 'bank-settings') loadBankSettings();
         if (name === 'alerts') loadAlerts();
         if (name === 'dashboard') loadStats();
     }
@@ -2050,6 +2367,8 @@
                 tasks.push(loadCompanyPaymentHistory());
             } else if (activeSec === 'gsheets') {
                 tasks.push(loadGSheetsStatus());
+            } else if (activeSec === 'bank-settings') {
+                tasks.push(loadBankSettings());
             }
 
             await Promise.allSettled(tasks);
@@ -2652,7 +2971,7 @@
             return `<button type="button" class="status-pill ${order.status === s.id ? 'active' : ''}" data-status="${s.id}" onclick="selectStatus('${s.id}')">${labelText}</button>`;
         }).join('');
 
-        const waMsg = encodeURIComponent(`سلام ${order.customerName || 'مشتری محترم'}،\nسفارش شما (${order.id}) در حال پیگیری است.\nمبلغ: ${(order.totalAmount || 0).toLocaleString('fa-IR')} تومان`);
+        const waMsg = encodeURIComponent(buildOrderWhatsAppMessage(order));
         document.getElementById('whatsappOrderLink').href = `https://wa.me/98${(order.phone || '').replace(/^0/, '')}?text=${waMsg}`;
 
         document.getElementById('orderModal').style.display = 'flex';
@@ -3533,7 +3852,286 @@
         document.getElementById('invGrandTotal').innerText = totalAmount.toLocaleString('fa-IR') + ' تومان';
         document.getElementById('invGrandTotalWords').innerText = 'مبلغ به حروف: ' + numToPersianWords(totalAmount);
 
+        populateInvoiceBankElements();
+
         document.getElementById('customerInvoiceModal').style.display = 'flex';
+    }
+
+    // -------------------------------------------------------------
+    // Bank Settings & Card Helpers
+    // -------------------------------------------------------------
+    let currentBankSettings = {
+        bankName: 'بانک ملی ایران',
+        cardHolder: 'پیمان نوری',
+        cardNumber: '6037991823456789',
+        shabaNumber: 'IR120170000000123456789012',
+        accountNumber: '',
+        description: 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا شماره پیگیری را در همین واتساپ ارسال فرمایید.'
+    };
+
+    function formatCardDigits(num) {
+        let clean = String(num || '').replace(/[^0-9]/g, '');
+        let formatted = '';
+        for (let i = 0; i < clean.length; i++) {
+            if (i > 0 && i % 4 === 0) formatted += '-';
+            formatted += clean[i];
+        }
+        return formatted;
+    }
+
+    function detectBankFromCard(num) {
+        let clean = String(num || '').replace(/[^0-9]/g, '');
+        if (clean.length < 6) return 'عضو شتاب';
+        const bin = clean.substring(0, 6);
+        if (bin.startsWith('603799') || bin.startsWith('170019')) return 'بانک ملی ایران';
+        if (bin.startsWith('610433') || bin.startsWith('991975')) return 'بانک ملت';
+        if (bin.startsWith('621986')) return 'بانک سامان';
+        if (bin.startsWith('502229') || bin.startsWith('639347')) return 'بانک پاسارگاد';
+        if (bin.startsWith('622106') || bin.startsWith('639194')) return 'بانک پارسیان';
+        if (bin.startsWith('589210')) return 'بانک سپه';
+        if (bin.startsWith('627381') || bin.startsWith('505785')) return 'بلو بانک (سامان)';
+        if (bin.startsWith('603769') || bin.startsWith('639217')) return 'بانک صادرات ایران';
+        if (bin.startsWith('627412')) return 'بانک اقتصاد نوین';
+        if (bin.startsWith('627488')) return 'بانک کارآفرین';
+        if (bin.startsWith('502908')) return 'بانک توسعه تعاون';
+        if (bin.startsWith('627760')) return 'پست بانک ایران';
+        if (bin.startsWith('502938')) return 'بانک دی';
+        if (bin.startsWith('627961')) return 'بانک صنعت و معدن';
+        return 'عضو شتاب';
+    }
+
+    function handleCardNumberInput(input) {
+        let clean = input.value.replace(/[^0-9۰-۹]/g, '');
+        const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+        for (let i = 0; i < 10; i++) {
+            clean = clean.replace(persianDigits[i], String(i));
+        }
+        input.value = formatCardDigits(clean);
+        
+        const badge = document.getElementById('bankDetectedBadge');
+        if (badge) {
+            badge.innerText = detectBankFromCard(clean);
+        }
+        updateLiveBankCardPreview();
+    }
+
+    function handleShabaInput(input) {
+        let clean = input.value.trim().toUpperCase();
+        const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+        for (let i = 0; i < 10; i++) {
+            clean = clean.replace(persianDigits[i], String(i));
+        }
+        clean = clean.replace(/[^A-Z0-9]/g, '');
+        if (clean.length > 0 && !clean.startsWith('IR') && /^[0-9]+$/.test(clean)) {
+            clean = 'IR' + clean;
+        }
+        input.value = clean;
+        updateLiveBankCardPreview();
+    }
+
+    function updateLiveBankCardPreview() {
+        const bankName = document.getElementById('bankNameInput')?.value.trim() || currentBankSettings.bankName || 'بانک ملی ایران';
+        const cardHolder = document.getElementById('cardHolderInput')?.value.trim() || currentBankSettings.cardHolder || 'پیمان نوری';
+        const rawCard = document.getElementById('cardNumberInput')?.value.trim() || formatCardDigits(currentBankSettings.cardNumber || '6037991823456789');
+        const rawShaba = document.getElementById('shabaNumberInput')?.value.trim() || currentBankSettings.shabaNumber || 'IR120170000000123456789012';
+        const accountNum = document.getElementById('accountNumberInput')?.value.trim() || '';
+        const desc = document.getElementById('bankDescriptionInput')?.value.trim() || currentBankSettings.description || 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.';
+
+        if (document.getElementById('previewBankName')) document.getElementById('previewBankName').innerText = bankName;
+        if (document.getElementById('previewCardHolder')) document.getElementById('previewCardHolder').innerText = cardHolder;
+        if (document.getElementById('previewCardNumber')) document.getElementById('previewCardNumber').innerText = rawCard;
+        if (document.getElementById('previewShabaNumber')) document.getElementById('previewShabaNumber').innerText = rawShaba;
+
+        const accBox = document.getElementById('previewAccountBox');
+        if (accBox) {
+            if (accountNum) {
+                accBox.style.display = 'block';
+                document.getElementById('previewAccountNumber').innerText = accountNum;
+            } else {
+                accBox.style.display = 'none';
+            }
+        }
+
+        // WhatsApp live preview template
+        const waBox = document.getElementById('previewWhatsAppTextBox');
+        if (waBox) {
+            let sampleMsg = `🧾 *فاکتور سفارش توزیع رافونه*\n\n`;
+            sampleMsg += `سلام *علی رضایی* عزیز،\nسفارش شما با شماره *ord-849201* با موفقیت ثبت شد.\n\n`;
+            sampleMsg += `📦 *اقلام سفارش:*\n▫️ مایع ظرفشویی ۴ لیتری رافونه × ۲ عدد = ۲۴۰,۰۰۰ تومان\n▫️ اسپری گاز پاک‌کن رافونه × ۱ عدد = ۵۵,۰۰۰ تومان\n\n`;
+            sampleMsg += `💰 *مبلغ کل قابل پرداخت:* ۲۹۵,۰۰۰ تومان\n\n`;
+            sampleMsg += `💳 *مشخصات واریز کارت به کارت:*\n`;
+            sampleMsg += `▫️ بانک: *${bankName}*\n`;
+            sampleMsg += `▫️ به نام: *${cardHolder}*\n`;
+            sampleMsg += `▫️ شماره کارت: *${rawCard}*\n`;
+            sampleMsg += `▫️ شماره شبا: *${rawShaba}*\n`;
+            if (accountNum) sampleMsg += `▫️ شماره حساب: *${accountNum}*\n`;
+            if (desc) sampleMsg += `\n📝 ${desc}\n`;
+            sampleMsg += `\n🚚 تحویل مستقیم درب منزل - با سپاس از خرید شما`;
+            waBox.innerText = sampleMsg;
+        }
+    }
+
+    async function loadBankSettings() {
+        try {
+            const res = await api('/api/settings/bank');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.settings) {
+                    currentBankSettings = { ...currentBankSettings, ...data.settings };
+                }
+            }
+        } catch (e) {
+            console.log('Load bank settings notice:', e);
+        }
+
+        if (document.getElementById('bankNameInput')) document.getElementById('bankNameInput').value = currentBankSettings.bankName || 'بانک ملی ایران';
+        if (document.getElementById('cardHolderInput')) document.getElementById('cardHolderInput').value = currentBankSettings.cardHolder || 'پیمان نوری';
+        if (document.getElementById('cardNumberInput')) {
+            document.getElementById('cardNumberInput').value = formatCardDigits(currentBankSettings.cardNumber || '6037991823456789');
+            if (document.getElementById('bankDetectedBadge')) {
+                document.getElementById('bankDetectedBadge').innerText = detectBankFromCard(currentBankSettings.cardNumber);
+            }
+        }
+        if (document.getElementById('shabaNumberInput')) document.getElementById('shabaNumberInput').value = currentBankSettings.shabaNumber || 'IR120170000000123456789012';
+        if (document.getElementById('accountNumberInput')) document.getElementById('accountNumberInput').value = currentBankSettings.accountNumber || '';
+        if (document.getElementById('bankDescriptionInput')) document.getElementById('bankDescriptionInput').value = currentBankSettings.description || 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.';
+
+        updateLiveBankCardPreview();
+        populateInvoiceBankElements();
+    }
+
+    function populateInvoiceBankElements() {
+        const s = currentBankSettings;
+        if (document.getElementById('invBankName')) document.getElementById('invBankName').innerText = s.bankName || 'بانک ملی ایران';
+        if (document.getElementById('invCardHolder')) document.getElementById('invCardHolder').innerText = s.cardHolder || 'پیمان نوری';
+        if (document.getElementById('invCardNumber')) document.getElementById('invCardNumber').innerText = formatCardDigits(s.cardNumber || '6037991823456789');
+        if (document.getElementById('invShabaNumber')) document.getElementById('invShabaNumber').innerText = s.shabaNumber || 'IR120170000000123456789012';
+        if (document.getElementById('invBankDesc')) {
+            document.getElementById('invBankDesc').innerHTML = `<i class="fa-solid fa-circle-info" style="color:#0284c7;"></i> <span>${s.description || 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.'}</span>`;
+        }
+    }
+
+    async function saveBankSettingsForm(e) {
+        if (e) e.preventDefault();
+        const btn = document.getElementById('btnSaveBankSettings');
+        const msgBox = document.getElementById('bankSaveMsg');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...`;
+        }
+
+        const payload = {
+            bankName: document.getElementById('bankNameInput').value.trim(),
+            cardHolder: document.getElementById('cardHolderInput').value.trim(),
+            cardNumber: document.getElementById('cardNumberInput').value.replace(/[^0-9]/g, ''),
+            shabaNumber: document.getElementById('shabaNumberInput').value.trim(),
+            accountNumber: document.getElementById('accountNumberInput').value.trim(),
+            description: document.getElementById('bankDescriptionInput').value.trim()
+        };
+
+        try {
+            const res = await api('/api/settings/bank', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data && data.success) {
+                currentBankSettings = { ...currentBankSettings, ...data.settings };
+                populateInvoiceBankElements();
+                if (msgBox) {
+                    msgBox.style.display = 'block';
+                    msgBox.style.background = '#dcfce7';
+                    msgBox.style.color = '#15803d';
+                    msgBox.style.border = '1px solid #86efac';
+                    msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.message || 'مشخصات بانکی با موفقیت ذخیره گردید.'}`;
+                    setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
+                }
+            } else {
+                throw new Error(data.message || 'خطا در ذخیره سازی');
+            }
+        } catch (err) {
+            if (msgBox) {
+                msgBox.style.display = 'block';
+                msgBox.style.background = '#fef2f2';
+                msgBox.style.color = '#dc2626';
+                msgBox.style.border = '1px solid #fca5a5';
+                msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> خطا: ${err.message}`;
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    }
+
+    function copyInvoiceText(elementId, btn) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const text = el.innerText.trim();
+        navigator.clipboard.writeText(text).then(() => {
+            if (btn) {
+                const orig = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> کپی شد`;
+                setTimeout(() => { btn.innerHTML = orig; }, 2000);
+            }
+        }).catch(() => {
+            alert('کپی شد: ' + text);
+        });
+    }
+
+    function copyCardFromSettings() {
+        const card = document.getElementById('cardNumberInput')?.value || currentBankSettings.cardNumber;
+        navigator.clipboard.writeText(card.replace(/[^0-9]/g, '')).then(() => {
+            alert('شماره کارت با موفقیت کپی شد: ' + card);
+        });
+    }
+
+    function copyShabaFromSettings() {
+        const shaba = document.getElementById('shabaNumberInput')?.value || currentBankSettings.shabaNumber;
+        navigator.clipboard.writeText(shaba).then(() => {
+            alert('شماره شبا با موفقیت کپی شد: ' + shaba);
+        });
+    }
+
+    function buildOrderWhatsAppMessage(order) {
+        if (!order) return '';
+        const b = currentBankSettings;
+        const custName = order.customerName || 'مشتری گرامی';
+        const orderId = order.id || 'ord-1001';
+        const total = Number(order.totalAmount || 0);
+
+        let msg = `🧾 *فاکتور سفارش پخش رافونه*\n\n`;
+        msg += `سلام *${custName}* عزیز،\nسفارش شما با کد پیگیری *${orderId}* با موفقیت ثبت شد.\n\n`;
+
+        if (order.items && order.items.length) {
+            msg += `📦 *اقلام سفارش:*\n`;
+            order.items.forEach(it => {
+                const q = it.qty || 1;
+                const p = Number(it.price || 0);
+                const t = Number(it.total || (p * q));
+                msg += `▫️ ${it.name || it.title || 'کالا'} × ${q} عدد = ${t.toLocaleString('fa-IR')} تومان\n`;
+            });
+            msg += `\n`;
+        }
+
+        msg += `💰 *مبلغ کل قابل پرداخت:* ${total.toLocaleString('fa-IR')} تومان\n`;
+        msg += `🚚 هزینه ارسال: رایگان (تحویل درب منزل)\n\n`;
+
+        msg += `💳 *اطلاعات کارت به کارت جهت واریز:*\n`;
+        msg += `▫️ بانک: *${b.bankName || 'بانک ملی ایران'}*\n`;
+        msg += `▫️ به نام: *${b.cardHolder || 'پیمان نوری'}*\n`;
+        msg += `▫️ شماره کارت: *${formatCardDigits(b.cardNumber || '6037991823456789')}*\n`;
+        msg += `▫️ شماره شبا: *${b.shabaNumber || 'IR120170000000123456789012'}*\n`;
+        if (b.accountNumber) {
+            msg += `▫️ شماره حساب: *${b.accountNumber}*\n`;
+        }
+        if (b.description) {
+            msg += `\n📝 ${b.description}\n`;
+        }
+        msg += `\n🌹 با سپاس از انتخاب و اعتماد شما به پخش شوینده رافونه`;
+        return msg;
     }
 
     function closeInvoiceModal() {

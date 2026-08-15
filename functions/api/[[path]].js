@@ -997,51 +997,30 @@ export async function onRequest(context) {
     }
 
     if (method === 'PATCH' || method === 'PUT') {
-      // ۱. ذخیره اطلاعات قدیمی قبل از آپدیت برای محاسبه اختلاف موجودی
       const oldStatus = existing ? existing.status : null;
-      const oldItems = existing ? existing.items : []; 
-
       const updatedOrder = formatOrder({
         ...existing,
         ...body,
         id: id,
         updatedAt: new Date().toISOString()
       });
-      
-      const newItems = updatedOrder.items || [];
-      const newStatus = updatedOrder.status;
 
-      // ذخیره در حافظه و دیتابیس
       const memIdx = memoryOrders.findIndex(o => String(o.id) === id);
       if (memIdx !== -1) memoryOrders[memIdx] = updatedOrder;
       else memoryOrders.push(updatedOrder);
 
       await saveOrderToPg(env, updatedOrder);
 
-      // ==========================================
-      // ۲. منطق هوشمند و جدید اصلاح موجودی انبار
-      // ==========================================
-      const wasActive = oldStatus !== 'cancelled';
-      const isActive = newStatus !== 'cancelled';
-
-      // الف) اگر سفارش قبلاً فعال بوده، موجودی اقلام قدیمی را به انبار برگردان
-      if (wasActive && oldItems && oldItems.length > 0) {
-        await updateProductStockForOrder(env, oldItems, true); // true یعنی بازگرداندن به انبار
+      // Handle stock adjustments on status changes
+      if (oldStatus !== 'cancelled' && updatedOrder.status === 'cancelled') {
+        await updateProductStockForOrder(env, updatedOrder.items, true); // Restore stock
+      } else if (oldStatus === 'cancelled' && updatedOrder.status !== 'cancelled') {
+        await updateProductStockForOrder(env, updatedOrder.items, false); // Re-deduct stock
       }
-      
-      // ب) اگر سفارش الان فعال است، موجودی اقلام جدید (ویرایش‌شده) را از انبار کسر کن
-      if (isActive && newItems && newItems.length > 0) {
-        await updateProductStockForOrder(env, newItems, false); // false یعنی کسر از انبار
-      }
-      // ==========================================
 
-      return jsonRes({ 
-        success: true, 
-        message: 'سفارش بروزرسانی شد و موجودی انبار به‌صورت خودکار اصلاح گردید', 
-        order: updatedOrder 
-      });
+      return jsonRes({ success: true, message: 'سفارش بروزرسانی شد', order: updatedOrder });
     }
-    
+
     if (method === 'DELETE') {
       if (existing) {
         // Restore stock for items in deleted order if order was active (not cancelled)
@@ -1319,6 +1298,47 @@ export async function onRequest(context) {
       await deletePurchaseFromPg(env, id);
       return jsonRes({ success: true, message: 'فاکتور خرید با موفقیت حذف گردید.' });
     }
+  }
+
+  // --- BANK SETTINGS ENDPOINTS ---
+  let memoryBankSettings = {
+    bankName: 'بانک ملی ایران',
+    cardHolder: 'پیمان نوری',
+    cardNumber: '6037991823456789',
+    shabaNumber: 'IR120170000000123456789012',
+    accountNumber: '',
+    description: 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
+  };
+
+  if (path === '/api/settings/bank' || path === '/api/admin/settings/bank') {
+    if (method === 'POST') {
+      let cleanCard = (body.cardNumber || '').replace(/[^0-9۰-۹]/g, '');
+      const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+      for (let i = 0; i < 10; i++) {
+        cleanCard = cleanCard.replace(persianDigits[i], String(i));
+      }
+
+      let cleanShaba = (body.shabaNumber || '').trim().toUpperCase();
+      for (let i = 0; i < 10; i++) {
+        cleanShaba = cleanShaba.replace(persianDigits[i], String(i));
+      }
+      if (cleanShaba && !cleanShaba.startsWith('IR') && /^[0-9]+$/.test(cleanShaba)) {
+        cleanShaba = 'IR' + cleanShaba;
+      }
+
+      memoryBankSettings = {
+        ...memoryBankSettings,
+        bankName: body.bankName ? String(body.bankName).trim() : 'بانک ملی ایران',
+        cardHolder: body.cardHolder ? String(body.cardHolder).trim() : 'پیمان نوری',
+        cardNumber: cleanCard || '6037991823456789',
+        shabaNumber: cleanShaba || 'IR120170000000123456789012',
+        accountNumber: body.accountNumber ? String(body.accountNumber).trim() : '',
+        description: body.description !== undefined ? String(body.description).trim() : 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.',
+        updatedAt: new Date().toISOString()
+      };
+      return jsonRes({ success: true, message: 'مشخصات حساب بانکی و کارت با موفقیت ذخیره شد.', settings: memoryBankSettings });
+    }
+    return jsonRes({ success: true, settings: memoryBankSettings });
   }
 
   // --- UPLOAD IMAGE ENDPOINT ---

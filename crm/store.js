@@ -61,6 +61,7 @@ const CUSTOMERS_FILE = path.join(DATA_DIR, 'customers.json');
 const COMPANY_PAYMENTS_FILE = path.join(DATA_DIR, 'company_payments.json');
 const PURCHASES_FILE = path.join(DATA_DIR, 'purchases.json');
 const DATA_PRODUCTS_FILE = path.join(DATA_DIR, 'products_data.json');
+const BANK_SETTINGS_FILE = path.join(DATA_DIR, 'bank_settings.json');
 
 const ROOT_ORDERS_FILE = path.join(process.cwd(), 'orders.json');
 const ROOT_CUSTOMERS_FILE = path.join(process.cwd(), 'customers.json');
@@ -68,6 +69,7 @@ const ROOT_COMPANY_PAYMENTS_FILE = path.join(process.cwd(), 'company_payments.js
 const ROOT_PURCHASES_FILE = path.join(process.cwd(), 'purchases.json');
 const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
 const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
+const ROOT_BANK_SETTINGS_FILE = path.join(process.cwd(), 'bank_settings.json');
 
 let productsListCache = null;
 let productsMapCache = null;
@@ -75,6 +77,7 @@ let ordersListCache = null;
 let customersListCache = null;
 let companyPaymentsListCache = null;
 let purchasesListCache = null;
+let bankSettingsCache = null;
 
 let isFirestoreLoading = false;
 let firestoreLoadPromise = null;
@@ -1655,6 +1658,52 @@ export function deletePurchase(id) {
     return true;
   }
   return false;
+}
+
+export const DEFAULT_BANK_SETTINGS = {
+  bankName: 'بانک ملی ایران',
+  cardHolder: 'پیمان نوری',
+  cardNumber: '6037991823456789',
+  shabaNumber: 'IR120170000000123456789012',
+  accountNumber: '',
+  description: 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
+};
+
+export function getBankSettings() {
+  if (bankSettingsCache) return bankSettingsCache;
+  try {
+    const loaded = readJson(BANK_SETTINGS_FILE, null);
+    if (loaded && typeof loaded === 'object' && loaded.cardNumber) {
+      bankSettingsCache = { ...DEFAULT_BANK_SETTINGS, ...loaded };
+      return bankSettingsCache;
+    }
+    const rootLoaded = readJson(ROOT_BANK_SETTINGS_FILE, null);
+    if (rootLoaded && typeof rootLoaded === 'object' && rootLoaded.cardNumber) {
+      bankSettingsCache = { ...DEFAULT_BANK_SETTINGS, ...rootLoaded };
+      return bankSettingsCache;
+    }
+  } catch (e) {
+    console.error('Error reading bank settings:', e);
+  }
+  bankSettingsCache = { ...DEFAULT_BANK_SETTINGS };
+  return bankSettingsCache;
+}
+
+export function saveBankSettings(settings) {
+  const current = getBankSettings();
+  const updated = {
+    ...current,
+    ...settings,
+    updatedAt: new Date().toISOString()
+  };
+  bankSettingsCache = updated;
+  try {
+    writeJson(BANK_SETTINGS_FILE, updated);
+    writeJson(ROOT_BANK_SETTINGS_FILE, updated);
+  } catch (e) {
+    console.error('Error writing bank settings file:', e);
+  }
+  return updated;
 }
 
 export async function initDatabaseSync() {
