@@ -2701,7 +2701,7 @@
             orderText += `💳 *اطلاعات واریز کارت به کارت:*\n`;
             orderText += `▫️ بانک: *${b.bankName || 'بانک ملی ایران'}*\n`;
             orderText += `▫️ به نام: *${b.cardHolder || 'پیمان نوری'}*\n`;
-            orderText += `▫️ شماره کارت: *${formatCardDigits(b.cardNumber || '6037991823456789')}*\n`;
+            orderText += `▫️ شماره کارت: *${formatCardForWhatsApp(b.cardNumber || '6037991823456789')}*\n`;
             orderText += `▫️ شماره شبا: *${b.shabaNumber || 'IR120170000000123456789012'}*\n`;
             if (b.description) {
                 orderText += `\n📝 ${b.description}\n`;
@@ -3203,6 +3203,18 @@
             return formatted;
         }
 
+        function formatCardForWhatsApp(num) {
+            let clean = String(num || '').replace(/[^0-9]/g, '');
+            if (!clean) return '';
+            let parts = [];
+            for (let i = 0; i < clean.length; i += 4) {
+                parts.push(clean.substring(i, i + 4));
+            }
+            const joined = parts.join('-');
+            // Force LTR isolate rendering on WhatsApp (4 first digits 6037 on the left)
+            return '\u200E\u202A' + joined + '\u202C\u200E';
+        }
+
         async function loadCustomerBankSettings() {
             try {
                 const localSaved = localStorage.getItem('rafooneh_bank_settings');
@@ -3360,7 +3372,7 @@
             msg += `💳 *اطلاعات کارت به کارت جهت واریز:*\n`;
             msg += `▫️ بانک: *${b.bankName || 'بانک ملی ایران'}*\n`;
             msg += `▫️ به نام: *${b.cardHolder || 'پیمان نوری'}*\n`;
-            msg += `▫️ شماره کارت: *${formatCardDigits(b.cardNumber || '6037991823456789')}*\n`;
+            msg += `▫️ شماره کارت: *${formatCardForWhatsApp(b.cardNumber || '6037991823456789')}*\n`;
             msg += `▫️ شماره شبا: *${b.shabaNumber || 'IR120170000000123456789012'}*\n`;
             if (b.accountNumber) {
                 msg += `▫️ شماره حساب: *${b.accountNumber}*\n`;

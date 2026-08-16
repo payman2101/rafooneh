@@ -2259,15 +2259,36 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data.orders && Array.isArray(data.orders)) {
-                        data.orders.forEach(o => serverOrderIds.add(String(o.id)));
+                        data.orders.forEach(o => {
+                            const oId = String(o.id || '');
+                            serverOrderIds.add(oId);
+                            serverOrderIds.add(oId.replace(/^ord-/, ''));
+                            serverOrderIds.add(`ord-${oId.replace(/^ord-/, '')}`);
+                        });
                     }
                 }
             } catch (e) {}
 
+            let deletedIds = new Set();
+            try {
+                const storedDeleted = JSON.parse(localStorage.getItem('rafooneh_deleted_order_ids') || '[]');
+                storedDeleted.forEach(id => {
+                    const sId = String(id);
+                    deletedIds.add(sId);
+                    deletedIds.add(sId.replace(/^ord-/, ''));
+                    deletedIds.add(`ord-${sId.replace(/^ord-/, '')}`);
+                });
+            } catch (e) {}
+
             for (const ord of localOrders) {
                 if (!ord || !ord.customerName || !ord.phone) continue;
-                // Skip if already on server
-                if (serverOrderIds.has(String(ord.id))) continue;
+                const rawId = String(ord.id || '');
+                const cleanId = rawId.replace(/^ord-/, '');
+                
+                // Skip if explicitly deleted or already on server
+                if (deletedIds.has(rawId) || deletedIds.has(cleanId) || serverOrderIds.has(rawId) || serverOrderIds.has(cleanId)) {
+                    continue;
+                }
 
                 try {
                     await fetch('/api/orders', {
@@ -2286,7 +2307,9 @@
                             createdAt: ord.createdAt
                         })
                     });
-                    serverOrderIds.add(String(ord.id));
+                    serverOrderIds.add(rawId);
+                    serverOrderIds.add(cleanId);
+                    serverOrderIds.add(`ord-${cleanId}`);
                 } catch (e) {
                     console.log('Sync local order notice:', e);
                 }
@@ -3021,6 +3044,19 @@
             return;
         }
 
+        const rawId = String(id || '').trim();
+        const cleanId = rawId.replace(/^ord-/, '');
+        const withPrefix = `ord-${cleanId}`;
+
+        // Blacklist deleted IDs in localStorage to guarantee they never re-sync from stale browser caches
+        try {
+            let deletedIds = JSON.parse(localStorage.getItem('rafooneh_deleted_order_ids') || '[]');
+            if (!deletedIds.includes(rawId)) deletedIds.push(rawId);
+            if (!deletedIds.includes(cleanId)) deletedIds.push(cleanId);
+            if (!deletedIds.includes(withPrefix)) deletedIds.push(withPrefix);
+            localStorage.setItem('rafooneh_deleted_order_ids', JSON.stringify(deletedIds));
+        } catch (e) {}
+
         try {
             await api(`/api/admin/orders/${id}`, { method: 'DELETE' });
         } catch (err) {
@@ -3029,7 +3065,10 @@
 
         try {
             let localOrders = getLocalOrders();
-            localOrders = localOrders.filter(o => o.id !== id);
+            localOrders = localOrders.filter(o => {
+                const oId = String(o.id || '').trim();
+                return oId !== rawId && oId !== cleanId && oId !== withPrefix;
+            });
             localStorage.setItem('rafooneh_local_orders', JSON.stringify(localOrders));
         } catch (e) {
             console.error('Error removing local order:', e);
@@ -3877,6 +3916,18 @@
         return formatted;
     }
 
+    function formatCardForWhatsApp(num) {
+        let clean = String(num || '').replace(/[^0-9]/g, '');
+        if (!clean) return '';
+        let parts = [];
+        for (let i = 0; i < clean.length; i += 4) {
+            parts.push(clean.substring(i, i + 4));
+        }
+        const joined = parts.join('-');
+        // Force LTR isolate rendering on WhatsApp (4 first digits 6037 on the left)
+        return '\u200E\u202A' + joined + '\u202C\u200E';
+    }
+
     function detectBankFromCard(num) {
         let clean = String(num || '').replace(/[^0-9]/g, '');
         if (clean.length < 6) return 'عضو شتاب';
@@ -4185,7 +4236,7 @@
         msg += `💳 *اطلاعات کارت به کارت جهت واریز:*\n`;
         msg += `▫️ بانک: *${b.bankName || 'بانک ملی ایران'}*\n`;
         msg += `▫️ به نام: *${b.cardHolder || 'پیمان نوری'}*\n`;
-        msg += `▫️ شماره کارت: *${formatCardDigits(b.cardNumber || '6037991823456789')}*\n`;
+        msg += `▫️ شماره کارت: *${formatCardForWhatsApp(b.cardNumber || '6037991823456789')}*\n`;
         msg += `▫️ شماره شبا: *${b.shabaNumber || 'IR120170000000123456789012'}*\n`;
         if (b.accountNumber) {
             msg += `▫️ شماره حساب: *${b.accountNumber}*\n`;
