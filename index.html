@@ -2101,8 +2101,17 @@
             return b === 'foreign' || b.includes('خارجی') || b.includes('وارداتی') || c === 'imported' || c === 'foreign';
         }
 
+        function isProductInStock(p) {
+            if (!p) return false;
+            if (p.badge === 'ناموجود') return false;
+            if (p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock))) {
+                return Number(p.stock) > 0;
+            }
+            return true;
+        }
+
         function updateCategoryTabCounts() {
-            const inStockProducts = products.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
+            const inStockProducts = products.filter(isProductInStock);
 
             const categoryLabels = {
                 'all': 'همه',
@@ -2148,8 +2157,8 @@
 
             const searchQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
 
-            // Include all products and sort out-of-stock (stock <= 0) to the bottom
-            let filtered = [...products];
+            // ONLY show in-stock products on storefront
+            let filtered = products.filter(isProductInStock);
 
             const knownCats = ['handwash', 'dishwash', 'cleaners', 'sanitary', 'laundry', 'cellulosic'];
 
@@ -2168,15 +2177,6 @@
                     (p.categoryName && p.categoryName.toLowerCase().includes(searchQuery))
                 );
             }
-
-            // Sort out-of-stock products to the end so in-stock products appear first
-            filtered.sort((a, b) => {
-                const aOut = a.stock !== undefined && a.stock !== null && Number(a.stock) <= 0;
-                const bOut = b.stock !== undefined && b.stock !== null && Number(b.stock) <= 0;
-                if (aOut && !bOut) return 1;
-                if (!aOut && bOut) return -1;
-                return 0;
-            });
 
             if (filtered.length === 0) {
                 grid.innerHTML = `

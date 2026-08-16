@@ -360,10 +360,16 @@ app.get('/api/products', async (req, res) => {
     if (!data || data.length === 0) {
       data = readProductsList();
     }
-    const includeAll = req.query.includeAll !== 'false';
+    const includeAll = req.query.includeAll === 'true';
     const products = includeAll
       ? data
-      : data.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
+      : data.filter(p => {
+          if (p.badge === 'ناموجود') return false;
+          if (p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock))) {
+            return Number(p.stock) > 0;
+          }
+          return true;
+        });
     return res.json({ success: true, count: products.length, products });
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطا در دریافت لیست محصولات' });

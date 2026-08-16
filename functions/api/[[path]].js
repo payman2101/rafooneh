@@ -1537,7 +1537,9 @@ export async function onRequest(context) {
       const brand = url.searchParams.get('brand');
       const category = url.searchParams.get('category');
       const search = url.searchParams.get('search');
-      const includeAll = url.searchParams.get('includeAll') !== 'false';
+      const isCustomerEndpoint = path === '/api/products';
+      const includeAllParam = url.searchParams.get('includeAll');
+      const includeAll = isCustomerEndpoint ? (includeAllParam === 'true') : (includeAllParam !== 'false');
 
       let result = [...products];
       if (brand && brand !== 'all') {
@@ -1551,7 +1553,13 @@ export async function onRequest(context) {
         result = result.filter(p => (p.name && p.name.toLowerCase().includes(s)) || String(p.id).includes(s) || (p.brandName && p.brandName.toLowerCase().includes(s)));
       }
       if (!includeAll) {
-        result = result.filter(p => p.stock === undefined || p.stock === null || Number(p.stock) > 0);
+        result = result.filter(p => {
+          if (p.badge === 'ناموجود') return false;
+          if (p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock))) {
+            return Number(p.stock) > 0;
+          }
+          return true;
+        });
       }
 
       const total = result.length;
