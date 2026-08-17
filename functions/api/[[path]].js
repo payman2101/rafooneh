@@ -268,17 +268,26 @@ async function adjustStockForOrderInPg(env, oldOrder, newOrder) {
     const productDeltas = new Map();
 
     const findProd = (item) => {
-      const prodId = String(item.productId || item.id || item.code || '').trim();
+      const prodId = String(item.productId || item.id || item.code || '').trim().toLowerCase();
+      const prodCode = String(item.code || '').trim().toLowerCase();
       const prodName = String(item.name || item.title || '').trim().toLowerCase();
       if (!prodId && !prodName) return null;
-      return pgProds.find(p => {
-        const pId = String(p.id || '').trim();
-        const pCode = String(p.code || '').trim();
-        const pName = String(p.name || '').trim().toLowerCase();
-        if (prodId && (pId === prodId || pCode === prodId)) return true;
-        if (prodName && pName === prodName) return true;
-        return false;
-      });
+
+      // 1. Exact match by ID or Code
+      if (prodId || prodCode) {
+        const byId = pgProds.find(p => {
+          const pId = String(p.id || '').trim().toLowerCase();
+          const pCode = String(p.code || '').trim().toLowerCase();
+          return (prodId && (pId === prodId || pCode === prodId)) || (prodCode && (pId === prodCode || pCode === prodCode));
+        });
+        if (byId) return byId;
+      }
+
+      // 2. Exact match by Name
+      if (prodName) {
+        return pgProds.find(p => String(p.name || '').trim().toLowerCase() === prodName);
+      }
+      return null;
     };
 
     oldItems.forEach(item => {
@@ -1100,28 +1109,68 @@ export async function onRequest(context) {
     }
 
     if (method === 'POST') {
-      const id = String(body.id || 'ORD-' + Date.now());
-      const code = String(body.code || 'REF-' + Math.floor(100000 + Math.random() * 900000));
-      const order = formatOrder({
-        id,
-        code,
-        customerName: body.customerName || 'مشتری',
-        phone: body.phone || '',
-        address: body.address || '',
-        note: body.note || '',
-        items: body.items || [],
-        totalAmount: Number(body.totalAmount) || 0,
-        paymentMethod: body.paymentMethod || 'cash',
-        status: body.status || 'pending',
-        createdAt: body.createdAt || new Date().toISOString(),
-        source: body.source || 'website'
-      });
+      const orders = await getCombinedOrders(env);
+      const reqId = body.id ? String(body.id).trim() : '';
+      const reqCode = body.code ? String(body.code).trim() : '';
+      const cleanReqId = reqId.replace(/^ord-/i, '').toLowerCase();
 
-      memoryOrders.unshift(order);
-      await saveOrderToPg(env, order);
+      let existing = null;
+      if (reqId || reqCode) {
+        existing = orders.find(o => {
+          const oId = String(o.id || '').trim();
+          const oCode = String(o.code || '').trim();
+          const cleanOId = oId.replace(/^ord-/i, '').toLowerCase();
+          return (reqId && (oId.toLowerCase() === reqId.toLowerCase() || cleanOId === cleanReqId)) ||
+                 (reqCode && oCode.toLowerCase() === reqCode.toLowerCase());
+        });
+      }
 
-      // Automatically adjust stock based on delta
-      await adjustStockForOrderInPg(env, null, order);
+      let order;
+      if (existing) {
+        order = formatOrder({
+          ...existing,
+          customerName: body.customerName || existing.customerName,
+          phone: body.phone ? normalizePhone(body.phone) : existing.phone,
+          address: body.address !== undefined ? body.address : existing.address,
+          note: body.note !== undefined ? body.note : existing.note,
+          items: (body.items && body.items.length) ? body.items : existing.items,
+          totalAmount: body.totalAmount !== undefined ? Number(body.totalAmount) : existing.totalAmount,
+          paymentMethod: body.paymentMethod || existing.paymentMethod,
+          status: body.status || existing.status,
+          source: body.source || existing.source || 'website'
+        });
+
+        const memIdx = memoryOrders.findIndex(o => {
+          const oId = String(o.id || '').trim();
+          return oId.toLowerCase() === reqId.toLowerCase() || oId.replace(/^ord-/i, '').toLowerCase() === cleanReqId;
+        });
+        if (memIdx !== -1) memoryOrders[memIdx] = order;
+        else memoryOrders.unshift(order);
+
+        await saveOrderToPg(env, order);
+        await adjustStockForOrderInPg(env, existing, order);
+      } else {
+        const id = reqId || ('ORD-' + Date.now());
+        const code = reqCode || ('REF-' + Math.floor(100000 + Math.random() * 900000));
+        order = formatOrder({
+          id,
+          code,
+          customerName: body.customerName || 'مشتری',
+          phone: body.phone ? normalizePhone(body.phone) : '',
+          address: body.address || '',
+          note: body.note || '',
+          items: body.items || [],
+          totalAmount: Number(body.totalAmount) || 0,
+          paymentMethod: body.paymentMethod || 'cash',
+          status: body.status || 'pending',
+          createdAt: body.createdAt || new Date().toISOString(),
+          source: body.source || 'website'
+        });
+
+        memoryOrders.unshift(order);
+        await saveOrderToPg(env, order);
+        await adjustStockForOrderInPg(env, null, order);
+      }
 
       // Auto save customer
       if (order.phone) {

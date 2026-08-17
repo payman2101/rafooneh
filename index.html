@@ -3055,7 +3055,13 @@
             if (!order || !order.id) return;
             try {
                 let orders = getLocalOrders();
-                const idx = orders.findIndex(o => o.id === order.id);
+                const reqId = String(order.id).trim().toLowerCase();
+                const cleanReqId = reqId.replace(/^ord-/, '');
+                const idx = orders.findIndex(o => {
+                    const oId = String(o.id || '').trim().toLowerCase();
+                    const cleanOId = oId.replace(/^ord-/, '');
+                    return oId === reqId || cleanOId === cleanReqId;
+                });
                 if (idx >= 0) {
                     orders[idx] = { ...orders[idx], ...order };
                 } else {

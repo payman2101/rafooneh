@@ -567,17 +567,28 @@ export function findProductInList(list, item) {
   const prodIdStr = item.productId !== undefined && item.productId !== null ? String(item.productId).trim().toLowerCase() : '';
   const nameStr = item.name ? String(item.name).trim().toLowerCase() : '';
 
-  return list.find(p => {
-    const pId = p.id !== undefined && p.id !== null ? String(p.id).trim().toLowerCase() : '';
-    const pCode = p.code !== undefined && p.code !== null ? String(p.code).trim().toLowerCase() : '';
-    const pName = p.name ? String(p.name).trim().toLowerCase() : '';
+  // 1. Match by exact ID or code first
+  if (idStr || codeStr || prodIdStr) {
+    const byId = list.find(p => {
+      const pId = p.id !== undefined && p.id !== null ? String(p.id).trim().toLowerCase() : '';
+      const pCode = p.code !== undefined && p.code !== null ? String(p.code).trim().toLowerCase() : '';
+      if (idStr && (pId === idStr || pCode === idStr)) return true;
+      if (codeStr && (pCode === codeStr || pId === codeStr)) return true;
+      if (prodIdStr && (pId === prodIdStr || pCode === prodIdStr)) return true;
+      return false;
+    });
+    if (byId) return byId;
+  }
 
-    if (idStr && (pId === idStr || pCode === idStr)) return true;
-    if (codeStr && (pCode === codeStr || pId === codeStr)) return true;
-    if (prodIdStr && (pId === prodIdStr || pCode === prodIdStr)) return true;
-    if (nameStr && pName === nameStr) return true;
-    return false;
-  });
+  // 2. Match by exact trimmed name
+  if (nameStr) {
+    return list.find(p => {
+      const pName = p.name ? String(p.name).trim().toLowerCase() : '';
+      return pName === nameStr;
+    });
+  }
+
+  return null;
 }
 
 export function adjustStockForOrderUpdate(oldOrder, newOrder) {
@@ -675,7 +686,13 @@ export function createOrder(orderData) {
   });
 
   const orderId = orderData.id || generateId('ord');
-  const existingIdx = orders.findIndex(o => String(o.id) === String(orderId));
+  const reqIdStr = String(orderId).trim().toLowerCase();
+  const cleanReqId = reqIdStr.replace(/^ord-/, '');
+  const existingIdx = orders.findIndex(o => {
+    const oId = String(o.id || '').trim().toLowerCase();
+    const cleanOId = oId.replace(/^ord-/, '');
+    return oId === reqIdStr || cleanOId === cleanReqId;
+  });
 
   let order;
   let oldOrder = null;

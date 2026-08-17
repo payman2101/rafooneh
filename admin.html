@@ -2135,7 +2135,13 @@
         if (!order || !order.id) return;
         try {
             let orders = getLocalOrders();
-            const idx = orders.findIndex(o => o.id === order.id);
+            const reqId = String(order.id).trim().toLowerCase();
+            const cleanReqId = reqId.replace(/^ord-/, '');
+            const idx = orders.findIndex(o => {
+                const oId = String(o.id || '').trim().toLowerCase();
+                const cleanOId = oId.replace(/^ord-/, '');
+                return oId === reqId || cleanOId === cleanReqId;
+            });
             if (idx >= 0) {
                 orders[idx] = { ...orders[idx], ...order };
             } else {
@@ -2282,16 +2288,16 @@
 
             for (const ord of localOrders) {
                 if (!ord || !ord.customerName || !ord.phone) continue;
-                const rawId = String(ord.id || '');
+                const rawId = String(ord.id || '').trim();
                 const cleanId = rawId.replace(/^ord-/, '');
                 
-                // Skip if explicitly deleted or already on server
-                if (deletedIds.has(rawId) || deletedIds.has(cleanId) || serverOrderIds.has(rawId) || serverOrderIds.has(cleanId)) {
+                // Skip if already marked synced, explicitly deleted, or already on server
+                if (ord.syncedWithServer || deletedIds.has(rawId) || deletedIds.has(cleanId) || serverOrderIds.has(rawId) || serverOrderIds.has(cleanId)) {
                     continue;
                 }
 
                 try {
-                    await fetch('/api/orders', {
+                    const res = await fetch('/api/orders', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -2307,6 +2313,10 @@
                             createdAt: ord.createdAt
                         })
                     });
+                    if (res.ok) {
+                        ord.syncedWithServer = true;
+                        saveLocalOrder(ord);
+                    }
                     serverOrderIds.add(rawId);
                     serverOrderIds.add(cleanId);
                     serverOrderIds.add(`ord-${cleanId}`);
