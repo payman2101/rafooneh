@@ -1768,7 +1768,7 @@
         <div class="header-content">
             <div class="header-brand-section">
                 <h1><i class="fa-solid fa-pump-soap"></i> محصولات بهداشتی پیمان</h1>
-                <p>تأمین مستقیم محصولات بهداشتی رافونه و لوازم نظافت درب منزل</p>
+                <p>تأمین مستقیم شوینده، بهداشتی و لوازم نظافت درب منزل</p>
             </div>
             <div class="header-actions-section">
                 <div class="badge-trust">
@@ -1827,7 +1827,7 @@
             <div style="display: flex; align-items: center; gap: 10px;">
                 <i class="fa-solid fa-gift"></i>
                 <div>
-                    <strong>لیست به روز محصولات رافونه:</strong> تمامی قیمت‌ها بر اساس نرخ تحویل درب منزل محاسبه گردیده است.
+                    <strong>لیست به روز کالاها و قیمت‌ها:</strong> تمامی قیمت‌ها بر اساس نرخ تحویل درب منزل محاسبه گردیده است.
                 </div>
             </div>
         </div>
@@ -1981,7 +1981,7 @@
             <div class="gateway-merchant-info">
                 <div class="merchant-field">
                     <span>نام پذیرنده:</span>
-                    <strong>فروشگاه رافونه</strong>
+                    <strong>پخش محصولات پیمان</strong>
                 </div>
                 <div class="merchant-field">
                     <span>کد پذیرنده:</span>
@@ -2061,7 +2061,7 @@
                 <i class="fa-solid fa-check"></i>
             </div>
             <h3 style="color:#15803d; margin-bottom: 6px;">پرداخت آنلاین با موفقیت انجام شد</h3>
-            <p style="font-size:0.85rem; color:var(--text-muted);">سفارش شما در سامانه توزیع رافونه ثبت گردید.</p>
+            <p style="font-size:0.85rem; color:var(--text-muted);">سفارش شما در سامانه پخش محصولات پیمان ثبت گردید.</p>
 
             <div class="receipt-details">
                 <div class="receipt-row">
@@ -2168,7 +2168,7 @@
                         <div class="inv-logo"><i class="fa-solid fa-pump-soap"></i></div>
                         <div>
                             <h2>محصولات بهداشتی پیمان</h2>
-                            <p>مرکز رسمی پخش و توزیع مستقیم شوینده و بهداشتی رافونه</p>
+                            <p>مرکز رسمی پخش محصولات پیمان (شوینده، بهداشتی و سلولزی)</p>
                         </div>
                     </div>
                     <div class="inv-title-box">
@@ -2186,7 +2186,7 @@
                 <div class="inv-parties-grid">
                     <div class="inv-party-box">
                         <h3><i class="fa-solid fa-store"></i> مشخصات فروشنده:</h3>
-                        <div><strong>فروشگاه:</strong> مرکز پخش شوینده رافونه</div>
+                        <div><strong>فروشگاه:</strong> پخش محصولات پیمان</div>
                         <div><strong>تلفن پشتیبانی:</strong> ۰۹۰۲۷۹۵۹۵۵۵</div>
                         <div><strong>وب‌سایت:</strong> rafooneh.com</div>
                         <div><strong>ارسال:</strong> تحویل مستقیم درب منزل مشتری</div>
@@ -2369,7 +2369,7 @@
 
     <!-- Footer -->
     <footer>
-        <p>توزیع مستقیم محصولات بهداشتی رافونه درب منزل</p>
+        <p>پخش محصولات پیمان - توزیع مستقیم شوینده و بهداشتی درب منزل</p>
         <a href="https://wa.me/989027959555" class="contact-direct" target="_blank">
             <i class="fa-brands fa-whatsapp"></i> پشتیبانی و سفارش تلفنی: 09027959555
         </a>
@@ -2988,7 +2988,7 @@
             // Save locally right away so order is preserved on this device
             saveLocalOrder(fallbackLocalOrder);
 
-            let orderText = `🛒 *سفارش جدید از وب‌سایت توزیع رافونه*\n\n`;
+            let orderText = `🛒 *سفارش جدید از وب‌سایت پخش محصولات پیمان*\n\n`;
             orderText += `👤 *نام مشتری:* ${name}\n`;
             orderText += `📞 *شماره تماس:* ${phone}\n`;
             orderText += `📍 *آدرس تحویل:* ${address}\n`;
@@ -3016,7 +3016,7 @@
             if (b.description) {
                 orderText += `\n📝 ${b.description}\n`;
             }
-            orderText += `\n🌹 با سپاس از اعتماد و خرید شما از رافونه`;
+            orderText += `\n🌹 با سپاس از اعتماد و خرید شما از پخش محصولات پیمان`;
 
             const myPhoneNumber = "989027959555";
             const encodedMessage = encodeURIComponent(orderText);
@@ -3246,7 +3246,7 @@
             const refId = document.getElementById('receiptRefId').innerText;
             const bankRef = document.getElementById('receiptBankRef').innerText;
 
-            let msg = `✅ *تاییدیه پرداخت آنلاین سفارش رافونه*\n\n`;
+            let msg = `✅ *تاییدیه پرداخت آنلاین سفارش - پخش محصولات پیمان*\n\n`;
             msg += `👤 *نام مشتری:* ${currentOrderData.name}\n`;
             msg += `📞 *تماس:* ${currentOrderData.phone}\n`;
             msg += `📍 *آدرس:* ${currentOrderData.address}\n`;
@@ -3666,8 +3666,8 @@
             const b = customerBankSettings;
             const total = Number(o.totalAmount || 0);
 
-            let msg = `🧾 *فاکتور سفارش پخش شوینده رافونه*\n\n`;
-            msg += `سلام *${o.customerName || 'مشتری گرامی'}* عزیز،\nسفارش شما با کد پیگیری *${o.id}* ثبت شده است.\n\n`;
+            let msg = `🧾 *فاکتور سفارش پخش محصولات پیمان*\n\n`;
+            msg += `وقت بخیر *${o.customerName || 'مشتری گرامی'}* عزیز،\nسفارش شما با کد پیگیری *${o.id}* ثبت شده است.\n\n`;
             msg += `📞 *تلفن تماس:* ${o.phone || '-'}\n`;
             msg += `📍 *آدرس تحویل:* ${o.address || '-'}\n\n`;
             
@@ -3696,7 +3696,7 @@
             if (b.description) {
                 msg += `\n📝 ${b.description}\n`;
             }
-            msg += `\n🌹 با سپاس از حسن انتخاب شما - پخش رافونه`;
+            msg += `\n🌹 با سپاس از حسن انتخاب شما - پخش محصولات پیمان`;
 
             const waUrl = `https://wa.me/989027959555?text=${encodeURIComponent(msg)}`;
             window.open(waUrl, '_blank');

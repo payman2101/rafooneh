@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CRM | مدیریت سفارشات رافونه</title>
+    <title>CRM | مدیریت سفارشات - پخش محصولات پیمان</title>
     
     <!-- PWA & Mobile Web App Meta Tags -->
     <link rel="manifest" href="/manifest.json">
@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="مدیریت رافونه">
+    <meta name="apple-mobile-web-app-title" content="مدیریت پیمان">
     <link rel="apple-touch-icon" href="/icons/icon-192.svg">
     <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg">
     
@@ -725,7 +725,7 @@
 
 <div class="login-screen" id="loginScreen">
     <div class="login-card">
-        <h1><i class="fa-solid fa-chart-line"></i> CRM رافونه</h1>
+        <h1><i class="fa-solid fa-chart-line"></i> CRM پخش محصولات پیمان</h1>
         <p>مدیریت سفارشات، مشتریان و پیگیری تحویل</p>
         <div class="error-msg" id="loginError"></div>
         <form onsubmit="handleLogin(event)" id="loginForm" autocomplete="off">
@@ -745,7 +745,7 @@
 
 <div class="app" id="app">
     <header class="topbar">
-        <h1><i class="fa-solid fa-store"></i> پنل CRM توزیع رافونه</h1>
+        <h1><i class="fa-solid fa-store"></i> پنل CRM پخش محصولات پیمان</h1>
         <div class="topbar-actions">
             <a href="/" class="btn btn-secondary" style="text-decoration:none;">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> فروشگاه
@@ -1705,7 +1705,7 @@
                     <div class="inv-logo"><i class="fa-solid fa-pump-soap"></i></div>
                     <div>
                         <h2>محصولات بهداشتی پیمان</h2>
-                        <p>مرکز رسمی پخش و توزیع مستقیم شوینده و بهداشتی رافونه</p>
+                        <p>مرکز رسمی پخش محصولات پیمان (شوینده، بهداشتی و سلولزی)</p>
                     </div>
                 </div>
                 <div class="inv-title-box">
@@ -1722,7 +1722,7 @@
             <div class="inv-parties-grid">
                 <div class="inv-party-box">
                     <h3><i class="fa-solid fa-store"></i> مشخصات فروشنده:</h3>
-                    <div><strong>فروشگاه:</strong> مرکز پخش شوینده رافونه</div>
+                    <div><strong>فروشگاه:</strong> پخش محصولات پیمان</div>
                     <div><strong>تلفن پشتیبانی:</strong> ۰۹۰۲۷۹۵۹۵۵۵</div>
                     <div><strong>وب‌سایت:</strong> rafooneh.com</div>
                     <div><strong>ارسال:</strong> تحویل مستقیم درب منزل مشتری</div>
@@ -4077,8 +4077,8 @@
         // WhatsApp live preview template
         const waBox = document.getElementById('previewWhatsAppTextBox');
         if (waBox) {
-            let sampleMsg = `🧾 *فاکتور سفارش توزیع رافونه*\n\n`;
-            sampleMsg += `سلام *علی رضایی* عزیز،\nسفارش شما با شماره *ord-849201* با موفقیت ثبت شد.\n\n`;
+            let sampleMsg = `🧾 *فاکتور سفارش پخش محصولات پیمان*\n\n`;
+            sampleMsg += `وقت بخیر *علی رضایی* عزیز،\nسفارش شما با شماره *ord-849201* با موفقیت ثبت شد.\n\n`;
             sampleMsg += `📦 *اقلام سفارش:*\n▫️ مایع ظرفشویی ۴ لیتری رافونه × ۲ عدد = ۲۴۰,۰۰۰ تومان\n▫️ اسپری گاز پاک‌کن رافونه × ۱ عدد = ۵۵,۰۰۰ تومان\n\n`;
             sampleMsg += `💰 *مبلغ کل قابل پرداخت:* ۲۹۵,۰۰۰ تومان\n\n`;
             sampleMsg += `💳 *مشخصات واریز کارت به کارت:*\n`;
@@ -4289,8 +4289,8 @@
         const orderId = order.id || 'ord-1001';
         const total = Number(order.totalAmount || 0);
 
-        let msg = `🧾 *فاکتور سفارش پخش رافونه*\n\n`;
-        msg += `سلام *${custName}* عزیز،\nسفارش شما با کد پیگیری *${orderId}* با موفقیت ثبت شد.\n\n`;
+        let msg = `🧾 *فاکتور سفارش پخش محصولات پیمان*\n\n`;
+        msg += `وقت بخیر *${custName}* عزیز،\nسفارش شما با کد پیگیری *${orderId}* با موفقیت ثبت شد.\n\n`;
 
         if (order.items && order.items.length) {
             msg += `📦 *اقلام سفارش:*\n`;
@@ -4317,7 +4317,7 @@
         if (b.description) {
             msg += `\n📝 ${b.description}\n`;
         }
-        msg += `\n🌹 با سپاس از انتخاب و اعتماد شما به پخش شوینده رافونه`;
+        msg += `\n🌹 با سپاس از انتخاب و اعتماد شما به پخش محصولات پیمان`;
         return msg;
     }
 
