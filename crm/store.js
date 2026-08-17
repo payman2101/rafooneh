@@ -1562,16 +1562,17 @@ export function createPurchase(purchaseData) {
 
 export function updatePurchase(id, updates) {
   let purchases = readJson(PURCHASES_FILE, []);
-  const idx = purchases.findIndex(p => String(p.id) === String(id));
+  const idx = purchases.findIndex(p => String(p.id) === String(id) || String(p.refNumber) === String(id));
   if (idx === -1) return null;
 
   const nowStr = new Date().toISOString();
+  const oldItems = Array.isArray(purchases[idx].items) ? purchases[idx].items : [];
   const rawItems = Array.isArray(updates.items) ? updates.items : purchases[idx].items;
   let totalAmount = 0;
   let totalItemsCount = 0;
 
   const items = rawItems.map(item => {
-    const pid = String(item.productId || item.id || '');
+    const pid = String(item.productId || item.id || item.code || '');
     const name = item.name || 'محصول رافونه';
     const qty = Math.max(1, Number(item.qty || item.quantity) || 1);
     const buyPrice = Math.max(0, Number(item.buyPrice) || 0);
@@ -1602,6 +1603,72 @@ export function updatePurchase(id, updates) {
     };
   });
 
+  // Calculate quantity difference per item between old and new purchase
+  const oldQtyMap = {};
+  oldItems.forEach(it => {
+    const pid = String(it.productId || it.id || it.code || '');
+    if (pid) {
+      oldQtyMap[pid] = (oldQtyMap[pid] || 0) + Math.max(1, Number(it.qty || it.quantity) || 1);
+    }
+  });
+
+  const newQtyMap = {};
+  items.forEach(it => {
+    const pid = String(it.productId || it.id || it.code || '');
+    if (pid) {
+      newQtyMap[pid] = (newQtyMap[pid] || 0) + Math.max(1, Number(it.qty || it.quantity) || 1);
+    }
+  });
+
+  const allProductIds = new Set([...Object.keys(oldQtyMap), ...Object.keys(newQtyMap)]);
+  const products = readProductsList();
+  let productsUpdated = false;
+
+  allProductIds.forEach(pid => {
+    const pIdx = products.findIndex(p => String(p.id) === pid || String(p.code) === pid);
+    if (pIdx !== -1) {
+      const oldQty = oldQtyMap[pid] || 0;
+      const newQty = newQtyMap[pid] || 0;
+      const delta = newQty - oldQty;
+
+      if (delta !== 0) {
+        const currentStock = Number(products[pIdx].stock || 0);
+        const newStock = Math.max(0, currentStock + delta);
+        products[pIdx].stock = newStock;
+        if (newStock <= 0) {
+          products[pIdx].badge = 'ناموجود';
+        } else if (newStock <= 5) {
+          products[pIdx].badge = `تعداد محدود (${newStock} عدد)`;
+        } else {
+          products[pIdx].badge = null;
+        }
+        products[pIdx].updatedAt = nowStr;
+        productsUpdated = true;
+      }
+    }
+  });
+
+  // Update buy and consumer prices for products
+  items.forEach(pItem => {
+    const pid = String(pItem.productId || pItem.id || pItem.code || '');
+    const pIdx = products.findIndex(p => String(p.id) === pid || String(p.code) === pid);
+    if (pIdx !== -1) {
+      if (pItem.buyPrice > 0) {
+        products[pIdx].buyPrice = pItem.buyPrice;
+      }
+      if (pItem.consumerPrice > 0) {
+        products[pIdx].price = pItem.consumerPrice;
+        products[pIdx].consumerPrice = pItem.consumerPrice;
+      }
+      products[pIdx].updatedAt = nowStr;
+      productsUpdated = true;
+    }
+  });
+
+  if (productsUpdated) {
+    saveProductsList(products);
+  }
+
   purchases[idx] = {
     ...purchases[idx],
     supplierName: updates.supplierName || purchases[idx].supplierName,
@@ -1613,30 +1680,6 @@ export function updatePurchase(id, updates) {
     totalItemsCount,
     updatedAt: nowStr
   };
-
-  if (items.length > 0) {
-    const products = readJson(PRODUCTS_FILE, []);
-    let productsUpdated = false;
-
-    items.forEach(pItem => {
-      const pIdx = products.findIndex(p => String(p.id) === String(pItem.productId) || String(p.code) === String(pItem.productId));
-      if (pIdx !== -1) {
-        if (pItem.buyPrice > 0) {
-          products[pIdx].buyPrice = pItem.buyPrice;
-        }
-        if (pItem.consumerPrice > 0) {
-          products[pIdx].price = pItem.consumerPrice;
-          products[pIdx].consumerPrice = pItem.consumerPrice;
-        }
-        products[pIdx].updatedAt = nowStr;
-        productsUpdated = true;
-      }
-    });
-
-    if (productsUpdated) {
-      saveProductsList(products);
-    }
-  }
 
   writeJson(PURCHASES_FILE, purchases);
   writeJson(ROOT_PURCHASES_FILE, purchases);
@@ -1650,8 +1693,42 @@ export function updatePurchase(id, updates) {
 export function deletePurchase(id) {
   let purchases = readJson(PURCHASES_FILE, []);
   const initialLen = purchases.length;
-  purchases = purchases.filter(p => String(p.id) !== String(id));
-  if (purchases.length !== initialLen) {
+  const target = purchases.find(p => String(p.id) === String(id) || String(p.refNumber) === String(id));
+
+  // Deduct purchase quantities from product inventory stock upon deletion
+  if (target && Array.isArray(target.items) && target.items.length > 0) {
+    const products = readProductsList();
+    let productsUpdated = false;
+    const nowStr = new Date().toISOString();
+
+    target.items.forEach(pItem => {
+      const pid = String(pItem.productId || pItem.id || pItem.code || '');
+      if (!pid) return;
+      const pIdx = products.findIndex(p => String(p.id) === pid || String(p.code) === pid);
+      if (pIdx !== -1) {
+        const qtyToDeduct = Math.max(1, Number(pItem.qty || pItem.quantity) || 1);
+        const currentStock = Number(products[pIdx].stock || 0);
+        const newStock = Math.max(0, currentStock - qtyToDeduct);
+        products[pIdx].stock = newStock;
+        if (newStock <= 0) {
+          products[pIdx].badge = 'ناموجود';
+        } else if (newStock <= 5) {
+          products[pIdx].badge = `تعداد محدود (${newStock} عدد)`;
+        } else {
+          products[pIdx].badge = null;
+        }
+        products[pIdx].updatedAt = nowStr;
+        productsUpdated = true;
+      }
+    });
+
+    if (productsUpdated) {
+      saveProductsList(products);
+    }
+  }
+
+  purchases = purchases.filter(p => String(p.id) !== String(id) && String(p.refNumber) !== String(id));
+  if (purchases.length !== initialLen || target) {
     writeJson(PURCHASES_FILE, purchases);
     writeJson(ROOT_PURCHASES_FILE, purchases);
     deletePurchaseFromFirestore(id).catch(e => console.error('Firestore delete purchase error:', e));

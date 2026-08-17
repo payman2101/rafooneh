@@ -5507,12 +5507,14 @@
     }
 
     async function deletePurchaseRecord(id) {
-        if (!confirm('آیا از حذف این فاکتور خرید اطمینان دارید؟')) return;
+        if (!confirm('آیا از حذف این فاکتور خرید اطمینان دارید؟ موجودی کالاهای این فاکتور از انبار کسر خواهد شد.')) return;
 
         try {
             const res = await api(`/api/admin/purchases/${id}`, { method: 'DELETE' });
             if (res.ok) {
-                loadPurchases();
+                await loadPurchases();
+                await loadAdminProducts();
+                alert('فاکتور خرید با موفقیت حذف گردید و موجودی اقلام آن از انبار کسر شد.');
             } else {
                 alert('خطا در حذف فاکتور خرید.');
             }

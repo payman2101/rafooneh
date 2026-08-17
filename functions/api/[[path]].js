@@ -1402,25 +1402,76 @@ export async function onRequest(context) {
 
       await savePurchaseToPg(env, updatedPurchase);
 
-      // Concurrently update buyPrice for each item in Supabase DB
-      if (items.length > 0) {
+      // Calculate quantity difference per item between old and new purchase
+      const oldItems = Array.isArray(existing ? existing.items : []) ? existing.items : [];
+      const oldQtyMap = {};
+      oldItems.forEach(it => {
+        const pid = String(it.productId || it.id || it.code || '');
+        if (pid) oldQtyMap[pid] = (oldQtyMap[pid] || 0) + Math.max(1, Number(it.qty || it.quantity || 1));
+      });
+      const newQtyMap = {};
+      items.forEach(it => {
+        const pid = String(it.productId || it.id || it.code || '');
+        if (pid) newQtyMap[pid] = (newQtyMap[pid] || 0) + Math.max(1, Number(it.qty || it.quantity || 1));
+      });
+      const allProductIds = new Set([...Object.keys(oldQtyMap), ...Object.keys(newQtyMap)]);
+
+      const pgProds = await getAllProductsFromPg(env) || [];
+      const updatePromises = Array.from(allProductIds).map(async (prodId) => {
+        const prodExisting = pgProds.find(p => String(p.id) === prodId || String(p.code) === prodId) ||
+                            defaultProducts.find(p => String(p.id) === prodId || String(p.code) === prodId);
+        if (prodExisting) {
+          const delta = (newQtyMap[prodId] || 0) - (oldQtyMap[prodId] || 0);
+          const currentStock = Number(prodExisting.stock || 0);
+          const newStock = Math.max(0, currentStock + delta);
+
+          const newItem = items.find(it => String(it.productId || it.id || it.code || '') === prodId);
+          const newBuyPrice = newItem && Number(newItem.buyPrice) > 0 ? Number(newItem.buyPrice) : Number(prodExisting.buyPrice || 0);
+          const newConsumerPrice = newItem && Number(newItem.consumerPrice) > 0 ? Number(newItem.consumerPrice) : Number(prodExisting.price || prodExisting.consumerPrice || 0);
+
+          const updatedProduct = {
+            ...prodExisting,
+            id: prodId,
+            code: prodId,
+            stock: newStock,
+            buyPrice: newBuyPrice,
+            price: newConsumerPrice > 0 ? newConsumerPrice : prodExisting.price,
+            consumerPrice: newConsumerPrice > 0 ? newConsumerPrice : prodExisting.consumerPrice,
+            badge: newStock <= 0 ? 'ناموجود' : (newStock <= 5 ? `تعداد محدود (${newStock} عدد)` : null),
+            updatedAt: new Date().toISOString()
+          };
+          await saveProductToPg(env, updatedProduct);
+        }
+      });
+      await Promise.all(updatePromises);
+
+      return jsonRes({ success: true, purchase: updatedPurchase, message: 'فاکتور خرید با موفقیت به روزرسانی شد.' });
+    }
+
+    if (method === 'DELETE') {
+      const idx = memoryPurchases.findIndex(p => String(p.id) === id || String(p.refNumber) === id);
+      const targetPurchase = idx !== -1 ? memoryPurchases[idx] : existing;
+      if (idx !== -1) memoryPurchases.splice(idx, 1);
+
+      // Deduct stock of items in deleted purchase invoice from PostgreSQL / Supabase
+      if (targetPurchase && Array.isArray(targetPurchase.items) && targetPurchase.items.length > 0) {
         const pgProds = await getAllProductsFromPg(env) || [];
-        const updatePromises = items.map(async (item) => {
+        const updatePromises = targetPurchase.items.map(async (item) => {
           const prodId = String(item.productId || item.id || item.code || '');
           if (!prodId) return;
 
           const prodExisting = pgProds.find(p => String(p.id) === prodId || String(p.code) === prodId) ||
                               defaultProducts.find(p => String(p.id) === prodId || String(p.code) === prodId);
           if (prodExisting) {
-            const newBuyPrice = Number(item.buyPrice) > 0 ? Number(item.buyPrice) : Number(prodExisting.buyPrice || 0);
-            const newConsumerPrice = Number(item.consumerPrice) > 0 ? Number(item.consumerPrice) : Number(prodExisting.price || prodExisting.consumerPrice || 0);
+            const deductQty = Math.max(1, Number(item.qty || item.quantity || 1));
+            const currentStock = Number(prodExisting.stock || 0);
+            const newStock = Math.max(0, currentStock - deductQty);
             const updatedProduct = {
               ...prodExisting,
               id: prodId,
               code: prodId,
-              buyPrice: newBuyPrice,
-              price: newConsumerPrice > 0 ? newConsumerPrice : prodExisting.price,
-              consumerPrice: newConsumerPrice > 0 ? newConsumerPrice : prodExisting.consumerPrice,
+              stock: newStock,
+              badge: newStock <= 0 ? 'ناموجود' : (newStock <= 5 ? `تعداد محدود (${newStock} عدد)` : null),
               updatedAt: new Date().toISOString()
             };
             await saveProductToPg(env, updatedProduct);
@@ -1429,14 +1480,8 @@ export async function onRequest(context) {
         await Promise.all(updatePromises);
       }
 
-      return jsonRes({ success: true, purchase: updatedPurchase, message: 'فاکتور خرید با موفقیت به روزرسانی شد.' });
-    }
-
-    if (method === 'DELETE') {
-      const idx = memoryPurchases.findIndex(p => String(p.id) === id);
-      if (idx !== -1) memoryPurchases.splice(idx, 1);
       await deletePurchaseFromPg(env, id);
-      return jsonRes({ success: true, message: 'فاکتور خرید با موفقیت حذف گردید.' });
+      return jsonRes({ success: true, message: 'فاکتور خرید با موفقیت حذف گردید و موجودی انبار کسر شد.' });
     }
   }
 
