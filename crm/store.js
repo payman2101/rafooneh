@@ -1411,18 +1411,24 @@ export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
 
   if (fromDate) {
     const s = new Date(fromDate);
-    s.setHours(0, 0, 0, 0);
-    startMs = s.getTime();
+    if (!isNaN(s.getTime())) {
+      s.setHours(0, 0, 0, 0);
+      startMs = s.getTime();
+    }
   }
   if (toDate) {
     const e = new Date(toDate);
-    e.setHours(23, 59, 59, 999);
-    endMs = e.getTime();
+    if (!isNaN(e.getTime())) {
+      e.setHours(23, 59, 59, 999);
+      endMs = e.getTime();
+    }
   }
 
   if (startMs > 0 || endMs < Infinity) {
     filteredOrders = filteredOrders.filter(o => {
+      if (!o.createdAt) return true;
       const orderTime = new Date(o.createdAt).getTime();
+      if (isNaN(orderTime)) return true;
       return orderTime >= startMs && orderTime <= endMs;
     });
   }

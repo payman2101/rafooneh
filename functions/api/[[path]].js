@@ -1348,8 +1348,120 @@ export async function onRequest(context) {
 
   // --- COMPANY PAYMENTS ENDPOINTS ---
   if (path === '/api/admin/company-payments/stats') {
-    const totalPaid = memoryCompanyPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
-    return jsonRes({ success: true, stats: { totalPaid, pending: 0, count: memoryCompanyPayments.length } });
+    const orders = await getCombinedOrders(env);
+    const products = await getCombinedProducts(env);
+    const pMap = {};
+    products.forEach(p => {
+      if (p.id) pMap[String(p.id)] = p;
+      if (p.code) pMap[String(p.code)] = p;
+    });
+
+    const fromDate = url.searchParams.get('fromDate') || '';
+    const toDate = url.searchParams.get('toDate') || '';
+
+    let filteredOrders = orders.filter(o => o.status !== 'cancelled');
+
+    let startMs = 0;
+    let endMs = Infinity;
+
+    if (fromDate) {
+      const s = new Date(fromDate);
+      if (!isNaN(s.getTime())) {
+        s.setHours(0, 0, 0, 0);
+        startMs = s.getTime();
+      }
+    }
+    if (toDate) {
+      const e = new Date(toDate);
+      if (!isNaN(e.getTime())) {
+        e.setHours(23, 59, 59, 999);
+        endMs = e.getTime();
+      }
+    }
+
+    if (startMs > 0 || endMs < Infinity) {
+      filteredOrders = filteredOrders.filter(o => {
+        if (!o.createdAt) return true;
+        const orderTime = new Date(o.createdAt).getTime();
+        if (isNaN(orderTime)) return true;
+        return orderTime >= startMs && orderTime <= endMs;
+      });
+    }
+
+    let totalItemsCount = 0;
+    let totalBuyCost = 0;
+    let totalRevenue = 0;
+    let rafoonehOrdersCount = 0;
+    const productSummaryMap = {};
+
+    filteredOrders.forEach(o => {
+      let orderHasRafooneh = false;
+      const items = Array.isArray(o.items) ? o.items : [];
+
+      items.forEach(item => {
+        const pid = String(item.id || item.code || item.productId || item.name || '');
+        const prod = pMap[pid] || pMap[item.id] || pMap[item.code] || {};
+
+        const brand = String(item.brand || prod.brand || '').toLowerCase();
+        const brandName = String(item.brandName || prod.brandName || '').toLowerCase();
+
+        // Calculate items under the Rafooneh brand
+        const isRafooneh = (brand === 'rafooneh' || brandName.includes('رافونه')) || (brand !== 'foreign' && !brandName.includes('خارجی'));
+        if (!isRafooneh) return;
+
+        orderHasRafooneh = true;
+
+        const qty = Number(item.qty || item.quantity) || 1;
+        const itemPrice = Number(item.price) || Number(prod.price) || 0;
+        let buyPrice = Number(item.buyPrice);
+        if (isNaN(buyPrice) || buyPrice <= 0) {
+          buyPrice = Number(prod.buyPrice) || Math.round(itemPrice * 0.7);
+        }
+
+        const itemCost = buyPrice * qty;
+        const itemRev = (Number(item.total) || (itemPrice * qty)) || itemCost;
+
+        if (!productSummaryMap[pid]) {
+          productSummaryMap[pid] = {
+            id: pid,
+            code: item.code || prod.code || item.id || pid,
+            name: item.name || prod.name || 'محصول رافونه',
+            unitsSold: 0,
+            buyPrice,
+            totalBuyCost: 0,
+            sellingPrice: itemPrice,
+            totalRevenue: 0
+          };
+        }
+
+        productSummaryMap[pid].unitsSold += qty;
+        productSummaryMap[pid].totalBuyCost += itemCost;
+        productSummaryMap[pid].totalRevenue += itemRev;
+
+        totalItemsCount += qty;
+        totalBuyCost += itemCost;
+        totalRevenue += itemRev;
+      });
+
+      if (orderHasRafooneh) {
+        rafoonehOrdersCount++;
+      }
+    });
+
+    const productList = Object.values(productSummaryMap).sort((a, b) => b.totalBuyCost - a.totalBuyCost);
+
+    return jsonRes({
+      success: true,
+      stats: {
+        fromDate,
+        toDate,
+        ordersCount: rafoonehOrdersCount,
+        totalItemsCount,
+        totalBuyCost,
+        totalRevenue,
+        products: productList
+      }
+    });
   }
 
   if (path === '/api/admin/company-payments') {
