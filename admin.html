@@ -2834,36 +2834,54 @@
         searchTimeout = setTimeout(loadOrders, 300);
     }
 
+    function normalizePhone(phone) {
+        if (!phone) return '';
+        let str = String(phone).trim();
+        const persianDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+        const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+        for (let i = 0; i < 10; i++) {
+            str = str.replaceAll(persianDigits[i], String(i));
+            str = str.replaceAll(arabicDigits[i], String(i));
+        }
+        let digits = str.replace(/\D/g, '');
+        if (digits.startsWith('0098')) digits = '0' + digits.slice(4);
+        else if (digits.startsWith('98') && digits.length >= 12) digits = '0' + digits.slice(2);
+        else if (digits.startsWith('9') && digits.length === 10) digits = '0' + digits;
+        return digits;
+    }
+
     async function loadCustomers() {
         const search = (document.getElementById('customerSearch')?.value || '').toLowerCase();
-        let customers = [];
+        let rawCustomers = [];
 
         try {
             const res = await api(`/api/admin/customers?search=${encodeURIComponent(search)}`);
             if (res.ok) {
                 const data = await res.json();
-                customers = data.customers || [];
+                rawCustomers = data.customers || [];
             }
         } catch (err) {
             console.log('Failed to fetch server customers');
         }
 
-        if (customers.length === 0) {
+        if (rawCustomers.length === 0) {
             const localOrders = getLocalOrders();
             const custMap = new Map();
             localOrders.forEach(o => {
                 if (!o.phone) return;
-                let c = custMap.get(o.phone);
+                const normPhone = normalizePhone(o.phone);
+                const key = normPhone || o.phone;
+                let c = custMap.get(key);
                 if (!c) {
                     c = {
-                        id: o.phone,
+                        id: o.customerId || ('CUST-' + (normPhone || o.phone)),
                         name: o.customerName || 'مشتری',
                         phone: o.phone,
                         totalOrders: 0,
                         totalSpent: 0,
                         lastOrderAt: o.createdAt
                     };
-                    custMap.set(o.phone, c);
+                    custMap.set(key, c);
                 }
                 c.totalOrders++;
                 c.totalSpent += (o.totalAmount || 0);
@@ -2871,11 +2889,31 @@
                     c.lastOrderAt = o.createdAt;
                 }
             });
-            customers = Array.from(custMap.values());
+            rawCustomers = Array.from(custMap.values());
             if (search) {
-                customers = customers.filter(c => (c.name && c.name.toLowerCase().includes(search)) || (c.phone && c.phone.includes(search)));
+                rawCustomers = rawCustomers.filter(c => (c.name && c.name.toLowerCase().includes(search)) || (c.phone && c.phone.includes(search)));
             }
         }
+
+        // Deduplicate customers by normalized phone number to ensure no duplicated rows
+        const uniqueCustMap = new Map();
+        rawCustomers.forEach(c => {
+            const normKey = normalizePhone(c.phone) || String(c.id);
+            if (!uniqueCustMap.has(normKey)) {
+                uniqueCustMap.set(normKey, { ...c, phone: normalizePhone(c.phone) || c.phone });
+            } else {
+                const existing = uniqueCustMap.get(normKey);
+                existing.totalOrders = Math.max(Number(existing.totalOrders || 0), Number(c.totalOrders || 0));
+                existing.totalSpent = Math.max(Number(existing.totalSpent || 0), Number(c.totalSpent || 0));
+                if (!existing.notes && c.notes) existing.notes = c.notes;
+                if (!existing.address && c.address) existing.address = c.address;
+                if (!existing.name && c.name) existing.name = c.name;
+                if (new Date(c.lastOrderAt || 0) > new Date(existing.lastOrderAt || 0)) {
+                    existing.lastOrderAt = c.lastOrderAt;
+                }
+            }
+        });
+        const customers = Array.from(uniqueCustMap.values());
 
         const tbody = document.getElementById('customersBody');
         if (!customers.length) {
@@ -3089,7 +3127,7 @@
         let customer = null;
 
         try {
-            const res = await api(`/api/admin/customers/${id}`);
+            const res = await api(`/api/admin/customers/${encodeURIComponent(id)}`);
             if (res.ok) {
                 const data = await res.json();
                 customer = data.customer;
@@ -3099,7 +3137,8 @@
         }
 
         if (!customer) {
-            const localOrders = getLocalOrders().filter(o => o.phone === id || o.customerId === id || o.customerName === id);
+            const normId = normalizePhone(id);
+            const localOrders = getLocalOrders().filter(o => o.phone === id || normalizePhone(o.phone) === normId || o.customerId === id || o.customerName === id);
             if (localOrders.length > 0) {
                 const first = localOrders[0];
                 const totalSpent = localOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
@@ -3120,6 +3159,8 @@
             alert('اطلاعات مشتری یافت نشد');
             return;
         }
+
+        window.currentCustomerLoadedPhone = customer.phone || '';
 
         let ordersHtml = (customer.orders && customer.orders.length)
             ? customer.orders.map(o =>
@@ -3166,11 +3207,21 @@
         const address = document.getElementById('editCustomerAddress').value.trim();
         const notes = document.getElementById('customerNotes').value.trim();
 
+        const oldPhone = window.currentCustomerLoadedPhone || '';
+        const oldNormPhone = normalizePhone(oldPhone);
+        const normNewPhone = normalizePhone(phone);
+
         try {
-            await api(`/api/admin/customers/${currentCustomerId}`, {
+            const res = await api(`/api/admin/customers/${encodeURIComponent(currentCustomerId)}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ name, phone, address, notes })
             });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.customer && data.customer.id) {
+                    currentCustomerId = data.customer.id;
+                }
+            }
         } catch (err) {
             console.log('Customer update server save error');
         }
@@ -3179,9 +3230,10 @@
             let localOrders = getLocalOrders();
             let updated = false;
             localOrders.forEach(o => {
-                if (o.customerId === currentCustomerId || o.phone === currentCustomerId || o.phone === phone) {
+                const oNorm = normalizePhone(o.phone);
+                if (o.customerId === currentCustomerId || oNorm === oldNormPhone || oNorm === normNewPhone || o.phone === oldPhone || o.phone === currentCustomerId || o.phone === phone) {
                     if (name) o.customerName = name;
-                    if (phone) o.phone = phone;
+                    if (normNewPhone || phone) o.phone = normNewPhone || phone;
                     if (address) o.address = address;
                     updated = true;
                 }

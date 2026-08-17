@@ -317,6 +317,22 @@ async function adjustStockForOrderInPg(env, oldOrder, newOrder) {
   }
 }
 
+function normalizePhone(phone) {
+  if (!phone) return '';
+  let str = String(phone).trim();
+  const persianDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  for (let i = 0; i < 10; i++) {
+    str = str.replaceAll(persianDigits[i], String(i));
+    str = str.replaceAll(arabicDigits[i], String(i));
+  }
+  let digits = str.replace(/\D/g, '');
+  if (digits.startsWith('0098')) digits = '0' + digits.slice(4);
+  else if (digits.startsWith('98') && digits.length >= 12) digits = '0' + digits.slice(2);
+  else if (digits.startsWith('9') && digits.length === 10) digits = '0' + digits;
+  return digits;
+}
+
 // Customers DB Helpers
 async function getAllCustomersFromPg(env) {
   try {
@@ -371,27 +387,33 @@ async function getCombinedCustomers(env) {
   
   const map = new Map();
 
-  // First seed from DB customers
+  // First seed from DB customers (deduplicated by normalized phone)
   pgCusts.forEach(pc => {
-    const normPhone = String(pc.phone || '').replace(/\D/g, '');
+    const normPhone = normalizePhone(pc.phone);
     const pKey = normPhone || String(pc.id);
-    map.set(pKey, {
-      id: String(pc.id),
-      name: pc.name || 'مشتری',
-      phone: pc.phone || '',
-      address: pc.address || '',
-      notes: pc.notes || '',
-      totalOrders: 0, // Reset to 0 before aggregating from real orders
-      totalSpent: 0,   // Reset to 0 before aggregating from real orders
-      lastOrderAt: pc.last_order_at || pc.created_at || new Date().toISOString(),
-      createdAt: pc.created_at || new Date().toISOString()
-    });
+    if (!map.has(pKey)) {
+      map.set(pKey, {
+        id: String(pc.id),
+        name: pc.name || 'مشتری',
+        phone: pc.phone || '',
+        address: pc.address || '',
+        notes: pc.notes || '',
+        totalOrders: 0,
+        totalSpent: 0,
+        lastOrderAt: pc.last_order_at || pc.created_at || new Date().toISOString(),
+        createdAt: pc.created_at || new Date().toISOString()
+      });
+    } else {
+      const existing = map.get(pKey);
+      if (!existing.notes && pc.notes) existing.notes = pc.notes;
+      if (!existing.address && pc.address) existing.address = pc.address;
+    }
   });
 
-  // Dynamically group & aggregate metrics from ALL orders (deduplicated by phone)
+  // Dynamically group & aggregate metrics from ALL orders (deduplicated by normalized phone)
   orders.forEach(o => {
     const rawPhone = String(o.phone || '');
-    const normPhone = rawPhone.replace(/\D/g, '');
+    const normPhone = normalizePhone(rawPhone);
     const key = normPhone || String(o.customerId || o.id);
 
     let cust = map.get(key);
@@ -1193,27 +1215,82 @@ export async function onRequest(context) {
   if (path.startsWith('/api/admin/customers/')) {
     const id = path.replace('/api/admin/customers/', '');
     const customers = await getCombinedCustomers(env);
-    let existing = customers.find(c => String(c.id) === id);
+    const normId = normalizePhone(id);
+    let existing = customers.find(c => String(c.id) === id || normalizePhone(c.phone) === normId || String(c.phone) === id);
 
     if (method === 'GET') {
       if (!existing) return jsonRes({ success: false, message: 'مشتری یافت نشد' }, 404);
       const orders = await getCombinedOrders(env);
-      const userOrders = orders.filter(o => String(o.phone) === String(existing.phone));
+      const userOrders = orders.filter(o =>
+        String(o.customerId) === String(existing.id) ||
+        normalizePhone(o.phone) === normalizePhone(existing.phone) ||
+        String(o.phone) === String(existing.phone)
+      );
       return jsonRes({ success: true, customer: { ...existing, orders: userOrders } });
     }
 
     if (method === 'PATCH' || method === 'PUT') {
-      const updatedCust = { ...existing, ...body, id };
-      const memIdx = memoryCustomers.findIndex(c => String(c.id) === id);
+      const oldPhone = existing ? existing.phone : '';
+      const oldNormPhone = normalizePhone(oldPhone);
+      const newPhone = body.phone ? normalizePhone(body.phone) : (oldNormPhone || oldPhone);
+      const oldId = existing ? String(existing.id) : String(id);
+
+      const updatedCust = {
+        ...(existing || {}),
+        ...body,
+        id: existing ? existing.id : id,
+        phone: newPhone,
+        updatedAt: new Date().toISOString()
+      };
+
+      const memIdx = memoryCustomers.findIndex(c => String(c.id) === oldId || normalizePhone(c.phone) === oldNormPhone || normalizePhone(c.phone) === newPhone);
       if (memIdx !== -1) memoryCustomers[memIdx] = updatedCust;
       else memoryCustomers.push(updatedCust);
 
+      // Clean duplicate in memoryCustomers
+      for (let i = memoryCustomers.length - 1; i >= 0; i--) {
+        if (i !== memIdx && (normalizePhone(memoryCustomers[i].phone) === newPhone || normalizePhone(memoryCustomers[i].phone) === oldNormPhone)) {
+          memoryCustomers.splice(i, 1);
+        }
+      }
+
       await saveCustomerToPg(env, updatedCust);
+
+      // Sync customer updates across all orders in Postgres & memory
+      const supabase = getSupabaseClient(env);
+      if (supabase) {
+        try {
+          const updatePayload = {};
+          if (newPhone) updatePayload.phone = newPhone;
+          if (body.name) updatePayload.customer_name = body.name;
+          if (body.address) updatePayload.address = body.address;
+
+          if (Object.keys(updatePayload).length > 0) {
+            if (oldPhone) await supabase.from('orders').update(updatePayload).eq('phone', oldPhone);
+            if (oldNormPhone && oldNormPhone !== oldPhone) await supabase.from('orders').update(updatePayload).eq('phone', oldNormPhone);
+            await supabase.from('orders').update(updatePayload).eq('customer_id', oldId);
+          }
+        } catch (err) {
+          console.error('[Supabase Update Orders on Customer Change Error]:', err);
+        }
+      }
+
+      memoryOrders.forEach(o => {
+        const oNormPhone = normalizePhone(o.phone);
+        if (String(o.customerId) === oldId || oNormPhone === oldNormPhone || oNormPhone === newPhone || String(o.phone) === String(oldPhone) || String(o.phone) === String(id)) {
+          if (body.name) o.customerName = body.name;
+          if (newPhone) o.phone = newPhone;
+          if (body.address) o.address = body.address;
+          o.customerId = updatedCust.id;
+        }
+      });
+
       return jsonRes({ success: true, message: 'اطلاعات مشتری بروزرسانی شد', customer: updatedCust });
     }
 
     if (method === 'DELETE') {
-      const memIdx = memoryCustomers.findIndex(c => String(c.id) === id);
+      const normDeleteId = normalizePhone(id);
+      const memIdx = memoryCustomers.findIndex(c => String(c.id) === id || normalizePhone(c.phone) === normDeleteId);
       if (memIdx !== -1) memoryCustomers.splice(memIdx, 1);
       await deleteCustomerFromPg(env, id);
       return jsonRes({ success: true, message: 'مشتری با موفقیت حذف شد' });

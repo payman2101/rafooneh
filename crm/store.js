@@ -448,7 +448,19 @@ function generateId(prefix) {
 }
 
 function normalizePhone(phone) {
-  return String(phone || '').replace(/\D/g, '').replace(/^98/, '0');
+  if (!phone) return '';
+  let str = String(phone).trim();
+  const persianDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  for (let i = 0; i < 10; i++) {
+    str = str.replaceAll(persianDigits[i], String(i));
+    str = str.replaceAll(arabicDigits[i], String(i));
+  }
+  let digits = str.replace(/\D/g, '');
+  if (digits.startsWith('0098')) digits = '0' + digits.slice(4);
+  else if (digits.startsWith('98') && digits.length >= 12) digits = '0' + digits.slice(2);
+  else if (digits.startsWith('9') && digits.length === 10) digits = '0' + digits;
+  return digits;
 }
 
 export function getStatusLabel(status) {
@@ -1113,62 +1125,128 @@ export async function deleteProduct(id) {
 export function listCustomers(filters = {}) {
   let customers = readJson(CUSTOMERS_FILE, []);
 
+  // Deduplicate customers by normalized phone number to ensure no duplicate rows
+  const custMap = new Map();
+  customers.forEach(c => {
+    const norm = normalizePhone(c.phone) || String(c.id);
+    if (!custMap.has(norm)) {
+      custMap.set(norm, { ...c, phone: normalizePhone(c.phone) || c.phone });
+    } else {
+      const existing = custMap.get(norm);
+      existing.totalOrders = Math.max(Number(existing.totalOrders || 0), Number(c.totalOrders || 0));
+      existing.totalSpent = Math.max(Number(existing.totalSpent || 0), Number(c.totalSpent || 0));
+      if (!existing.notes && c.notes) existing.notes = c.notes;
+      if (!existing.address && c.address) existing.address = c.address;
+      if (!existing.name && c.name) existing.name = c.name;
+      if (new Date(c.lastOrderAt || 0) > new Date(existing.lastOrderAt || 0)) {
+        existing.lastOrderAt = c.lastOrderAt;
+      }
+    }
+  });
+  let result = Array.from(custMap.values());
+
   if (filters.search) {
     const q = filters.search.toLowerCase();
-    customers = customers.filter(c =>
+    result = result.filter(c =>
       c.name?.toLowerCase().includes(q) ||
       c.phone?.includes(q) ||
       c.address?.toLowerCase().includes(q)
     );
   }
 
-  return customers.sort((a, b) => new Date(b.lastOrderAt || b.createdAt) - new Date(a.lastOrderAt || a.createdAt));
+  return result.sort((a, b) => new Date(b.lastOrderAt || b.createdAt) - new Date(a.lastOrderAt || a.createdAt));
 }
 
 export function getCustomerById(id) {
   const customers = readJson(CUSTOMERS_FILE, []);
-  const customer = customers.find(c => c.id === id);
+  const normId = normalizePhone(id);
+  const customer = customers.find(c => String(c.id) === String(id) || normalizePhone(c.phone) === normId || String(c.phone) === String(id));
   if (!customer) return null;
 
-  const orders = readJson(ORDERS_FILE, []).filter(o => o.customerId === id);
+  const orders = readJson(ORDERS_FILE, []).filter(o =>
+    String(o.customerId) === String(customer.id) ||
+    normalizePhone(o.phone) === normalizePhone(customer.phone) ||
+    String(o.phone) === String(customer.phone)
+  );
   return { ...customer, orders };
 }
 
 export async function updateCustomer(id, updates) {
   const customers = readJson(CUSTOMERS_FILE, []);
-  const idx = customers.findIndex(c => c.id === id || c.phone === id);
+  const normId = normalizePhone(id);
+  const idx = customers.findIndex(c => String(c.id) === String(id) || normalizePhone(c.phone) === normId || String(c.phone) === String(id));
   if (idx === -1) return null;
 
-  const oldPhone = customers[idx].phone;
+  const oldCustomer = customers[idx];
+  const oldPhone = oldCustomer.phone;
+  const oldNormPhone = normalizePhone(oldPhone);
+  const newPhone = updates.phone ? normalizePhone(updates.phone) : oldNormPhone;
+  const oldId = String(oldCustomer.id);
 
-  customers[idx] = {
-    ...customers[idx],
+  const updatedCustomer = {
+    ...oldCustomer,
     ...updates,
+    phone: newPhone,
     updatedAt: new Date().toISOString()
   };
 
-  // Sync customer changes across orders
-  if (updates.name || updates.phone || updates.address) {
-    const orders = readJson(ORDERS_FILE, []);
-    let ordersUpdated = false;
-    orders.forEach(o => {
-      if (o.customerId === id || o.phone === oldPhone || o.phone === id) {
-        if (updates.name) o.customerName = updates.name;
-        if (updates.phone) o.phone = normalizePhone(updates.phone);
-        if (updates.address) o.address = updates.address;
-        ordersUpdated = true;
+  // Re-build customer list ensuring complete deduplication
+  const updatedList = [];
+  const seenPhones = new Set();
+  seenPhones.add(newPhone);
+  updatedList.push(updatedCustomer);
+
+  for (let i = 0; i < customers.length; i++) {
+    if (i === idx) continue;
+    const cNorm = normalizePhone(customers[i].phone);
+    if (cNorm === oldNormPhone || cNorm === newPhone || String(customers[i].id) === oldId) {
+      if (customers[i].id && String(customers[i].id) !== String(updatedCustomer.id)) {
+        deleteCustomerFromFirestore(customers[i].id).catch(() => {});
+        deleteCustomerCloudSql(customers[i].id).catch(() => {});
+        try { deleteCustomerSqlite(customers[i].id); } catch (e) {}
       }
-    });
-    if (ordersUpdated) {
-      writeJson(ORDERS_FILE, orders);
+      updatedCustomer.totalOrders = Math.max(Number(updatedCustomer.totalOrders || 0), Number(customers[i].totalOrders || 0));
+      updatedCustomer.totalSpent = Math.max(Number(updatedCustomer.totalSpent || 0), Number(customers[i].totalSpent || 0));
+      if (!updatedCustomer.notes && customers[i].notes) updatedCustomer.notes = customers[i].notes;
+    } else {
+      if (!seenPhones.has(cNorm)) {
+        seenPhones.add(cNorm);
+        updatedList.push(customers[i]);
+      }
     }
   }
 
-  writeJson(CUSTOMERS_FILE, customers);
-  await saveCustomerCloudSql(customers[idx]).catch(e => console.error('Cloud SQL update customer notice:', e));
-  saveCustomerToFirestore(customers[idx]).catch(e => console.error('Firestore update customer error:', e));
-  try { saveCustomerSqlite(customers[idx]); } catch (e) { console.error('SQLite update customer notice:', e); }
-  return customers[idx];
+  // Sync customer changes across orders
+  const orders = readJson(ORDERS_FILE, []);
+  let ordersUpdated = false;
+  orders.forEach(o => {
+    const oNormPhone = normalizePhone(o.phone);
+    if (String(o.customerId) === oldId || String(o.customerId) === String(id) || oNormPhone === oldNormPhone || oNormPhone === newPhone || String(o.phone) === String(oldPhone) || String(o.phone) === String(id)) {
+      if (updates.name) o.customerName = updates.name;
+      if (newPhone) o.phone = newPhone;
+      if (updates.address) o.address = updates.address;
+      o.customerId = updatedCustomer.id;
+      o.updatedAt = new Date().toISOString();
+      ordersUpdated = true;
+
+      saveOrderToFirestore(o).catch(e => console.error('Firestore save order error on customer update:', e));
+      try { saveOrderSqlite(o); } catch (e) {}
+      saveOrderCloudSql(o).catch(e => {});
+    }
+  });
+
+  if (ordersUpdated) {
+    writeJson(ORDERS_FILE, orders);
+    writeJson(ROOT_ORDERS_FILE, orders);
+  }
+
+  writeJson(CUSTOMERS_FILE, updatedList);
+  writeJson(ROOT_CUSTOMERS_FILE, updatedList);
+  await saveCustomerCloudSql(updatedCustomer).catch(e => console.error('Cloud SQL update customer notice:', e));
+  saveCustomerToFirestore(updatedCustomer).catch(e => console.error('Firestore update customer error:', e));
+  try { saveCustomerSqlite(updatedCustomer); } catch (e) { console.error('SQLite update customer notice:', e); }
+
+  return updatedCustomer;
 }
 
 export async function deleteCustomer(id) {
