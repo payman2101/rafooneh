@@ -2058,7 +2058,6 @@
                                     ارسال عادی (تحویل رایگان درب منزل)
                                     <span class="badge-free">رایگان</span>
                                 </div>
-                                <div class="delivery-desc">سراسر کرج و استان البرز (تحویل ۲۴ الی ۴۸ ساعت کاری طبق نوبت)</div>
                             </div>
                         </label>
 
@@ -2068,47 +2067,13 @@
                                 <div class="delivery-title">
                                     <i class="fa-solid fa-bolt" style="color:#d97706"></i>
                                     تحویل فوری (کمتر از ۲۴ ساعت - ویژه شهر کرج)
-                                    <span class="badge-express">محاسبه بر اساس مسافت</span>
                                 </div>
-                                <div class="delivery-desc">ارسال اختصاصی مستقیم از انبار مهرشهر (پایه ۱۰۰ هزار + ۲۵ هزار/کیلومتر)</div>
                             </div>
                         </label>
                     </div>
 
                     <!-- Express Delivery Calculator Sub-Panel -->
                     <div id="expressDeliveryPanel" class="express-calc-box" style="display: none;">
-                        <div class="express-notice-banner">
-                            <i class="fa-solid fa-circle-info" style="margin-top:2px;"></i>
-                            <div>
-                                <strong>مبدأ ارسال:</strong> انبار مرکزی رافونه (کرج، فاز ۴ مهرشهر، خیابان ۴۰۹ شرقی، پلاک ۱۱۲)
-                                <div style="font-size:0.75rem; color:#0369a1; margin-top:2px;">⚡ خدمت تحویل فوری فعلاً ویژه شهر کرج فعال است و به زودی برای تهران نیز اضافه می‌شود.</div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label style="font-size: 0.82rem; font-weight: bold; color: #334155; margin-bottom: 4px; display: block;">
-                                <i class="fa-solid fa-map-pin"></i> انتخاب محدوده / محله در کرج:
-                            </label>
-                            <select id="karajDistrictSelect" class="form-control" onchange="handleDistrictChange()" style="font-size: 0.85rem; padding: 8px 10px;">
-                                <option value="mehrshahr4" data-dist="1.5">فاز ۴ مهرشهر (همجوار انبار) - حدود ۱.۵ کیلومتر</option>
-                                <option value="mehrshahr123" data-dist="3.5">فاز ۱، ۲ و ۳ مهرشهر / بلوار شهرداری - حدود ۳.۵ کیلومتر</option>
-                                <option value="kianmehr" data-dist="4.5">کیانمهر / بلوار ارم - حدود ۴.۵ کیلومتر</option>
-                                <option value="golshahr" data-dist="5.5">گلشهر / ۴۵ متری گلشهر / پونه - حدود ۵.۵ کیلومتر</option>
-                                <option value="mahroovila" data-dist="6.0">مهرویلا / میدان مادر / درختی - حدود ۶.۰ کیلومتر</option>
-                                <option value="dehghanvila" data-dist="7.5">دهقان ویلا / میانجاده / حیدرآباد - حدود ۷.۵ کیلومتر</option>
-                                <option value="jahanshahr" data-dist="9.0">جهانشهر / میدان سپاه / بلوار ماهان - حدود ۹.۰ کیلومتر</option>
-                                <option value="talebani" data-dist="9.5">میدان شهدا / چهارراه طالقانی / هفت تیر - حدود ۹.۵ کیلومتر</option>
-                                <option value="baghestan" data-dist="10.5">باغستان / شاهین‌ویلا / گوهردشت غربی - حدود ۱۰.۵ کیلومتر</option>
-                                <option value="gohardasht" data-dist="11.0">گوهردشت (رجایی‌شهر) / رستاخیز - حدود ۱۱.۰ کیلومتر</option>
-                                <option value="azimieh" data-dist="13.5">عظیمیه / میدان اسبی / طالقانی شمالی - حدود ۱۳.۵ کیلومتر</option>
-                                <option value="fardis" data-dist="14.0">فردیس / منظریه / رزکان - حدود ۱۴.۰ کیلومتر</option>
-                                <option value="kamalshahr" data-dist="7.5">کمالشهر / حصارک - حدود ۷.۵ کیلومتر</option>
-                                <option value="mohammadshahr" data-dist="12.0">محمدشهر / همایون‌ویلا - حدود ۱۲.۰ کیلومتر</option>
-                                <option value="garmdarreh" data-dist="18.0">گرمدره / کلاک / سرحدآباد - حدود ۱۸.۰ کیلومتر</option>
-                                <option value="custom" data-dist="custom">📌 تعیین دقیق از روی نقشه یا موقعیت GPS</option>
-                            </select>
-                        </div>
-
                         <div class="express-location-tools">
                             <button type="button" class="btn-loc-tool" onclick="detectCustomerGpsLocation()">
                                 <i class="fa-solid fa-crosshairs" style="color:#0284c7;"></i>
@@ -2123,22 +2088,10 @@
                         <div id="deliveryMapContainer"></div>
 
                         <!-- Live Cost Breakdown -->
-                        <div class="express-breakdown-card">
-                            <div class="express-breakdown-row">
-                                <span style="color:#475569;"><i class="fa-solid fa-route"></i> فاصله تقریبی تا انبار:</span>
-                                <strong id="expressDistanceLabel" style="color:#0284c7;">۱.۵ کیلومتر</strong>
-                            </div>
-                            <div class="express-breakdown-row">
-                                <span style="color:#475569;">هزینه پایه تحویل فوری:</span>
-                                <span>۱۰۰٬۰۰۰ تومان</span>
-                            </div>
-                            <div class="express-breakdown-row">
-                                <span style="color:#475569;">هزینه مسافت (هر کیلومتر ۲۵٬۰۰۰ ت):</span>
-                                <span id="expressKmCostLabel">۳۷٬۵۰۰ تومان</span>
-                            </div>
-                            <div class="express-breakdown-row" style="border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 2px; font-weight: bold;">
+                        <div class="express-breakdown-card" style="margin-top: 6px;">
+                            <div class="express-breakdown-row" style="font-weight: bold;">
                                 <span style="color:#b45309;"><i class="fa-solid fa-calculator"></i> کل هزینه تحویل فوری:</span>
-                                <strong id="expressTotalFeeLabel" style="color:#b45309; font-size: 0.9rem;">۱۳۸٬۰۰۰ تومان</strong>
+                                <strong id="expressTotalFeeLabel" style="color:#b45309; font-size: 0.95rem;">۱۳۰٬۰۰۰ تومان</strong>
                             </div>
                         </div>
                     </div>
@@ -2147,34 +2100,6 @@
                 <div class="form-group">
                     <label for="custNote"><i class="fa-solid fa-comment-dots"></i> توضیحات یا زمان تحویل (اختیاری):</label>
                     <input type="text" id="custNote" class="form-control" placeholder="مثلاً: تحویل ساعت ۵ به بعد">
-                </div>
-
-                <div class="form-group">
-                    <label><i class="fa-solid fa-credit-card"></i> روش پرداخت:</label>
-                    <div class="payment-methods">
-                        <label class="payment-option active" id="optionCod">
-                            <input type="radio" name="paymentMethod" value="cod" checked onchange="togglePaymentMethod('cod')">
-                            <div class="payment-option-content">
-                                <div class="payment-title">
-                                    <i class="fa-solid fa-truck-ramp-box" style="color:var(--primary)"></i>
-                                    پرداخت در محل (کارتخوان یا نقد)
-                                    <span class="badge-fast">پیش‌فرض</span>
-                                </div>
-                                <div class="payment-desc">تسویه هنگام دریافت کالا درب منزل</div>
-                            </div>
-                        </label>
-
-                        <label class="payment-option" id="optionWhatsapp">
-                            <input type="radio" name="paymentMethod" value="whatsapp" onchange="togglePaymentMethod('whatsapp')">
-                            <div class="payment-option-content">
-                                <div class="payment-title">
-                                    <i class="fa-brands fa-whatsapp" style="color:var(--whatsapp)"></i>
-                                    کارت به کارت / هماهنگی در واتساپ
-                                </div>
-                                <div class="payment-desc">دریافت شماره کارت یا هماهنگی در واتساپ</div>
-                            </div>
-                        </label>
-                    </div>
                 </div>
 
                 <button type="submit" class="btn-submit-order" id="submitBtn">
@@ -3067,29 +2992,11 @@
         const WAREHOUSE_COORDS = [35.8012, 50.9015];
         const WAREHOUSE_ADDRESS = "کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲";
         const EXPRESS_BASE_FEE = 100000;
-        const EXPRESS_PER_KM_FEE = 25000;
-
-        const KARAJ_DISTRICTS = {
-            mehrshahr4: { name: 'فاز ۴ مهرشهر', dist: 1.5, coords: [35.8012, 50.9015] },
-            mehrshahr123: { name: 'فاز ۱ تا ۳ مهرشهر', dist: 3.5, coords: [35.8080, 50.9180] },
-            kianmehr: { name: 'کیانمهر', dist: 4.5, coords: [35.7720, 50.8850] },
-            golshahr: { name: 'گلشهر', dist: 5.5, coords: [35.8230, 50.9380] },
-            mahroovila: { name: 'مهرویلا', dist: 6.0, coords: [35.8290, 50.9540] },
-            dehghanvila: { name: 'دهقان ویلا / میانجاده', dist: 7.5, coords: [35.8360, 50.9630] },
-            jahanshahr: { name: 'جهانشهر', dist: 9.0, coords: [35.8380, 50.9850] },
-            talebani: { name: 'میدان شهدا / طالقانی', dist: 9.5, coords: [35.8280, 50.9950] },
-            baghestan: { name: 'باغستان / شاهین‌ویلا', dist: 10.5, coords: [35.8750, 50.9700] },
-            gohardasht: { name: 'گوهردشت (رجایی‌شهر)', dist: 11.0, coords: [35.8620, 50.9910] },
-            azimieh: { name: 'عظیمیه', dist: 13.5, coords: [35.8520, 51.0250] },
-            fardis: { name: 'فردیس / منظریه', dist: 14.0, coords: [35.7280, 50.9820] },
-            kamalshahr: { name: 'کمالشهر / حصارک', dist: 7.5, coords: [35.8650, 50.8650] },
-            mohammadshahr: { name: 'محمدشهر', dist: 12.0, coords: [35.7550, 50.9250] },
-            garmdarreh: { name: 'گرمدره / کلاک', dist: 18.0, coords: [35.7500, 51.0800] }
-        };
+        const EXPRESS_PER_KM_FEE = 20000;
 
         let selectedDeliveryType = 'normal'; // 'normal' or 'express'
         let expressDeliveryDistance = 1.5; // in kilometers
-        let expressDeliveryFee = 138000; // in Tomans
+        let expressDeliveryFee = 130000; // in Tomans (100k base + 1.5km * 20k)
         let customerCoordinates = [35.8012, 50.9015];
         let deliveryMapInstance = null;
         let deliveryWarehouseMarker = null;
@@ -3128,12 +3035,7 @@
             expressDeliveryDistance = calc.distance;
             expressDeliveryFee = calc.totalFee;
 
-            const distLabel = document.getElementById('expressDistanceLabel');
-            const kmCostLabel = document.getElementById('expressKmCostLabel');
             const totalFeeLabel = document.getElementById('expressTotalFeeLabel');
-
-            if (distLabel) distLabel.innerText = `${calc.distance.toLocaleString('fa-IR')} کیلومتر`;
-            if (kmCostLabel) kmCostLabel.innerText = `${calc.kmCost.toLocaleString('fa-IR')} تومان`;
             if (totalFeeLabel) totalFeeLabel.innerText = `${calc.totalFee.toLocaleString('fa-IR')} تومان`;
 
             refreshOrderSummaryList();
@@ -3153,7 +3055,8 @@
                 if (normalOpt) normalOpt.classList.remove('active');
                 if (expressOpt) expressOpt.classList.add('active');
                 if (panel) panel.style.display = 'flex';
-                handleDistrictChange();
+                updateExpressCostDisplay(expressDeliveryDistance);
+                toggleDeliveryMap(true);
             }
             refreshOrderSummaryList();
         }
@@ -3239,8 +3142,6 @@
                     const newLatLng = e.target.getLatLng();
                     customerCoordinates = [newLatLng.lat, newLatLng.lng];
                     const dist = calculateDistanceKm(WAREHOUSE_COORDS[0], WAREHOUSE_COORDS[1], newLatLng.lat, newLatLng.lng);
-                    const sel = document.getElementById('karajDistrictSelect');
-                    if (sel) sel.value = 'custom';
                     updateExpressCostDisplay(dist);
                     updateMapRouteLine();
                 });
@@ -3250,8 +3151,6 @@
                     customerCoordinates = [newLatLng.lat, newLatLng.lng];
                     deliveryCustomerMarker.setLatLng(newLatLng);
                     const dist = calculateDistanceKm(WAREHOUSE_COORDS[0], WAREHOUSE_COORDS[1], newLatLng.lat, newLatLng.lng);
-                    const sel = document.getElementById('karajDistrictSelect');
-                    if (sel) sel.value = 'custom';
                     updateExpressCostDisplay(dist);
                     updateMapRouteLine();
                 });
@@ -3297,8 +3196,6 @@
                     const lng = pos.coords.longitude;
                     customerCoordinates = [lat, lng];
                     const dist = calculateDistanceKm(WAREHOUSE_COORDS[0], WAREHOUSE_COORDS[1], lat, lng);
-                    const sel = document.getElementById('karajDistrictSelect');
-                    if (sel) sel.value = 'custom';
                     updateExpressCostDisplay(dist);
 
                     toggleDeliveryMap(true);
@@ -3314,7 +3211,7 @@
                     }
                 },
                 err => {
-                    alert('دسترسی به موقعیت مکانی داده نشد یا خطایی رخ داد. لطفاً محله را از لیست انتخاب فرمایید.');
+                    alert('دسترسی به موقعیت مکانی GPS داده نشد. لطفاً روی نقشه تعاملی موقعیت خود را مشخص فرمایید.');
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = orig;
@@ -3403,24 +3300,12 @@
             document.getElementById('checkoutModal').style.display = 'none';
         }
 
-        let selectedPaymentMethod = 'cod';
+        let selectedPaymentMethod = 'whatsapp';
         let currentAuthority = '';
         let currentOrderData = null;
         let generatedOtp = '';
         let generatedCaptchaCode = '8492';
         let timerInterval = null;
-
-        function togglePaymentMethod(method) {
-            selectedPaymentMethod = method;
-            document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('active'));
-            if (method === 'cod') {
-                document.getElementById('optionCod').classList.add('active');
-                document.getElementById('submitBtn').innerHTML = `<i class="fa-brands fa-whatsapp" style="font-size: 1.3rem;"></i> ثبت سفارش در محل و ارسال به واتساپ`;
-            } else if (method === 'whatsapp') {
-                document.getElementById('optionWhatsapp').classList.add('active');
-                document.getElementById('submitBtn').innerHTML = `<i class="fa-brands fa-whatsapp" style="font-size: 1.3rem;"></i> ارسال سفارش و دریافت شماره کارت در واتساپ`;
-            }
-        }
 
         function calculateCartTotal() {
             let total = 0;
@@ -3543,7 +3428,7 @@
                 note,
                 items: orderItems,
                 totalAmount,
-                paymentMethod: selectedPaymentMethod,
+                paymentMethod: 'whatsapp',
                 deliveryType: selectedDeliveryType,
                 deliveryFee,
                 deliveryDistance: selectedDeliveryType === 'express' ? expressDeliveryDistance : 0,
@@ -3567,12 +3452,12 @@
             orderText += `📞 *شماره تماس:* ${phone}\n`;
             orderText += `📍 *آدرس تحویل:* ${address}\n`;
             if (note) orderText += `📝 *توضیحات:* ${note}\n`;
-            orderText += `💳 *روش پرداخت:* ${selectedPaymentMethod === 'cod' ? 'پرداخت در محل (کارتخوان / نقد)' : 'کارت به کارت / هماهنگی در واتساپ'}\n`;
+            orderText += `💳 *روش پرداخت:* کارت به کارت / هماهنگی در واتساپ\n`;
 
             if (selectedDeliveryType === 'express') {
                 orderText += `⚡ *نوع تحویل:* تحویل فوری کمتر از ۲۴ ساعت (کرج)\n`;
                 orderText += `📍 *مبدأ:* انبار فاز ۴ مهرشهر | *فاصله:* ${expressDeliveryDistance.toLocaleString('fa-IR')} کیلومتر\n`;
-                orderText += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان (پایه ۱۰۰ هزار + ۲۵ هزار/کیلومتر)\n`;
+                orderText += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان (پایه ۱۰۰ هزار + ۲۰ هزار/کیلومتر)\n`;
             } else {
                 orderText += `🚚 *نوع تحویل:* تحویل عادی (رایگان درب منزل)\n`;
             }

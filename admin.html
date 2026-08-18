@@ -2955,7 +2955,6 @@
             <div class="detail-row"><span>نوع ارسال</span><strong>${deliveryLabel}</strong></div>
             ${deliveryType === 'express' ? `<div class="detail-row"><span>هزینه ارسال اکسپرس</span><strong style="color:#d97706;">${formatPrice(deliveryFee)}</strong></div>` : ''}
             ${order.note ? `<div class="detail-row"><span>توضیحات</span><strong>${order.note}</strong></div>` : ''}
-            <div class="detail-row"><span>روش پرداخت</span><strong>${paymentLabels[order.paymentMethod] || order.paymentMethod || 'پرداخت در محل'}</strong></div>
             <div class="detail-row"><span>مبلغ کل فروش</span><strong>${formatPrice(order.totalAmount)}</strong></div>
             <div class="detail-row"><span>کل هزینه خرید</span><strong style="color:var(--warning);">${formatPrice(order.totalCost || 0)}</strong></div>
             <div class="detail-row"><span>سود خالص سفارش</span><strong style="color:var(--success); font-size:1rem;">${formatPrice(order.totalProfit || 0)} (${(order.profitMargin || 0).toLocaleString('fa-IR')}٪)</strong></div>
