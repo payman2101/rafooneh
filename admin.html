@@ -4250,9 +4250,7 @@
         msg += `💰 *مبلغ کل قابل پرداخت:* ${total.toLocaleString('fa-IR')} تومان\n`;
         if (order.deliveryType === 'express') {
             const dFee = Number(order.deliveryFee || 0);
-            const dist = Number(order.deliveryDistance || 0);
             msg += `⚡ *نوع ارسال:* تحویل فوری اکسپرس (کمتر از ۲۴ ساعت)\n`;
-            if (dist > 0) msg += `📍 *مسافت تخمینی تا انبار مهرشهر:* ${dist.toLocaleString('fa-IR')} کیلومتر\n`;
             msg += `🛵 *هزینه ارسال اکسپرس:* ${dFee > 0 ? dFee.toLocaleString('fa-IR') + ' تومان' : 'رایگان'}\n\n`;
         } else {
             msg += `🚚 *نوع ارسال:* ارسال عادی رایگان (تحویل ۲۴ الی ۴۸ ساعت)\n\n`;

@@ -2077,7 +2077,7 @@
                         <!-- Live Cost Breakdown -->
                         <div class="express-breakdown-card" style="margin-top: 2px;">
                             <div class="express-breakdown-row" style="font-weight: bold;">
-                                <span style="color:#b45309;"><i class="fa-solid fa-calculator"></i> هزینه تحویل فوری (پایه ۱۰۰ هزار + ۲۰ هزار/کیلومتر):</span>
+                                <span style="color:#b45309;"><i class="fa-solid fa-bolt"></i> هزینه تحویل فوری:</span>
                                 <strong id="expressTotalFeeLabel" style="color:#b45309; font-size: 0.95rem;">۱۲۰٬۰۰۰ تومان</strong>
                             </div>
                         </div>
@@ -3158,7 +3158,7 @@
             const statusBadge = document.getElementById('locationStatusBadge');
             if (statusBadge) {
                 statusBadge.style.display = 'block';
-                statusBadge.innerHTML = `<i class="fa-solid fa-check-circle"></i> موقعیت انتخابی شما روی نقشه ثبت شد (${dist.toLocaleString('fa-IR')} کیلومتر - کرایه: ${expressDeliveryFee.toLocaleString('fa-IR')} تومان)`;
+                statusBadge.innerHTML = `<i class="fa-solid fa-check-circle"></i> موقعیت مکانی شما با موفقیت ثبت شد (هزینه تحویل فوری: ${expressDeliveryFee.toLocaleString('fa-IR')} تومان)`;
             }
         }
 
@@ -3242,7 +3242,7 @@
             deliveryRow.className = 'summary-item';
             if (selectedDeliveryType === 'express') {
                 deliveryRow.innerHTML = `
-                    <span style="color:#b45309;"><i class="fa-solid fa-bolt"></i> تحویل فوری (مسافت ${expressDeliveryDistance.toLocaleString('fa-IR')} کم):</span>
+                    <span style="color:#b45309;"><i class="fa-solid fa-bolt"></i> هزینه تحویل فوری:</span>
                     <span style="color:#b45309; font-weight:bold;">+${expressDeliveryFee.toLocaleString('fa-IR')} تومان</span>
                 `;
             } else {
@@ -3452,8 +3452,7 @@
 
             if (selectedDeliveryType === 'express') {
                 orderText += `⚡ *نوع تحویل:* تحویل فوری کمتر از ۲۴ ساعت (کرج)\n`;
-                orderText += `📍 *مبدأ:* انبار فاز ۴ مهرشهر | *فاصله:* ${expressDeliveryDistance.toLocaleString('fa-IR')} کیلومتر\n`;
-                orderText += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان (پایه ۱۰۰ هزار + ۲۰ هزار/کیلومتر)\n`;
+                orderText += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان\n`;
             } else {
                 orderText += `🚚 *نوع تحویل:* تحویل عادی (رایگان درب منزل)\n`;
             }
@@ -4116,7 +4115,7 @@
             const invDelFee = document.getElementById('invDeliveryFee');
             if (invDelTitle && invDelFee) {
                 if (isExpress) {
-                    invDelTitle.innerHTML = `<i class="fa-solid fa-bolt" style="color:#d97706;"></i> تحویل فوری (مسافت ${deliveryDist > 0 ? deliveryDist.toLocaleString('fa-IR') + ' کیلومتر' : 'کرج'}):`;
+                    invDelTitle.innerHTML = `<i class="fa-solid fa-bolt" style="color:#d97706;"></i> هزینه تحویل فوری:`;
                     invDelFee.style.color = '#b45309';
                     invDelFee.innerText = `${deliveryFee.toLocaleString('fa-IR')} تومان`;
                 } else {
@@ -4172,7 +4171,7 @@
 
             if (isExpress) {
                 msg += `⚡ *نوع تحویل:* تحویل فوری کمتر از ۲۴ ساعت (کرج)\n`;
-                msg += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان (فاصله: ${dist.toLocaleString('fa-IR')} کیلومتر)\n\n`;
+                msg += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان\n\n`;
             } else {
                 msg += `🚚 *هزینه ارسال:* رایگان (تحویل درب منزل)\n\n`;
             }
