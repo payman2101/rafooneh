@@ -706,6 +706,10 @@ export function createOrder(orderData) {
       items: (items && items.length) ? items : orders[existingIdx].items,
       totalAmount: Number(orderData.totalAmount) || orders[existingIdx].totalAmount,
       paymentMethod: orderData.paymentMethod || orders[existingIdx].paymentMethod,
+      deliveryType: orderData.deliveryType !== undefined ? orderData.deliveryType : (orders[existingIdx].deliveryType || 'normal'),
+      deliveryFee: orderData.deliveryFee !== undefined ? Number(orderData.deliveryFee) : (orders[existingIdx].deliveryFee || 0),
+      deliveryDistance: orderData.deliveryDistance !== undefined ? Number(orderData.deliveryDistance) : (orders[existingIdx].deliveryDistance || 0),
+      deliveryCity: orderData.deliveryCity || orders[existingIdx].deliveryCity || 'کرج',
       status: orderData.status || orders[existingIdx].status || 'new',
       updatedAt: new Date().toISOString()
     };
@@ -721,6 +725,10 @@ export function createOrder(orderData) {
       items,
       totalAmount: Number(orderData.totalAmount) || 0,
       paymentMethod: orderData.paymentMethod || 'cod',
+      deliveryType: orderData.deliveryType || 'normal',
+      deliveryFee: Number(orderData.deliveryFee) || 0,
+      deliveryDistance: Number(orderData.deliveryDistance) || 0,
+      deliveryCity: orderData.deliveryCity || 'کرج',
       status: orderData.status || 'new',
       adminNotes: orderData.adminNotes || '',
       source: orderData.source || 'website',

@@ -1759,8 +1759,8 @@
                         <strong id="invSubtotal">۰ تومان</strong>
                     </div>
                     <div class="inv-total-row">
-                        <span>هزینه پیک / ارسال:</span>
-                        <strong style="color: #16a34a;">رایگان (تحویل درب منزل)</strong>
+                        <span id="invDeliveryTitle">هزینه پیک / ارسال:</span>
+                        <strong id="invDeliveryFee" style="color: #16a34a;">رایگان (تحویل درب منزل)</strong>
                     </div>
                     <div class="inv-total-row grand-total">
                         <span>مبلغ کل قابل پرداخت:</span>
@@ -2940,11 +2940,20 @@
             `;
         }).join('');
 
+        const deliveryType = order.deliveryType || 'normal';
+        const deliveryFee = Number(order.deliveryFee || 0);
+        const deliveryDistance = Number(order.deliveryDistance || 0);
+        const deliveryLabel = deliveryType === 'express' 
+            ? `<span style="color:#d97706; font-weight:bold;"><i class="fa-solid fa-bolt"></i> ارسال اکسپرس فوری ${deliveryDistance > 0 ? `(${deliveryDistance} کیلومتر)` : ''}</span>`
+            : `<span style="color:#16a34a; font-weight:bold;"><i class="fa-solid fa-truck"></i> ارسال عادی رایگان (۲۴ الی ۴۸ ساعت)</span>`;
+
         document.getElementById('orderDetailContent').innerHTML = `
             <div class="detail-row"><span>کد سفارش</span><strong>${order.id}</strong></div>
             <div class="detail-row"><span>مشتری</span><strong>${order.customerName || '—'}</strong></div>
             <div class="detail-row"><span>تلفن</span><strong dir="ltr">${order.phone || '—'}</strong></div>
             <div class="detail-row"><span>آدرس</span><strong>${order.address || '—'}</strong></div>
+            <div class="detail-row"><span>نوع ارسال</span><strong>${deliveryLabel}</strong></div>
+            ${deliveryType === 'express' ? `<div class="detail-row"><span>هزینه ارسال اکسپرس</span><strong style="color:#d97706;">${formatPrice(deliveryFee)}</strong></div>` : ''}
             ${order.note ? `<div class="detail-row"><span>توضیحات</span><strong>${order.note}</strong></div>` : ''}
             <div class="detail-row"><span>روش پرداخت</span><strong>${paymentLabels[order.paymentMethod] || order.paymentMethod || 'پرداخت در محل'}</strong></div>
             <div class="detail-row"><span>مبلغ کل فروش</span><strong>${formatPrice(order.totalAmount)}</strong></div>
@@ -3876,6 +3885,23 @@
         });
 
         const totalAmount = Number(order.totalAmount) || subtotal;
+        const deliveryType = order.deliveryType || 'normal';
+        const deliveryFee = Number(order.deliveryFee || 0);
+        const deliveryDistance = Number(order.deliveryDistance || 0);
+
+        const deliveryTitleEl = document.getElementById('invDeliveryTitle');
+        const deliveryFeeEl = document.getElementById('invDeliveryFee');
+        if (deliveryTitleEl && deliveryFeeEl) {
+            if (deliveryType === 'express') {
+                deliveryTitleEl.innerText = `ارسال اکسپرس فوری ${deliveryDistance > 0 ? `(${deliveryDistance} کیلومتر)` : ''}:`;
+                deliveryFeeEl.style.color = '#d97706';
+                deliveryFeeEl.innerText = deliveryFee > 0 ? `${deliveryFee.toLocaleString('fa-IR')} تومان` : 'رایگان';
+            } else {
+                deliveryTitleEl.innerText = 'هزینه پیک / ارسال:';
+                deliveryFeeEl.style.color = '#16a34a';
+                deliveryFeeEl.innerText = 'رایگان (تحویل درب منزل)';
+            }
+        }
 
         document.getElementById('invSubtotal').innerText = subtotal.toLocaleString('fa-IR') + ' تومان';
         document.getElementById('invGrandTotal').innerText = totalAmount.toLocaleString('fa-IR') + ' تومان';
@@ -4223,7 +4249,15 @@
         }
 
         msg += `💰 *مبلغ کل قابل پرداخت:* ${total.toLocaleString('fa-IR')} تومان\n`;
-        msg += `🚚 هزینه ارسال: رایگان (تحویل درب منزل)\n\n`;
+        if (order.deliveryType === 'express') {
+            const dFee = Number(order.deliveryFee || 0);
+            const dist = Number(order.deliveryDistance || 0);
+            msg += `⚡ *نوع ارسال:* تحویل فوری اکسپرس (کمتر از ۲۴ ساعت)\n`;
+            if (dist > 0) msg += `📍 *مسافت تخمینی تا انبار مهرشهر:* ${dist.toLocaleString('fa-IR')} کیلومتر\n`;
+            msg += `🛵 *هزینه ارسال اکسپرس:* ${dFee > 0 ? dFee.toLocaleString('fa-IR') + ' تومان' : 'رایگان'}\n\n`;
+        } else {
+            msg += `🚚 *نوع ارسال:* ارسال عادی رایگان (تحویل ۲۴ الی ۴۸ ساعت)\n\n`;
+        }
 
         msg += `💳 *اطلاعات کارت به کارت جهت واریز:*\n`;
         msg += `▫️ بانک: *${b.bankName || 'بانک ملی ایران'}*\n`;

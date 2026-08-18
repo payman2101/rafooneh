@@ -19,6 +19,9 @@
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet for Express Delivery Map -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     
     <script>
         const PRODUCT_PLACEHOLDER_SVG = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f1f5f9'/%3E%3Cpath d='M160 140h80v20h-80zM170 120h60v20h-60zM150 160h100v160c0 11-9 20-20 20h-60c-11 0-20-9-20-20V160z' fill='%230284c7' opacity='0.3'/%3E%3Ctext x='200' y='320' font-family='sans-serif' font-size='16' fill='%2364748b' text-anchor='middle'%3Eتصویر کالا%3E%3C/text%3E%3C/svg%3E";
@@ -814,6 +817,166 @@
             font-size: 0.78rem;
             color: var(--text-muted);
             margin-top: 2px;
+        }
+
+        /* Delivery Options & Express Calculator */
+        .delivery-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .delivery-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fafafa;
+        }
+
+        .delivery-option:hover {
+            border-color: #0284c7;
+            background: #ffffff;
+        }
+
+        .delivery-option.active {
+            border-color: #0284c7;
+            background: #f0f9ff;
+        }
+
+        .delivery-option input[type="radio"] {
+            margin-top: 4px;
+            accent-color: #0284c7;
+            width: 18px;
+            height: 18px;
+        }
+
+        .delivery-option-content {
+            flex: 1;
+        }
+
+        .delivery-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .badge-express {
+            background: #fef3c7;
+            color: #b45309;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid #fde68a;
+            font-weight: normal;
+        }
+
+        .badge-free {
+            background: #dcfce7;
+            color: #15803d;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid #bbf7d0;
+            font-weight: normal;
+        }
+
+        .delivery-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .express-calc-box {
+            background: #ffffff;
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .express-notice-banner {
+            font-size: 0.78rem;
+            color: #0369a1;
+            background: #e0f2fe;
+            padding: 8px 10px;
+            border-radius: 8px;
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .express-location-tools {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-loc-tool {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-loc-tool:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+
+        .btn-loc-tool.active-map {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
+        }
+
+        #deliveryMapContainer {
+            width: 100%;
+            height: 210px;
+            border-radius: 10px;
+            border: 1px solid #94a3b8;
+            overflow: hidden;
+            display: none;
+            margin-top: 6px;
+        }
+
+        .express-breakdown-card {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .express-breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         /* Bank Gateway Portal Modal */
@@ -1885,6 +2048,103 @@
                 </div>
 
                 <div class="form-group">
+                    <label><i class="fa-solid fa-truck-fast"></i> نحوه تحویل و ارسال سفارش:</label>
+                    <div class="delivery-options">
+                        <label class="delivery-option active" id="optionDeliveryNormal">
+                            <input type="radio" name="deliveryMethod" value="normal" checked onchange="toggleDeliveryType('normal')">
+                            <div class="delivery-option-content">
+                                <div class="delivery-title">
+                                    <i class="fa-solid fa-truck" style="color:var(--primary)"></i>
+                                    ارسال عادی (تحویل رایگان درب منزل)
+                                    <span class="badge-free">رایگان</span>
+                                </div>
+                                <div class="delivery-desc">سراسر کرج و استان البرز (تحویل ۲۴ الی ۴۸ ساعت کاری طبق نوبت)</div>
+                            </div>
+                        </label>
+
+                        <label class="delivery-option" id="optionDeliveryExpress">
+                            <input type="radio" name="deliveryMethod" value="express" onchange="toggleDeliveryType('express')">
+                            <div class="delivery-option-content">
+                                <div class="delivery-title">
+                                    <i class="fa-solid fa-bolt" style="color:#d97706"></i>
+                                    تحویل فوری (کمتر از ۲۴ ساعت - ویژه شهر کرج)
+                                    <span class="badge-express">محاسبه بر اساس مسافت</span>
+                                </div>
+                                <div class="delivery-desc">ارسال اختصاصی مستقیم از انبار مهرشهر (پایه ۱۰۰ هزار + ۲۵ هزار/کیلومتر)</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Express Delivery Calculator Sub-Panel -->
+                    <div id="expressDeliveryPanel" class="express-calc-box" style="display: none;">
+                        <div class="express-notice-banner">
+                            <i class="fa-solid fa-circle-info" style="margin-top:2px;"></i>
+                            <div>
+                                <strong>مبدأ ارسال:</strong> انبار مرکزی رافونه (کرج، فاز ۴ مهرشهر، خیابان ۴۰۹ شرقی، پلاک ۱۱۲)
+                                <div style="font-size:0.75rem; color:#0369a1; margin-top:2px;">⚡ خدمت تحویل فوری فعلاً ویژه شهر کرج فعال است و به زودی برای تهران نیز اضافه می‌شود.</div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-size: 0.82rem; font-weight: bold; color: #334155; margin-bottom: 4px; display: block;">
+                                <i class="fa-solid fa-map-pin"></i> انتخاب محدوده / محله در کرج:
+                            </label>
+                            <select id="karajDistrictSelect" class="form-control" onchange="handleDistrictChange()" style="font-size: 0.85rem; padding: 8px 10px;">
+                                <option value="mehrshahr4" data-dist="1.5">فاز ۴ مهرشهر (همجوار انبار) - حدود ۱.۵ کیلومتر</option>
+                                <option value="mehrshahr123" data-dist="3.5">فاز ۱، ۲ و ۳ مهرشهر / بلوار شهرداری - حدود ۳.۵ کیلومتر</option>
+                                <option value="kianmehr" data-dist="4.5">کیانمهر / بلوار ارم - حدود ۴.۵ کیلومتر</option>
+                                <option value="golshahr" data-dist="5.5">گلشهر / ۴۵ متری گلشهر / پونه - حدود ۵.۵ کیلومتر</option>
+                                <option value="mahroovila" data-dist="6.0">مهرویلا / میدان مادر / درختی - حدود ۶.۰ کیلومتر</option>
+                                <option value="dehghanvila" data-dist="7.5">دهقان ویلا / میانجاده / حیدرآباد - حدود ۷.۵ کیلومتر</option>
+                                <option value="jahanshahr" data-dist="9.0">جهانشهر / میدان سپاه / بلوار ماهان - حدود ۹.۰ کیلومتر</option>
+                                <option value="talebani" data-dist="9.5">میدان شهدا / چهارراه طالقانی / هفت تیر - حدود ۹.۵ کیلومتر</option>
+                                <option value="baghestan" data-dist="10.5">باغستان / شاهین‌ویلا / گوهردشت غربی - حدود ۱۰.۵ کیلومتر</option>
+                                <option value="gohardasht" data-dist="11.0">گوهردشت (رجایی‌شهر) / رستاخیز - حدود ۱۱.۰ کیلومتر</option>
+                                <option value="azimieh" data-dist="13.5">عظیمیه / میدان اسبی / طالقانی شمالی - حدود ۱۳.۵ کیلومتر</option>
+                                <option value="fardis" data-dist="14.0">فردیس / منظریه / رزکان - حدود ۱۴.۰ کیلومتر</option>
+                                <option value="kamalshahr" data-dist="7.5">کمالشهر / حصارک - حدود ۷.۵ کیلومتر</option>
+                                <option value="mohammadshahr" data-dist="12.0">محمدشهر / همایون‌ویلا - حدود ۱۲.۰ کیلومتر</option>
+                                <option value="garmdarreh" data-dist="18.0">گرمدره / کلاک / سرحدآباد - حدود ۱۸.۰ کیلومتر</option>
+                                <option value="custom" data-dist="custom">📌 تعیین دقیق از روی نقشه یا موقعیت GPS</option>
+                            </select>
+                        </div>
+
+                        <div class="express-location-tools">
+                            <button type="button" class="btn-loc-tool" onclick="detectCustomerGpsLocation()">
+                                <i class="fa-solid fa-crosshairs" style="color:#0284c7;"></i>
+                                دریافت لوکیشن با GPS
+                            </button>
+                            <button type="button" class="btn-loc-tool" id="btnToggleMap" onclick="toggleDeliveryMap()">
+                                <i class="fa-solid fa-map-location-dot" style="color:#0284c7;"></i>
+                                <span id="btnToggleMapText">باز کردن نقشه تعاملی</span>
+                            </button>
+                        </div>
+
+                        <div id="deliveryMapContainer"></div>
+
+                        <!-- Live Cost Breakdown -->
+                        <div class="express-breakdown-card">
+                            <div class="express-breakdown-row">
+                                <span style="color:#475569;"><i class="fa-solid fa-route"></i> فاصله تقریبی تا انبار:</span>
+                                <strong id="expressDistanceLabel" style="color:#0284c7;">۱.۵ کیلومتر</strong>
+                            </div>
+                            <div class="express-breakdown-row">
+                                <span style="color:#475569;">هزینه پایه تحویل فوری:</span>
+                                <span>۱۰۰٬۰۰۰ تومان</span>
+                            </div>
+                            <div class="express-breakdown-row">
+                                <span style="color:#475569;">هزینه مسافت (هر کیلومتر ۲۵٬۰۰۰ ت):</span>
+                                <span id="expressKmCostLabel">۳۷٬۵۰۰ تومان</span>
+                            </div>
+                            <div class="express-breakdown-row" style="border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 2px; font-weight: bold;">
+                                <span style="color:#b45309;"><i class="fa-solid fa-calculator"></i> کل هزینه تحویل فوری:</span>
+                                <strong id="expressTotalFeeLabel" style="color:#b45309; font-size: 0.9rem;">۱۳۸٬۰۰۰ تومان</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label for="custNote"><i class="fa-solid fa-comment-dots"></i> توضیحات یا زمان تحویل (اختیاری):</label>
                     <input type="text" id="custNote" class="form-control" placeholder="مثلاً: تحویل ساعت ۵ به بعد">
                 </div>
@@ -2225,8 +2485,8 @@
                             <strong id="invSubtotal">۰ تومان</strong>
                         </div>
                         <div class="inv-total-row">
-                            <span>هزینه پیک / ارسال:</span>
-                            <strong style="color: #16a34a;">رایگان (تحویل درب منزل)</strong>
+                            <span id="invDeliveryTitle">هزینه پیک / ارسال:</span>
+                            <strong id="invDeliveryFee" style="color: #16a34a;">رایگان (تحویل درب منزل)</strong>
                         </div>
                         <div class="inv-total-row grand-total">
                             <span>مبلغ کل قابل پرداخت:</span>
@@ -2800,18 +3060,282 @@
             }
         }
 
-        function openCheckoutModal() {
-            const modal = document.getElementById('checkoutModal');
+        // -------------------------------------------------------------
+        // Express Delivery & Distance Pricing Engine
+        // Base warehouse: Karaj, Mehrshahr Phase 4, 409th East St, No. 112
+        // -------------------------------------------------------------
+        const WAREHOUSE_COORDS = [35.8012, 50.9015];
+        const WAREHOUSE_ADDRESS = "کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲";
+        const EXPRESS_BASE_FEE = 100000;
+        const EXPRESS_PER_KM_FEE = 25000;
+
+        const KARAJ_DISTRICTS = {
+            mehrshahr4: { name: 'فاز ۴ مهرشهر', dist: 1.5, coords: [35.8012, 50.9015] },
+            mehrshahr123: { name: 'فاز ۱ تا ۳ مهرشهر', dist: 3.5, coords: [35.8080, 50.9180] },
+            kianmehr: { name: 'کیانمهر', dist: 4.5, coords: [35.7720, 50.8850] },
+            golshahr: { name: 'گلشهر', dist: 5.5, coords: [35.8230, 50.9380] },
+            mahroovila: { name: 'مهرویلا', dist: 6.0, coords: [35.8290, 50.9540] },
+            dehghanvila: { name: 'دهقان ویلا / میانجاده', dist: 7.5, coords: [35.8360, 50.9630] },
+            jahanshahr: { name: 'جهانشهر', dist: 9.0, coords: [35.8380, 50.9850] },
+            talebani: { name: 'میدان شهدا / طالقانی', dist: 9.5, coords: [35.8280, 50.9950] },
+            baghestan: { name: 'باغستان / شاهین‌ویلا', dist: 10.5, coords: [35.8750, 50.9700] },
+            gohardasht: { name: 'گوهردشت (رجایی‌شهر)', dist: 11.0, coords: [35.8620, 50.9910] },
+            azimieh: { name: 'عظیمیه', dist: 13.5, coords: [35.8520, 51.0250] },
+            fardis: { name: 'فردیس / منظریه', dist: 14.0, coords: [35.7280, 50.9820] },
+            kamalshahr: { name: 'کمالشهر / حصارک', dist: 7.5, coords: [35.8650, 50.8650] },
+            mohammadshahr: { name: 'محمدشهر', dist: 12.0, coords: [35.7550, 50.9250] },
+            garmdarreh: { name: 'گرمدره / کلاک', dist: 18.0, coords: [35.7500, 51.0800] }
+        };
+
+        let selectedDeliveryType = 'normal'; // 'normal' or 'express'
+        let expressDeliveryDistance = 1.5; // in kilometers
+        let expressDeliveryFee = 138000; // in Tomans
+        let customerCoordinates = [35.8012, 50.9015];
+        let deliveryMapInstance = null;
+        let deliveryWarehouseMarker = null;
+        let deliveryCustomerMarker = null;
+        let deliveryRouteLine = null;
+
+        function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const straightDistance = R * c;
+            // Apply road network detour factor (approx 1.28x)
+            const roadDistance = straightDistance * 1.28;
+            return Math.max(1, Math.round(roadDistance * 10) / 10);
+        }
+
+        function calculateExpressFee(distanceKm) {
+            const dist = Math.max(1, Math.round(distanceKm * 10) / 10);
+            const kmCost = Math.round(dist * EXPRESS_PER_KM_FEE);
+            const rawFee = EXPRESS_BASE_FEE + kmCost;
+            // Round to nearest 1,000 Tomans
+            const finalFee = Math.round(rawFee / 1000) * 1000;
+            return {
+                distance: dist,
+                kmCost: kmCost,
+                totalFee: finalFee
+            };
+        }
+
+        function updateExpressCostDisplay(distKm) {
+            const calc = calculateExpressFee(distKm);
+            expressDeliveryDistance = calc.distance;
+            expressDeliveryFee = calc.totalFee;
+
+            const distLabel = document.getElementById('expressDistanceLabel');
+            const kmCostLabel = document.getElementById('expressKmCostLabel');
+            const totalFeeLabel = document.getElementById('expressTotalFeeLabel');
+
+            if (distLabel) distLabel.innerText = `${calc.distance.toLocaleString('fa-IR')} کیلومتر`;
+            if (kmCostLabel) kmCostLabel.innerText = `${calc.kmCost.toLocaleString('fa-IR')} تومان`;
+            if (totalFeeLabel) totalFeeLabel.innerText = `${calc.totalFee.toLocaleString('fa-IR')} تومان`;
+
+            refreshOrderSummaryList();
+        }
+
+        function toggleDeliveryType(type) {
+            selectedDeliveryType = type;
+            const normalOpt = document.getElementById('optionDeliveryNormal');
+            const expressOpt = document.getElementById('optionDeliveryExpress');
+            const panel = document.getElementById('expressDeliveryPanel');
+
+            if (type === 'normal') {
+                if (normalOpt) normalOpt.classList.add('active');
+                if (expressOpt) expressOpt.classList.remove('active');
+                if (panel) panel.style.display = 'none';
+            } else {
+                if (normalOpt) normalOpt.classList.remove('active');
+                if (expressOpt) expressOpt.classList.add('active');
+                if (panel) panel.style.display = 'flex';
+                handleDistrictChange();
+            }
+            refreshOrderSummaryList();
+        }
+
+        function handleDistrictChange() {
+            const select = document.getElementById('karajDistrictSelect');
+            if (!select) return;
+            const val = select.value;
+            if (val === 'custom') {
+                toggleDeliveryMap(true);
+            } else if (KARAJ_DISTRICTS[val]) {
+                const district = KARAJ_DISTRICTS[val];
+                customerCoordinates = district.coords;
+                updateExpressCostDisplay(district.dist);
+                if (deliveryCustomerMarker && deliveryMapInstance) {
+                    deliveryCustomerMarker.setLatLng(customerCoordinates);
+                    updateMapRouteLine();
+                }
+            }
+        }
+
+        function toggleDeliveryMap(forceOpen = false) {
+            const container = document.getElementById('deliveryMapContainer');
+            const btnText = document.getElementById('btnToggleMapText');
+            const btn = document.getElementById('btnToggleMap');
+            if (!container) return;
+
+            const isCurrentlyHidden = container.style.display === 'none' || !container.style.display;
+            const shouldOpen = forceOpen ? true : isCurrentlyHidden;
+
+            if (shouldOpen) {
+                container.style.display = 'block';
+                if (btnText) btnText.innerText = 'بستن نقشه';
+                if (btn) btn.classList.add('active-map');
+                initDeliveryMap();
+            } else {
+                container.style.display = 'none';
+                if (btnText) btnText.innerText = 'باز کردن نقشه تعاملی';
+                if (btn) btn.classList.remove('active-map');
+            }
+        }
+
+        function initDeliveryMap() {
+            if (typeof L === 'undefined') return;
+            const container = document.getElementById('deliveryMapContainer');
+            if (!container) return;
+
+            if (!deliveryMapInstance) {
+                deliveryMapInstance = L.map('deliveryMapContainer', {
+                    center: [35.8150, 50.9300],
+                    zoom: 12
+                });
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(deliveryMapInstance);
+
+                // Warehouse Marker
+                const warehouseIcon = L.divIcon({
+                    className: 'custom-map-icon',
+                    html: '<div style="background:#00897b; color:white; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,0,0,0.3); border:2px solid white; font-size:16px;"><i class="fa-solid fa-warehouse"></i></div>',
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 17]
+                });
+
+                deliveryWarehouseMarker = L.marker(WAREHOUSE_COORDS, { icon: warehouseIcon })
+                    .addTo(deliveryMapInstance)
+                    .bindPopup(`<b>🏢 انبار مرکزی رافونه</b><br>${WAREHOUSE_ADDRESS}`);
+
+                // Customer Marker (Draggable)
+                const customerIcon = L.divIcon({
+                    className: 'custom-map-icon',
+                    html: '<div style="background:#ea580c; color:white; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,0,0,0.3); border:2px solid white; font-size:16px;"><i class="fa-solid fa-location-dot"></i></div>',
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 17]
+                });
+
+                deliveryCustomerMarker = L.marker(customerCoordinates, { icon: customerIcon, draggable: true })
+                    .addTo(deliveryMapInstance)
+                    .bindPopup('<b>📍 آدرس تحویل سفارش شما</b><br>می‌توانید این نشانگر را جابجا کنید.');
+
+                deliveryCustomerMarker.on('dragend', function (e) {
+                    const newLatLng = e.target.getLatLng();
+                    customerCoordinates = [newLatLng.lat, newLatLng.lng];
+                    const dist = calculateDistanceKm(WAREHOUSE_COORDS[0], WAREHOUSE_COORDS[1], newLatLng.lat, newLatLng.lng);
+                    const sel = document.getElementById('karajDistrictSelect');
+                    if (sel) sel.value = 'custom';
+                    updateExpressCostDisplay(dist);
+                    updateMapRouteLine();
+                });
+
+                deliveryMapInstance.on('click', function (e) {
+                    const newLatLng = e.latlng;
+                    customerCoordinates = [newLatLng.lat, newLatLng.lng];
+                    deliveryCustomerMarker.setLatLng(newLatLng);
+                    const dist = calculateDistanceKm(WAREHOUSE_COORDS[0], WAREHOUSE_COORDS[1], newLatLng.lat, newLatLng.lng);
+                    const sel = document.getElementById('karajDistrictSelect');
+                    if (sel) sel.value = 'custom';
+                    updateExpressCostDisplay(dist);
+                    updateMapRouteLine();
+                });
+            }
+
+            setTimeout(() => {
+                if (deliveryMapInstance) {
+                    deliveryMapInstance.invalidateSize();
+                    updateMapRouteLine();
+                }
+            }, 200);
+        }
+
+        function updateMapRouteLine() {
+            if (!deliveryMapInstance || !deliveryWarehouseMarker || !deliveryCustomerMarker) return;
+            if (deliveryRouteLine) {
+                deliveryMapInstance.removeLayer(deliveryRouteLine);
+            }
+            deliveryRouteLine = L.polyline([WAREHOUSE_COORDS, customerCoordinates], {
+                color: '#0284c7',
+                weight: 3,
+                dashArray: '6, 8',
+                opacity: 0.85
+            }).addTo(deliveryMapInstance);
+        }
+
+        function detectCustomerGpsLocation() {
+            if (!navigator.geolocation) {
+                alert('مرورگر شما از موقعیت‌یابی خودکار GPS پشتیبانی نمی‌کند.');
+                return;
+            }
+
+            const btn = event?.currentTarget;
+            const orig = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> دریافت موقعیت...';
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    customerCoordinates = [lat, lng];
+                    const dist = calculateDistanceKm(WAREHOUSE_COORDS[0], WAREHOUSE_COORDS[1], lat, lng);
+                    const sel = document.getElementById('karajDistrictSelect');
+                    if (sel) sel.value = 'custom';
+                    updateExpressCostDisplay(dist);
+
+                    toggleDeliveryMap(true);
+                    if (deliveryCustomerMarker && deliveryMapInstance) {
+                        deliveryCustomerMarker.setLatLng([lat, lng]);
+                        deliveryMapInstance.setView([lat, lng], 13);
+                        updateMapRouteLine();
+                    }
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> موقعیت دریافت شد';
+                        setTimeout(() => { btn.innerHTML = orig; }, 2500);
+                    }
+                },
+                err => {
+                    alert('دسترسی به موقعیت مکانی داده نشد یا خطایی رخ داد. لطفاً محله را از لیست انتخاب فرمایید.');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = orig;
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        function refreshOrderSummaryList() {
             const summaryList = document.getElementById('orderSummaryList');
+            if (!summaryList) return;
             summaryList.innerHTML = '';
 
-            let totalPrice = 0;
+            let itemsSubtotal = 0;
 
             for (const [id, qty] of Object.entries(cart)) {
-                const p = products.find(prod => prod.id == id);
+                const p = products.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
                 if (p) {
                     const itemTotal = p.price * qty;
-                    totalPrice += itemTotal;
+                    itemsSubtotal += itemTotal;
                     const itemRow = document.createElement('div');
                     itemRow.className = 'summary-item';
                     itemRow.innerHTML = `
@@ -2822,18 +3346,56 @@
                 }
             }
 
+            // Subtotal Row
+            const subtotalRow = document.createElement('div');
+            subtotalRow.className = 'summary-item';
+            subtotalRow.style.paddingTop = '6px';
+            subtotalRow.style.marginTop = '4px';
+            subtotalRow.style.borderTop = '1px dashed #e2e8f0';
+            subtotalRow.innerHTML = `
+                <span style="color:#475569;">جمع کل اقلام:</span>
+                <span>${itemsSubtotal.toLocaleString('fa-IR')} تومان</span>
+            `;
+            summaryList.appendChild(subtotalRow);
+
+            // Delivery Row
+            const deliveryRow = document.createElement('div');
+            deliveryRow.className = 'summary-item';
+            if (selectedDeliveryType === 'express') {
+                deliveryRow.innerHTML = `
+                    <span style="color:#b45309;"><i class="fa-solid fa-bolt"></i> تحویل فوری (مسافت ${expressDeliveryDistance.toLocaleString('fa-IR')} کم):</span>
+                    <span style="color:#b45309; font-weight:bold;">+${expressDeliveryFee.toLocaleString('fa-IR')} تومان</span>
+                `;
+            } else {
+                deliveryRow.innerHTML = `
+                    <span style="color:#15803d;"><i class="fa-solid fa-truck"></i> هزینه ارسال (عادی):</span>
+                    <span style="color:#15803d; font-weight:bold;">رایگان</span>
+                `;
+            }
+            summaryList.appendChild(deliveryRow);
+
+            // Final Payable Grand Total Row
+            const grandTotal = itemsSubtotal + (selectedDeliveryType === 'express' ? expressDeliveryFee : 0);
             const totalRow = document.createElement('div');
             totalRow.className = 'summary-item';
             totalRow.style.fontWeight = 'bold';
-            totalRow.style.borderTop = '1px solid #ccc';
+            totalRow.style.borderTop = '1px solid #cbd5e1';
             totalRow.style.paddingTop = '8px';
             totalRow.style.marginTop = '4px';
             totalRow.innerHTML = `
                 <span>جمع کل قابل پرداخت:</span>
-                <span style="color:var(--primary-dark);">${totalPrice.toLocaleString('fa-IR')} تومان</span>
+                <span style="color:var(--primary-dark); font-size:1.05rem;">${grandTotal.toLocaleString('fa-IR')} تومان</span>
             `;
             summaryList.appendChild(totalRow);
+        }
 
+        function openCheckoutModal() {
+            const modal = document.getElementById('checkoutModal');
+            selectedDeliveryType = 'normal';
+            const normRadio = document.querySelector('input[name="deliveryMethod"][value="normal"]');
+            if (normRadio) normRadio.checked = true;
+            toggleDeliveryType('normal');
+            refreshOrderSummaryList();
             modal.style.display = 'flex';
         }
 
@@ -2867,6 +3429,12 @@
                 if (p) total += p.price * qty;
             }
             return total;
+        }
+
+        function calculateFinalPayableTotal() {
+            const itemsTotal = calculateCartTotal();
+            const deliveryFee = selectedDeliveryType === 'express' ? expressDeliveryFee : 0;
+            return itemsTotal + deliveryFee;
         }
 
         function deductLocalProductStock(items) {
@@ -2936,9 +3504,11 @@
             const phone = document.getElementById('custPhone').value.trim();
             const address = document.getElementById('custAddress').value.trim();
             const note = document.getElementById('custNote').value.trim();
-            const totalAmount = calculateCartTotal();
+            const itemsSubtotal = calculateCartTotal();
+            const deliveryFee = selectedDeliveryType === 'express' ? expressDeliveryFee : 0;
+            const totalAmount = itemsSubtotal + deliveryFee;
 
-            if (totalAmount <= 0) {
+            if (itemsSubtotal <= 0) {
                 alert('سبد خرید شما خالی است!');
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnHtml; }
                 return;
@@ -2973,7 +3543,11 @@
                 note,
                 items: orderItems,
                 totalAmount,
-                paymentMethod: selectedPaymentMethod
+                paymentMethod: selectedPaymentMethod,
+                deliveryType: selectedDeliveryType,
+                deliveryFee,
+                deliveryDistance: selectedDeliveryType === 'express' ? expressDeliveryDistance : 0,
+                deliveryCity: 'کرج'
             };
 
             const fallbackLocalOrder = {
@@ -2988,12 +3562,20 @@
             // Save locally right away so order is preserved on this device
             saveLocalOrder(fallbackLocalOrder);
 
-            let orderText = `🛒 *سفارش جدید از وب‌سایت توزیع رافونه*\n\n`;
+            let orderText = `🛒 *سفارش جدید از وب‌سایت پخش رافونه*\n\n`;
             orderText += `👤 *نام مشتری:* ${name}\n`;
             orderText += `📞 *شماره تماس:* ${phone}\n`;
             orderText += `📍 *آدرس تحویل:* ${address}\n`;
             if (note) orderText += `📝 *توضیحات:* ${note}\n`;
             orderText += `💳 *روش پرداخت:* ${selectedPaymentMethod === 'cod' ? 'پرداخت در محل (کارتخوان / نقد)' : 'کارت به کارت / هماهنگی در واتساپ'}\n`;
+
+            if (selectedDeliveryType === 'express') {
+                orderText += `⚡ *نوع تحویل:* تحویل فوری کمتر از ۲۴ ساعت (کرج)\n`;
+                orderText += `📍 *مبدأ:* انبار فاز ۴ مهرشهر | *فاصله:* ${expressDeliveryDistance.toLocaleString('fa-IR')} کیلومتر\n`;
+                orderText += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان (پایه ۱۰۰ هزار + ۲۵ هزار/کیلومتر)\n`;
+            } else {
+                orderText += `🚚 *نوع تحویل:* تحویل عادی (رایگان درب منزل)\n`;
+            }
 
             orderText += `\n📦 *اقلام سفارشی:*\n`;
             for (const [id, qty] of Object.entries(cart)) {
@@ -3004,11 +3586,15 @@
                 }
             }
 
+            if (selectedDeliveryType === 'express') {
+                orderText += `\n▫️ *جمع اقلام:* ${itemsSubtotal.toLocaleString('fa-IR')} تومان\n`;
+                orderText += `▫️ *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان\n`;
+            }
+
             orderText += `\n💰 *مبلغ کل قابل پرداخت:* ${totalAmount.toLocaleString('fa-IR')} تومان\n`;
-            orderText += `🚚 *تحویل رایگان درب منزل*\n\n`;
 
             const b = customerBankSettings;
-            orderText += `💳 *اطلاعات واریز کارت به کارت:*\n`;
+            orderText += `\n💳 *اطلاعات واریز کارت به کارت:*\n`;
             orderText += `▫️ بانک: *${b.bankName || 'بانک ملی ایران'}*\n`;
             orderText += `▫️ به نام: *${b.cardHolder || 'پیمان نوری'}*\n`;
             orderText += `▫️ شماره کارت: *${formatCardForWhatsApp(b.cardNumber || '6037991823456789')}*\n`;
@@ -3016,7 +3602,7 @@
             if (b.description) {
                 orderText += `\n📝 ${b.description}\n`;
             }
-            orderText += `\n🌹 با سپاس از اعتماد و خرید شما از رافونه`;
+            orderText += `\n🌹 با سپاس از اعتماد و خرید شما از پخش رافونه`;
 
             const myPhoneNumber = "989027959555";
             const encodedMessage = encodeURIComponent(orderText);
@@ -3641,7 +4227,25 @@
                 tbody.appendChild(tr);
             });
 
-            const totalAmount = Number(order.totalAmount) || subtotal;
+            const isExpress = order.deliveryType === 'express' || (Number(order.deliveryFee) > 0);
+            const deliveryFee = Number(order.deliveryFee) || 0;
+            const deliveryDist = Number(order.deliveryDistance) || 0;
+
+            const invDelTitle = document.getElementById('invDeliveryTitle');
+            const invDelFee = document.getElementById('invDeliveryFee');
+            if (invDelTitle && invDelFee) {
+                if (isExpress) {
+                    invDelTitle.innerHTML = `<i class="fa-solid fa-bolt" style="color:#d97706;"></i> تحویل فوری (مسافت ${deliveryDist > 0 ? deliveryDist.toLocaleString('fa-IR') + ' کیلومتر' : 'کرج'}):`;
+                    invDelFee.style.color = '#b45309';
+                    invDelFee.innerText = `${deliveryFee.toLocaleString('fa-IR')} تومان`;
+                } else {
+                    invDelTitle.innerHTML = `هزینه پیک / ارسال:`;
+                    invDelFee.style.color = '#16a34a';
+                    invDelFee.innerText = `رایگان (تحویل درب منزل)`;
+                }
+            }
+
+            const totalAmount = Number(order.totalAmount) || (subtotal + deliveryFee);
 
             document.getElementById('invSubtotal').innerText = subtotal.toLocaleString('fa-IR') + ' تومان';
             document.getElementById('invGrandTotal').innerText = totalAmount.toLocaleString('fa-IR') + ' تومان';
@@ -3665,6 +4269,9 @@
             const o = activeInvoiceOrder;
             const b = customerBankSettings;
             const total = Number(o.totalAmount || 0);
+            const isExpress = o.deliveryType === 'express' || (Number(o.deliveryFee) > 0);
+            const deliveryFee = Number(o.deliveryFee) || 0;
+            const dist = Number(o.deliveryDistance) || 0;
 
             let msg = `🧾 *فاکتور سفارش پخش شوینده رافونه*\n\n`;
             msg += `سلام *${o.customerName || 'مشتری گرامی'}* عزیز،\nسفارش شما با کد پیگیری *${o.id}* ثبت شده است.\n\n`;
@@ -3682,8 +4289,14 @@
                 msg += `\n`;
             }
 
-            msg += `💰 *مبلغ کل قابل پرداخت:* ${total.toLocaleString('fa-IR')} تومان\n`;
-            msg += `🚚 هزینه ارسال: رایگان (تحویل درب منزل)\n\n`;
+            if (isExpress) {
+                msg += `⚡ *نوع تحویل:* تحویل فوری کمتر از ۲۴ ساعت (کرج)\n`;
+                msg += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان (فاصله: ${dist.toLocaleString('fa-IR')} کیلومتر)\n\n`;
+            } else {
+                msg += `🚚 *هزینه ارسال:* رایگان (تحویل درب منزل)\n\n`;
+            }
+
+            msg += `💰 *مبلغ کل قابل پرداخت:* ${total.toLocaleString('fa-IR')} تومان\n\n`;
 
             msg += `💳 *اطلاعات کارت به کارت جهت واریز:*\n`;
             msg += `▫️ بانک: *${b.bankName || 'بانک ملی ایران'}*\n`;
