@@ -2044,29 +2044,7 @@
 
                 <div class="form-group">
                     <label for="custAddress"><i class="fa-solid fa-location-dot"></i> آدرس کامل و شماره واحد:</label>
-                    <textarea id="custAddress" class="form-control" placeholder="خیابان ... کوچه ... پلاک ... واحد ..." required oninput="handleAddressInputDebounced()"></textarea>
-                    <div id="addressGeocodeTag" style="display: none; margin-top: 6px; font-size: 0.78rem; color: #0284c7; background: #f0f9ff; border: 1px solid #bae6fd; padding: 5px 10px; border-radius: 6px;"></div>
-                </div>
-
-                <!-- Location Picker Tools (Available for both Normal and Express Delivery) -->
-                <div class="form-group">
-                    <label style="display: flex; justify-content: space-between; align-items: center;">
-                        <span><i class="fa-solid fa-map-pin"></i> موقعیت مکانی تحویل (GPS / نقشه):</span>
-                        <span style="font-size: 0.72rem; color: #64748b; font-weight: normal;">اختیاری جهت سهولت راننده</span>
-                    </label>
-                    <div class="express-location-tools">
-                        <button type="button" class="btn-loc-tool" onclick="detectCustomerGpsLocation()">
-                            <i class="fa-solid fa-crosshairs" style="color:#0284c7;"></i>
-                            دریافت لوکیشن با GPS
-                        </button>
-                        <button type="button" class="btn-loc-tool" id="btnToggleMap" onclick="toggleDeliveryMap()">
-                            <i class="fa-solid fa-map-location-dot" style="color:#0284c7;"></i>
-                            <span id="btnToggleMapText">انتخاب روی نقشه</span>
-                        </button>
-                    </div>
-
-                    <div id="deliveryMapContainer"></div>
-                    <div id="locationStatusBadge" style="display: none; margin-top: 6px; font-size: 0.76rem; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 8px; border-radius: 6px;"></div>
+                    <textarea id="custAddress" class="form-control" placeholder="خیابان ... کوچه ... پلاک ... واحد ..." required></textarea>
                 </div>
 
                 <div class="form-group">
@@ -2099,11 +2077,32 @@
                         <!-- Live Cost Breakdown -->
                         <div class="express-breakdown-card" style="margin-top: 2px;">
                             <div class="express-breakdown-row" style="font-weight: bold;">
-                                <span style="color:#b45309;"><i class="fa-solid fa-calculator"></i> هزینه تحویل فوری (پایه ۵۰ هزار + ۲۰ هزار/کم):</span>
-                                <strong id="expressTotalFeeLabel" style="color:#b45309; font-size: 0.95rem;">۸۰٬۰۰۰ تومان</strong>
+                                <span style="color:#b45309;"><i class="fa-solid fa-calculator"></i> هزینه تحویل فوری (پایه ۱۰۰ هزار + ۲۰ هزار/کیلومتر):</span>
+                                <strong id="expressTotalFeeLabel" style="color:#b45309; font-size: 0.95rem;">۱۲۰٬۰۰۰ تومان</strong>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Location Picker Tools (Mandatory for Express Delivery, Optional for Normal) -->
+                <div class="form-group" id="locationPickerGroup">
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fa-solid fa-map-pin"></i> موقعیت مکانی تحویل (GPS / نقشه):</span>
+                        <span id="locRequirementBadge" style="font-size: 0.75rem; color: #64748b; font-weight: normal;">اختیاری جهت سهولت راننده</span>
+                    </label>
+                    <div class="express-location-tools">
+                        <button type="button" class="btn-loc-tool" onclick="detectCustomerGpsLocation()">
+                            <i class="fa-solid fa-crosshairs" style="color:#0284c7;"></i>
+                            دریافت لوکیشن با GPS
+                        </button>
+                        <button type="button" class="btn-loc-tool" id="btnToggleMap" onclick="toggleDeliveryMap()">
+                            <i class="fa-solid fa-map-location-dot" style="color:#0284c7;"></i>
+                            <span id="btnToggleMapText">انتخاب روی نقشه</span>
+                        </button>
+                    </div>
+
+                    <div id="deliveryMapContainer"></div>
+                    <div id="locationStatusBadge" style="display: none; margin-top: 6px; font-size: 0.76rem; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 8px; border-radius: 6px;"></div>
                 </div>
 
                 <div class="form-group">
@@ -2995,143 +2994,22 @@
         }
 
         // -------------------------------------------------------------
-        // Delivery, Geocoding & Distance Pricing Engine
+        // Delivery & Distance Pricing Engine
         // Base warehouse: Karaj, Mehrshahr Phase 4, 409th East St, No. 112
         // Exact Coordinates: [35.8124, 50.9415]
         // -------------------------------------------------------------
         const WAREHOUSE_COORDS = [35.8124, 50.9415];
         const WAREHOUSE_ADDRESS = "کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲";
-        const EXPRESS_BASE_FEE = 50000;
+        const EXPRESS_BASE_FEE = 100000;
         const EXPRESS_PER_KM_FEE = 20000;
 
         let selectedDeliveryType = 'normal'; // 'normal' or 'express'
         let expressDeliveryDistance = 1.0; // in kilometers
-        let expressDeliveryFee = 70000; // in Tomans (50k base + 1.0km * 20k)
+        let expressDeliveryFee = 120000; // in Tomans (100k base + 1.0km * 20k)
         let customerCoordinates = [35.8124, 50.9415];
         let hasCustomLocationSet = false;
         let deliveryMapInstance = null;
         let deliveryCustomerMarker = null;
-        let geocodeTimeout = null;
-
-        // Accurate Karaj & Alborz District Gazetteer calibrated against Warehouse (Phase 4 Mehrshahr)
-        const KARAJ_DISTRICT_KEYWORDS = [
-            { keywords: ['فاز ۴ مهرشهر', 'فاز 4 مهرشهر', 'فاز چهار مهرشهر', '۴۰۹', '409', 'بلوار گلها', 'صدمتری', 'شهید خانزاده', 'گلزار مهرشهر', 'معظمی'], name: 'فاز ۴ مهرشهر', dist: 1.0, coords: [35.8124, 50.9415] },
-            { keywords: ['گلشهر', '۴۵ متری گلشهر', '45 متری گلشهر', 'بلوار پونه', 'پونه شرقی', 'پونه غربی', 'میدان الغدیر', 'کتویی زاده', 'حدادی', 'گلزار'], name: 'گلشهر (۴۵ متری / پونه)', dist: 1.8, coords: [35.8230, 50.9380] },
-            { keywords: ['فاز ۱ مهرشهر', 'فاز 1 مهرشهر', 'فاز ۲ مهرشهر', 'فاز 2 مهرشهر', 'فاز ۳ مهرشهر', 'فاز 3 مهرشهر', 'بلوار شهرداری', 'کاخ مروارید', 'بلوار ارم', '۱۰۰ شرقی', '۲۰۰ شرقی', '۳۰۰ شرقی', 'مهرشهر'], name: 'مهرشهر (فاز ۱ تا ۳)', dist: 2.8, coords: [35.8080, 50.9180] },
-            { keywords: ['مهرویلا', 'مهرويلا', 'میدان مادر', 'خیابان درختی', 'درختی', 'بلوار دانش آموز', 'خیابان حافظ', 'خیابان خیام', 'میدان عطار', 'انوشیروان'], name: 'مهرویلا / درختی', dist: 2.7, coords: [35.8290, 50.9540] },
-            { keywords: ['دهقان ویلا', 'دهقانویلا', 'دهقان‌ویلا', 'میانجاده', 'میان جاده', 'حیدرآباد', 'حیدر اباد', 'بلوار یادگار امام', 'یاسر', 'کرج نو'], name: 'دهقان ویلا / میانجاده', dist: 3.8, coords: [35.8360, 50.9630] },
-            { keywords: ['کیانمهر', 'کیان مهر', 'بلوار امیرکبیر', 'شهرک ابریشم', 'قزلحصار', 'قزل حصار', 'بوستان کیانمهر'], name: 'کیانمهر', dist: 6.8, coords: [35.7720, 50.8850] },
-            { keywords: ['جهانشهر', 'جهان شهر', 'میدان سپاه', 'بلوار ماهان', 'بلوار مولانا', 'کسری', 'بلوار جمهوری', 'پارک تنیس', 'میدان هلال احمر'], name: 'جهانشهر', dist: 5.5, coords: [35.8380, 50.9850] },
-            { keywords: ['طالقانی', 'چهارراه طالقانی', 'میدان شهدا', 'هفت تیر', 'میدان هفت تیر', 'میدان توحید', 'خیابان بهشتی', 'میدان کرج', 'دانشکده', 'مصباح', 'قلمستان', 'ساسانی', 'میدان امام حسین'], name: 'میدان شهدا / چهارراه طالقانی', dist: 6.3, coords: [35.8280, 50.9950] },
-            { keywords: ['گوهردشت', 'گوهر دشت', 'رجایی شهر', 'رجایی‌شهر', 'رستاخیز', 'فلکه اول گوهردشت', 'فلکه دوم', 'فلکه سوم', 'بلوار ملک شاه', 'خیابان داریوش', 'بلوار استقلال', 'میدان رستاخیز', 'بلوار موذن', 'دانشگاه آزاد'], name: 'گوهردشت (رجایی‌شهر)', dist: 7.5, coords: [35.8620, 50.9910] },
-            { keywords: ['باغستان', 'باغستان غربی', 'باغستان شرقی', 'شاهین ویلا', 'شاهین‌ویلا', 'بلوار ظفر', 'بلوار باهنر', 'اشتراکی', 'گلدشت', 'بنی نجار'], name: 'باغستان / شاهین‌ویلا', dist: 8.5, coords: [35.8750, 50.9700] },
-            { keywords: ['کمالشهر', 'کمال شهر', 'حصارک', 'حصارک بالا', 'حصارک پایین', 'میدان دانشگاه', 'خرمدشت', 'خرم دشت', 'پیشاهنگی', 'ظفر'], name: 'کمالشهر / حصارک', dist: 8.9, coords: [35.8650, 50.8650] },
-            { keywords: ['کوی کارمندان', 'کارمندان جنوبی', 'کارمندان شمالی', 'شهرک بنفشه', 'ولیعصر کرج', 'شهرک بعثت', 'آزادگان', 'میدان آزادگان'], name: 'کوی کارمندان / بنفشه', dist: 7.9, coords: [35.8300, 51.0100] },
-            { keywords: ['محمدشهر', 'محمد شهر', 'همایون ویلا', 'همایون‌ویلا', 'جعفرآباد', 'ماهدشت', 'ماه دشت', 'زیبادشت', 'زیبا دشت'], name: 'محمدشهر / ماهدشت', dist: 8.2, coords: [35.7550, 50.9250] },
-            { keywords: ['عظیمیه', 'عظيميه', 'میدان اسبی', 'میدان مهران', 'طالقانی شمالی', 'بلوار شریعتی', 'بلوار کاج', 'میدان بعثت', 'میدان طالقانی', 'میدان گلستان', 'پامچال', 'بام کرج'], name: 'عظیمیه', dist: 10.5, coords: [35.8520, 51.0250] },
-            { keywords: ['فردیس', 'فلکه اول فردیس', 'فلکه دوم فردیس', 'فلکه سوم فردیس', 'فلکه چهارم فردیس', 'فلکه پنجم', 'منظریه', 'شهرک ناز', 'شهرک ۱۱۰', 'شهرک 110', 'قریشی', 'کانال فردیس', 'رزکان', 'مشکین دشت', 'مشکیندشت'], name: 'فردیس / منظریه', dist: 12.5, coords: [35.7280, 50.9820] },
-            { keywords: ['گرمدره', 'گرم دره', 'کلاک', 'کلاک بالا', 'کلاک پایین', 'سرحدآباد', 'سرحد اباد', 'امیرکبیر گرمدره'], name: 'گرمدره / کلاک', dist: 16.0, coords: [35.7500, 51.0800] },
-            { keywords: ['هشتگرد', 'شهر جدید هشتگرد', 'مهستان', 'نظرآباد', 'نظراباد', 'چهارباغ', 'کردان', 'تهراندشت', 'زعفرانیه', 'کوهسار'], name: 'هشتگرد / ساوجبلاغ / کردان', dist: 30.0, coords: [35.9600, 50.6800] },
-            { keywords: ['تهران', 'پونک', 'صادقیه', 'ستارخان', 'مرزداران', 'شهرزیبا', 'جنت آباد', 'شهرک غرب', 'سعادت آباد', 'آزادی', 'اکباتان', 'تهرانسر', 'چیتگر', 'دریاچه چیتگر', 'منطقه ۲۲', 'منطقه 22', 'وردآورد', 'شهریار', 'اندیشه'], name: 'تهران / حومه غربی', dist: 38.0, coords: [35.7300, 51.2800] }
-        ];
-
-        function normalizePersianText(str) {
-            if (!str) return '';
-            return str
-                .replace(/ي/g, 'ی')
-                .replace(/ك/g, 'ک')
-                .replace(/ة/g, 'ه')
-                .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
-                .toLowerCase()
-                .trim();
-        }
-
-        function handleAddressInputDebounced() {
-            clearTimeout(geocodeTimeout);
-            geocodeTimeout = setTimeout(() => {
-                geocodeAddressText();
-            }, 450);
-        }
-
-        async function geocodeAddressText() {
-            const addressInput = document.getElementById('custAddress');
-            const tag = document.getElementById('addressGeocodeTag');
-            if (!addressInput) return;
-
-            const rawText = addressInput.value.trim();
-            if (rawText.length < 3) {
-                if (tag) tag.style.display = 'none';
-                return;
-            }
-
-            const cleanText = normalizePersianText(rawText);
-
-            // 1. Instant local dictionary match
-            let bestMatch = null;
-            for (const item of KARAJ_DISTRICT_KEYWORDS) {
-                for (const kw of item.keywords) {
-                    const cleanKw = normalizePersianText(kw);
-                    if (cleanText.includes(cleanKw)) {
-                        bestMatch = item;
-                        break;
-                    }
-                }
-                if (bestMatch) break;
-            }
-
-            if (bestMatch) {
-                applyGeocodedLocation(bestMatch.coords, bestMatch.dist, `تشخیص هوشمند محدوده: ${bestMatch.name}`);
-                return;
-            }
-
-            // 2. Online OpenStreetMap geocoding fallback
-            try {
-                const query = encodeURIComponent(`${rawText}, استان البرز, ایران`);
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`, {
-                    headers: { 'Accept-Language': 'fa,en', 'User-Agent': 'RafoonehApp/1.0' }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.length > 0) {
-                        const lat = parseFloat(data[0].lat);
-                        const lon = parseFloat(data[0].lon);
-                        const dist = calculateDistanceKm(WAREHOUSE_COORDS[0], WAREHOUSE_COORDS[1], lat, lon);
-                        const displayName = data[0].display_name ? data[0].display_name.split(',')[0] : 'آدرس شما';
-                        applyGeocodedLocation([lat, lon], dist, `یافتن آدرس: ${displayName}`);
-                        return;
-                    }
-                }
-            } catch (err) {
-                console.debug('Online geocode notice:', err);
-            }
-
-            if (tag) tag.style.display = 'none';
-        }
-
-        function applyGeocodedLocation(coords, dist, labelText) {
-            customerCoordinates = coords;
-            hasCustomLocationSet = true;
-            updateExpressCostDisplay(dist);
-
-            const tag = document.getElementById('addressGeocodeTag');
-            if (tag) {
-                tag.style.display = 'block';
-                tag.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles" style="color:#0284c7;"></i> <strong>${labelText}</strong> (فاصله تا انبار: ${dist.toLocaleString('fa-IR')} کیلومتر)`;
-            }
-
-            const statusBadge = document.getElementById('locationStatusBadge');
-            if (statusBadge) {
-                statusBadge.style.display = 'block';
-                statusBadge.innerHTML = `<i class="fa-solid fa-check-circle"></i> موقعیت روی نقشه تنظیم شد (${dist.toLocaleString('fa-IR')} کیلومتر)`;
-            }
-
-            if (deliveryCustomerMarker) {
-                deliveryCustomerMarker.setLatLng(coords);
-            }
-            if (deliveryMapInstance) {
-                deliveryMapInstance.setView(coords, 13);
-            }
-        }
 
         function calculateDistanceKm(lat1, lon1, lat2, lon2) {
             const R = 6371; // Earth radius in km
@@ -3176,16 +3054,29 @@
             const normalOpt = document.getElementById('optionDeliveryNormal');
             const expressOpt = document.getElementById('optionDeliveryExpress');
             const panel = document.getElementById('expressDeliveryPanel');
+            const reqBadge = document.getElementById('locRequirementBadge');
 
             if (type === 'normal') {
                 if (normalOpt) normalOpt.classList.add('active');
                 if (expressOpt) expressOpt.classList.remove('active');
                 if (panel) panel.style.display = 'none';
+                if (reqBadge) {
+                    reqBadge.innerHTML = 'اختیاری جهت سهولت راننده';
+                    reqBadge.style.color = '#64748b';
+                    reqBadge.style.fontWeight = 'normal';
+                }
             } else {
                 if (normalOpt) normalOpt.classList.remove('active');
                 if (expressOpt) expressOpt.classList.add('active');
                 if (panel) panel.style.display = 'flex';
+                if (reqBadge) {
+                    reqBadge.innerHTML = '<i class="fa-solid fa-asterisk" style="font-size:0.65rem;"></i> الزامی جهت محاسبه کرایه فوری';
+                    reqBadge.style.color = '#dc2626';
+                    reqBadge.style.fontWeight = 'bold';
+                }
                 updateExpressCostDisplay(expressDeliveryDistance);
+                // Automatically open the map for the user to register their location
+                toggleDeliveryMap(true);
             }
             refreshOrderSummaryList();
         }
@@ -3267,7 +3158,7 @@
             const statusBadge = document.getElementById('locationStatusBadge');
             if (statusBadge) {
                 statusBadge.style.display = 'block';
-                statusBadge.innerHTML = `<i class="fa-solid fa-check-circle"></i> موقعیت انتخابی شما روی نقشه تنظیم شد (${dist.toLocaleString('fa-IR')} کیلومتر)`;
+                statusBadge.innerHTML = `<i class="fa-solid fa-check-circle"></i> موقعیت انتخابی شما روی نقشه ثبت شد (${dist.toLocaleString('fa-IR')} کیلومتر - کرایه: ${expressDeliveryFee.toLocaleString('fa-IR')} تومان)`;
             }
         }
 
@@ -3490,6 +3381,16 @@
                 return;
             }
 
+            // Mandatory Location Check for Express Delivery
+            if (selectedDeliveryType === 'express' && !hasCustomLocationSet) {
+                alert('جهت محاسبه دقیق هزینه و ارسال سفارش تحویل فوری، لطفاً موقعیت مکانی خود را روی نقشه مشخص فرمایید یا از دکمه «دریافت لوکیشن با GPS» استفاده کنید.');
+                toggleDeliveryMap(true);
+                const locGroup = document.getElementById('locationPickerGroup');
+                if (locGroup) locGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnHtml; }
+                return;
+            }
+
             const orderItems = [];
             for (const [id, qty] of Object.entries(cart)) {
                 const p = products.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
@@ -3552,7 +3453,7 @@
             if (selectedDeliveryType === 'express') {
                 orderText += `⚡ *نوع تحویل:* تحویل فوری کمتر از ۲۴ ساعت (کرج)\n`;
                 orderText += `📍 *مبدأ:* انبار فاز ۴ مهرشهر | *فاصله:* ${expressDeliveryDistance.toLocaleString('fa-IR')} کیلومتر\n`;
-                orderText += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان (پایه ۵۰ هزار + ۲۰ هزار/کیلومتر)\n`;
+                orderText += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان (پایه ۱۰۰ هزار + ۲۰ هزار/کیلومتر)\n`;
             } else {
                 orderText += `🚚 *نوع تحویل:* تحویل عادی (رایگان درب منزل)\n`;
             }
