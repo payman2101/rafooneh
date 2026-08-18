@@ -2261,83 +2261,13 @@
         document.getElementById('loginScreen').style.display = 'flex';
     }
 
-    let isSyncingLocalOrders = false;
     async function syncLocalOrdersToServer() {
-        if (isSyncingLocalOrders) return;
-        isSyncingLocalOrders = true;
+        // Server is the single source of truth; no auto-sync of stale client orders
         try {
-            const localOrders = getLocalOrders();
-            if (!localOrders || !localOrders.length) return;
-
-            // Fetch server orders to check which ones already exist
-            let serverOrderIds = new Set();
-            try {
-                const res = await api('/api/orders');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.orders && Array.isArray(data.orders)) {
-                        data.orders.forEach(o => {
-                            const oId = String(o.id || '');
-                            serverOrderIds.add(oId);
-                            serverOrderIds.add(oId.replace(/^ord-/, ''));
-                            serverOrderIds.add(`ord-${oId.replace(/^ord-/, '')}`);
-                        });
-                    }
-                }
-            } catch (e) {}
-
-            let deletedIds = new Set();
-            try {
-                const storedDeleted = JSON.parse(localStorage.getItem('rafooneh_deleted_order_ids') || '[]');
-                storedDeleted.forEach(id => {
-                    const sId = String(id);
-                    deletedIds.add(sId);
-                    deletedIds.add(sId.replace(/^ord-/, ''));
-                    deletedIds.add(`ord-${sId.replace(/^ord-/, '')}`);
-                });
-            } catch (e) {}
-
-            for (const ord of localOrders) {
-                if (!ord || !ord.customerName || !ord.phone) continue;
-                const rawId = String(ord.id || '').trim();
-                const cleanId = rawId.replace(/^ord-/, '');
-                
-                // Skip if already marked synced, explicitly deleted, or already on server
-                if (ord.syncedWithServer || deletedIds.has(rawId) || deletedIds.has(cleanId) || serverOrderIds.has(rawId) || serverOrderIds.has(cleanId)) {
-                    continue;
-                }
-
-                try {
-                    const res = await fetch('/api/orders', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id: ord.id,
-                            customerName: ord.customerName,
-                            phone: ord.phone,
-                            address: ord.address || 'تهران',
-                            note: ord.note || '',
-                            items: ord.items || [],
-                            totalAmount: ord.totalAmount || 0,
-                            paymentMethod: ord.paymentMethod || 'cod',
-                            status: ord.status || 'pending',
-                            createdAt: ord.createdAt
-                        })
-                    });
-                    if (res.ok) {
-                        ord.syncedWithServer = true;
-                        saveLocalOrder(ord);
-                    }
-                    serverOrderIds.add(rawId);
-                    serverOrderIds.add(cleanId);
-                    serverOrderIds.add(`ord-${cleanId}`);
-                } catch (e) {
-                    console.log('Sync local order notice:', e);
-                }
-            }
-        } finally {
-            isSyncingLocalOrders = false;
-        }
+            // Clean up any stale test orders from client local storage
+            const local = getLocalOrders().filter(o => o && o.id !== 'ord-test1' && o.phone !== '09121111111');
+            localStorage.setItem('rafooneh_local_orders', JSON.stringify(local));
+        } catch (e) {}
     }
 
     async function showApp() {
@@ -2786,24 +2716,13 @@
             });
         }
 
-        const localOrders = getLocalOrders();
-        const mergedMap = new Map();
-        localOrders.forEach(o => mergedMap.set(o.id, o));
-        serverOrders.forEach(o => mergedMap.set(o.id, o));
+        let orderList = serverOrders;
+        if (!orderList || orderList.length === 0) {
+            // Only fallback to local if server returned nothing or offline
+            orderList = getLocalOrders();
+        }
 
-        // Smart deduplication for identical orders submitted in close window
-        const deduplicated = [];
-        const seenSignatures = new Set();
-        Array.from(mergedMap.values()).forEach(o => {
-            const timeKey = Math.floor(new Date(o.createdAt || Date.now()).getTime() / (120 * 1000));
-            const sig = `${o.phone || ''}_${o.totalAmount || 0}_${timeKey}`;
-            if (!seenSignatures.has(sig)) {
-                seenSignatures.add(sig);
-                deduplicated.push(o);
-            }
-        });
-
-        allOrdersData = deduplicated;
+        allOrdersData = orderList;
         let allOrders = [...allOrdersData];
 
         if (status && status !== 'all') {
