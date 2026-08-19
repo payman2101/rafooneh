@@ -95,7 +95,7 @@ export function normalizePassword(str) {
     s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
   }
   // Normalize date separators (replace Arabic date separator '؍', backslash '\', dash '-', dot '.' with '/')
-  s = s.replace(/[\\|\-.\u060D\u066D]/g, '/');
+  s = s.replace(/[\/\\|.\u060D\u066D-]/g, '/');
   // Remove leading zeros in date segments like /08/01 -> /8/1
   s = s.replace(/\/0+([0-9]+)/g, '/$1');
   return s;
@@ -106,7 +106,7 @@ export function toCanonicalPassword(p) {
     .toLowerCase()
     .replace(/@/g, 'a')
     .replace(/0/g, 'o')
-    .replace(/[\/\-\._]/g, '')
+    .replace(/[\/._-]/g, '')
     .replace(/\s+/g, '');
 }
 

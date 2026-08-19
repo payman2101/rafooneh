@@ -24,7 +24,7 @@ function normPass(str) {
   for (let i = 0; i < 10; i++) {
     s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
   }
-  s = s.replace(/[\\|\-.\u060D\u066D]/g, '/');
+  s = s.replace(/[\/\\|.\u060D\u066D-]/g, '/');
   s = s.replace(/\/0+([0-9]+)/g, '/$1');
   return s;
 }
@@ -34,7 +34,7 @@ function toCanonicalPass(p) {
     .toLowerCase()
     .replace(/@/g, 'a')
     .replace(/0/g, 'o')
-    .replace(/[\/\-\._]/g, '')
+    .replace(/[\/._-]/g, '')
     .replace(/\s+/g, '');
 }
 

@@ -2306,12 +2306,12 @@
         if (!str) return '';
         let s = String(str).trim();
         const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
-        const arabicDigits  = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /۸/g, /٩/g];
+        const arabicDigits  = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
         for (let i = 0; i < 10; i++) {
             s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
         }
-        s = s.replace(/[\|-.؍٭]/g, '/');
-        s = s.replace(//0+([0-9]+)/g, '/');
+        s = s.replace(/[\/\\|.\u060D\u066D-]/g, '/');
+        s = s.replace(/\/0+([0-9]+)/g, '/$1');
         return s;
     }
 
@@ -2320,8 +2320,8 @@
             .toLowerCase()
             .replace(/@/g, 'a')
             .replace(/0/g, 'o')
-            .replace(/[/-._]/g, '')
-            .replace(/s+/g, '');
+            .replace(/[\/._-]/g, '')
+            .replace(/\s+/g, '');
     }
 
     function isMasterPassMatch(inputPass) {
@@ -2448,7 +2448,7 @@
 
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 2500);
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
 
             let res = null, data = {};
             try {
@@ -5190,212 +5190,6 @@
         } catch (e) {}
 
         await loadCompanyPaymentHistory();
-    }      </div>
-                            <div class="stat-card" style="border-right:4px solid var(--danger); background:#fef2f2;">
-                                <div class="stat-title" style="color:#991b1b; font-weight:bold;">مجموع مبلغ خرید (بدهی به شرکت)</div>
-                                <div class="stat-value" style="color:var(--danger); font-weight:bold;">${formatPrice(data.stats.totalBuyCost)}</div>
-                                <div style="font-size:0.75rem; color:#b91c1c; margin-top:4px;">مبلغ تسویه قابل پرداخت به شرکت</div>
-                            </div>
-                            <div class="stat-card" style="border-right:4px solid var(--success);">
-                                <div class="stat-title">مجموع مبلغ فروش کل</div>
-                                <div class="stat-value" style="color:var(--success);">${formatPrice(data.stats.totalRevenue)}</div>
-                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">درآمد کل دریافتی از مشتریان</div>
-                            </div>
-                        `;
-                    }
-
-                    renderCompanyPaymentItems(currentCompanyPaymentItems);
-                    return;
-                }
-            }
-        } catch (err) {
-            console.error('Error fetching company payment stats from server:', err);
-        }
-
-        if (grid) grid.innerHTML = '<p style="color:var(--danger); padding:10px;">خطا در دریافت اطلاعات کارکرد از سرور. لطفاً اتصال اینترنت یا سرور را بررسی کنید.</p>';
-        renderCompanyPaymentItems([]);
-    }
-
-    function renderCompanyPaymentItems(items) {
-        const tbody = document.getElementById('companyPaymentItemsBody');
-        const tfoot = document.getElementById('companyPaymentItemsFoot');
-        if (!tbody) return;
-
-        if (!items || items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:20px;">هیچ محصولی در این بازه زمانی فروخته نشده است.</td></tr>';
-            if (tfoot) tfoot.innerHTML = '';
-            return;
-        }
-
-        let sumUnits = 0;
-        let sumBuyCost = 0;
-        let sumRevenue = 0;
-
-        tbody.innerHTML = items.map((p, idx) => {
-            sumUnits += Number(p.unitsSold) || 0;
-            sumBuyCost += Number(p.totalBuyCost) || 0;
-            sumRevenue += Number(p.totalRevenue) || 0;
-
-            return `
-                <tr>
-                    <td>${(idx + 1).toLocaleString('fa-IR')}</td>
-                    <td><strong>${p.code || p.id || '-'}</strong></td>
-                    <td style="font-weight:bold; color:var(--text);">${p.name || 'محصول رافونه'}</td>
-                    <td><span class="badge" style="background:var(--primary-light); color:var(--primary-dark); font-size:0.9rem; padding:4px 10px;">${(p.unitsSold || 0).toLocaleString('fa-IR')}</span></td>
-                    <td>${(p.buyPrice || 0).toLocaleString('fa-IR')}</td>
-                    <td style="color:var(--danger); font-weight:bold;">${formatPrice(p.totalBuyCost)}</td>
-                    <td>${(p.sellingPrice || 0).toLocaleString('fa-IR')}</td>
-                    <td style="font-weight:bold;">${formatPrice(p.totalRevenue)}</td>
-                </tr>
-            `;
-        }).join('');
-
-        if (tfoot) {
-            tfoot.innerHTML = `
-                <tr>
-                    <td colspan="3" style="text-align:left; padding:12px;">مجموع کل بازه:</td>
-                    <td style="color:var(--primary-dark); font-size:1rem;">${sumUnits.toLocaleString('fa-IR')} عدد</td>
-                    <td>—</td>
-                    <td style="color:var(--danger); font-size:1.05rem;">${formatPrice(sumBuyCost)}</td>
-                    <td>—</td>
-                    <td style="color:var(--success); font-size:1.05rem;">${formatPrice(sumRevenue)}</td>
-                </tr>
-            `;
-        }
-    }
-
-    function filterCompanyPaymentItems() {
-        const q = (document.getElementById('cpSearchItem')?.value || '').toLowerCase().trim();
-        if (!q) {
-            renderCompanyPaymentItems(currentCompanyPaymentItems);
-            return;
-        }
-        const filtered = currentCompanyPaymentItems.filter(i =>
-            (i.name || '').toLowerCase().includes(q) ||
-            (i.code || '').toLowerCase().includes(q) ||
-            (i.id || '').toLowerCase().includes(q)
-        );
-        renderCompanyPaymentItems(filtered);
-    }
-
-    async function submitCompanyPaymentSettlement() {
-        if (!currentCompanyPaymentStats || currentCompanyPaymentStats.totalBuyCost <= 0) {
-            alert('هیچ فروش یا کارکردی در این بازه زمانی وجود ندارد یا مبلغ بدهی به شرکت صفر است.');
-            return;
-        }
-
-        const refNumber = document.getElementById('cpRefNumber')?.value?.trim() || '';
-        const notes = document.getElementById('cpNotes')?.value?.trim() || '';
-        const fromDate = currentCompanyPaymentStats.fromDate || 'ابتدا';
-        const toDate = currentCompanyPaymentStats.toDate || 'امروز';
-        const totalAmountStr = formatPrice(currentCompanyPaymentStats.totalBuyCost);
-        const totalItemsStr = (currentCompanyPaymentStats.totalItemsCount || 0).toLocaleString('fa-IR');
-
-        const confirmMsg = `آیا از ثبت نهایی تسویه‌حساب پرداختی به شرکت اطمینان دارید؟\n\n• بازه زمانی: از ${fromDate} تا ${toDate}\n• تعداد کل اقلام: ${totalItemsStr} عدد\n• مبلغ پرداختی بر اساس قیمت خرید: ${totalAmountStr}`;
-        if (!confirm(confirmMsg)) return;
-
-        try {
-            const payload = {
-                paymentDate: new Date().toISOString().split('T')[0],
-                fromDate: currentCompanyPaymentStats.fromDate,
-                toDate: currentCompanyPaymentStats.toDate,
-                totalBuyCost: currentCompanyPaymentStats.totalBuyCost,
-                totalItemsCount: currentCompanyPaymentStats.totalItemsCount,
-                ordersCount: currentCompanyPaymentStats.ordersCount,
-                refNumber,
-                notes,
-                status: 'پرداخت شده',
-                items: currentCompanyPaymentStats.products || []
-            };
-
-            const res = await api('/api/admin/company-payments', {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                alert('تسویه‌حساب پرداختی به شرکت با موفقیت در سیستم و دیتابیس ثبت شد.');
-                document.getElementById('cpRefNumber').value = '';
-                document.getElementById('cpNotes').value = '';
-                await loadCompanyPaymentHistory();
-            } else {
-                alert('خطا در ثبت تسویه‌حساب.');
-            }
-        } catch (err) {
-            console.error('Error submitting company payment settlement:', err);
-            alert('خطا در برقراری ارتباط با سرور.');
-        }
-    }
-
-    async function loadCompanyPaymentHistory() {
-        const tbody = document.getElementById('companyPaymentHistoryBody');
-        if (!tbody) return;
-
-        try {
-            const res = await api('/api/admin/company-payments');
-            if (res.ok) {
-                const data = await res.json();
-                if (data.success && Array.isArray(data.payments)) {
-                    companyPaymentHistoryList = data.payments;
-                    if (data.payments.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">هیچ تسویه‌حسابی هنوز ثبت نشده است.</td></tr>';
-                        return;
-                    }
-
-                    tbody.innerHTML = data.payments.map((p) => {
-                        const periodStr = (p.fromDate || p.toDate)
-                            ? `${p.fromDate || 'ابتدا'} تا ${p.toDate || 'امروز'}`
-                            : 'کل دوره';
-
-                        return `
-                            <tr>
-                                <td><strong>${p.id || '-'}</strong></td>
-                                <td><i class="fa-regular fa-calendar-check" style="color:var(--primary); margin-left:4px;"></i> ${p.paymentDate || '-'}</td>
-                                <td style="font-size:0.85rem;">${periodStr}</td>
-                                <td>${(p.ordersCount || 0).toLocaleString('fa-IR')}</td>
-                                <td><strong style="color:var(--primary-dark);">${(p.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</strong></td>
-                                <td><strong style="color:var(--danger); font-size:0.95rem;">${formatPrice(p.totalBuyCost)}</strong></td>
-                                <td style="font-size:0.82rem; color:var(--muted);">
-                                    ${p.refNumber ? `<span style="font-weight:bold; color:var(--text);">پیگیری: ${p.refNumber}</span><br>` : ''}
-                                    ${p.notes || '—'}
-                                </td>
-                                <td><span class="badge" style="background:#dcfce7; color:#15803d; font-weight:bold;">${p.status || 'پرداخت شده'}</span></td>
-                                <td>
-                                    <div style="display:flex; gap:6px;">
-                                        <button class="btn btn-secondary" onclick="viewCompanyPaymentDetails('${p.id}')" style="padding:4px 8px; font-size:0.78rem;" title="مشاهده جزئیات اقلام">
-                                            <i class="fa-solid fa-eye"></i> جزئیات
-                                        </button>
-                                        <button class="btn btn-danger" onclick="deleteCompanyPaymentRecord('${p.id}')" style="padding:4px 8px; font-size:0.78rem;" title="حذف سند">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
-                    return;
-                }
-            }
-        } catch (err) {
-            console.error('Error fetching company payment history:', err);
-        }
-
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">خطا در دریافت تاریخچه تسویه‌ها.</td></tr>';
-    }
-
-    async function deleteCompanyPaymentRecord(id) {
-        if (!confirm(`آیا از حذف سند تسویه‌حساب کد ${id} اطمینان دارید؟`)) return;
-
-        try {
-            const res = await api(`/api/admin/company-payments/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                await loadCompanyPaymentHistory();
-            } else {
-                alert('خطا در حذف تسویه‌حساب.');
-            }
-        } catch (err) {
-            console.error('Error deleting company payment:', err);
-        }
     }
 
     function viewCompanyPaymentDetails(id) {
