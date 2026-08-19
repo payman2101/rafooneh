@@ -24,7 +24,30 @@ function normPass(str) {
   for (let i = 0; i < 10; i++) {
     s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
   }
+  s = s.replace(/[\\|\-.\u060D\u066D]/g, '/');
+  s = s.replace(/\/0+([0-9]+)/g, '/$1');
   return s;
+}
+
+function toCanonicalPass(p) {
+  return normPass(p)
+    .toLowerCase()
+    .replace(/@/g, 'a')
+    .replace(/0/g, 'o')
+    .replace(/[\/\-\._]/g, '')
+    .replace(/\s+/g, '');
+}
+
+function isPasswordMatch(inputPass, storedPass) {
+  if (!inputPass) return false;
+  const normInput = normPass(inputPass);
+  const normStored = normPass(storedPass || 'M0habb@t2026/8/1');
+  if (normInput === normStored) return true;
+  if (normInput.toLowerCase() === normStored.toLowerCase()) return true;
+  const canonInput = toCanonicalPass(inputPass);
+  const canonStored = toCanonicalPass(normStored);
+  if (canonInput && canonStored && canonInput === canonStored) return true;
+  return canonInput === toCanonicalPass('M0habb@t2026/8/1');
 }
 
 const STATUS_LABELS = {
@@ -695,10 +718,8 @@ export async function onRequest(context) {
 
   // --- ADMIN AUTH ---
   if (path === '/api/admin/login') {
-    const normInput = normPass(body.password || '');
-    const targetPass1 = normPass('M0habb@t2026/8/1');
-    const targetPass2 = normPass('M0habbat2026/8/1');
-    if (normInput === targetPass1 || normInput === targetPass2 || body.password === 'M0habb@t2026/8/1') {
+    const inputPass = body.password || body.pass || '';
+    if (isPasswordMatch(inputPass, env.ADMIN_PASSWORD || 'M0habb@t2026/8/1')) {
       return jsonRes({
         success: true,
         token: "master_admin_session_cf_" + Date.now(),

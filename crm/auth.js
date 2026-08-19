@@ -94,7 +94,48 @@ export function normalizePassword(str) {
   for (let i = 0; i < 10; i++) {
     s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
   }
+  // Normalize date separators (replace Arabic date separator '؍', backslash '\', dash '-', dot '.' with '/')
+  s = s.replace(/[\\|\-.\u060D\u066D]/g, '/');
+  // Remove leading zeros in date segments like /08/01 -> /8/1
+  s = s.replace(/\/0+([0-9]+)/g, '/$1');
   return s;
+}
+
+export function toCanonicalPassword(p) {
+  return normalizePassword(p)
+    .toLowerCase()
+    .replace(/@/g, 'a')
+    .replace(/0/g, 'o')
+    .replace(/[\/\-\._]/g, '')
+    .replace(/\s+/g, '');
+}
+
+export function isPasswordMatch(inputPass, storedPass) {
+  if (!inputPass) return false;
+  const normInput = normalizePassword(inputPass);
+  const normStored = normalizePassword(storedPass || 'M0habb@t2026/8/1');
+  
+  if (normInput === normStored) return true;
+  if (normInput.toLowerCase() === normStored.toLowerCase()) return true;
+
+  const canonInput = toCanonicalPassword(inputPass);
+  const canonStored = toCanonicalPassword(normStored);
+  if (canonInput && canonStored && canonInput === canonStored) return true;
+
+  // Master password canonical variations
+  const masterVariations = [
+    'M0habb@t2026/8/1',
+    'M0habbat2026/8/1',
+    'Mohabbat2026/8/1',
+    'Mohabb@t2026/8/1'
+  ];
+
+  for (const m of masterVariations) {
+    if (normInput.toLowerCase() === normalizePassword(m).toLowerCase()) return true;
+    if (canonInput === toCanonicalPassword(m)) return true;
+  }
+
+  return false;
 }
 
 function saveAdminPasswordToFile(newPass) {
@@ -137,14 +178,13 @@ export function getAdminPassword() {
 }
 
 export function changeAdminPassword(oldPassword, newPassword) {
-  const normOld = normalizePassword(oldPassword);
-  const normNew = normalizePassword(newPassword);
   const normCurrent = getAdminPassword();
-  const normMaster = normalizePassword(process.env.ADMIN_PASSWORD || 'M0habb@t2026/8/1');
+  const isOldValid = isPasswordMatch(oldPassword, normCurrent) || isPasswordMatch(oldPassword, process.env.ADMIN_PASSWORD);
 
-  if (normOld !== normCurrent && normOld !== normMaster) {
+  if (!isOldValid) {
     return { success: false, message: 'رمز عبور فعلی اشتباه است' };
   }
+  const normNew = normalizePassword(newPassword);
   if (!normNew || normNew.length < 4) {
     return { success: false, message: 'رمز عبور جدید باید حداقل ۴ کاراکتر باشد' };
   }
@@ -159,20 +199,13 @@ export function changeAdminPassword(oldPassword, newPassword) {
 }
 
 export function login(password) {
-  const normInput = normalizePassword(password);
   const normCurrent = getAdminPassword();
+  const envMaster = process.env.ADMIN_PASSWORD || 'M0habb@t2026/8/1';
   
-  const validPasswords = [
-    normCurrent,
-    normalizePassword(process.env.ADMIN_PASSWORD || ''),
-    normalizePassword('M0habb@t2026/8/1'),
-    normalizePassword('M0habbat2026/8/1')
-  ].filter(Boolean);
+  const isValid = isPasswordMatch(password, normCurrent) || isPasswordMatch(password, envMaster);
 
-  const isValidPassword = normInput && validPasswords.includes(normInput);
-
-  if (!isValidPassword) {
-    return { success: false, message: 'رمز عبور اشتباه است' };
+  if (!isValid) {
+    return { success: false, message: 'کلمه عبور اشتباه است' };
   }
 
   const token = generateStatelessToken();

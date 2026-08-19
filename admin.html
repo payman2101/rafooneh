@@ -772,7 +772,12 @@
         <form onsubmit="handleLogin(event)" id="loginForm" autocomplete="off">
             <div class="form-group">
                 <label for="password">رمز عبور مدیریت</label>
-                <input type="password" id="password" class="form-control" autocomplete="new-password" required>
+                <div style="position: relative;">
+                    <input type="password" id="password" class="form-control" autocomplete="new-password" placeholder="کلمه عبور مدیریت..." required style="padding-left: 38px; width: 100%;">
+                    <button type="button" id="togglePasswordVisibilityBtn" onclick="togglePasswordVisibility()" title="نمایش/عدم نمایش رمز" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #64748b; cursor: pointer; padding: 4px; font-size: 1rem;">
+                        <i class="fa-solid fa-eye" id="togglePasswordVisibilityIcon"></i>
+                    </button>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
                 <i class="fa-solid fa-right-to-bracket"></i> ورود به پنل
@@ -2305,7 +2310,54 @@
         for (let i = 0; i < 10; i++) {
             s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
         }
+        s = s.replace(/[\|-.؍٭]/g, '/');
+        s = s.replace(//0+([0-9]+)/g, '/');
         return s;
+    }
+
+    function toCanonicalPass(p) {
+        return normPass(p)
+            .toLowerCase()
+            .replace(/@/g, 'a')
+            .replace(/0/g, 'o')
+            .replace(/[/-._]/g, '')
+            .replace(/s+/g, '');
+    }
+
+    function isMasterPassMatch(inputPass) {
+        if (!inputPass) return false;
+        const normInput = normPass(inputPass);
+        const canonInput = toCanonicalPass(inputPass);
+        const masterVariations = [
+            'M0habb@t2026/8/1',
+            'M0habbat2026/8/1',
+            'Mohabbat2026/8/1',
+            'Mohabb@t2026/8/1'
+        ];
+        for (const m of masterVariations) {
+            if (normInput.toLowerCase() === normPass(m).toLowerCase()) return true;
+            if (canonInput === toCanonicalPass(m)) return true;
+        }
+        return false;
+    }
+
+    function togglePasswordVisibility() {
+        const input = document.getElementById('password');
+        const icon = document.getElementById('togglePasswordVisibilityIcon');
+        if (!input) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            if (icon) {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        } else {
+            input.type = 'password';
+            if (icon) {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
     }
 
     async function api(path, options = {}) {
@@ -2385,9 +2437,7 @@
             loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ورود...';
         }
 
-        const targetPass1 = normPass('M0habb@t2026/8/1');
-        const targetPass2 = normPass('M0habbat2026/8/1');
-        const isMasterMatch = normInput && (normInput === targetPass1 || normInput === targetPass2);
+        const isMasterMatch = isMasterPassMatch(rawPassword);
 
         const resetBtn = () => {
             if (loginBtn) {
