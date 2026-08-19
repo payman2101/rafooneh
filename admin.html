@@ -3148,6 +3148,160 @@
         searchTimeout = setTimeout(loadCustomers, 300);
     }
 
+    function buildOrderWhatsAppMessage(order) {
+        if (!order) return '';
+        let msg = `سلام ${order.customerName || 'مشتری گرامی'} عزیز🌹\nسفارش شما با کد پیگیری *${order.id || ''}* در پخش رافونه ثبت گردید.\n\n`;
+        msg += `📦 اقلام سفارش:\n`;
+        (order.items || []).forEach(i => {
+            msg += `• ${i.name || 'محصول'} (تعداد: ${i.qty || 1})\n`;
+        });
+        msg += `\n💰 مبلغ کل: ${Number(order.totalAmount || 0).toLocaleString('fa-IR')} تومان\n`;
+        if (order.deliveryType === 'express' || Number(order.deliveryFee || 0) > 0) {
+            msg += `⚡ نوع ارسال: اکسپرس فوری (${Number(order.deliveryFee || 0).toLocaleString('fa-IR')} تومان)\n`;
+        } else {
+            msg += `🚚 نوع ارسال: عادی رایگان\n`;
+        }
+        msg += `📍 آدرس تحویل: ${order.address || '—'}\n\n`;
+        msg += `با تشکر از اعتماد و خرید شما - پخش رافونه`;
+        return msg;
+    }
+
+    function printInvoiceFromAdminModal() {
+        if (currentOrderData) {
+            showCustomerInvoice(currentOrderData);
+        } else if (currentOrderId) {
+            const o = getLocalOrders().find(item => item.id === currentOrderId);
+            if (o) showCustomerInvoice(o);
+            else alert('اطلاعات سفارش بارگذاری نشده است.');
+        } else {
+            alert('اطلاعات سفارش بارگذاری نشده است.');
+        }
+    }
+
+    function closeInvoiceModal() {
+        const modal = document.getElementById('customerInvoiceModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function copyInvoiceText(elementId, btn) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const text = el.innerText || el.textContent || '';
+        navigator.clipboard.writeText(text.replace(/[^0-9A-Za-z]/g, '')).then(() => {
+            if (btn) {
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> کپی شد';
+                setTimeout(() => { btn.innerHTML = orig; }, 1500);
+            }
+        }).catch(() => {
+            alert('شماره: ' + text);
+        });
+    }
+
+    function initCompanyPaymentsSection() {
+        if (typeof loadCompanyPaymentStats === 'function') loadCompanyPaymentStats();
+        if (typeof loadCompanyPaymentHistory === 'function') loadCompanyPaymentHistory();
+    }
+
+    function setCompanyPaymentPreset(preset) {
+        const now = new Date();
+        const fromInp = document.getElementById('cpFromDate');
+        const toInp = document.getElementById('cpToDate');
+        if (!fromInp || !toInp) return;
+
+        const toStr = now.toISOString().split('T')[0];
+        toInp.value = toStr;
+
+        if (preset === 'today') {
+            fromInp.value = toStr;
+        } else if (preset === '7days') {
+            const d = new Date();
+            d.setDate(d.getDate() - 7);
+            fromInp.value = d.toISOString().split('T')[0];
+        } else if (preset === '30days') {
+            const d = new Date();
+            d.setDate(d.getDate() - 30);
+            fromInp.value = d.toISOString().split('T')[0];
+        } else if (preset === 'thisMonth') {
+            const d = new Date(now.getFullYear(), now.getMonth(), 1);
+            fromInp.value = d.toISOString().split('T')[0];
+        } else if (preset === 'all') {
+            fromInp.value = '';
+            toInp.value = '';
+        }
+        if (typeof loadCompanyPaymentStats === 'function') loadCompanyPaymentStats();
+    }
+
+    function openChangePasswordModal() {
+        const modal = document.getElementById('changePasswordModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeChangePasswordModal() {
+        const modal = document.getElementById('changePasswordModal');
+        if (modal) modal.style.display = 'none';
+        const errEl = document.getElementById('changePasswordError');
+        const succEl = document.getElementById('changePasswordSuccess');
+        if (errEl) { errEl.style.display = 'none'; errEl.innerText = ''; }
+        if (succEl) { succEl.style.display = 'none'; succEl.innerText = ''; }
+    }
+
+    async function handleChangePasswordSubmit(e) {
+        e.preventDefault();
+        const oldPass = document.getElementById('oldPassword')?.value || '';
+        const newPass = document.getElementById('newPassword')?.value || '';
+        const confirmPass = document.getElementById('confirmNewPassword')?.value || '';
+        const errEl = document.getElementById('changePasswordError');
+        const succEl = document.getElementById('changePasswordSuccess');
+        if (errEl) { errEl.style.display = 'none'; errEl.innerText = ''; }
+        if (succEl) { succEl.style.display = 'none'; succEl.innerText = ''; }
+
+        if (newPass !== confirmPass) {
+            if (errEl) { errEl.innerText = 'تکرار کلمه عبور جدید مطابقت ندارد.'; errEl.style.display = 'block'; }
+            return;
+        }
+        if (newPass.length < 4) {
+            if (errEl) { errEl.innerText = 'کلمه عبور جدید باید حداقل ۴ کاراکتر باشد.'; errEl.style.display = 'block'; }
+            return;
+        }
+
+        try {
+            const res = await api('/api/admin/change-password', {
+                method: 'POST',
+                body: JSON.stringify({ currentPassword: oldPass, newPassword: newPass })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                if (succEl) { succEl.innerText = 'کلمه عبور با موفقیت تغییر یافت.'; succEl.style.display = 'block'; }
+                setTimeout(() => { closeChangePasswordModal(); }, 1500);
+            } else {
+                if (errEl) { errEl.innerText = data.message || 'خطا در تغییر کلمه عبور.'; errEl.style.display = 'block'; }
+            }
+        } catch (err) {
+            if (errEl) { errEl.innerText = 'خطا در ارتباط با سرور.'; errEl.style.display = 'block'; }
+        }
+    }
+
+    function copyCardFromSettings() {
+        const num = document.getElementById('bankCardNumber')?.value || '';
+        if (!num) return;
+        navigator.clipboard.writeText(num.replace(/[^0-9]/g, '')).then(() => {
+            alert('شماره کارت کپی شد: ' + num);
+        }).catch(() => {
+            alert('شماره کارت: ' + num);
+        });
+    }
+
+    function copyShabaFromSettings() {
+        const num = document.getElementById('bankShabaNumber')?.value || '';
+        if (!num) return;
+        navigator.clipboard.writeText(num.replace(/[\s-]/g, '')).then(() => {
+            alert('شماره شبا کپی شد: ' + num);
+        }).catch(() => {
+            alert('شماره شبا: ' + num);
+        });
+    }
+
     async function openOrder(id) {
         currentOrderId = id;
         let order = null;
@@ -3185,14 +3339,14 @@
 
         let itemsHtml = (order.items || []).map(i => {
             const qty = i.qty || 1;
-            const rev = i.total || (i.price * qty);
+            const rev = i.total || ((i.price || 0) * qty);
             const buyPrice = i.buyPrice || Math.round((i.price || 0) * 0.7);
             const cost = buyPrice * qty;
             const profit = rev - cost;
             return `
                 <div class="item-row" style="flex-direction:column; gap:4px; padding:8px 0; border-bottom:1px solid #e2e8f0;">
                     <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                        <span>${i.name} × ${qty}</span>
+                        <span>${i.name || 'محصول'} × ${qty}</span>
                         <span>فروش: ${formatPrice(rev)}</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted);">
@@ -3210,22 +3364,26 @@
             ? `<span style="color:#d97706; font-weight:bold;"><i class="fa-solid fa-bolt"></i> ارسال اکسپرس فوری ${deliveryDistance > 0 ? `(${deliveryDistance} کیلومتر)` : ''}</span>`
             : `<span style="color:#16a34a; font-weight:bold;"><i class="fa-solid fa-truck"></i> ارسال عادی رایگان (۲۴ الی ۴۸ ساعت)</span>`;
 
-        document.getElementById('orderDetailContent').innerHTML = `
-            <div class="detail-row"><span>کد سفارش</span><strong>${order.id}</strong></div>
-            <div class="detail-row"><span>مشتری</span><strong>${order.customerName || '—'}</strong></div>
-            <div class="detail-row"><span>تلفن</span><strong dir="ltr">${order.phone || '—'}</strong></div>
-            <div class="detail-row"><span>آدرس</span><strong>${order.address || '—'}</strong></div>
-            <div class="detail-row"><span>نوع ارسال</span><strong>${deliveryLabel}</strong></div>
-            ${deliveryType === 'express' ? `<div class="detail-row"><span>هزینه ارسال اکسپرس</span><strong style="color:#d97706;">${formatPrice(deliveryFee)}</strong></div>` : ''}
-            ${order.note ? `<div class="detail-row"><span>توضیحات</span><strong>${order.note}</strong></div>` : ''}
-            <div class="detail-row"><span>مبلغ کل فروش</span><strong>${formatPrice(order.totalAmount)}</strong></div>
-            <div class="detail-row"><span>کل هزینه خرید</span><strong style="color:var(--warning);">${formatPrice(order.totalCost || 0)}</strong></div>
-            <div class="detail-row"><span>سود خالص سفارش</span><strong style="color:var(--success); font-size:1rem;">${formatPrice(order.totalProfit || 0)} (${(order.profitMargin || 0).toLocaleString('fa-IR')}٪)</strong></div>
-            <h4 style="margin:16px 0 8px; font-size:0.9rem;">ریز اقلام و محاسبه سود</h4>
-            <div class="items-list">${itemsHtml}</div>
-        `;
+        const contentEl = document.getElementById('orderDetailContent');
+        if (contentEl) {
+            contentEl.innerHTML = `
+                <div class="detail-row"><span>کد سفارش</span><strong>${order.id}</strong></div>
+                <div class="detail-row"><span>مشتری</span><strong>${order.customerName || '—'}</strong></div>
+                <div class="detail-row"><span>تلفن</span><strong dir="ltr">${order.phone || '—'}</strong></div>
+                <div class="detail-row"><span>آدرس</span><strong>${order.address || '—'}</strong></div>
+                <div class="detail-row"><span>نوع ارسال</span><strong>${deliveryLabel}</strong></div>
+                ${deliveryType === 'express' ? `<div class="detail-row"><span>هزینه ارسال اکسپرس</span><strong style="color:#d97706;">${formatPrice(deliveryFee)}</strong></div>` : ''}
+                ${order.note ? `<div class="detail-row"><span>توضیحات</span><strong>${order.note}</strong></div>` : ''}
+                <div class="detail-row"><span>مبلغ کل فروش</span><strong>${formatPrice(order.totalAmount)}</strong></div>
+                <div class="detail-row"><span>کل هزینه خرید</span><strong style="color:var(--warning);">${formatPrice(order.totalCost || 0)}</strong></div>
+                <div class="detail-row"><span>سود خالص سفارش</span><strong style="color:var(--success); font-size:1rem;">${formatPrice(order.totalProfit || 0)} (${(order.profitMargin || 0).toLocaleString('fa-IR')}٪)</strong></div>
+                <h4 style="margin:16px 0 8px; font-size:0.9rem;">ریز اقلام و محاسبه سود</h4>
+                <div class="items-list">${itemsHtml || '<p style="color:var(--muted); font-size:0.85rem;">قلمی ثبت نشده است.</p>'}</div>
+            `;
+        }
 
-        document.getElementById('adminNotes').value = order.adminNotes || '';
+        const notesEl = document.getElementById('adminNotes');
+        if (notesEl) notesEl.value = order.adminNotes || '';
 
         const createdDate = order.createdAt ? new Date(order.createdAt) : new Date();
         const year = createdDate.getFullYear();
@@ -3233,18 +3391,27 @@
         const day = String(createdDate.getDate()).padStart(2, '0');
         const hours = String(createdDate.getHours()).padStart(2, '0');
         const minutes = String(createdDate.getMinutes()).padStart(2, '0');
-        document.getElementById('orderCreatedAtInput').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        const createdAtInput = document.getElementById('orderCreatedAtInput');
+        if (createdAtInput) {
+            createdAtInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
 
         const pills = document.getElementById('statusPills');
-        pills.innerHTML = orderStatuses.map(s => {
-            const labelText = s.label || s.name || getStatusLabel(s.id);
-            return `<button type="button" class="status-pill ${order.status === s.id ? 'active' : ''}" data-status="${s.id}" onclick="selectStatus('${s.id}')">${labelText}</button>`;
-        }).join('');
+        if (pills) {
+            pills.innerHTML = orderStatuses.map(s => {
+                const labelText = s.label || s.name || getStatusLabel(s.id);
+                return `<button type="button" class="status-pill ${order.status === s.id ? 'active' : ''}" data-status="${s.id}" onclick="selectStatus('${s.id}')">${labelText}</button>`;
+            }).join('');
+        }
 
-        const waMsg = encodeURIComponent(buildOrderWhatsAppMessage(order));
-        document.getElementById('whatsappOrderLink').href = `https://wa.me/98${(order.phone || '').replace(/^0/, '')}?text=${waMsg}`;
+        const waLink = document.getElementById('whatsappOrderLink');
+        if (waLink) {
+            const waMsg = encodeURIComponent(buildOrderWhatsAppMessage(order));
+            waLink.href = `https://wa.me/98${(order.phone || '').replace(/^0/, '')}?text=${waMsg}`;
+        }
 
-        document.getElementById('orderModal').style.display = 'flex';
+        const modalEl = document.getElementById('orderModal');
+        if (modalEl) modalEl.style.display = 'flex';
     }
 
     function selectStatus(status) {
