@@ -39,7 +39,9 @@ import {
   initDatabaseSync,
   ensureFirestoreLoaded,
   getBankSettings,
-  saveBankSettings
+  saveBankSettings,
+  getDeliverySettings,
+  saveDeliverySettings
 } from './crm/store.js';
 import { checkpointSqlite } from './crm/sqlite.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
@@ -1153,6 +1155,64 @@ function handleUpdateBankSettings(req, res) {
 
 app.post('/api/admin/settings/bank', authMiddleware, handleUpdateBankSettings);
 app.post('/api/settings/bank', handleUpdateBankSettings);
+
+// API: Get Delivery & Express Settings (Public / Storefront / Admin)
+app.get('/api/settings/delivery', (req, res) => {
+  try {
+    const settings = getDeliverySettings();
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت تنظیمات ارسال و تحویل' });
+  }
+});
+
+// API: Get Delivery Settings (Admin)
+app.get('/api/admin/settings/delivery', authMiddleware, (req, res) => {
+  try {
+    const settings = getDeliverySettings();
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت تنظیمات ارسال و تحویل' });
+  }
+});
+
+// API: Update Delivery Settings
+function handleUpdateDeliverySettings(req, res) {
+  try {
+    const {
+      isExpressDeliveryEnabled,
+      disabledNoticeMessage,
+      expressBaseFee,
+      expressPerKmFee,
+      expressEstimatedHours,
+      warehouseAddress,
+      warehouseLat,
+      warehouseLng
+    } = req.body || {};
+
+    const updated = saveDeliverySettings({
+      isExpressDeliveryEnabled: typeof isExpressDeliveryEnabled === 'boolean' ? isExpressDeliveryEnabled : Boolean(isExpressDeliveryEnabled),
+      disabledNoticeMessage: disabledNoticeMessage !== undefined ? String(disabledNoticeMessage).trim() : undefined,
+      expressBaseFee: !isNaN(Number(expressBaseFee)) ? Number(expressBaseFee) : undefined,
+      expressPerKmFee: !isNaN(Number(expressPerKmFee)) ? Number(expressPerKmFee) : undefined,
+      expressEstimatedHours: !isNaN(Number(expressEstimatedHours)) ? Number(expressEstimatedHours) : undefined,
+      warehouseAddress: warehouseAddress !== undefined ? String(warehouseAddress).trim() : undefined,
+      warehouseLat: !isNaN(Number(warehouseLat)) ? Number(warehouseLat) : undefined,
+      warehouseLng: !isNaN(Number(warehouseLng)) ? Number(warehouseLng) : undefined
+    });
+
+    res.json({
+      success: true,
+      message: 'تنظیمات ارسال و تحویل فوری با موفقیت ذخیره شد.',
+      settings: updated
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در ذخیره تنظیمات ارسال و تحویل' });
+  }
+}
+
+app.post('/api/admin/settings/delivery', authMiddleware, handleUpdateDeliverySettings);
+app.post('/api/settings/delivery', handleUpdateDeliverySettings);
 
 // API: Download SQLite database file
 app.get('/api/admin/database/download', authMiddleware, (req, res) => {

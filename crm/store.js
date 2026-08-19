@@ -64,6 +64,7 @@ const COMPANY_PAYMENTS_FILE = path.join(DATA_DIR, 'company_payments.json');
 const PURCHASES_FILE = path.join(DATA_DIR, 'purchases.json');
 const DATA_PRODUCTS_FILE = path.join(DATA_DIR, 'products_data.json');
 const BANK_SETTINGS_FILE = path.join(DATA_DIR, 'bank_settings.json');
+const DELIVERY_SETTINGS_FILE = path.join(DATA_DIR, 'delivery_settings.json');
 
 const ROOT_ORDERS_FILE = path.join(process.cwd(), 'orders.json');
 const ROOT_CUSTOMERS_FILE = path.join(process.cwd(), 'customers.json');
@@ -72,6 +73,7 @@ const ROOT_PURCHASES_FILE = path.join(process.cwd(), 'purchases.json');
 const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
 const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
 const ROOT_BANK_SETTINGS_FILE = path.join(process.cwd(), 'bank_settings.json');
+const ROOT_DELIVERY_SETTINGS_FILE = path.join(process.cwd(), 'delivery_settings.json');
 
 let productsListCache = null;
 let productsMapCache = null;
@@ -80,6 +82,7 @@ let customersListCache = null;
 let companyPaymentsListCache = null;
 let purchasesListCache = null;
 let bankSettingsCache = null;
+let deliverySettingsCache = null;
 
 let isFirestoreLoading = false;
 let firestoreLoadPromise = null;
@@ -1915,6 +1918,54 @@ export function saveBankSettings(settings) {
   saveBankSettingsCloudSql(updated).catch(e => {
     console.error('[Cloud SQL] Save bank settings error:', e.message);
   });
+  return updated;
+}
+
+export const DEFAULT_DELIVERY_SETTINGS = {
+  isExpressDeliveryEnabled: true,
+  disabledNoticeMessage: 'در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.',
+  expressBaseFee: 100000,
+  expressPerKmFee: 20000,
+  expressEstimatedHours: 24,
+  warehouseAddress: 'کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲',
+  warehouseLat: 35.8124,
+  warehouseLng: 50.9415
+};
+
+export function getDeliverySettings() {
+  if (deliverySettingsCache) return deliverySettingsCache;
+  try {
+    const loaded = readJson(DELIVERY_SETTINGS_FILE, null);
+    if (loaded && typeof loaded === 'object' && typeof loaded.isExpressDeliveryEnabled !== 'undefined') {
+      deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS, ...loaded };
+      return deliverySettingsCache;
+    }
+    const rootLoaded = readJson(ROOT_DELIVERY_SETTINGS_FILE, null);
+    if (rootLoaded && typeof rootLoaded === 'object' && typeof rootLoaded.isExpressDeliveryEnabled !== 'undefined') {
+      deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS, ...rootLoaded };
+      return deliverySettingsCache;
+    }
+  } catch (e) {
+    console.error('Error reading delivery settings:', e);
+  }
+  deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS };
+  return deliverySettingsCache;
+}
+
+export function saveDeliverySettings(settings) {
+  const current = getDeliverySettings();
+  const updated = {
+    ...current,
+    ...settings,
+    updatedAt: new Date().toISOString()
+  };
+  deliverySettingsCache = updated;
+  try {
+    writeJson(DELIVERY_SETTINGS_FILE, updated);
+    writeJson(ROOT_DELIVERY_SETTINGS_FILE, updated);
+  } catch (e) {
+    console.error('Error writing delivery settings file:', e);
+  }
   return updated;
 }
 

@@ -70,6 +70,17 @@ let memoryBankSettings = {
   description: 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
 };
 
+let memoryDeliverySettings = {
+  isExpressDeliveryEnabled: true,
+  disabledNoticeMessage: 'در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.',
+  expressBaseFee: 100000,
+  expressPerKmFee: 20000,
+  expressEstimatedHours: 24,
+  warehouseAddress: 'کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲',
+  warehouseLat: 35.8124,
+  warehouseLng: 50.9415
+};
+
 // --- SUPABASE HELPERS ---
 function getSupabaseClient(env = {}) {
   const url = env?.SUPABASE_URL || process.env?.SUPABASE_URL || 'https://agyerjkhtsqmdtcgamgq.supabase.co';
@@ -1775,6 +1786,31 @@ export async function onRequest(context) {
       memoryBankSettings = { ...memoryBankSettings, ...pgBank };
     }
     return jsonRes({ success: true, settings: memoryBankSettings });
+  }
+
+  // --- DELIVERY & EXPRESS SETTINGS ENDPOINTS ---
+  if (path === '/api/settings/delivery' || path === '/api/admin/settings/delivery') {
+    if (method === 'POST') {
+      memoryDeliverySettings = {
+        ...memoryDeliverySettings,
+        isExpressDeliveryEnabled: typeof body.isExpressDeliveryEnabled === 'boolean' ? body.isExpressDeliveryEnabled : Boolean(body.isExpressDeliveryEnabled),
+        disabledNoticeMessage: body.disabledNoticeMessage !== undefined ? String(body.disabledNoticeMessage).trim() : memoryDeliverySettings.disabledNoticeMessage,
+        expressBaseFee: !isNaN(Number(body.expressBaseFee)) ? Number(body.expressBaseFee) : memoryDeliverySettings.expressBaseFee,
+        expressPerKmFee: !isNaN(Number(body.expressPerKmFee)) ? Number(body.expressPerKmFee) : memoryDeliverySettings.expressPerKmFee,
+        expressEstimatedHours: !isNaN(Number(body.expressEstimatedHours)) ? Number(body.expressEstimatedHours) : memoryDeliverySettings.expressEstimatedHours,
+        warehouseAddress: body.warehouseAddress !== undefined ? String(body.warehouseAddress).trim() : memoryDeliverySettings.warehouseAddress,
+        warehouseLat: !isNaN(Number(body.warehouseLat)) ? Number(body.warehouseLat) : memoryDeliverySettings.warehouseLat,
+        warehouseLng: !isNaN(Number(body.warehouseLng)) ? Number(body.warehouseLng) : memoryDeliverySettings.warehouseLng,
+        updatedAt: new Date().toISOString()
+      };
+      return jsonRes({
+        success: true,
+        message: 'تنظیمات ارسال و تحویل فوری با موفقیت ذخیره گردید.',
+        settings: memoryDeliverySettings
+      });
+    }
+
+    return jsonRes({ success: true, settings: memoryDeliverySettings });
   }
 
   // --- UPLOAD IMAGE ENDPOINT ---

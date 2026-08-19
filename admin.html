@@ -527,6 +527,47 @@
             text-align: center;
         }
 
+        /* Switch Toggle Styles */
+        .switch-toggle {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+            margin: 0;
+            flex-shrink: 0;
+        }
+        .switch-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider-round {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 34px;
+        }
+        .slider-round:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .switch-toggle input:checked + .slider-round {
+            background-color: #059669;
+        }
+        .switch-toggle input:checked + .slider-round:before {
+            transform: translateX(24px);
+        }
+
         .inv-footer {
             display: flex;
             justify-content: space-between;
@@ -766,6 +807,7 @@
         <button class="active" onclick="showSection('dashboard', this)">داشبورد</button>
         <button onclick="showSection('orders', this)">سفارشات</button>
         <button onclick="showSection('products', this)">انبار و برندها</button>
+        <button onclick="showSection('delivery-settings', this)">تحویل فوری</button>
         <button onclick="showSection('bank-settings', this)">کارت و حساب</button>
         <button onclick="showSection('gsheets', this)">گوگل شیت</button>
         <button onclick="showSection('profit', this)">تحلیل سود</button>
@@ -785,6 +827,9 @@
             </button>
             <button class="nav-item" data-section="products" onclick="showSection('products', this)">
                 <i class="fa-solid fa-boxes-stacked"></i> مدیریت انبار و برندها
+            </button>
+            <button class="nav-item" data-section="delivery-settings" onclick="showSection('delivery-settings', this)">
+                <i class="fa-solid fa-truck-fast"></i> تنظیمات تحویل فوری
             </button>
             <button class="nav-item" data-section="bank-settings" onclick="showSection('bank-settings', this)">
                 <i class="fa-solid fa-credit-card"></i> حساب بانکی و کارت به کارت
@@ -814,6 +859,30 @@
             <!-- Dashboard -->
             <section class="section active" id="section-dashboard">
                 <div id="dashboardAlertBanner"></div>
+
+                <!-- Quick Express Delivery Control Bar -->
+                <div class="panel" style="margin-bottom: 20px; padding: 14px 20px; border-right: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: #ffffff; border-radius: 12px; border: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold; font-size: 0.95rem; color: var(--text);">کنترل وضعیت تحویل فوری ۲۴ ساعته</div>
+                            <div style="font-size: 0.78rem; color: var(--muted); margin-top: 2px;" id="dashExpressStatusSubtext">در حال بررسی وضعیت تحویل فوری...</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <span id="dashExpressStatusBadge" class="badge" style="background:#dcfce7; color:#15803d; font-size:0.85rem; padding:6px 12px;">
+                            <i class="fa-solid fa-check-circle"></i> تحویل فوری فعال است
+                        </span>
+                        <button type="button" class="btn btn-secondary" onclick="toggleQuickExpressStatus()" id="btnQuickToggleExpress" style="font-size:0.85rem; padding:6px 14px;">
+                            <i class="fa-solid fa-power-off"></i> تغییر وضعیت
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="showSection('delivery-settings')" style="font-size:0.85rem; padding:6px 12px;">
+                            <i class="fa-solid fa-gear"></i> تنظیمات
+                        </button>
+                    </div>
+                </div>
 
                 <!-- Dashboard Date Filter Bar -->
                 <div class="panel" style="margin-bottom: 20px; padding: 16px 20px;">
@@ -1643,6 +1712,144 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Delivery & Express Settings Section -->
+            <section class="section" id="section-delivery-settings">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <h2 style="margin:0; font-size:1.35rem; color:#0f172a; display:flex; align-items:center; gap:10px;">
+                            <i class="fa-solid fa-truck-fast" style="color:var(--primary);"></i> تنظیمات ارسال و کنترل تحویل فوری
+                        </h2>
+                        <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">
+                            مدیریت و کنترل فعال/غیرفعال بودن تحویل فوری ۲۴ ساعته در روزهای مختلف، نرخ کرایه پایه، و پیام اطلاع‌رسانی به خریداران.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button type="button" class="btn btn-secondary" onclick="loadDeliverySettings(true)" style="padding:8px 14px; font-size:0.85rem;" title="بازخوانی از سرور">
+                            <i class="fa-solid fa-rotate"></i> بازخوانی از سرور
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;">
+                    <!-- Left Column: Form & Primary Controls -->
+                    <div class="card" style="padding:24px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
+                        <h3 style="margin:0 0 16px 0; font-size:1.05rem; color:#1e293b; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+                            <i class="fa-solid fa-sliders" style="color:var(--primary);"></i> پیکربندی تحویل فوری (اکسپرس)
+                        </h3>
+
+                        <form onsubmit="saveDeliverySettingsForm(event)" id="deliverySettingsForm">
+                            <!-- Big Toggle Switch Box -->
+                            <div style="background:#f8fafc; border:2px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:20px; transition:all 0.2s ease;" id="expressStatusCard">
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                                    <div style="display:flex; align-items:center; gap:12px;">
+                                        <div id="expressStatusIconBox" style="width:44px; height:44px; border-radius:12px; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                                            <i class="fa-solid fa-bolt"></i>
+                                        </div>
+                                        <div>
+                                            <label for="isExpressDeliveryEnabledSwitch" style="margin:0; font-weight:800; font-size:1rem; color:#0f172a; cursor:pointer;">
+                                                وضعیت سرویس تحویل فوری (۲۴ ساعته)
+                                            </label>
+                                            <div style="font-size:0.8rem; color:#64748b; margin-top:2px;" id="expressStatusDescription">
+                                                در حال حاضر فعال و قابل انتخاب برای خریداران است
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <label class="switch-toggle" style="position:relative; display:inline-block; width:52px; height:28px; margin:0; flex-shrink:0;">
+                                        <input type="checkbox" id="isExpressDeliveryEnabledSwitch" onchange="updateDeliverySettingsUI()">
+                                        <span class="slider-round"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label for="disabledNoticeMessageInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                    <i class="fa-solid fa-circle-info" style="color:#d97706; margin-left:4px;"></i> پیام اطلاع‌رسانی به مشتری در زمان غیرفعال بودن:
+                                </label>
+                                <textarea id="disabledNoticeMessageInput" class="form-control" rows="3" placeholder="متنی که هنگام غیرفعال بودن تحویل فوری به مشتریان در بخش تسویه‌حساب نمایش داده می‌شود..." style="font-size:0.85rem; line-height:1.6;" oninput="updateDeliverySettingsUI()"></textarea>
+                                <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">این پیام در فرم پرداخت فروشگاه جهت آگاهی مشتری نمایش می‌یابد.</div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+                                <div class="form-group">
+                                    <label for="expressBaseFeeInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                        <i class="fa-solid fa-coins" style="color:#059669; margin-left:4px;"></i> هزینه پایه ورودی (تومان):
+                                    </label>
+                                    <input type="number" id="expressBaseFeeInput" class="form-control" placeholder="100000" min="0" step="1000" oninput="updateDeliverySettingsUI()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="expressPerKmFeeInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                        <i class="fa-solid fa-road" style="color:#0284c7; margin-left:4px;"></i> هزینه به ازای هر کیلومتر (تومان):
+                                    </label>
+                                    <input type="number" id="expressPerKmFeeInput" class="form-control" placeholder="20000" min="0" step="1000" oninput="updateDeliverySettingsUI()">
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label for="warehouseAddressInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                    <i class="fa-solid fa-warehouse" style="color:#6366f1; margin-left:4px;"></i> آدرس مبدأ انبار رافونه:
+                                </label>
+                                <input type="text" id="warehouseAddressInput" class="form-control" placeholder="کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲" oninput="updateDeliverySettingsUI()">
+                            </div>
+
+                            <div id="deliverySaveMsg" style="display:none; padding:12px; border-radius:10px; margin-bottom:16px; font-size:0.85rem;"></div>
+
+                            <button type="submit" id="btnSaveDeliverySettings" class="btn btn-primary" style="width:100%; padding:12px; font-size:0.95rem; font-weight:bold; border-radius:10px;">
+                                <i class="fa-solid fa-floppy-disk"></i> ذخیره و اعمال تغییرات
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Live Storefront Simulation & Preview -->
+                    <div style="display:flex; flex-direction:column; gap:20px;">
+                        <div class="card" style="padding:22px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
+                            <h3 style="margin:0 0 16px 0; font-size:1.05rem; color:#1e293b; display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-eye" style="color:var(--primary);"></i> پیش‌نمایش در صفحه پرداخت فروشگاه
+                            </h3>
+
+                            <div style="border:1px solid #e2e8f0; border-radius:12px; padding:14px; background:#f8fafc;">
+                                <div style="font-size:0.8rem; font-weight:bold; color:#64748b; margin-bottom:10px;">
+                                    <i class="fa-solid fa-truck-fast"></i> گزینه انتخابی مشتری:
+                                </div>
+
+                                <!-- Normal Delivery Option -->
+                                <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-radius:10px; border:2px solid var(--primary); background:#eff6ff; margin-bottom:10px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <i class="fa-solid fa-circle-check" style="color:var(--primary);"></i>
+                                        <span style="font-weight:bold; font-size:0.88rem; color:#1e293b;">ارسال عادی (تحویل رایگان درب منزل)</span>
+                                    </div>
+                                    <span style="background:#dcfce7; color:#15803d; font-size:0.75rem; font-weight:bold; padding:2px 8px; border-radius:6px;">رایگان</span>
+                                </div>
+
+                                <!-- Express Delivery Option Preview -->
+                                <div id="previewExpressStoreOption" style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-radius:10px; border:1px solid #e2e8f0; background:#ffffff; transition:all 0.3s ease;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <i class="fa-solid fa-bolt" id="previewExpressIcon" style="color:#d97706;"></i>
+                                        <span id="previewExpressTitle" style="font-weight:bold; font-size:0.88rem; color:#1e293b;">تحویل فوری (کمتر از ۲۴ ساعت - کرج)</span>
+                                    </div>
+                                    <span id="previewExpressBadge" style="background:#fef3c7; color:#b45309; font-size:0.75rem; font-weight:bold; padding:2px 8px; border-radius:6px;">فعال در فروشگاه</span>
+                                </div>
+
+                                <!-- Disabled Message Simulation Box -->
+                                <div id="previewDisabledAlertBox" style="display:none; margin-top:10px; background:#fff1f2; border:1px solid #fecdd3; border-radius:10px; padding:10px 12px; color:#be123c; font-size:0.8rem; line-height:1.5;">
+                                    <i class="fa-solid fa-triangle-exclamation" style="margin-left:4px;"></i>
+                                    <span id="previewDisabledAlertText">...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Guide Card -->
+                        <div class="card" style="padding:18px 20px; border-radius:16px; border:1px solid #bae6fd; background:#f0f9ff;">
+                            <h4 style="margin:0 0 8px 0; font-size:0.92rem; color:#0369a1; display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-lightbulb"></i> راهنمای کنترل تحویل فوری در روزهای شلوغ و تعطیل
+                            </h4>
+                            <p style="margin:0; font-size:0.82rem; line-height:1.7; color:#334155;">
+                                در هر روز یا بازه‌ای که به علت مسافرت، تعطیلی یا حجم بالای کار امکان تحویل ۲۴ ساعته سفارشات وجود ندارد، کافی است با زدن کلید تغییر وضعیت، تحویل فوری را موقتاً غیرفعال کنید. خریداران به صورت شفاف از موضوع مطلع شده و سفارشات را با تحویل عادی ثبت خواهند کرد.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 </div>
@@ -2292,6 +2499,7 @@
             loadAdminProducts().catch(() => {});
             loadGSheetsStatus().catch(() => {});
             loadBankSettings().catch(() => {});
+            loadDeliverySettings().catch(() => {});
         }, 50);
     }
 
@@ -2313,8 +2521,9 @@
         if (name === 'orders') { loadOrders(); ensureProductsCatalogLoaded(); }
         if (name === 'new-purchase' || name === 'new-order') ensureProductsCatalogLoaded();
         if (name === 'bank-settings') loadBankSettings();
+        if (name === 'delivery-settings') loadDeliverySettings();
         if (name === 'alerts') loadAlerts();
-        if (name === 'dashboard') loadStats();
+        if (name === 'dashboard') { loadStats(); loadDeliverySettings(); }
     }
 
     let isRefreshingActive = false;
@@ -2326,7 +2535,7 @@
             const tasks = [loadAlerts()];
 
             if (activeSec === 'dashboard') {
-                tasks.push(loadStats(), loadOrders());
+                tasks.push(loadStats(), loadOrders(), loadDeliverySettings());
             } else if (activeSec === 'orders') {
                 tasks.push(loadOrders());
             } else if (activeSec === 'customers') {
@@ -2341,6 +2550,10 @@
                 tasks.push(loadCompanyPaymentHistory());
             } else if (activeSec === 'gsheets') {
                 tasks.push(loadGSheetsStatus());
+            } else if (activeSec === 'delivery-settings') {
+                tasks.push(loadDeliverySettings(true));
+            } else if (activeSec === 'bank-settings') {
+                tasks.push(loadBankSettings(true));
             }
 
             await Promise.allSettled(tasks);
@@ -4175,11 +4388,322 @@
                     msgBox.style.background = '#dcfce7';
                     msgBox.style.color = '#15803d';
                     msgBox.style.border = '1px solid #86efac';
-                    msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.message || 'مشخصات بانکی با موفقیت در دیتابیس و حافظه ذخیره گردید.'}`;
+                    msgBox.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + (data.message || 'مشخصات بانکی با موفقیت در دیتابیس و حافظه ذخیره گردید.');
                     setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
                 }
             } else {
-                throw new Error(data.message || 'خطا در ذخیره سازی ا�    function calculateCompanyPaymentStatsLocally(fromDate, toDate, ordersList, productsList) {
+                throw new Error(data.message || 'خطا در ذخیره سازی اطلاعات');
+            }
+        } catch (err) {
+            if (msgBox) {
+                msgBox.style.display = 'block';
+                msgBox.style.background = '#fef2f2';
+                msgBox.style.color = '#991b1b';
+                msgBox.style.border = '1px solid #fecaca';
+                msgBox.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> خطا در ذخیره‌سازی: ' + (err.message || 'لطفاً مجدداً تلاش نمایید.');
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml || '<i class="fa-solid fa-floppy-disk"></i> ذخیره و ثبت اطلاعات کارت';
+            }
+        }
+    }
+
+    // ==========================================
+    // Delivery & Express Control Module
+    // ==========================================
+    let currentDeliverySettings = {
+        isExpressDeliveryEnabled: true,
+        disabledNoticeMessage: 'در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.',
+        expressBaseFee: 100000,
+        expressPerKmFee: 20000,
+        expressEstimatedHours: 24,
+        warehouseAddress: 'کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲',
+        warehouseLat: 35.8124,
+        warehouseLng: 50.9415
+    };
+
+    async function loadDeliverySettings(force = false) {
+        try {
+            const localSaved = localStorage.getItem('rafooneh_delivery_settings');
+            if (localSaved) {
+                const parsed = JSON.parse(localSaved);
+                if (parsed && typeof parsed.isExpressDeliveryEnabled !== 'undefined') {
+                    currentDeliverySettings = { ...currentDeliverySettings, ...parsed };
+                }
+            }
+        } catch (e) {}
+
+        const formEl = document.getElementById('deliverySettingsForm');
+        const isEditing = formEl && formEl.contains(document.activeElement);
+
+        try {
+            const res = await api('/api/settings/delivery');
+            if (res && res.ok) {
+                const data = await res.json();
+                if (data && data.settings) {
+                    currentDeliverySettings = { ...currentDeliverySettings, ...data.settings };
+                    try {
+                        localStorage.setItem('rafooneh_delivery_settings', JSON.stringify(currentDeliverySettings));
+                    } catch (e) {}
+                }
+            }
+        } catch (e) {
+            console.log('Load delivery settings notice:', e);
+        }
+
+        if (force || !isEditing) {
+            const isEnabled = currentDeliverySettings.isExpressDeliveryEnabled !== false;
+            const switchEl = document.getElementById('isExpressDeliveryEnabledSwitch');
+            if (switchEl) switchEl.checked = isEnabled;
+
+            if (document.getElementById('disabledNoticeMessageInput')) {
+                document.getElementById('disabledNoticeMessageInput').value = currentDeliverySettings.disabledNoticeMessage || '';
+            }
+            if (document.getElementById('expressBaseFeeInput')) {
+                document.getElementById('expressBaseFeeInput').value = currentDeliverySettings.expressBaseFee || 100000;
+            }
+            if (document.getElementById('expressPerKmFeeInput')) {
+                document.getElementById('expressPerKmFeeInput').value = currentDeliverySettings.expressPerKmFee || 20000;
+            }
+            if (document.getElementById('warehouseAddressInput')) {
+                document.getElementById('warehouseAddressInput').value = currentDeliverySettings.warehouseAddress || 'کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲';
+            }
+
+            updateDeliverySettingsUI();
+
+            if (force) {
+                const msgBox = document.getElementById('deliverySaveMsg');
+                if (msgBox) {
+                    msgBox.style.display = 'block';
+                    msgBox.style.background = '#f0f9ff';
+                    msgBox.style.color = '#0369a1';
+                    msgBox.style.border = '1px solid #bae6fd';
+                    msgBox.innerHTML = '<i class="fa-solid fa-circle-check"></i> آخرین تنظیمات تحویل فوری از سرور بازخوانی شد.';
+                    setTimeout(() => { msgBox.style.display = 'none'; }, 3000);
+                }
+            }
+        }
+    }
+
+    function updateDeliverySettingsUI() {
+        const switchEl = document.getElementById('isExpressDeliveryEnabledSwitch');
+        const isEnabled = switchEl ? switchEl.checked : (currentDeliverySettings.isExpressDeliveryEnabled !== false);
+        
+        const cardBox = document.getElementById('expressStatusCard');
+        const iconBox = document.getElementById('expressStatusIconBox');
+        const descEl = document.getElementById('expressStatusDescription');
+        
+        const previewOpt = document.getElementById('previewExpressStoreOption');
+        const previewIcon = document.getElementById('previewExpressIcon');
+        const previewBadge = document.getElementById('previewExpressBadge');
+        const previewAlertBox = document.getElementById('previewDisabledAlertBox');
+        const previewAlertText = document.getElementById('previewDisabledAlertText');
+
+        // Update Dashboard Top Widget
+        const dashBadge = document.getElementById('dashExpressStatusBadge');
+        const dashSubtext = document.getElementById('dashExpressStatusSubtext');
+        const dashBtn = document.getElementById('btnQuickToggleExpress');
+
+        if (isEnabled) {
+            if (cardBox) {
+                cardBox.style.background = '#f0fdf4';
+                cardBox.style.borderColor = '#86efac';
+            }
+            if (iconBox) {
+                iconBox.style.background = '#dcfce7';
+                iconBox.style.color = '#15803d';
+                iconBox.innerHTML = '<i class="fa-solid fa-bolt"></i>';
+            }
+            if (descEl) {
+                descEl.innerText = 'تحویل فوری ۲۴ ساعته فعال است (خریداران در بخش ثبت سفارش می‌توانند تحویل فوری را انتخاب کنند)';
+                descEl.style.color = '#15803d';
+            }
+
+            if (previewOpt) {
+                previewOpt.style.opacity = '1';
+                previewOpt.style.border = '1px solid #fed7aa';
+                previewOpt.style.background = '#fffbeb';
+            }
+            if (previewIcon) previewIcon.style.color = '#d97706';
+            if (previewBadge) {
+                previewBadge.style.background = '#fef3c7';
+                previewBadge.style.color = '#b45309';
+                previewBadge.innerText = 'فعال در فروشگاه';
+            }
+            if (previewAlertBox) previewAlertBox.style.display = 'none';
+
+            if (dashBadge) {
+                dashBadge.style.background = '#dcfce7';
+                dashBadge.style.color = '#15803d';
+                dashBadge.innerHTML = '<i class="fa-solid fa-check-circle"></i> تحویل فوری فعال است';
+            }
+            if (dashSubtext) dashSubtext.innerText = 'سرویس تحویل فوری ۲۴ ساعته برای تمام خریداران فعال است.';
+            if (dashBtn) {
+                dashBtn.style.background = '#fef2f2';
+                dashBtn.style.color = '#dc2626';
+                dashBtn.style.borderColor = '#fecaca';
+                dashBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> غیرفعال‌سازی سریع';
+            }
+        } else {
+            if (cardBox) {
+                cardBox.style.background = '#fef2f2';
+                cardBox.style.borderColor = '#fecaca';
+            }
+            if (iconBox) {
+                iconBox.style.background = '#fee2e2';
+                iconBox.style.color = '#dc2626';
+                iconBox.innerHTML = '<i class="fa-solid fa-ban"></i>';
+            }
+            if (descEl) {
+                descEl.innerText = 'تحویل فوری موقتاً غیرفعال است (سفارشات جدید فقط به صورت عادی و رایگان ثبت می‌شوند)';
+                descEl.style.color = '#dc2626';
+            }
+
+            if (previewOpt) {
+                previewOpt.style.opacity = '0.65';
+                previewOpt.style.border = '1px dashed #cbd5e1';
+                previewOpt.style.background = '#f1f5f9';
+            }
+            if (previewIcon) previewIcon.style.color = '#94a3b8';
+            if (previewBadge) {
+                previewBadge.style.background = '#fee2e2';
+                previewBadge.style.color = '#dc2626';
+                previewBadge.innerText = 'غیرفعال موقت';
+            }
+            if (previewAlertBox) {
+                previewAlertBox.style.display = 'block';
+                const msg = document.getElementById('disabledNoticeMessageInput')?.value || currentDeliverySettings.disabledNoticeMessage;
+                if (previewAlertText) previewAlertText.innerText = msg;
+            }
+
+            if (dashBadge) {
+                dashBadge.style.background = '#fee2e2';
+                dashBadge.style.color = '#dc2626';
+                dashBadge.innerHTML = '<i class="fa-solid fa-ban"></i> تحویل فوری غیرفعال است';
+            }
+            if (dashSubtext) dashSubtext.innerText = 'سفارشات جدید موقتاً فقط به صورت ارسال عادی ثبت می‌شوند.';
+            if (dashBtn) {
+                dashBtn.style.background = '#f0fdf4';
+                dashBtn.style.color = '#15803d';
+                dashBtn.style.borderColor = '#bbf7d0';
+                dashBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> فعال‌سازی سریع';
+            }
+        }
+    }
+
+    async function toggleQuickExpressStatus() {
+        const currentlyEnabled = currentDeliverySettings.isExpressDeliveryEnabled !== false;
+        const newStatus = !currentlyEnabled;
+        
+        currentDeliverySettings.isExpressDeliveryEnabled = newStatus;
+        const switchEl = document.getElementById('isExpressDeliveryEnabledSwitch');
+        if (switchEl) switchEl.checked = newStatus;
+        
+        updateDeliverySettingsUI();
+
+        try {
+            localStorage.setItem('rafooneh_delivery_settings', JSON.stringify(currentDeliverySettings));
+        } catch (e) {}
+
+        try {
+            await api('/api/admin/settings/delivery', {
+                method: 'POST',
+                body: JSON.stringify({ isExpressDeliveryEnabled: newStatus })
+            });
+        } catch (err) {
+            console.warn('Sync delivery status warning:', err);
+        }
+    }
+
+    async function saveDeliverySettingsForm(e) {
+        if (e) e.preventDefault();
+        const btn = document.getElementById('btnSaveDeliverySettings');
+        const msgBox = document.getElementById('deliverySaveMsg');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...';
+        }
+
+        const isEnabled = document.getElementById('isExpressDeliveryEnabledSwitch')?.checked ?? true;
+        const disabledNotice = document.getElementById('disabledNoticeMessageInput')?.value?.trim() || '';
+        const baseFee = Number(document.getElementById('expressBaseFeeInput')?.value) || 100000;
+        const perKmFee = Number(document.getElementById('expressPerKmFeeInput')?.value) || 20000;
+        const warehouseAddr = document.getElementById('warehouseAddressInput')?.value?.trim() || 'کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲';
+
+        const payload = {
+            isExpressDeliveryEnabled: isEnabled,
+            disabledNoticeMessage: disabledNotice,
+            expressBaseFee: baseFee,
+            expressPerKmFee: perKmFee,
+            warehouseAddress: warehouseAddr
+        };
+
+        try {
+            let res = await api('/api/admin/settings/delivery', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            if (!res || !res.ok) {
+                res = await api('/api/settings/delivery', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            const data = await res.json().catch(() => ({}));
+            if (data && (data.success || data.settings)) {
+                if (data.settings) {
+                    currentDeliverySettings = { ...currentDeliverySettings, ...data.settings };
+                } else {
+                    currentDeliverySettings = { ...currentDeliverySettings, ...payload };
+                }
+
+                try {
+                    localStorage.setItem('rafooneh_delivery_settings', JSON.stringify(currentDeliverySettings));
+                } catch (e) {}
+
+                updateDeliverySettingsUI();
+
+                if (msgBox) {
+                    msgBox.style.display = 'block';
+                    msgBox.style.background = '#dcfce7';
+                    msgBox.style.color = '#15803d';
+                    msgBox.style.border = '1px solid #86efac';
+                    msgBox.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + (data.message || 'تنظیمات تحویل فوری با موفقیت در دیتابیس و سرور ذخیره گردید.');
+                    setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
+                }
+            } else {
+                throw new Error(data.message || 'خطا در ذخیره تنظیمات');
+            }
+        } catch (err) {
+            // Local fallback save
+            currentDeliverySettings = { ...currentDeliverySettings, ...payload };
+            try {
+                localStorage.setItem('rafooneh_delivery_settings', JSON.stringify(currentDeliverySettings));
+            } catch (e) {}
+            updateDeliverySettingsUI();
+
+            if (msgBox) {
+                msgBox.style.display = 'block';
+                msgBox.style.background = '#dcfce7';
+                msgBox.style.color = '#15803d';
+                msgBox.style.border = '1px solid #86efac';
+                msgBox.innerHTML = '<i class="fa-solid fa-circle-check"></i> تنظیمات در حافظه ذخیره و اعمال شد.';
+                setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml || '<i class="fa-solid fa-floppy-disk"></i> ذخیره و اعمال تغییرات';
+            }
+        }
+    }
+
+    function calculateCompanyPaymentStatsLocally(fromDate, toDate, ordersList, productsList) {
         let orders = Array.isArray(ordersList) ? [...ordersList] : [];
         if (orders.length === 0) {
             orders = getLocalOrders();

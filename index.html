@@ -2072,6 +2072,17 @@
                         </label>
                     </div>
 
+                    <!-- Disabled Express Delivery Notice -->
+                    <div id="expressDeliveryDisabledNotice" style="display:none; margin-top:10px; background:#fffbeb; border:1px solid #fef3c7; border-radius:10px; padding:10px 14px; color:#92400e; font-size:0.83rem; line-height:1.6;">
+                        <div style="display:flex; align-items:flex-start; gap:8px;">
+                            <i class="fa-solid fa-circle-info" style="color:#d97706; margin-top:3px; flex-shrink:0;"></i>
+                            <div>
+                                <strong style="display:block; margin-bottom:2px; color:#78350f;">اطلاعیه تحویل فوری:</strong>
+                                <span id="expressDeliveryDisabledNoticeText">در حال حاضر تحویل فوری موقتاً غیرفعال است و تمام سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌شوند.</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Express Delivery Calculator Sub-Panel -->
                     <div id="expressDeliveryPanel" class="express-calc-box" style="display: none;">
                         <!-- Live Cost Breakdown -->
@@ -3003,6 +3014,17 @@
         const EXPRESS_BASE_FEE = 100000;
         const EXPRESS_PER_KM_FEE = 20000;
 
+        let storeDeliverySettings = {
+            isExpressDeliveryEnabled: true,
+            disabledNoticeMessage: 'در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.',
+            expressBaseFee: 100000,
+            expressPerKmFee: 20000,
+            expressEstimatedHours: 24,
+            warehouseAddress: "کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲",
+            warehouseLat: 35.8124,
+            warehouseLng: 50.9415
+        };
+
         let selectedDeliveryType = 'normal'; // 'normal' or 'express'
         let expressDeliveryDistance = 1.0; // in kilometers
         let expressDeliveryFee = 120000; // in Tomans (100k base + 1.0km * 20k)
@@ -3010,6 +3032,61 @@
         let hasCustomLocationSet = false;
         let deliveryMapInstance = null;
         let deliveryCustomerMarker = null;
+
+        async function loadStoreDeliverySettings() {
+            try {
+                const localSaved = localStorage.getItem('rafooneh_delivery_settings');
+                if (localSaved) {
+                    const parsed = JSON.parse(localSaved);
+                    if (parsed && typeof parsed.isExpressDeliveryEnabled !== 'undefined') {
+                        storeDeliverySettings = { ...storeDeliverySettings, ...parsed };
+                        applyStoreDeliverySettingsUI();
+                    }
+                }
+            } catch (e) {}
+
+            try {
+                const res = await fetch(getApiUrl('/api/settings/delivery'));
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.settings) {
+                        storeDeliverySettings = { ...storeDeliverySettings, ...data.settings };
+                        try {
+                            localStorage.setItem('rafooneh_delivery_settings', JSON.stringify(storeDeliverySettings));
+                        } catch (e) {}
+                        applyStoreDeliverySettingsUI();
+                    }
+                }
+            } catch (e) {
+                console.log('Store delivery settings notice:', e);
+            }
+            applyStoreDeliverySettingsUI();
+        }
+
+        function applyStoreDeliverySettingsUI() {
+            const isExpressAvailable = storeDeliverySettings.isExpressDeliveryEnabled !== false;
+            const expressOptionEl = document.getElementById('optionDeliveryExpress');
+            const disabledNoticeEl = document.getElementById('expressDeliveryDisabledNotice');
+            const disabledNoticeTextEl = document.getElementById('expressDeliveryDisabledNoticeText');
+
+            if (isExpressAvailable) {
+                if (expressOptionEl) expressOptionEl.style.display = 'block';
+                if (disabledNoticeEl) disabledNoticeEl.style.display = 'none';
+            } else {
+                if (expressOptionEl) expressOptionEl.style.display = 'none';
+                if (disabledNoticeEl) {
+                    disabledNoticeEl.style.display = 'block';
+                    if (disabledNoticeTextEl) {
+                        disabledNoticeTextEl.innerText = storeDeliverySettings.disabledNoticeMessage || 'در حال حاضر تحویل فوری موقتاً غیرفعال است.';
+                    }
+                }
+                if (selectedDeliveryType === 'express') {
+                    toggleDeliveryType('normal');
+                    const normalRadio = document.querySelector('input[name="deliveryMethod"][value="normal"]');
+                    if (normalRadio) normalRadio.checked = true;
+                }
+            }
+        }
 
         function calculateDistanceKm(lat1, lon1, lat2, lon2) {
             const R = 6371; // Earth radius in km
@@ -3026,9 +3103,11 @@
         }
 
         function calculateExpressFee(distanceKm) {
+            const baseFee = Number(storeDeliverySettings.expressBaseFee) || EXPRESS_BASE_FEE;
+            const perKmFee = Number(storeDeliverySettings.expressPerKmFee) || EXPRESS_PER_KM_FEE;
             const dist = Math.max(1, Math.round(distanceKm * 10) / 10);
-            const kmCost = Math.round(dist * EXPRESS_PER_KM_FEE);
-            const rawFee = EXPRESS_BASE_FEE + kmCost;
+            const kmCost = Math.round(dist * perKmFee);
+            const rawFee = baseFee + kmCost;
             // Round to nearest 1,000 Tomans
             const finalFee = Math.round(rawFee / 1000) * 1000;
             return {
@@ -3050,6 +3129,11 @@
         }
 
         function toggleDeliveryType(type) {
+            if (type === 'express' && storeDeliverySettings.isExpressDeliveryEnabled === false) {
+                type = 'normal';
+                alert('امکان تحویل فوری موقتاً غیرفعال است. سفارش با ارسال عادی ثبت خواهد شد.');
+            }
+
             selectedDeliveryType = type;
             const normalOpt = document.getElementById('optionDeliveryNormal');
             const expressOpt = document.getElementById('optionDeliveryExpress');
@@ -3270,6 +3354,7 @@
 
         function openCheckoutModal() {
             const modal = document.getElementById('checkoutModal');
+            loadStoreDeliverySettings();
             selectedDeliveryType = 'normal';
             const normRadio = document.querySelector('input[name="deliveryMethod"][value="normal"]');
             if (normRadio) normRadio.checked = true;
@@ -4400,8 +4485,10 @@
         renderProducts();
         loadProductsFromApi();
         loadCustomerBankSettings();
+        loadStoreDeliverySettings();
         syncPendingLocalOrders();
         setInterval(loadProductsFromApi, 3000);
+        setInterval(loadStoreDeliverySettings, 5000);
         setInterval(syncPendingLocalOrders, 10000);
     </script>
 </body>
