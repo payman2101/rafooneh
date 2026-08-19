@@ -804,24 +804,44 @@ app.get('/api/admin/profit', authMiddleware, (req, res) => {
 
 // CRM: Company Payment Calculation & Settlement
 app.get('/api/admin/company-payments/stats', authMiddleware, (req, res) => {
-  const { fromDate, toDate } = req.query;
-  const stats = getCompanyPaymentStats({ fromDate, toDate });
-  res.json({ success: true, stats });
+  try {
+    const { fromDate, toDate } = req.query;
+    const stats = getCompanyPaymentStats({ fromDate, toDate });
+    res.json({ success: true, stats });
+  } catch (err) {
+    console.error('Error in /api/admin/company-payments/stats:', err);
+    res.status(500).json({ success: false, message: 'خطا در محاسبه کارکرد: ' + err.message });
+  }
 });
 
 app.get('/api/admin/company-payments', authMiddleware, (req, res) => {
-  const payments = listCompanyPayments();
-  res.json({ success: true, payments });
+  try {
+    const payments = listCompanyPayments();
+    res.json({ success: true, payments });
+  } catch (err) {
+    console.error('Error in /api/admin/company-payments:', err);
+    res.status(500).json({ success: false, message: 'خطا در دریافت تاریخچه پرداختی‌ها: ' + err.message });
+  }
 });
 
 app.post('/api/admin/company-payments', authMiddleware, (req, res) => {
-  const payment = createCompanyPayment(req.body);
-  res.json({ success: true, payment });
+  try {
+    const payment = createCompanyPayment(req.body);
+    res.json({ success: true, payment });
+  } catch (err) {
+    console.error('Error in POST /api/admin/company-payments:', err);
+    res.status(500).json({ success: false, message: 'خطا در ثبت تسویه: ' + err.message });
+  }
 });
 
 app.delete('/api/admin/company-payments/:id', authMiddleware, (req, res) => {
-  const deleted = deleteCompanyPayment(req.params.id);
-  res.json({ success: deleted });
+  try {
+    const deleted = deleteCompanyPayment(req.params.id);
+    res.json({ success: deleted });
+  } catch (err) {
+    console.error('Error in DELETE /api/admin/company-payments:', err);
+    res.status(500).json({ success: false, message: 'خطا در حذف سند تسویه: ' + err.message });
+  }
 });
 
 // CRM: Purchases / Purchase Invoices

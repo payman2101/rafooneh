@@ -4179,248 +4179,147 @@
                     setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
                 }
             } else {
-                throw new Error(data.message || 'خطا در ذخیره سازی اطلاعات');
-            }
-        } catch (err) {
-            if (msgBox) {
-                msgBox.style.display = 'block';
-                msgBox.style.background = '#fef2f2';
-                msgBox.style.color = '#dc2626';
-                msgBox.style.border = '1px solid #fca5a5';
-                msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> خطا: ${err.message}`;
-            }
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = origHtml;
-            }
-        }
-    }
-
-    function copyInvoiceText(elementId, btn) {
-        const el = document.getElementById(elementId);
-        if (!el) return;
-        const text = el.innerText.trim();
-        navigator.clipboard.writeText(text).then(() => {
-            if (btn) {
-                const orig = btn.innerHTML;
-                btn.innerHTML = `<i class="fa-solid fa-check"></i> کپی شد`;
-                setTimeout(() => { btn.innerHTML = orig; }, 2000);
-            }
-        }).catch(() => {
-            alert('کپی شد: ' + text);
-        });
-    }
-
-    function copyCardFromSettings() {
-        const card = document.getElementById('cardNumberInput')?.value || currentBankSettings.cardNumber;
-        navigator.clipboard.writeText(card.replace(/[^0-9]/g, '')).then(() => {
-            alert('شماره کارت با موفقیت کپی شد: ' + card);
-        });
-    }
-
-    function copyShabaFromSettings() {
-        const shaba = document.getElementById('shabaNumberInput')?.value || currentBankSettings.shabaNumber;
-        navigator.clipboard.writeText(shaba).then(() => {
-            alert('شماره شبا با موفقیت کپی شد: ' + shaba);
-        });
-    }
-
-    function buildOrderWhatsAppMessage(order) {
-        if (!order) return '';
-        const b = currentBankSettings;
-        const custName = order.customerName || 'مشتری گرامی';
-        const orderId = order.id || 'ord-1001';
-        const total = Number(order.totalAmount || 0);
-
-        let msg = `🧾 *فاکتور سفارش پخش رافونه*\n\n`;
-        msg += `سلام *${custName}* عزیز،\nسفارش شما با کد پیگیری *${orderId}* با موفقیت ثبت شد.\n\n`;
-
-        if (order.items && order.items.length) {
-            msg += `📦 *اقلام سفارش:*\n`;
-            order.items.forEach(it => {
-                const q = it.qty || 1;
-                const p = Number(it.price || 0);
-                const t = Number(it.total || (p * q));
-                msg += `▫️ ${it.name || it.title || 'کالا'} × ${q} عدد = ${t.toLocaleString('fa-IR')} تومان\n`;
-            });
-            msg += `\n`;
+                throw new Error(data.message || 'خطا در ذخیره سازی ا�    function calculateCompanyPaymentStatsLocally(fromDate, toDate, ordersList, productsList) {
+        let orders = Array.isArray(ordersList) ? [...ordersList] : [];
+        if (orders.length === 0) {
+            orders = getLocalOrders();
         }
 
-        msg += `💰 *مبلغ کل قابل پرداخت:* ${total.toLocaleString('fa-IR')} تومان\n`;
-        if (order.deliveryType === 'express') {
-            const dFee = Number(order.deliveryFee || 0);
-            msg += `⚡ *نوع ارسال:* تحویل فوری اکسپرس (کمتر از ۲۴ ساعت)\n`;
-            msg += `🛵 *هزینه ارسال اکسپرس:* ${dFee > 0 ? dFee.toLocaleString('fa-IR') + ' تومان' : 'رایگان'}\n\n`;
-        } else {
-            msg += `🚚 *نوع ارسال:* ارسال عادی رایگان (تحویل ۲۴ الی ۴۸ ساعت)\n\n`;
+        // Merge with allOrdersData if available
+        if (Array.isArray(allOrdersData) && allOrdersData.length > 0) {
+            const map = new Map();
+            orders.forEach(o => { if (o && o.id) map.set(String(o.id), o); });
+            allOrdersData.forEach(o => { if (o && o.id) map.set(String(o.id), o); });
+            orders = Array.from(map.values());
         }
 
-        msg += `💳 *اطلاعات کارت به کارت جهت واریز:*\n`;
-        msg += `▫️ بانک: *${b.bankName || 'بانک ملی ایران'}*\n`;
-        msg += `▫️ به نام: *${b.cardHolder || 'پیمان نوری'}*\n`;
-        msg += `▫️ شماره کارت: *${formatCardForWhatsApp(b.cardNumber || '6037991823456789')}*\n`;
-        msg += `▫️ شماره شبا: *${b.shabaNumber || 'IR120170000000123456789012'}*\n`;
-        if (b.accountNumber) {
-            msg += `▫️ شماره حساب: *${b.accountNumber}*\n`;
-        }
-        if (b.description) {
-            msg += `\n📝 ${b.description}\n`;
-        }
-        msg += `\n🌹 با سپاس از انتخاب و اعتماد شما به پخش شوینده رافونه`;
-        return msg;
-    }
-
-    function closeInvoiceModal() {
-        document.getElementById('customerInvoiceModal').style.display = 'none';
-    }
-
-    function printInvoiceFromAdminModal() {
-        if (currentOrderData) {
-            showCustomerInvoice(currentOrderData);
-        } else {
-            alert('اطلاعات سفارش بارگذاری نشده است.');
-        }
-    }
-
-    function openChangePasswordModal() {
-        document.getElementById('oldPasswordInput').value = '';
-        document.getElementById('newPasswordInput').value = '';
-        document.getElementById('confirmPasswordInput').value = '';
-        const statusEl = document.getElementById('changePasswordStatus');
-        statusEl.style.display = 'none';
-        statusEl.innerText = '';
-        document.getElementById('changePasswordModal').style.display = 'flex';
-    }
-
-    function closeChangePasswordModal() {
-        document.getElementById('changePasswordModal').style.display = 'none';
-    }
-
-    async function handleChangePasswordSubmit(e) {
-        e.preventDefault();
-        const oldPassword = document.getElementById('oldPasswordInput').value.trim();
-        const newPassword = document.getElementById('newPasswordInput').value.trim();
-        const confirmPassword = document.getElementById('confirmPasswordInput').value.trim();
-        const statusEl = document.getElementById('changePasswordStatus');
-        const submitBtn = document.getElementById('btnSubmitChangePassword');
-
-        if (newPassword !== confirmPassword) {
-            statusEl.style.display = 'block';
-            statusEl.style.background = '#fee2e2';
-            statusEl.style.color = '#b91c1c';
-            statusEl.innerText = 'رمز عبور جدید و تکرار آن یکسان نیستند.';
-            return;
-        }
-
-        if (newPassword.length < 4) {
-            statusEl.style.display = 'block';
-            statusEl.style.background = '#fee2e2';
-            statusEl.style.color = '#b91c1c';
-            statusEl.innerText = 'رمز عبور جدید باید حداقل ۴ کاراکتر باشد.';
-            return;
-        }
+        let products = Array.isArray(productsList) && productsList.length > 0
+            ? productsList
+            : (purchaseProductsCatalog && purchaseProductsCatalog.length > 0
+                ? purchaseProductsCatalog
+                : (typeof productsData !== 'undefined' ? productsData : []));
 
         try {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال بروزرسانی...';
+            const customProds = JSON.parse(localStorage.getItem('rafooneh_custom_products') || '[]');
+            if (Array.isArray(customProds) && customProds.length > 0) {
+                const pMapById = new Map();
+                products.forEach(p => { if (p && (p.id || p.code)) pMapById.set(String(p.id || p.code), p); });
+                customProds.forEach(p => { if (p && (p.id || p.code)) pMapById.set(String(p.id || p.code), p); });
+                products = Array.from(pMapById.values());
+            }
+        } catch (e) {}
 
-            const res = await api('/api/admin/change-password', {
-                method: 'POST',
-                body: JSON.stringify({ oldPassword, newPassword })
+        const pMap = {};
+        products.forEach(p => {
+            if (!p) return;
+            if (p.id !== undefined && p.id !== null) pMap[String(p.id).toLowerCase()] = p;
+            if (p.code !== undefined && p.code !== null) pMap[String(p.code).toLowerCase()] = p;
+            if (p.name) pMap[String(p.name).trim().toLowerCase()] = p;
+        });
+
+        let filteredOrders = orders.filter(o => o && o.status !== 'cancelled');
+
+        let startMs = 0;
+        let endMs = Infinity;
+
+        if (fromDate) {
+            const s = new Date(fromDate);
+            if (!isNaN(s.getTime())) {
+                s.setHours(0, 0, 0, 0);
+                startMs = s.getTime();
+            }
+        }
+        if (toDate) {
+            const e = new Date(toDate);
+            if (!isNaN(e.getTime())) {
+                e.setHours(23, 59, 59, 999);
+                endMs = e.getTime();
+            }
+        }
+
+        if (startMs > 0 || endMs < Infinity) {
+            filteredOrders = filteredOrders.filter(o => {
+                if (!o.createdAt) return true;
+                const orderTime = new Date(o.createdAt).getTime();
+                if (isNaN(orderTime)) return true;
+                return orderTime >= startMs && orderTime <= endMs;
+            });
+        }
+
+        let totalItemsCount = 0;
+        let totalBuyCost = 0;
+        let totalRevenue = 0;
+        let rafoonehOrdersCount = 0;
+        const productSummaryMap = {};
+
+        filteredOrders.forEach(o => {
+            let orderHasRafooneh = false;
+            const items = Array.isArray(o.items) ? o.items : [];
+
+            items.forEach(item => {
+                if (!item) return;
+                const pid = String(item.id || item.code || item.productId || item.name || '').toLowerCase();
+                const prod = pMap[pid] || pMap[String(item.id || '').toLowerCase()] || pMap[String(item.code || '').toLowerCase()] || pMap[String(item.name || '').trim().toLowerCase()] || {};
+
+                const brand = String(item.brand || prod.brand || '').toLowerCase();
+                const brandName = String(item.brandName || prod.brandName || '').toLowerCase();
+
+                // Calculate ONLY items under the Rafooneh brand
+                const isRafooneh = (brand === 'rafooneh' || brandName.includes('رافونه')) || (brand !== 'foreign' && !brandName.includes('خارجی'));
+                if (!isRafooneh) return;
+
+                orderHasRafooneh = true;
+
+                const qty = Number(item.qty || item.quantity) || 1;
+                const itemPrice = Number(item.price) || Number(prod.price) || 0;
+                let buyPrice = Number(item.buyPrice);
+                if (isNaN(buyPrice) || buyPrice <= 0) {
+                    buyPrice = Number(prod.buyPrice) || Math.round(itemPrice * 0.7);
+                }
+
+                const itemCost = buyPrice * qty;
+                const itemRev = (Number(item.total) || (itemPrice * qty)) || itemCost;
+
+                const mapKey = String(prod.code || prod.id || item.code || item.id || item.name || pid);
+
+                if (!productSummaryMap[mapKey]) {
+                    productSummaryMap[mapKey] = {
+                        id: mapKey,
+                        code: prod.code || item.code || prod.id || item.id || mapKey,
+                        name: item.name || prod.name || 'محصول رافونه',
+                        unitsSold: 0,
+                        buyPrice: buyPrice,
+                        totalBuyCost: 0,
+                        sellingPrice: itemPrice,
+                        totalRevenue: 0
+                    };
+                }
+
+                productSummaryMap[mapKey].unitsSold += qty;
+                productSummaryMap[mapKey].totalBuyCost += itemCost;
+                productSummaryMap[mapKey].totalRevenue += itemRev;
+
+                totalItemsCount += qty;
+                totalBuyCost += itemCost;
+                totalRevenue += itemRev;
             });
 
-            const data = await res.json();
-
-            if (data.success) {
-                statusEl.style.display = 'block';
-                statusEl.style.background = '#dcfce7';
-                statusEl.style.color = '#15803d';
-                statusEl.innerText = data.message || 'رمز عبور با موفقیت تغییر یافت.';
-                setTimeout(() => {
-                    closeChangePasswordModal();
-                }, 1500);
-            } else {
-                statusEl.style.display = 'block';
-                statusEl.style.background = '#fee2e2';
-                statusEl.style.color = '#b91c1c';
-                statusEl.innerText = data.message || 'خطا در تغییر رمز عبور.';
+            if (orderHasRafooneh) {
+                rafoonehOrdersCount++;
             }
-        } catch (err) {
-            statusEl.style.display = 'block';
-            statusEl.style.background = '#fee2e2';
-            statusEl.style.color = '#b91c1c';
-            statusEl.innerText = 'خطای ارتباط با سرور.';
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> ذخیره رمز عبور جدید';
-        }
-    }
+        });
 
-    document.getElementById('orderModal').addEventListener('click', e => {
-        if (e.target.id === 'orderModal') closeOrderModal();
-    });
-    document.getElementById('customerModal').addEventListener('click', e => {
-        if (e.target.id === 'customerModal') closeCustomerModal();
-    });
-    document.getElementById('addProductModal').addEventListener('click', e => {
-        if (e.target.id === 'addProductModal') closeAddProductModal();
-    });
-    document.getElementById('editProductModal').addEventListener('click', e => {
-        if (e.target.id === 'editProductModal') closeEditProductModal();
-    });
-    document.getElementById('changePasswordModal').addEventListener('click', e => {
-        if (e.target.id === 'changePasswordModal') closeChangePasswordModal();
-    });
-    document.getElementById('companyPaymentDetailModal')?.addEventListener('click', e => {
-        if (e.target.id === 'companyPaymentDetailModal') closeCompanyPaymentDetailModal();
-    });
+        const productList = Object.values(productSummaryMap).sort((a, b) => b.totalBuyCost - a.totalBuyCost);
 
-    // --- COMPANY PAYMENTS & SETTLEMENT ENGINE ---
-    let currentCompanyPaymentStats = null;
-    let currentCompanyPaymentItems = [];
-    let companyPaymentHistoryList = [];
-
-    function initCompanyPaymentsSection() {
-        const fromInp = document.getElementById('cpFromDate');
-        const toInp = document.getElementById('cpToDate');
-        if (fromInp && toInp && !fromInp.value && !toInp.value) {
-            const now = new Date();
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            fromInp.value = firstDay.toISOString().split('T')[0];
-            toInp.value = now.toISOString().split('T')[0];
-        }
-        loadCompanyPaymentStats();
-        loadCompanyPaymentHistory();
-    }
-
-    function setCompanyPaymentPreset(preset) {
-        const fromInp = document.getElementById('cpFromDate');
-        const toInp = document.getElementById('cpToDate');
-        if (!fromInp || !toInp) return;
-        const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-
-        if (preset === 'today') {
-            fromInp.value = todayStr;
-            toInp.value = todayStr;
-        } else if (preset === '7days') {
-            const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            fromInp.value = d7.toISOString().split('T')[0];
-            toInp.value = todayStr;
-        } else if (preset === '30days') {
-            const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            fromInp.value = d30.toISOString().split('T')[0];
-            toInp.value = todayStr;
-        } else if (preset === 'thisMonth') {
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            fromInp.value = firstDay.toISOString().split('T')[0];
-            toInp.value = todayStr;
-        } else if (preset === 'all') {
-            fromInp.value = '';
-            toInp.value = '';
-        }
-        loadCompanyPaymentStats();
+        return {
+            fromDate: fromDate || '',
+            toDate: toDate || '',
+            ordersCount: rafoonehOrdersCount,
+            totalItemsCount,
+            totalBuyCost,
+            totalRevenue,
+            products: productList
+        };
     }
 
     async function loadCompanyPaymentStats() {
@@ -4428,30 +4327,296 @@
         const toDate = document.getElementById('cpToDate')?.value || '';
 
         const grid = document.getElementById('companyPaymentStatsGrid');
-        if (grid) grid.innerHTML = '<p style="color:var(--muted); padding:10px;">در حال محاسبه کارکرد...</p>';
+        if (grid) grid.innerHTML = '<p style="color:var(--muted); padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i> در حال محاسبه کارکرد و بدهی به شرکت...</p>';
 
         await syncLocalOrdersToServer().catch(() => {});
 
+        let stats = null;
+
+        // 1. Try fetching from server API
         try {
             const res = await api(`/api/admin/company-payments/stats?fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`);
-            if (res.ok) {
+            if (res && res.ok) {
                 const data = await res.json();
-                if (data.success && data.stats) {
-                    currentCompanyPaymentStats = data.stats;
-                    currentCompanyPaymentItems = data.stats.products || [];
+                if (data && data.success && data.stats) {
+                    stats = data.stats;
+                }
+            }
+        } catch (err) {
+            console.warn('Server company-payments stats unavailable, falling back to local engine:', err);
+        }
 
-                    if (grid) {
-                        grid.innerHTML = `
-                            <div class="stat-card" style="border-right:4px solid var(--primary);">
-                                <div class="stat-title">تعداد سفارشات ثبت‌شده</div>
-                                <div class="stat-value">${(data.stats.ordersCount || 0).toLocaleString('fa-IR')}</div>
-                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">در بازه زمانی انتخابی</div>
-                            </div>
-                            <div class="stat-card" style="border-right:4px solid var(--accent);">
-                                <div class="stat-title">تعداد کل اقلام فروخته‌شده</div>
-                                <div class="stat-value">${(data.stats.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</div>
-                                <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">مجموع واحد محصولات</div>
-                            </div>
+        // 2. If server API didn't return stats, calculate directly via client engine
+        if (!stats) {
+            try {
+                let orders = [];
+                try {
+                    const ordRes = await api('/api/admin/orders');
+                    if (ordRes && ordRes.ok) {
+                        const ordData = await ordRes.json();
+                        if (ordData && Array.isArray(ordData.orders)) {
+                            orders = ordData.orders;
+                            allOrdersData = orders;
+                        }
+                    }
+                } catch (e) {}
+
+                if (!orders || orders.length === 0) {
+                    orders = getLocalOrders();
+                }
+
+                const catalog = await ensureProductsCatalogLoaded();
+                stats = calculateCompanyPaymentStatsLocally(fromDate, toDate, orders, catalog);
+            } catch (calcErr) {
+                console.error('Error in local company payment calculation:', calcErr);
+            }
+        }
+
+        if (stats) {
+            currentCompanyPaymentStats = stats;
+            currentCompanyPaymentItems = stats.products || [];
+
+            if (grid) {
+                grid.innerHTML = `
+                    <div class="stat-card" style="border-right:4px solid var(--primary);">
+                        <div class="stat-title">تعداد سفارشات ثبت‌شده</div>
+                        <div class="stat-value">${(stats.ordersCount || 0).toLocaleString('fa-IR')}</div>
+                        <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">در بازه زمانی انتخابی</div>
+                    </div>
+                    <div class="stat-card" style="border-right:4px solid var(--accent);">
+                        <div class="stat-title">تعداد کل اقلام فروخته‌شده</div>
+                        <div class="stat-value">${(stats.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</div>
+                        <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">مجموع واحد محصولات</div>
+                    </div>
+                    <div class="stat-card" style="border-right:4px solid var(--danger); background:#fef2f2;">
+                        <div class="stat-title" style="color:#991b1b; font-weight:bold;">مجموع مبلغ خرید (بدهی به شرکت)</div>
+                        <div class="stat-value" style="color:var(--danger); font-weight:bold;">${formatPrice(stats.totalBuyCost)}</div>
+                        <div style="font-size:0.75rem; color:#b91c1c; margin-top:4px;">مبلغ تسویه قابل پرداخت به شرکت</div>
+                    </div>
+                    <div class="stat-card" style="border-right:4px solid var(--success);">
+                        <div class="stat-title">مجموع مبلغ فروش کل</div>
+                        <div class="stat-value" style="color:var(--success);">${formatPrice(stats.totalRevenue)}</div>
+                        <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">درآمد کل دریافتی از مشتریان</div>
+                    </div>
+                `;
+            }
+
+            renderCompanyPaymentItems(currentCompanyPaymentItems);
+            return;
+        }
+
+        if (grid) grid.innerHTML = '<p style="color:var(--danger); padding:10px;">خطا در محاسبه اطلاعات کارکرد. لطفاً ورودی تاریخ را بررسی فرمایید.</p>';
+        renderCompanyPaymentItems([]);
+    }
+
+    function renderCompanyPaymentItems(items) {
+        const tbody = document.getElementById('companyPaymentItemsBody');
+        const tfoot = document.getElementById('companyPaymentItemsFoot');
+        if (!tbody) return;
+
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:20px;">هیچ محصولی در این بازه زمانی فروخته نشده است.</td></tr>';
+            if (tfoot) tfoot.innerHTML = '';
+            return;
+        }
+
+        let sumUnits = 0;
+        let sumBuyCost = 0;
+        let sumRevenue = 0;
+
+        tbody.innerHTML = items.map((p, idx) => {
+            sumUnits += Number(p.unitsSold) || 0;
+            sumBuyCost += Number(p.totalBuyCost) || 0;
+            sumRevenue += Number(p.totalRevenue) || 0;
+
+            return `
+                <tr>
+                    <td>${(idx + 1).toLocaleString('fa-IR')}</td>
+                    <td><strong>${p.code || p.id || '-'}</strong></td>
+                    <td style="font-weight:bold; color:var(--text);">${p.name || 'محصول رافونه'}</td>
+                    <td><span class="badge" style="background:var(--primary-light); color:var(--primary-dark); font-size:0.9rem; padding:4px 10px;">${(p.unitsSold || 0).toLocaleString('fa-IR')}</span></td>
+                    <td>${(p.buyPrice || 0).toLocaleString('fa-IR')}</td>
+                    <td style="color:var(--danger); font-weight:bold;">${formatPrice(p.totalBuyCost)}</td>
+                    <td>${(p.sellingPrice || 0).toLocaleString('fa-IR')}</td>
+                    <td style="font-weight:bold;">${formatPrice(p.totalRevenue)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        if (tfoot) {
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:left; padding:12px;">مجموع کل بازه:</td>
+                    <td style="color:var(--primary-dark); font-size:1rem;">${sumUnits.toLocaleString('fa-IR')} عدد</td>
+                    <td>—</td>
+                    <td style="color:var(--danger); font-size:1.05rem;">${formatPrice(sumBuyCost)}</td>
+                    <td>—</td>
+                    <td style="color:var(--success); font-size:1.05rem;">${formatPrice(sumRevenue)}</td>
+                </tr>
+            `;
+        }
+    }
+
+    function filterCompanyPaymentItems() {
+        const q = (document.getElementById('cpSearchItem')?.value || '').toLowerCase().trim();
+        if (!q) {
+            renderCompanyPaymentItems(currentCompanyPaymentItems);
+            return;
+        }
+        const filtered = currentCompanyPaymentItems.filter(i =>
+            (i.name || '').toLowerCase().includes(q) ||
+            (i.code || '').toLowerCase().includes(q) ||
+            (i.id || '').toLowerCase().includes(q)
+        );
+        renderCompanyPaymentItems(filtered);
+    }
+
+    async function submitCompanyPaymentSettlement() {
+        if (!currentCompanyPaymentStats || currentCompanyPaymentStats.totalBuyCost <= 0) {
+            alert('هیچ فروش یا کارکردی در این بازه زمانی وجود ندارد یا مبلغ بدهی به شرکت صفر است.');
+            return;
+        }
+
+        const refNumber = document.getElementById('cpRefNumber')?.value?.trim() || '';
+        const notes = document.getElementById('cpNotes')?.value?.trim() || '';
+        const fromDate = currentCompanyPaymentStats.fromDate || 'ابتدا';
+        const toDate = currentCompanyPaymentStats.toDate || 'امروز';
+        const totalAmountStr = formatPrice(currentCompanyPaymentStats.totalBuyCost);
+        const totalItemsStr = (currentCompanyPaymentStats.totalItemsCount || 0).toLocaleString('fa-IR');
+
+        const confirmMsg = `آیا از ثبت نهایی تسویه‌حساب پرداختی به شرکت اطمینان دارید؟\n\n• بازه زمانی: از ${fromDate} تا ${toDate}\n• تعداد کل اقلام: ${totalItemsStr} عدد\n• مبلغ پرداختی بر اساس قیمت خرید: ${totalAmountStr}`;
+        if (!confirm(confirmMsg)) return;
+
+        const settlementId = 'PAY-' + Date.now().toString().slice(-6);
+        const payload = {
+            id: settlementId,
+            paymentDate: new Date().toISOString().split('T')[0],
+            fromDate: currentCompanyPaymentStats.fromDate,
+            toDate: currentCompanyPaymentStats.toDate,
+            totalBuyCost: currentCompanyPaymentStats.totalBuyCost,
+            totalItemsCount: currentCompanyPaymentStats.totalItemsCount,
+            ordersCount: currentCompanyPaymentStats.ordersCount,
+            refNumber,
+            notes,
+            status: 'پرداخت شده',
+            items: currentCompanyPaymentStats.products || [],
+            createdAt: new Date().toISOString()
+        };
+
+        // Save locally immediately to preserve state
+        try {
+            const localPayments = JSON.parse(localStorage.getItem('rafooneh_company_payments') || '[]');
+            localPayments.unshift(payload);
+            localStorage.setItem('rafooneh_company_payments', JSON.stringify(localPayments));
+        } catch (e) {}
+
+        try {
+            const res = await api('/api/admin/company-payments', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            if (res && res.ok) {
+                alert('تسویه‌حساب پرداختی به شرکت با موفقیت ثبت شد.');
+            } else {
+                alert('تسویه‌حساب پرداختی به صورت محلی ذخیره شد.');
+            }
+        } catch (err) {
+            console.error('Notice on submitting company payment settlement to server:', err);
+            alert('تسویه‌حساب پرداختی به صورت محلی ذخیره شد.');
+        }
+
+        const refInp = document.getElementById('cpRefNumber');
+        const notesInp = document.getElementById('cpNotes');
+        if (refInp) refInp.value = '';
+        if (notesInp) notesInp.value = '';
+        await loadCompanyPaymentHistory();
+    }
+
+    async function loadCompanyPaymentHistory() {
+        const tbody = document.getElementById('companyPaymentHistoryBody');
+        if (!tbody) return;
+
+        let payments = [];
+
+        try {
+            const res = await api('/api/admin/company-payments');
+            if (res && res.ok) {
+                const data = await res.json();
+                if (data.success && Array.isArray(data.payments)) {
+                    payments = data.payments;
+                    localStorage.setItem('rafooneh_company_payments', JSON.stringify(payments));
+                }
+            }
+        } catch (err) {
+            console.warn('Could not fetch company payment history from server, using local store');
+        }
+
+        if (!payments || payments.length === 0) {
+            try {
+                payments = JSON.parse(localStorage.getItem('rafooneh_company_payments') || '[]');
+            } catch (e) {
+                payments = [];
+            }
+        }
+
+        companyPaymentHistoryList = payments || [];
+
+        if (companyPaymentHistoryList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">هیچ تسویه‌حسابی هنوز ثبت نشده است.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = companyPaymentHistoryList.map((p) => {
+            const periodStr = (p.fromDate || p.toDate)
+                ? `${p.fromDate || 'ابتدا'} تا ${p.toDate || 'امروز'}`
+                : 'کل دوره';
+
+            return `
+                <tr>
+                    <td><strong>${p.id || '-'}</strong></td>
+                    <td><i class="fa-regular fa-calendar-check" style="color:var(--primary); margin-left:4px;"></i> ${p.paymentDate || '-'}</td>
+                    <td style="font-size:0.85rem;">${periodStr}</td>
+                    <td>${(p.ordersCount || 0).toLocaleString('fa-IR')}</td>
+                    <td><strong style="color:var(--primary-dark);">${(p.totalItemsCount || 0).toLocaleString('fa-IR')} عدد</strong></td>
+                    <td><strong style="color:var(--danger); font-size:0.95rem;">${formatPrice(p.totalBuyCost)}</strong></td>
+                    <td style="font-size:0.82rem; color:var(--muted);">
+                        ${p.refNumber ? `<span style="font-weight:bold; color:var(--text);">پیگیری: ${p.refNumber}</span><br>` : ''}
+                        ${p.notes || '—'}
+                    </td>
+                    <td><span class="badge" style="background:#dcfce7; color:#15803d; font-weight:bold;">${p.status || 'پرداخت شده'}</span></td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn btn-secondary" onclick="viewCompanyPaymentDetails('${p.id}')" style="padding:4px 8px; font-size:0.78rem;" title="مشاهده جزئیات اقلام">
+                                <i class="fa-solid fa-eye"></i> جزئیات
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteCompanyPaymentRecord('${p.id}')" style="padding:4px 8px; font-size:0.78rem;" title="حذف سند">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function deleteCompanyPaymentRecord(id) {
+        if (!confirm(`آیا از حذف سند تسویه‌حساب کد ${id} اطمینان دارید؟`)) return;
+
+        try {
+            await api(`/api/admin/company-payments/${id}`, { method: 'DELETE' });
+        } catch (err) {
+            console.warn('Server delete company payment error:', err);
+        }
+
+        try {
+            let localPayments = JSON.parse(localStorage.getItem('rafooneh_company_payments') || '[]');
+            localPayments = localPayments.filter(p => String(p.id) !== String(id));
+            localStorage.setItem('rafooneh_company_payments', JSON.stringify(localPayments));
+        } catch (e) {}
+
+        await loadCompanyPaymentHistory();
+    }      </div>
                             <div class="stat-card" style="border-right:4px solid var(--danger); background:#fef2f2;">
                                 <div class="stat-title" style="color:#991b1b; font-weight:bold;">مجموع مبلغ خرید (بدهی به شرکت)</div>
                                 <div class="stat-value" style="color:var(--danger); font-weight:bold;">${formatPrice(data.stats.totalBuyCost)}</div>
