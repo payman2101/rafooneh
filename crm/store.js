@@ -1955,15 +1955,25 @@ export const DEFAULT_DELIVERY_SETTINGS = {
 export function getDeliverySettings() {
   if (deliverySettingsCache) return deliverySettingsCache;
   try {
-    const loaded = readJson(DELIVERY_SETTINGS_FILE, null);
-    if (loaded && typeof loaded === 'object' && typeof loaded.isExpressDeliveryEnabled !== 'undefined') {
-      deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS, ...loaded };
-      return deliverySettingsCache;
+    if (fs.existsSync(DELIVERY_SETTINGS_FILE)) {
+      const content = fs.readFileSync(DELIVERY_SETTINGS_FILE, 'utf8');
+      if (content && content.trim() !== 'null' && content.trim() !== '' && content.trim() !== '{}') {
+        const loaded = JSON.parse(content);
+        if (loaded && typeof loaded === 'object' && typeof loaded.isExpressDeliveryEnabled !== 'undefined') {
+          deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS, ...loaded };
+          return deliverySettingsCache;
+        }
+      }
     }
-    const rootLoaded = readJson(ROOT_DELIVERY_SETTINGS_FILE, null);
-    if (rootLoaded && typeof rootLoaded === 'object' && typeof rootLoaded.isExpressDeliveryEnabled !== 'undefined') {
-      deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS, ...rootLoaded };
-      return deliverySettingsCache;
+    if (fs.existsSync(ROOT_DELIVERY_SETTINGS_FILE)) {
+      const content = fs.readFileSync(ROOT_DELIVERY_SETTINGS_FILE, 'utf8');
+      if (content && content.trim() !== 'null' && content.trim() !== '' && content.trim() !== '{}') {
+        const rootLoaded = JSON.parse(content);
+        if (rootLoaded && typeof rootLoaded === 'object' && typeof rootLoaded.isExpressDeliveryEnabled !== 'undefined') {
+          deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS, ...rootLoaded };
+          return deliverySettingsCache;
+        }
+      }
     }
   } catch (e) {
     console.error('Error reading delivery settings:', e);
@@ -1974,15 +1984,22 @@ export function getDeliverySettings() {
 
 export function saveDeliverySettings(settings) {
   const current = getDeliverySettings();
+  const cleanSettings = {};
+  for (const [k, v] of Object.entries(settings || {})) {
+    if (v !== undefined && v !== null) {
+      cleanSettings[k] = v;
+    }
+  }
   const updated = {
     ...current,
-    ...settings,
+    ...cleanSettings,
     updatedAt: new Date().toISOString()
   };
   deliverySettingsCache = updated;
   try {
-    writeJson(DELIVERY_SETTINGS_FILE, updated);
-    writeJson(ROOT_DELIVERY_SETTINGS_FILE, updated);
+    ensureDataDir();
+    fs.writeFileSync(DELIVERY_SETTINGS_FILE, JSON.stringify(updated, null, 2), 'utf8');
+    fs.writeFileSync(ROOT_DELIVERY_SETTINGS_FILE, JSON.stringify(updated, null, 2), 'utf8');
   } catch (e) {
     console.error('Error writing delivery settings file:', e);
   }

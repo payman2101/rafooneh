@@ -1,0 +1,11 @@
+{
+  "isExpressDeliveryEnabled": true,
+  "disabledNoticeMessage": "در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.",
+  "expressBaseFee": 100000,
+  "expressPerKmFee": 20000,
+  "expressEstimatedHours": 24,
+  "warehouseAddress": "کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲",
+  "warehouseLat": 35.8124,
+  "warehouseLng": 50.9415,
+  "updatedAt": "2026-08-20T08:49:15.977Z"
+}

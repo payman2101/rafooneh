@@ -51,6 +51,9 @@ const appDir = typeof __dirname !== 'undefined'
   ? __dirname
   : path.dirname(fileURLToPath(import.meta.url));
 
+const APP_BUILD_VERSION = '2.5.2';
+const APP_BUILD_TIME = Date.now();
+
 const app = express();
 const PORT = 3000;
 
@@ -77,6 +80,48 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// App Version Endpoint for PWA / Mobile live updates
+app.get('/api/app-version', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.json({
+    success: true,
+    version: APP_BUILD_VERSION,
+    buildTime: APP_BUILD_TIME,
+    timestamp: Date.now()
+  });
+});
+
+// Explicit No-Cache delivery for Service Worker and Manifest
+app.get(['/sw.js', '/service-worker.js'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.sendFile(path.join(appDir, 'sw.js'));
+});
+
+app.get(['/manifest.json', '/site.webmanifest'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+  res.sendFile(path.join(appDir, 'manifest.json'));
+});
+
+app.get(['/', '/index.html'], (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
+app.get(['/admin', '/admin.html'], (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
@@ -84,7 +129,15 @@ app.use(async (req, res, next) => {
   await ensureFirestoreLoaded().catch(() => {});
   next();
 });
-app.use(express.static(appDir));
+app.use(express.static(appDir, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html') || filePath.endsWith('sw.js') || filePath.endsWith('manifest.json')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Function to process Excel file 'سفارش 1405.xlsx' automatically on save/change
 function categorize(name) {
@@ -1179,27 +1232,44 @@ app.get('/api/admin/settings/delivery', authMiddleware, (req, res) => {
 // API: Update Delivery Settings
 function handleUpdateDeliverySettings(req, res) {
   try {
-    const {
-      isExpressDeliveryEnabled,
-      disabledNoticeMessage,
-      expressBaseFee,
-      expressPerKmFee,
-      expressEstimatedHours,
-      warehouseAddress,
-      warehouseLat,
-      warehouseLng
-    } = req.body || {};
+    const body = req.body || {};
+    const payload = {};
 
-    const updated = saveDeliverySettings({
-      isExpressDeliveryEnabled: typeof isExpressDeliveryEnabled === 'boolean' ? isExpressDeliveryEnabled : Boolean(isExpressDeliveryEnabled),
-      disabledNoticeMessage: disabledNoticeMessage !== undefined ? String(disabledNoticeMessage).trim() : undefined,
-      expressBaseFee: !isNaN(Number(expressBaseFee)) ? Number(expressBaseFee) : undefined,
-      expressPerKmFee: !isNaN(Number(expressPerKmFee)) ? Number(expressPerKmFee) : undefined,
-      expressEstimatedHours: !isNaN(Number(expressEstimatedHours)) ? Number(expressEstimatedHours) : undefined,
-      warehouseAddress: warehouseAddress !== undefined ? String(warehouseAddress).trim() : undefined,
-      warehouseLat: !isNaN(Number(warehouseLat)) ? Number(warehouseLat) : undefined,
-      warehouseLng: !isNaN(Number(warehouseLng)) ? Number(warehouseLng) : undefined
-    });
+    if (body.isExpressDeliveryEnabled !== undefined) {
+      if (typeof body.isExpressDeliveryEnabled === 'boolean') {
+        payload.isExpressDeliveryEnabled = body.isExpressDeliveryEnabled;
+      } else if (body.isExpressDeliveryEnabled === 'false' || body.isExpressDeliveryEnabled === 0 || body.isExpressDeliveryEnabled === '0') {
+        payload.isExpressDeliveryEnabled = false;
+      } else if (body.isExpressDeliveryEnabled === 'true' || body.isExpressDeliveryEnabled === 1 || body.isExpressDeliveryEnabled === '1') {
+        payload.isExpressDeliveryEnabled = true;
+      } else {
+        payload.isExpressDeliveryEnabled = Boolean(body.isExpressDeliveryEnabled);
+      }
+    }
+
+    if (body.disabledNoticeMessage !== undefined) {
+      payload.disabledNoticeMessage = String(body.disabledNoticeMessage).trim();
+    }
+    if (body.expressBaseFee !== undefined && !isNaN(Number(body.expressBaseFee))) {
+      payload.expressBaseFee = Number(body.expressBaseFee);
+    }
+    if (body.expressPerKmFee !== undefined && !isNaN(Number(body.expressPerKmFee))) {
+      payload.expressPerKmFee = Number(body.expressPerKmFee);
+    }
+    if (body.expressEstimatedHours !== undefined && !isNaN(Number(body.expressEstimatedHours))) {
+      payload.expressEstimatedHours = Number(body.expressEstimatedHours);
+    }
+    if (body.warehouseAddress !== undefined) {
+      payload.warehouseAddress = String(body.warehouseAddress).trim();
+    }
+    if (body.warehouseLat !== undefined && !isNaN(Number(body.warehouseLat))) {
+      payload.warehouseLat = Number(body.warehouseLat);
+    }
+    if (body.warehouseLng !== undefined && !isNaN(Number(body.warehouseLng))) {
+      payload.warehouseLng = Number(body.warehouseLng);
+    }
+
+    const updated = saveDeliverySettings(payload);
 
     res.json({
       success: true,
@@ -1207,6 +1277,7 @@ function handleUpdateDeliverySettings(req, res) {
       settings: updated
     });
   } catch (err) {
+    console.error('Save delivery settings error:', err);
     res.status(500).json({ success: false, message: 'خطا در ذخیره تنظیمات ارسال و تحویل' });
   }
 }

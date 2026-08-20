@@ -2040,7 +2040,7 @@
                                         </div>
                                     </div>
                                     <label class="switch-toggle" style="position:relative; display:inline-block; width:52px; height:28px; margin:0; flex-shrink:0;">
-                                        <input type="checkbox" id="isExpressDeliveryEnabledSwitch" onchange="updateDeliverySettingsUI()">
+                                        <input type="checkbox" id="isExpressDeliveryEnabledSwitch" onchange="onExpressDeliverySwitchToggle(this)">
                                         <span class="slider-round"></span>
                                     </label>
                                 </div>
@@ -5554,6 +5554,56 @@
         }
     }
 
+    async function onExpressDeliverySwitchToggle(switchEl) {
+        const isChecked = switchEl ? switchEl.checked : false;
+        currentDeliverySettings.isExpressDeliveryEnabled = isChecked;
+        updateDeliverySettingsUI();
+
+        try {
+            localStorage.setItem('rafooneh_delivery_settings', JSON.stringify(currentDeliverySettings));
+        } catch (e) {}
+
+        const msgBox = document.getElementById('deliverySaveMsg');
+        if (msgBox) {
+            msgBox.style.display = 'block';
+            msgBox.style.background = '#f0f9ff';
+            msgBox.style.color = '#0284c7';
+            msgBox.style.border = '1px solid #bae6fd';
+            msgBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال اعمال وضعیت جدید تحویل فوری در سرور...';
+        }
+
+        try {
+            let res = await api('/api/admin/settings/delivery', {
+                method: 'POST',
+                body: JSON.stringify({ isExpressDeliveryEnabled: isChecked })
+            });
+            if (!res || !res.ok) {
+                res = await api('/api/settings/delivery', {
+                    method: 'POST',
+                    body: JSON.stringify({ isExpressDeliveryEnabled: isChecked })
+                });
+            }
+            if (msgBox) {
+                msgBox.style.display = 'block';
+                msgBox.style.background = isChecked ? '#dcfce7' : '#fee2e2';
+                msgBox.style.color = isChecked ? '#15803d' : '#dc2626';
+                msgBox.style.border = isChecked ? '1px solid #86efac' : '1px solid #fecaca';
+                msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> وضعیت تحویل فوری با موفقیت به <strong>${isChecked ? 'فعال' : 'غیرفعال'}</strong> تغییر یافت و ذخیره شد.`;
+                setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
+            }
+        } catch (err) {
+            console.warn('Sync delivery status error:', err);
+            if (msgBox) {
+                msgBox.style.display = 'block';
+                msgBox.style.background = '#fee2e2';
+                msgBox.style.color = '#dc2626';
+                msgBox.style.border = '1px solid #fecaca';
+                msgBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> خطا در ارتباط با سرور هنگام ذخیره وضعیت تحویل فوری.';
+                setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
+            }
+        }
+    }
+
     async function toggleQuickExpressStatus() {
         const currentlyEnabled = currentDeliverySettings.isExpressDeliveryEnabled !== false;
         const newStatus = !currentlyEnabled;
@@ -5569,10 +5619,16 @@
         } catch (e) {}
 
         try {
-            await api('/api/admin/settings/delivery', {
+            let res = await api('/api/admin/settings/delivery', {
                 method: 'POST',
                 body: JSON.stringify({ isExpressDeliveryEnabled: newStatus })
             });
+            if (!res || !res.ok) {
+                await api('/api/settings/delivery', {
+                    method: 'POST',
+                    body: JSON.stringify({ isExpressDeliveryEnabled: newStatus })
+                });
+            }
         } catch (err) {
             console.warn('Sync delivery status warning:', err);
         }

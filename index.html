@@ -3258,7 +3258,9 @@
             } catch (e) {}
 
             try {
-                const res = await fetch(getApiUrl('/api/settings/delivery'));
+                const res = await fetch(getApiUrl('/api/settings/delivery?_=' + Date.now()), {
+                    cache: 'no-store'
+                });
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.settings) {
@@ -4872,18 +4874,101 @@
             }
         }
 
-        // Register Service Worker
+        // -------------------------------------------------------------
+        // PWA Live Auto-Update & Service Worker Lifecycle
+        // -------------------------------------------------------------
+        const APP_CLIENT_VERSION = '2.5.2';
+        let swRegistration = null;
+        let isAppRefreshing = false;
+
+        async function checkForAppUpdates() {
+            try {
+                // 1. Trigger Service Worker update check
+                if (swRegistration && typeof swRegistration.update === 'function') {
+                    swRegistration.update().catch(() => {});
+                }
+
+                // 2. Check server version endpoint
+                const res = await fetch(getApiUrl('/api/app-version?_=' + Date.now()), {
+                    cache: 'no-store'
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.buildTime) {
+                        const savedBuildTime = localStorage.getItem('peyman_pwa_build_time');
+                        if (savedBuildTime && String(savedBuildTime) !== String(data.buildTime)) {
+                            console.log('[PWA] New application version detected from server. Updating cache and refreshing...');
+                            localStorage.setItem('peyman_pwa_build_time', String(data.buildTime));
+                            if ('caches' in window) {
+                                try {
+                                    const keys = await caches.keys();
+                                    await Promise.all(keys.map(k => caches.delete(k)));
+                                } catch (e) {}
+                            }
+                            if (!isAppRefreshing) {
+                                isAppRefreshing = true;
+                                window.location.reload();
+                            }
+                        } else if (!savedBuildTime) {
+                            localStorage.setItem('peyman_pwa_build_time', String(data.buildTime));
+                        }
+                    }
+                }
+            } catch (e) {
+                // Background update check notice
+            }
+        }
+
+        // Register Service Worker with instant update propagation
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register('/sw.js?v=' + APP_CLIENT_VERSION)
                     .then((reg) => {
-                        console.log('PWA Service Worker registered with scope:', reg.scope);
+                        swRegistration = reg;
+                        console.log('[PWA] Service Worker active with scope:', reg.scope);
+                        
+                        reg.update().catch(() => {});
+                        setInterval(() => {
+                            if (swRegistration) swRegistration.update().catch(() => {});
+                        }, 60 * 1000);
+
+                        reg.addEventListener('updatefound', () => {
+                            const newWorker = reg.installing;
+                            if (newWorker) {
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        console.log('[PWA] New version ready, activating...');
+                                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                    }
+                                });
+                            }
+                        });
                     })
                     .catch((err) => {
-                        console.warn('PWA Service Worker registration notice:', err);
+                        console.warn('[PWA] Service Worker registration notice:', err);
                     });
             });
+
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!isAppRefreshing) {
+                    isAppRefreshing = true;
+                    console.log('[PWA] Controller updated to new version. Refreshing interface...');
+                    window.location.reload();
+                }
+            });
         }
+
+        // Auto-check updates when app is reopened or focused from mobile background
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                checkForAppUpdates();
+                loadProductsFromApi();
+                loadStoreDeliverySettings();
+            }
+        });
+        window.addEventListener('focus', () => {
+            checkForAppUpdates();
+        });
 
         renderProducts();
         loadProductsFromApi();
@@ -4893,6 +4978,7 @@
         setInterval(loadProductsFromApi, 3000);
         setInterval(loadStoreDeliverySettings, 5000);
         setInterval(syncPendingLocalOrders, 10000);
+        setInterval(checkForAppUpdates, 30000);
     </script>
 </body>
 </html>
