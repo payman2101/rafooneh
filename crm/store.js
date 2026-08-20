@@ -869,12 +869,32 @@ export function getAdminAlerts() {
     .filter(o => o.isDelayed)
     .sort((a, b) => b.elapsedMs - a.elapsedMs);
 
+  // 3. Inactive customers (> 60 days since last order)
+  const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
+  const allCustomers = listCustomers();
+  const inactiveCustomers = allCustomers
+    .map(c => {
+      const lastOrderTime = new Date(c.lastOrderAt || c.createdAt || 0).getTime();
+      const elapsedMs = now - lastOrderTime;
+      const daysInactive = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+      return {
+        ...c,
+        daysInactive: isNaN(daysInactive) ? 60 : daysInactive,
+        elapsedMs,
+        isInactive: lastOrderTime > 0 && elapsedMs >= SIXTY_DAYS_MS
+      };
+    })
+    .filter(c => c.isInactive)
+    .sort((a, b) => b.elapsedMs - a.elapsedMs);
+
   return {
     lowStockCount: lowStockProducts.length,
     lowStockProducts,
     delayedOrdersCount: delayedOrders.length,
     delayedOrders,
-    totalAlertsCount: lowStockProducts.length + delayedOrders.length
+    inactiveCustomersCount: inactiveCustomers.length,
+    inactiveCustomers,
+    totalAlertsCount: lowStockProducts.length + delayedOrders.length + inactiveCustomers.length
   };
 }
 

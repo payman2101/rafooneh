@@ -1354,7 +1354,7 @@
                     </div>
                 </div>
 
-                <div class="panel" style="border-right: 4px solid var(--danger);">
+                <div class="panel" style="border-right: 4px solid var(--danger); margin-bottom:20px;">
                     <div class="panel-header">
                         <h2><i class="fa-solid fa-clock-rotate-left" style="color:var(--danger);"></i> هشدار تأخیر تحویل سفارشات (بیش از یک هفته)</h2>
                     </div>
@@ -1376,40 +1376,87 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Inactive Customers Reminder (60+ days) -->
+                <div class="panel" style="border-right: 4px solid #8b5cf6;">
+                    <div class="panel-header" style="flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h2><i class="fa-solid fa-user-clock" style="color:#8b5cf6;"></i> یادآوری مشتریان بدون سفارش (بیش از ۶۰ روز)</h2>
+                            <p style="font-size: 0.85rem; color: var(--muted); margin: 4px 0 0;">
+                                لیست مشتریانی که بیش از ۲ ماه است خریدی ثبت نکرده‌اند جهت تماس، ارسال پیشنهاد ویژه یا کد تخفیف در واتساپ
+                            </p>
+                        </div>
+                        <span id="inactiveCustomersCountBadge" class="badge" style="background:#ede9fe; color:#6d28d9; font-size:0.85rem; padding:6px 12px; font-weight:bold;">
+                            ۰ مشتری غیرفعال
+                        </span>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>نام مشتری</th>
+                                    <th>شماره تماس</th>
+                                    <th>تعداد کل سفارشات</th>
+                                    <th>مجموع خرید قبلی</th>
+                                    <th>تاریخ آخرین سفارش</th>
+                                    <th>مدت عدم سفارش</th>
+                                    <th>اقدام سریع</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inactiveCustomersAlertsBody">
+                                <tr><td colspan="7" class="empty-state">در حال بررسی سوابق سفارشات مشتریان...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
             <!-- Orders -->
             <section class="section" id="section-orders">
                 <div class="panel">
-                    <div class="panel-header">
+                    <div class="panel-header" style="flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center;">
                         <h2>لیست سفارشات</h2>
-                        <div class="filters">
-                            <button class="btn btn-primary" onclick="openNewAdminOrderModal()" style="font-size:0.85rem; padding:8px 14px; margin-left:8px;">
+                        <div class="filters" style="flex-wrap:wrap; gap:10px; align-items:center;">
+                            <button class="btn btn-primary" onclick="openNewAdminOrderModal()" style="font-size:0.85rem; padding:8px 14px;">
                                 <i class="fa-solid fa-plus"></i> ثبت سفارش جدید
                             </button>
                             <select id="orderStatusFilter" onchange="loadOrders()">
                                 <option value="all">همه وضعیت‌ها</option>
                             </select>
-                            <input type="text" id="orderSearch" placeholder="جستجو نام / تلفن / کد..." oninput="debounceOrders()">
+                            <input type="text" id="orderSearch" placeholder="جستجو نام / تلفن / کد / آدرس..." oninput="debounceOrders()" style="min-width:220px;">
                         </div>
                     </div>
                     <div class="table-wrap">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>کد سفارش</th>
-                                    <th>مشتری</th>
-                                    <th>تلفن</th>
-                                    <th>مبلغ</th>
+                                    <th onclick="sortOrdersTable('id')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس کد">
+                                        کد سفارش <i id="sortIcon-order-id" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortOrdersTable('customerName')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس نام مشتری">
+                                        مشتری <i id="sortIcon-order-customerName" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortOrdersTable('phone')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس تلفن">
+                                        تلفن <i id="sortIcon-order-phone" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortOrdersTable('totalAmount')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس مبلغ">
+                                        مبلغ <i id="sortIcon-order-totalAmount" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
                                     <th>پرداخت</th>
-                                    <th>وضعیت</th>
-                                    <th>تاریخ</th>
-                                    <th></th>
+                                    <th onclick="sortOrdersTable('status')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس وضعیت">
+                                        وضعیت <i id="sortIcon-order-status" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortOrdersTable('createdAt')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس تاریخ">
+                                        تاریخ <i id="sortIcon-order-createdAt" class="fa-solid fa-sort-down" style="font-size:0.8rem; margin-right:4px; color:var(--primary);"></i>
+                                    </th>
+                                    <th>عملیات</th>
                                 </tr>
                             </thead>
                             <tbody id="ordersBody"></tbody>
                         </table>
                     </div>
+                    <!-- Orders Pagination Bar -->
+                    <div id="ordersPaginationContainer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 20px; border-top:1px solid #e2e8f0; background:#f8fafc;"></div>
                 </div>
             </section>
 
@@ -1492,6 +1539,8 @@
                             <tbody id="productsAdminBody"></tbody>
                         </table>
                     </div>
+                    <!-- Products Pagination Bar -->
+                    <div id="productsPaginationContainer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 20px; border-top:1px solid #e2e8f0; background:#f8fafc;"></div>
                 </div>
             </section>
 
@@ -1556,27 +1605,39 @@
             <!-- Customers -->
             <section class="section" id="section-customers">
                 <div class="panel">
-                    <div class="panel-header">
+                    <div class="panel-header" style="flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center;">
                         <h2>لیست مشتریان</h2>
-                        <div class="filters">
-                            <input type="text" id="customerSearch" placeholder="جستجو نام / تلفن / آدرس..." oninput="debounceCustomers()">
+                        <div class="filters" style="flex-wrap:wrap; gap:10px; align-items:center;">
+                            <input type="text" id="customerSearch" placeholder="جستجو نام / تلفن / آدرس..." oninput="debounceCustomers()" style="min-width:220px;">
                         </div>
                     </div>
                     <div class="table-wrap">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>نام</th>
-                                    <th>تلفن</th>
-                                    <th>تعداد سفارش</th>
-                                    <th>مجموع خرید</th>
-                                    <th>آخرین سفارش</th>
-                                    <th></th>
+                                    <th onclick="sortCustomersTable('name')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس نام">
+                                        نام مشتری <i id="sortIcon-cust-name" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortCustomersTable('phone')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس تلفن">
+                                        تلفن <i id="sortIcon-cust-phone" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortCustomersTable('totalOrders')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس تعداد سفارش">
+                                        تعداد سفارش <i id="sortIcon-cust-totalOrders" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortCustomersTable('totalSpent')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس مجموع خرید">
+                                        مجموع خرید <i id="sortIcon-cust-totalSpent" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
+                                    <th onclick="sortCustomersTable('lastOrderAt')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس آخرین تاریخ سفارش">
+                                        آخرین سفارش <i id="sortIcon-cust-lastOrderAt" class="fa-solid fa-sort-down" style="font-size:0.8rem; margin-right:4px; color:var(--primary);"></i>
+                                    </th>
+                                    <th>عملیات</th>
                                 </tr>
                             </thead>
                             <tbody id="customersBody"></tbody>
                         </table>
                     </div>
+                    <!-- Customers Pagination Bar -->
+                    <div id="customersPaginationContainer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 20px; border-top:1px solid #e2e8f0; background:#f8fafc;"></div>
                 </div>
             </section>
 
@@ -1605,11 +1666,19 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>شماره فاکتور / سند</th>
-                                        <th>تامین‌کننده / شرکت</th>
-                                        <th>تاریخ خرید</th>
+                                        <th onclick="sortPurchasesTable('id')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس شماره سند">
+                                            شماره فاکتور / سند <i id="sortIcon-pur-id" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                        </th>
+                                        <th onclick="sortPurchasesTable('supplierName')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس تامین‌کننده">
+                                            تامین‌کننده / شرکت <i id="sortIcon-pur-supplierName" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                        </th>
+                                        <th onclick="sortPurchasesTable('purchaseDate')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس تاریخ">
+                                            تاریخ خرید <i id="sortIcon-pur-purchaseDate" class="fa-solid fa-sort-down" style="font-size:0.8rem; margin-right:4px; color:var(--primary);"></i>
+                                        </th>
                                         <th>لیست اقلام خریداری شده (دراپ‌داون)</th>
-                                        <th>مبلغ کل قابل پرداخت (تومان)</th>
+                                        <th onclick="sortPurchasesTable('totalAmount')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس مبلغ کل">
+                                            مبلغ کل قابل پرداخت (تومان) <i id="sortIcon-pur-totalAmount" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                        </th>
                                         <th>توضیحات</th>
                                         <th>عملیات</th>
                                     </tr>
@@ -1619,6 +1688,8 @@
                                 </tbody>
                             </table>
                         </div>
+                        <!-- Purchases Pagination Bar -->
+                        <div id="purchasesPaginationContainer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 20px; border-top:1px solid #e2e8f0; background:#f8fafc; margin-top:12px; border-radius:8px;"></div>
                     </div>
                 </div>
             </section>
@@ -2145,7 +2216,7 @@
             <div class="inv-parties-grid">
                 <div class="inv-party-box">
                     <h3><i class="fa-solid fa-store"></i> مشخصات فروشنده:</h3>
-                    <div><strong>فروشگاه:</strong> مرکز پخش شوینده رافونه</div>
+                    <div><strong>فروشگاه:</strong> مرکز پخش محصولات پیمان</div>
                     <div><strong>تلفن پشتیبانی:</strong> ۰۹۰۲۷۹۵۹۵۵۵</div>
                     <div><strong>وب‌سایت:</strong> rafooneh.com</div>
                     <div><strong>ارسال:</strong> تحویل مستقیم درب منزل مشتری</div>
@@ -3076,14 +3147,144 @@
         }
     }
 
+    // Global pagination and sorting states
+    window.ordersTableState = { search: '', status: 'all', sortCol: 'createdAt', sortDir: 'desc', page: 1, pageSize: 15 };
+    window.customersTableState = { search: '', sortCol: 'lastOrderAt', sortDir: 'desc', page: 1, pageSize: 15 };
+    window.productsTableState = { brand: 'all', category: 'all', search: '', sortCol: 'id', sortDir: 'asc', page: 1, pageSize: 15 };
+    window.purchasesTableState = { search: '', sortCol: 'purchaseDate', sortDir: 'desc', page: 1, pageSize: 15 };
+
+    // Unified Pagination Helper
+    function renderPaginationUI(opts) {
+        const { containerId, currentPage, totalPages, totalItems, pageSize, onPageChange, onPageSizeChange } = opts;
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        if (totalItems === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+        const endItem = Math.min(currentPage * pageSize, totalItems);
+
+        let pagesHtml = '';
+        const maxVisibleButtons = 5;
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
+        if (endPage - startPage < maxVisibleButtons - 1) {
+            startPage = Math.max(1, endPage - maxVisibleButtons + 1);
+        }
+
+        pagesHtml += `
+            <button class="btn btn-secondary" style="padding:4px 9px; font-size:0.82rem;" onclick="${onPageChange}(1)" ${currentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:4px 9px; font-size:0.82rem;"' : ''} title="صفحه اول">
+                <i class="fa-solid fa-angles-right"></i>
+            </button>
+            <button class="btn btn-secondary" style="padding:4px 9px; font-size:0.82rem;" onclick="${onPageChange}(${currentPage - 1})" ${currentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:4px 9px; font-size:0.82rem;"' : ''} title="صفحه قبل">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        `;
+
+        for (let p = startPage; p <= endPage; p++) {
+            if (p === currentPage) {
+                pagesHtml += `<button class="btn btn-primary" style="padding:4px 11px; font-size:0.85rem; font-weight:bold;">${p.toLocaleString('fa-IR')}</button>`;
+            } else {
+                pagesHtml += `<button class="btn btn-secondary" style="padding:4px 11px; font-size:0.85rem;" onclick="${onPageChange}(${p})">${p.toLocaleString('fa-IR')}</button>`;
+            }
+        }
+
+        pagesHtml += `
+            <button class="btn btn-secondary" style="padding:4px 9px; font-size:0.82rem;" onclick="${onPageChange}(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:4px 9px; font-size:0.82rem;"' : ''} title="صفحه بعد">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button class="btn btn-secondary" style="padding:4px 9px; font-size:0.82rem;" onclick="${onPageChange}(${totalPages})" ${currentPage >= totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:4px 9px; font-size:0.82rem;"' : ''} title="صفحه آخر">
+                <i class="fa-solid fa-angles-left"></i>
+            </button>
+        `;
+
+        container.innerHTML = `
+            <div style="font-size:0.85rem; color:#475569; display:flex; align-items:center; gap:8px;">
+                <span>نمایش <strong>${startItem.toLocaleString('fa-IR')}</strong> تا <strong>${endItem.toLocaleString('fa-IR')}</strong> از <strong>${totalItems.toLocaleString('fa-IR')}</strong> ردیف</span>
+                <span style="color:#cbd5e1;">|</span>
+                <span>صفحه <strong>${currentPage.toLocaleString('fa-IR')}</strong> از <strong>${Math.max(1, totalPages).toLocaleString('fa-IR')}</strong></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:#64748b;">
+                    <span>تعداد در صفحه:</span>
+                    <select onchange="${onPageSizeChange}(this.value)" class="form-control" style="padding:3px 8px; font-size:0.85rem; width:auto; height:auto;">
+                        <option value="10" ${pageSize === 10 ? 'selected' : ''}>۱۰</option>
+                        <option value="15" ${pageSize === 15 ? 'selected' : ''}>۱۵</option>
+                        <option value="25" ${pageSize === 25 ? 'selected' : ''}>۲۵</option>
+                        <option value="50" ${pageSize === 50 ? 'selected' : ''}>۵۰</option>
+                        <option value="100" ${pageSize === 100 ? 'selected' : ''}>۱۰۰</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:4px; align-items:center;">
+                    ${pagesHtml}
+                </div>
+            </div>
+        `;
+    }
+
     async function loadAlerts() {
-        const res = await api('/api/admin/alerts');
-        if (!res.ok) return;
-        const data = await res.json();
-        const alerts = data.alerts || {};
+        let alerts = {};
+        try {
+            const res = await api('/api/admin/alerts');
+            if (res.ok) {
+                const data = await res.json();
+                alerts = data.alerts || {};
+            }
+        } catch (err) {
+            console.log('Error loading alerts:', err);
+        }
+
+        // If inactiveCustomers wasn't computed by server, compute client-side
+        if (!alerts.inactiveCustomers) {
+            const localOrders = getLocalOrders();
+            const custMap = new Map();
+            const now = Date.now();
+            localOrders.forEach(o => {
+                if (!o.phone) return;
+                const key = normalizePhone(o.phone) || o.phone;
+                let c = custMap.get(key);
+                if (!c) {
+                    c = {
+                        customerId: o.customerId || key,
+                        name: o.customerName || 'مشتری',
+                        phone: o.phone,
+                        totalOrders: 0,
+                        totalSpent: 0,
+                        lastOrderAt: o.createdAt
+                    };
+                    custMap.set(key, c);
+                }
+                c.totalOrders++;
+                c.totalSpent += (Number(o.totalAmount) || 0);
+                if (new Date(o.createdAt || 0) > new Date(c.lastOrderAt || 0)) {
+                    c.lastOrderAt = o.createdAt;
+                }
+            });
+
+            const inactives = [];
+            custMap.forEach(c => {
+                const lastTime = new Date(c.lastOrderAt || 0).getTime();
+                const diffDays = Math.floor((now - lastTime) / (1000 * 60 * 60 * 24));
+                if (diffDays >= 60) {
+                    inactives.push({
+                        ...c,
+                        daysSinceLastOrder: diffDays
+                    });
+                }
+            });
+            inactives.sort((a, b) => b.daysSinceLastOrder - a.daysSinceLastOrder);
+            alerts.inactiveCustomers = inactives;
+        }
 
         // Badges
-        const totalAlerts = alerts.totalAlertsCount || 0;
+        const lowStockCount = (alerts.lowStockProducts || []).length;
+        const delayedCount = (alerts.delayedOrders || []).length;
+        const inactiveCount = (alerts.inactiveCustomers || []).length;
+        const totalAlerts = alerts.totalAlertsCount || (lowStockCount + delayedCount + inactiveCount);
+
         const sbBadge = document.getElementById('alertBadgeSidebar');
         const mbBadge = document.getElementById('alertBadgeMobile');
 
@@ -3097,40 +3298,89 @@
 
         // Low stock products table
         const lowStockBody = document.getElementById('lowStockAlertsBody');
-        if (!alerts.lowStockProducts || !alerts.lowStockProducts.length) {
-            lowStockBody.innerHTML = '<tr><td colspan="7" class="empty-state">هیچ کالایی کمتر از ۵ عدد موجودی ندارد ✅</td></tr>';
-        } else {
-            lowStockBody.innerHTML = alerts.lowStockProducts.map(p => `
-                <tr>
-                    <td>${p.id}</td>
-                    <td><strong>${p.name}</strong></td>
-                    <td>${p.categoryName || '—'}</td>
-                    <td>${formatPrice(p.price)}</td>
-                    <td>${formatPrice(p.buyPrice)}</td>
-                    <td style="color:var(--danger); font-weight:bold; font-size:1.05rem;">${p.stock.toLocaleString('fa-IR')} عدد</td>
-                    <td><span class="badge badge-cancelled">${p.badge}</span></td>
-                </tr>
-            `).join('');
+        if (lowStockBody) {
+            if (!alerts.lowStockProducts || !alerts.lowStockProducts.length) {
+                lowStockBody.innerHTML = '<tr><td colspan="7" class="empty-state">هیچ کالایی کمتر از ۵ عدد موجودی ندارد ✅</td></tr>';
+            } else {
+                lowStockBody.innerHTML = alerts.lowStockProducts.map(p => `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.categoryName || '—'}</td>
+                        <td>${formatPrice(p.price)}</td>
+                        <td>${formatPrice(p.buyPrice)}</td>
+                        <td style="color:var(--danger); font-weight:bold; font-size:1.05rem;">${p.stock.toLocaleString('fa-IR')} عدد</td>
+                        <td><span class="badge badge-cancelled">${p.badge}</span></td>
+                    </tr>
+                `).join('');
+            }
         }
 
         // Delayed orders table
         const delayedBody = document.getElementById('delayedOrdersAlertsBody');
-        if (!alerts.delayedOrders || !alerts.delayedOrders.length) {
-            delayedBody.innerHTML = '<tr><td colspan="8" class="empty-state">هیچ سفارش بدون تحویلی بیش از ۱ هفته تأخیر ندارد ✅</td></tr>';
-        } else {
-            delayedBody.innerHTML = alerts.delayedOrders.map(o => `
-                <tr>
-                    <td>${o.id.split('-')[1] || o.id}</td>
-                    <td>${o.customerName}</td>
-                    <td dir="ltr">${o.phone}</td>
-                    <td>${formatPrice(o.totalAmount)}</td>
-                    <td>${formatDate(o.createdAt)}</td>
-                    <td><span class="badge badge-cancelled"><i class="fa-solid fa-hourglass-half"></i> ${o.delayDays.toLocaleString('fa-IR')} روز تأخیر</span></td>
-                    <td>${statusBadge(o.status, getStatusLabel(o.status))}</td>
-                    <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">مدیریت سفارش</button></td>
-                </tr>
-            `).join('');
+        if (delayedBody) {
+            if (!alerts.delayedOrders || !alerts.delayedOrders.length) {
+                delayedBody.innerHTML = '<tr><td colspan="8" class="empty-state">هیچ سفارش بدون تحویلی بیش از ۱ هفته تأخیر ندارد ✅</td></tr>';
+            } else {
+                delayedBody.innerHTML = alerts.delayedOrders.map(o => `
+                    <tr>
+                        <td>${o.id.split('-')[1] || o.id}</td>
+                        <td>${o.customerName}</td>
+                        <td dir="ltr">${o.phone}</td>
+                        <td>${formatPrice(o.totalAmount)}</td>
+                        <td>${formatDate(o.createdAt)}</td>
+                        <td><span class="badge badge-cancelled"><i class="fa-solid fa-hourglass-half"></i> ${o.delayDays.toLocaleString('fa-IR')} روز تأخیر</span></td>
+                        <td>${statusBadge(o.status, getStatusLabel(o.status))}</td>
+                        <td><button class="btn btn-secondary" onclick="openOrder('${o.id}')">مدیریت سفارش</button></td>
+                    </tr>
+                `).join('');
+            }
         }
+
+        // Inactive customers reminder table (60+ days)
+        const inactiveBody = document.getElementById('inactiveCustomersAlertsBody');
+        const inactiveBadge = document.getElementById('inactiveCustomersCountBadge');
+        if (inactiveBadge) {
+            inactiveBadge.textContent = `${inactiveCount.toLocaleString('fa-IR')} مشتری غیرفعال`;
+        }
+
+        if (inactiveBody) {
+            if (!alerts.inactiveCustomers || !alerts.inactiveCustomers.length) {
+                inactiveBody.innerHTML = '<tr><td colspan="7" class="empty-state">همه مشتریان در ۶۰ روز گذشته سفارش ثبت کرده‌اند یا مشتری غیرفعالی وجود ندارد ✅</td></tr>';
+            } else {
+                inactiveBody.innerHTML = alerts.inactiveCustomers.map(c => `
+                    <tr>
+                        <td><strong>${escapeHtml(c.name || 'مشتری')}</strong></td>
+                        <td dir="ltr"><span style="font-family:monospace; font-weight:bold;">${escapeHtml(c.phone || '-')}</span></td>
+                        <td>${(c.totalOrders || 0).toLocaleString('fa-IR')} سفارش</td>
+                        <td><strong style="color:#059669;">${formatPrice(c.totalSpent || 0)} تومان</strong></td>
+                        <td>${formatDate(c.lastOrderAt)}</td>
+                        <td>
+                            <span class="badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:bold; font-size:0.8rem;">
+                                <i class="fa-solid fa-calendar-xmark"></i> ${Number(c.daysSinceLastOrder || 0).toLocaleString('fa-IR')} روز پیش
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <button class="btn btn-secondary" style="background:#25d366; color:white; border-color:#22c55e; padding:5px 10px; font-size:0.82rem;" onclick="contactInactiveCustomerWhatsApp('${escapeHtml(c.name || 'مشتری')}', '${escapeHtml(c.phone || '')}', ${c.daysSinceLastOrder || 60})" title="ارسال پیام یادآوری و تخفیف در واتساپ">
+                                    <i class="fa-brands fa-whatsapp"></i> پیام واتساپ
+                                </button>
+                                <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.82rem;" onclick="openCustomer('${c.customerId || c.id || c.phone}')">
+                                    پروفایل
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+    }
+
+    function contactInactiveCustomerWhatsApp(name, phone, days) {
+        const rawPhone = String(phone || '').replace(/[^0-9]/g, '').replace(/^0/, '');
+        const msg = `وقت بخیر *${name}* عزیز🌹\nاز آخرین همراهی و خرید شما در محصولات پیمان مدتی می‌گذرد. مشتاق دیدار مجدد شما هستیم و تخفیف‌ها و هدایای ویژه‌ای برای سفارش جدید شما در نظر گرفته‌ایم.\n\nجهت مشاهده جدیدترین محصولات و ثبت سفارش:\nhttps://rafooneh.com\n\nبا احترام - محصولات پیمان`;
+        const url = rawPhone ? `https://wa.me/98${rawPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
     }
 
     function getStatusLabel(status) {
@@ -3149,9 +3399,54 @@
         return found?.label || found?.name || labels[status] || status || 'جدید';
     }
 
+    // Orders Table: Sorting & Pagination Functions
+    window.sortOrdersTable = function(col) {
+        if (window.ordersTableState.sortCol === col) {
+            window.ordersTableState.sortDir = window.ordersTableState.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            window.ordersTableState.sortCol = col;
+            window.ordersTableState.sortDir = col === 'createdAt' || col === 'totalAmount' ? 'desc' : 'asc';
+        }
+        window.ordersTableState.page = 1;
+        updateOrderSortHeaderIcons();
+        renderOrdersTable();
+    };
+
+    function updateOrderSortHeaderIcons() {
+        const cols = ['id', 'customerName', 'phone', 'totalAmount', 'status', 'createdAt'];
+        cols.forEach(col => {
+            const icon = document.getElementById(`sortIcon-order-${col}`);
+            if (!icon) return;
+            if (window.ordersTableState.sortCol === col) {
+                icon.className = window.ordersTableState.sortDir === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+                icon.style.opacity = '1';
+                icon.style.color = 'var(--primary)';
+            } else {
+                icon.className = 'fa-solid fa-sort';
+                icon.style.opacity = '0.35';
+                icon.style.color = '';
+            }
+        });
+    }
+
+    window.changeOrdersPage = function(page) {
+        window.ordersTableState.page = Math.max(1, page);
+        renderOrdersTable();
+    };
+
+    window.changeOrdersPageSize = function(size) {
+        window.ordersTableState.pageSize = parseInt(size, 10) || 15;
+        window.ordersTableState.page = 1;
+        renderOrdersTable();
+    };
+
+    let cachedOrdersList = [];
+
     async function loadOrders() {
-        const status = document.getElementById('orderStatusFilter').value;
-        const search = document.getElementById('orderSearch').value;
+        const status = document.getElementById('orderStatusFilter')?.value || 'all';
+        const search = document.getElementById('orderSearch')?.value || '';
+        window.ordersTableState.status = status;
+        window.ordersTableState.search = search;
 
         let serverOrders = [];
         let serverStatuses = [];
@@ -3181,7 +3476,7 @@
         }
 
         const filterEl = document.getElementById('orderStatusFilter');
-        if (filterEl.options.length <= 1) {
+        if (filterEl && filterEl.options.length <= 1) {
             orderStatuses.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.id;
@@ -3192,60 +3487,111 @@
 
         let orderList = serverOrders;
         if (!orderList || orderList.length === 0) {
-            // Only fallback to local if server returned nothing or offline
             orderList = getLocalOrders();
         }
 
         allOrdersData = orderList;
-        let allOrders = [...allOrdersData];
+        cachedOrdersList = [...allOrdersData];
+        renderOrdersTable();
+    }
+
+    function renderOrdersTable() {
+        const status = window.ordersTableState.status;
+        const search = (window.ordersTableState.search || '').trim().toLowerCase();
+        let list = [...(cachedOrdersList || [])];
 
         if (status && status !== 'all') {
-            allOrders = allOrders.filter(o => o.status === status);
+            list = list.filter(o => o.status === status);
         }
         if (search) {
-            const q = search.toLowerCase();
-            allOrders = allOrders.filter(o =>
-                (o.id && o.id.toLowerCase().includes(q)) ||
-                (o.customerName && o.customerName.toLowerCase().includes(q)) ||
-                (o.phone && o.phone.includes(q))
+            list = list.filter(o =>
+                (o.id && String(o.id).toLowerCase().includes(search)) ||
+                (o.customerName && String(o.customerName).toLowerCase().includes(search)) ||
+                (o.phone && String(o.phone).includes(search)) ||
+                (o.address && String(o.address).toLowerCase().includes(search)) ||
+                (o.note && String(o.note).toLowerCase().includes(search))
             );
         }
 
-        allOrders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        // Apply Sorting
+        const col = window.ordersTableState.sortCol || 'createdAt';
+        const dir = window.ordersTableState.sortDir === 'asc' ? 1 : -1;
+        list.sort((a, b) => {
+            let valA = a[col];
+            let valB = b[col];
+
+            if (col === 'totalAmount') {
+                return ((Number(valA) || 0) - (Number(valB) || 0)) * dir;
+            } else if (col === 'createdAt') {
+                return (new Date(valA || 0).getTime() - new Date(valB || 0).getTime()) * dir;
+            } else {
+                valA = String(valA || '').toLowerCase();
+                valB = String(valB || '').toLowerCase();
+                if (valA < valB) return -1 * dir;
+                if (valA > valB) return 1 * dir;
+                return 0;
+            }
+        });
+        updateOrderSortHeaderIcons();
+
+        // Apply Pagination
+        const totalItems = list.length;
+        const pageSize = window.ordersTableState.pageSize || 15;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        if (window.ordersTableState.page > totalPages) {
+            window.ordersTableState.page = totalPages;
+        }
+        const currentPage = window.ordersTableState.page || 1;
+        const startIndex = (currentPage - 1) * pageSize;
+        const paginatedList = list.slice(startIndex, startIndex + pageSize);
 
         const tbody = document.getElementById('ordersBody');
-        if (!allOrders.length) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">سفارشی یافت نشد</td></tr>';
-            return;
+        if (!tbody) return;
+
+        if (!paginatedList.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">سفارشی با این مشخصات یافت نشد</td></tr>';
+        } else {
+            tbody.innerHTML = paginatedList.map(o => `
+                <tr>
+                    <td><strong style="font-family:monospace; color:var(--primary); font-size:0.92rem;">${o.id.split('-')[1] || o.id}</strong></td>
+                    <td><strong>${escapeHtml(o.customerName || 'مشتری')}</strong></td>
+                    <td dir="ltr"><span style="font-family:monospace;">${escapeHtml(o.phone || '-')}</span></td>
+                    <td><strong style="color:#059669; font-size:0.95rem;">${formatPrice(o.totalAmount)}</strong></td>
+                    <td>${paymentLabels[o.paymentMethod] || o.paymentMethod || 'پرداخت در محل'}</td>
+                    <td>${statusBadge(o.status || 'new', o.statusLabel || getStatusLabel(o.status || 'new'))}</td>
+                    <td>${formatDate(o.createdAt)}</td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn btn-secondary" onclick="openOrder('${o.id}')">جزئیات</button>
+                            <button class="btn btn-secondary" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1; padding:6px 10px;" onclick="openOrderForm('${o.id}')" title="ویرایش کامل سفارش">
+                                <i class="fa-solid fa-pen-to-square"></i> ویرایش
+                            </button>
+                            <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteOrder('${o.id}')" title="حذف سفارش">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        tbody.innerHTML = allOrders.map(o => `
-            <tr>
-                <td>${o.id.split('-')[1] || o.id}</td>
-                <td>${o.customerName || 'مشتری'}</td>
-                <td dir="ltr">${o.phone || '-'}</td>
-                <td>${formatPrice(o.totalAmount)}</td>
-                <td>${paymentLabels[o.paymentMethod] || o.paymentMethod || 'پرداخت در محل'}</td>
-                <td>${statusBadge(o.status || 'new', o.statusLabel || getStatusLabel(o.status || 'new'))}</td>
-                <td>${formatDate(o.createdAt)}</td>
-                <td>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn btn-secondary" onclick="openOrder('${o.id}')">جزئیات</button>
-                        <button class="btn btn-secondary" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1; padding:6px 10px;" onclick="openOrderForm('${o.id}')" title="ویرایش کامل سفارش">
-                            <i class="fa-solid fa-pen-to-square"></i> ویرایش
-                        </button>
-                        <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteOrder('${o.id}')" title="حذف سفارش">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+        renderPaginationUI({
+            containerId: 'ordersPaginationContainer',
+            currentPage,
+            totalPages,
+            totalItems,
+            pageSize,
+            onPageChange: 'changeOrdersPage',
+            onPageSizeChange: 'changeOrdersPageSize'
+        });
     }
 
     function debounceOrders() {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(loadOrders, 300);
+        searchTimeout = setTimeout(() => {
+            window.ordersTableState.page = 1;
+            loadOrders();
+        }, 300);
     }
 
     function normalizePhone(phone) {
@@ -3264,8 +3610,52 @@
         return digits;
     }
 
+    // Customers Table: Sorting & Pagination
+    window.sortCustomersTable = function(col) {
+        if (window.customersTableState.sortCol === col) {
+            window.customersTableState.sortDir = window.customersTableState.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            window.customersTableState.sortCol = col;
+            window.customersTableState.sortDir = col === 'lastOrderAt' || col === 'totalSpent' || col === 'totalOrders' ? 'desc' : 'asc';
+        }
+        window.customersTableState.page = 1;
+        updateCustomerSortHeaderIcons();
+        renderCustomersTable();
+    };
+
+    function updateCustomerSortHeaderIcons() {
+        const cols = ['name', 'phone', 'totalOrders', 'totalSpent', 'lastOrderAt'];
+        cols.forEach(col => {
+            const icon = document.getElementById(`sortIcon-cust-${col}`);
+            if (!icon) return;
+            if (window.customersTableState.sortCol === col) {
+                icon.className = window.customersTableState.sortDir === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+                icon.style.opacity = '1';
+                icon.style.color = 'var(--primary)';
+            } else {
+                icon.className = 'fa-solid fa-sort';
+                icon.style.opacity = '0.35';
+                icon.style.color = '';
+            }
+        });
+    }
+
+    window.changeCustomersPage = function(page) {
+        window.customersTableState.page = Math.max(1, page);
+        renderCustomersTable();
+    };
+
+    window.changeCustomersPageSize = function(size) {
+        window.customersTableState.pageSize = parseInt(size, 10) || 15;
+        window.customersTableState.page = 1;
+        renderCustomersTable();
+    };
+
+    let cachedCustomersList = [];
+
     async function loadCustomers() {
         const search = (document.getElementById('customerSearch')?.value || '').toLowerCase();
+        window.customersTableState.search = search;
         let rawCustomers = [];
 
         try {
@@ -3298,7 +3688,7 @@
                     custMap.set(key, c);
                 }
                 c.totalOrders++;
-                c.totalSpent += (o.totalAmount || 0);
+                c.totalSpent += (Number(o.totalAmount) || 0);
                 if (new Date(o.createdAt || 0) > new Date(c.lastOrderAt || 0)) {
                     c.lastOrderAt = o.createdAt;
                 }
@@ -3327,36 +3717,98 @@
                 }
             }
         });
-        const customers = Array.from(uniqueCustMap.values());
+        cachedCustomersList = Array.from(uniqueCustMap.values());
+        renderCustomersTable();
+    }
 
-        const tbody = document.getElementById('customersBody');
-        if (!customers.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">مشتری یافت نشد</td></tr>';
-            return;
+    function renderCustomersTable() {
+        const search = (window.customersTableState.search || '').trim().toLowerCase();
+        let list = [...(cachedCustomersList || [])];
+
+        if (search) {
+            list = list.filter(c =>
+                (c.name && String(c.name).toLowerCase().includes(search)) ||
+                (c.phone && String(c.phone).includes(search)) ||
+                (c.id && String(c.id).toLowerCase().includes(search)) ||
+                (c.address && String(c.address).toLowerCase().includes(search)) ||
+                (c.notes && String(c.notes).toLowerCase().includes(search))
+            );
         }
 
-        tbody.innerHTML = customers.map(c => `
-            <tr>
-                <td>${c.name}</td>
-                <td dir="ltr">${c.phone}</td>
-                <td>${(c.totalOrders || 0).toLocaleString('fa-IR')}</td>
-                <td>${formatPrice(c.totalSpent)}</td>
-                <td>${formatDate(c.lastOrderAt)}</td>
-                <td>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn btn-secondary" onclick="openCustomer('${c.id}')">پروفایل</button>
-                        <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteCustomer('${c.id}')" title="حذف مشتری">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+        // Apply Sorting
+        const col = window.customersTableState.sortCol || 'lastOrderAt';
+        const dir = window.customersTableState.sortDir === 'asc' ? 1 : -1;
+        list.sort((a, b) => {
+            let valA = a[col];
+            let valB = b[col];
+
+            if (col === 'totalSpent' || col === 'totalOrders') {
+                return ((Number(valA) || 0) - (Number(valB) || 0)) * dir;
+            } else if (col === 'lastOrderAt') {
+                return (new Date(valA || 0).getTime() - new Date(valB || 0).getTime()) * dir;
+            } else {
+                valA = String(valA || '').toLowerCase();
+                valB = String(valB || '').toLowerCase();
+                if (valA < valB) return -1 * dir;
+                if (valA > valB) return 1 * dir;
+                return 0;
+            }
+        });
+        updateCustomerSortHeaderIcons();
+
+        // Apply Pagination
+        const totalItems = list.length;
+        const pageSize = window.customersTableState.pageSize || 15;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        if (window.customersTableState.page > totalPages) {
+            window.customersTableState.page = totalPages;
+        }
+        const currentPage = window.customersTableState.page || 1;
+        const startIndex = (currentPage - 1) * pageSize;
+        const paginatedList = list.slice(startIndex, startIndex + pageSize);
+
+        const tbody = document.getElementById('customersBody');
+        if (!tbody) return;
+
+        if (!paginatedList.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">مشتری با این مشخصات یافت نشد</td></tr>';
+        } else {
+            tbody.innerHTML = paginatedList.map(c => `
+                <tr>
+                    <td><strong>${escapeHtml(c.name || 'مشتری')}</strong></td>
+                    <td dir="ltr"><span style="font-family:monospace; font-weight:bold;">${escapeHtml(c.phone || '-')}</span></td>
+                    <td>${(c.totalOrders || 0).toLocaleString('fa-IR')} سفارش</td>
+                    <td><strong style="color:#059669;">${formatPrice(c.totalSpent)}</strong></td>
+                    <td>${formatDate(c.lastOrderAt)}</td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn btn-secondary" onclick="openCustomer('${c.id}')">پروفایل</button>
+                            <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteCustomer('${c.id}')" title="حذف مشتری">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        renderPaginationUI({
+            containerId: 'customersPaginationContainer',
+            currentPage,
+            totalPages,
+            totalItems,
+            pageSize,
+            onPageChange: 'changeCustomersPage',
+            onPageSizeChange: 'changeCustomersPageSize'
+        });
     }
 
     function debounceCustomers() {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(loadCustomers, 300);
+        searchTimeout = setTimeout(() => {
+            window.customersTableState.page = 1;
+            loadCustomers();
+        }, 300);
     }
 
     let currentInvoiceOrder = null;
@@ -3393,8 +3845,8 @@
         const deliveryFee = Number(order.deliveryFee || 0);
         const deliveryDistance = Number(order.deliveryDistance || 0);
 
-        let msg = `🧾 *فاکتور سفارش پخش شوینده و بهداشتی رافونه*\n\n`;
-        msg += `سلام *${order.customerName || 'مشتری گرامی'}* عزیز🌹\n`;
+        let msg = `🧾 *فاکتور سفارش محصولات پیمان*\n\n`;
+        msg += `وقت بخیر *${order.customerName || 'مشتری گرامی'}* عزیز🌹\n`;
         msg += `سفارش شما با کد پیگیری *${order.id || ''}* در سیستم ثبت گردید.\n\n`;
         msg += `📞 *تلفن تماس:* ${order.phone || '—'}\n`;
         msg += `📍 *آدرس تحویل:* ${order.address || '—'}\n\n`;
@@ -3405,7 +3857,11 @@
                 const qty = i.qty || 1;
                 const price = Number(i.price || 0);
                 const itemTotal = Number(i.total || (price * qty));
-                msg += `▫️ ${i.name || 'محصول'} × ${qty} عدد = ${itemTotal.toLocaleString('fa-IR')} تومان\n`;
+                if (i.isGift || price === 0) {
+                    msg += `🎁 ${i.name || 'هدیه'} × ${qty} عدد = رایگان\n`;
+                } else {
+                    msg += `▫️ ${i.name || 'محصول'} × ${qty} عدد = ${itemTotal.toLocaleString('fa-IR')} تومان\n`;
+                }
             });
             msg += `\n`;
         }
@@ -3437,7 +3893,7 @@
             msg += `\n📌 ${b.description}\n`;
         }
 
-        msg += `\n🌹 با سپاس از حسن انتخاب و خرید شما - پخش رافونه`;
+        msg += `\n🌹 با سپاس از حسن انتخاب و خرید شما - محصولات پیمان`;
         return msg;
     }
 
@@ -4739,9 +5195,9 @@
         // WhatsApp live preview template
         const waBox = document.getElementById('previewWhatsAppTextBox');
         if (waBox) {
-            let sampleMsg = `🧾 *فاکتور سفارش توزیع رافونه*\n\n`;
-            sampleMsg += `سلام *علی رضایی* عزیز،\nسفارش شما با شماره *ord-849201* با موفقیت ثبت شد.\n\n`;
-            sampleMsg += `📦 *اقلام سفارش:*\n▫️ مایع ظرفشویی ۴ لیتری رافونه × ۲ عدد = ۲۴۰,۰۰۰ تومان\n▫️ اسپری گاز پاک‌کن رافونه × ۱ عدد = ۵۵,۰۰۰ تومان\n\n`;
+            let sampleMsg = `🧾 *فاکتور سفارش محصولات پیمان*\n\n`;
+            sampleMsg += `وقت بخیر *علی رضایی* عزیز🌹\nسفارش شما با شماره *ord-849201* با موفقیت ثبت شد.\n\n`;
+            sampleMsg += `📦 *اقلام سفارش:*\n▫️ مایع ظرفشویی ۴ لیتری × ۲ عدد = ۲۴۰,۰۰۰ تومان\n▫️ اسپری گاز پاک‌کن × ۱ عدد = ۵۵,۰۰۰ تومان\n\n`;
             sampleMsg += `💰 *مبلغ کل قابل پرداخت:* ۲۹۵,۰۰۰ تومان\n\n`;
             sampleMsg += `💳 *مشخصات واریز کارت به کارت:*\n`;
             sampleMsg += `▫️ بانک: *${bankName}*\n`;
@@ -4750,7 +5206,7 @@
             sampleMsg += `▫️ شماره شبا: *${rawShaba}*\n`;
             if (accountNum) sampleMsg += `▫️ شماره حساب: *${accountNum}*\n`;
             if (desc) sampleMsg += `\n📝 ${desc}\n`;
-            sampleMsg += `\n🚚 تحویل مستقیم درب منزل - با سپاس از خرید شما`;
+            sampleMsg += `\n🌹 با سپاس از حسن انتخاب و خرید شما - محصولات پیمان`;
             waBox.innerText = sampleMsg;
         }
     }
@@ -6697,7 +7153,7 @@
         document.getElementById('newAdminOrderModal').style.display = 'none';
     }
 
-    function addAdminOrderItemRow(itemData = null) {
+    function addAdminOrderItemRow(itemData = null, prepend = true) {
         const container = document.getElementById('adminOrderItemsContainer');
         if (!container) return;
 
@@ -6744,7 +7200,11 @@
             </div>
         `;
 
-        container.appendChild(div);
+        if (prepend && container.firstChild) {
+            container.insertBefore(div, container.firstChild);
+        } else {
+            container.appendChild(div);
+        }
         calcAdminOrderTotals();
     }
 
@@ -7198,16 +7658,16 @@
                         items.forEach(rawIt => {
                             const it = normalizeItemObject(rawIt);
                             addPagePurchaseItemRow({
-                                productId: it.productId || it.id || it.code || it.name,
-                                qty: it.qty || it.quantity || 1,
-                                buyPrice: it.buyPrice || 0,
-                                consumerPrice: it.consumerPrice || it.price || 0,
-                                multiplier: it.multiplier || '',
-                                name: it.name || it.title || ''
-                            });
+                                 productId: it.productId || it.id || it.code || it.name,
+                                 qty: it.qty || it.quantity || 1,
+                                 buyPrice: it.buyPrice || 0,
+                                 consumerPrice: it.consumerPrice || it.price || 0,
+                                 multiplier: it.multiplier || '',
+                                 name: it.name || it.title || ''
+                            }, false);
                         });
                     } else {
-                        addPagePurchaseItemRow();
+                        addPagePurchaseItemRow(null, true);
                     }
                 }
             } else {
@@ -7332,9 +7792,23 @@
             </div>
         `;
 
-        container.appendChild(div);
+        if (prepend && container.firstChild) {
+            container.insertBefore(div, container.firstChild);
+        } else {
+            container.appendChild(div);
+        }
         renderUnifiedProductCombobox(div, selectedPId, 'purchase');
         calcPagePurchaseTotals();
+
+        if (prepend) {
+            setTimeout(() => {
+                const searchInput = div.querySelector('.prod-search-input');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 50);
+        }
     }
 
     function onPagePurchasePriceOrMultiplierChange(inputEl) {
@@ -7629,10 +8103,10 @@
                             qty: it.qty || it.quantity || 1,
                             price: it.price || it.buyPrice || 0,
                             name: it.name || it.title || ''
-                        });
+                        }, false);
                     });
                 } else {
-                    addPageOrderItemRow();
+                    addPageOrderItemRow(null, true);
                 }
             } else {
                 alert('اطلاعات سفارش مورد نظر یافت نشد.');
@@ -7662,7 +8136,7 @@
         showSection('new-order');
     }
 
-    function addPageOrderItemRow(itemData = null) {
+    function addPageOrderItemRow(itemData = null, prepend = true) {
         const container = document.getElementById('pageOrderItemsContainer');
         if (!container) return;
 
@@ -7712,9 +8186,23 @@
             </div>
         `;
 
-        container.appendChild(div);
+        if (prepend && container.firstChild) {
+            container.insertBefore(div, container.firstChild);
+        } else {
+            container.appendChild(div);
+        }
         renderUnifiedProductCombobox(div, selectedPId, 'order');
         calcPageOrderTotals();
+
+        if (prepend) {
+            setTimeout(() => {
+                const searchInput = div.querySelector('.prod-search-input');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 50);
+        }
     }
 
     function onPageOrderProductSelect(selectEl) {
