@@ -760,6 +760,214 @@
             margin-top: 10px;
             word-break: break-all;
         }
+
+        /* ------------------------------------------------------------- */
+        /* Enhanced Responsive Rules for Admin Panel                     */
+        /* ------------------------------------------------------------- */
+        @media (max-width: 900px) {
+            .mobile-tabs {
+                display: flex !important;
+                background: var(--card);
+                border-bottom: 1px solid var(--border);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding: 10px 12px;
+                gap: 8px;
+                position: sticky;
+                top: 0;
+                z-index: 80;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            }
+            .mobile-tabs::-webkit-scrollbar { display: none; }
+            .mobile-tabs button {
+                white-space: nowrap;
+                padding: 9px 16px;
+                border-radius: 20px;
+                border: 1px solid var(--border);
+                background: white;
+                cursor: pointer;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text);
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                flex-shrink: 0;
+                min-height: 40px;
+                transition: all 0.2s ease;
+            }
+            .mobile-tabs button.active {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+                box-shadow: 0 2px 8px rgba(0, 137, 123, 0.25);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 12px 14px;
+                gap: 10px;
+            }
+            .topbar h1 {
+                font-size: 1.05rem;
+            }
+            .topbar-actions {
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: flex-start;
+            }
+            .topbar-actions .btn {
+                padding: 8px 12px;
+                font-size: 0.82rem;
+                flex: 1 1 auto;
+                justify-content: center;
+                min-height: 40px;
+            }
+            .main {
+                padding: 12px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px !important;
+                margin-bottom: 16px;
+            }
+            .stat-card {
+                padding: 12px 14px;
+                border-radius: 12px;
+            }
+            .stat-card .value {
+                font-size: 1.25rem;
+                word-break: break-all;
+            }
+            .stat-card .label {
+                font-size: 0.75rem;
+            }
+            .panel {
+                border-radius: 12px;
+                margin-bottom: 16px;
+            }
+            .panel-header {
+                padding: 12px 14px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .filters {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .filters input, .filters select {
+                width: 100%;
+                padding: 10px 12px;
+                font-size: 16px; /* Prevents iOS auto-zoom */
+            }
+            .table-wrap {
+                -webkit-overflow-scrolling: touch;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+            }
+            table {
+                font-size: 0.8rem;
+                min-width: 600px;
+            }
+            th, td {
+                padding: 10px 8px;
+            }
+            .modal-overlay {
+                padding: 8px;
+                align-items: flex-end;
+            }
+            .modal {
+                border-radius: 20px 20px 12px 12px;
+                padding: 18px 14px;
+                max-height: 94vh;
+                width: 100%;
+                max-width: 100%;
+            }
+            .invoice-container-card {
+                padding: 16px 10px;
+                border-radius: 16px;
+                max-height: 94vh;
+            }
+            .printable-invoice {
+                padding: 14px 10px;
+            }
+            .inv-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .inv-title-box {
+                text-align: right;
+            }
+            .inv-parties-grid {
+                grid-template-columns: 1fr !important;
+                gap: 10px;
+            }
+            .inv-table th, .inv-table td {
+                padding: 6px 4px;
+                font-size: 0.76rem;
+            }
+            .inv-footer {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .signature-box {
+                width: 100%;
+            }
+            .bank-preview-card {
+                padding: 16px;
+            }
+            .bank-preview-number {
+                font-size: 1.1rem;
+                letter-spacing: 1px;
+                padding: 6px 8px;
+            }
+            .bank-preview-shaba {
+                font-size: 0.78rem;
+            }
+            /* Form input styling on mobile */
+            .form-control {
+                font-size: 16px; /* Prevents auto-zoom on mobile safari */
+                padding: 11px 12px;
+            }
+            /* Full width modal buttons */
+            .modal-actions {
+                display: flex;
+                flex-direction: column-reverse;
+                gap: 8px;
+            }
+            .modal-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+            }
+            .stat-card {
+                padding: 10px;
+            }
+            .stat-card .value {
+                font-size: 1.12rem;
+            }
+            .stat-card .sub {
+                font-size: 0.7rem;
+            }
+            .login-card {
+                padding: 22px 18px;
+                border-radius: 16px;
+            }
+        }
     </style>
 </head>
 <body>
