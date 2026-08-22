@@ -1898,6 +1898,9 @@ export const DEFAULT_BANK_SETTINGS = {
   cardNumber: '6037991823456789',
   shabaNumber: 'IR120170000000123456789012',
   accountNumber: '',
+  whatsappNumber: '09027959555',
+  adminWhatsApp: '09027959555',
+  supportPhone: '09027959555',
   description: 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
 };
 
@@ -1905,12 +1908,12 @@ export function getBankSettings() {
   if (bankSettingsCache) return bankSettingsCache;
   try {
     const loaded = readJson(BANK_SETTINGS_FILE, null);
-    if (loaded && typeof loaded === 'object' && loaded.cardNumber) {
+    if (loaded && typeof loaded === 'object' && (loaded.cardNumber || loaded.whatsappNumber || loaded.adminWhatsApp)) {
       bankSettingsCache = { ...DEFAULT_BANK_SETTINGS, ...loaded };
       return bankSettingsCache;
     }
     const rootLoaded = readJson(ROOT_BANK_SETTINGS_FILE, null);
-    if (rootLoaded && typeof rootLoaded === 'object' && rootLoaded.cardNumber) {
+    if (rootLoaded && typeof rootLoaded === 'object' && (rootLoaded.cardNumber || rootLoaded.whatsappNumber || rootLoaded.adminWhatsApp)) {
       bankSettingsCache = { ...DEFAULT_BANK_SETTINGS, ...rootLoaded };
       return bankSettingsCache;
     }

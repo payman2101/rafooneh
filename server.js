@@ -720,7 +720,7 @@ app.post('/api/admin/upload-image', handleImageUploadRoute);
 // CRM: Public order submission from website
 app.post('/api/orders', (req, res) => {
   try {
-    const { id, customerName, phone, address, note, items, totalAmount, paymentMethod } = req.body || {};
+    const { id, customerName, phone, address, note, items, totalAmount, paymentMethod, deliveryType, deliveryFee, deliveryDistance, deliveryCity, deliveryCoordinates, giftItems } = req.body || {};
 
     if (!customerName || !phone || !address) {
       return res.status(400).json({ success: false, message: 'نام، تلفن و آدرس الزامی است' });
@@ -739,6 +739,12 @@ app.post('/api/orders', (req, res) => {
       items,
       totalAmount,
       paymentMethod,
+      deliveryType,
+      deliveryFee,
+      deliveryDistance,
+      deliveryCity,
+      deliveryCoordinates,
+      giftItems,
       source: 'website'
     });
 
@@ -1170,7 +1176,7 @@ app.get('/api/admin/settings/bank', authMiddleware, (req, res) => {
 // API: Update Bank Settings (Handler for both public and admin paths)
 function handleUpdateBankSettings(req, res) {
   try {
-    const { bankName, cardHolder, cardNumber, shabaNumber, accountNumber, description } = req.body || {};
+    const { bankName, cardHolder, cardNumber, shabaNumber, accountNumber, description, whatsappNumber, adminWhatsApp, supportPhone } = req.body || {};
     
     // Clean and validate card number (16 digits)
     let cleanCard = (cardNumber || '').replace(/[^0-9۰-۹]/g, '');
@@ -1187,12 +1193,29 @@ function handleUpdateBankSettings(req, res) {
       cleanShaba = 'IR' + cleanShaba;
     }
 
+    let cleanWhatsApp = (adminWhatsApp || whatsappNumber || '').replace(/[^0-9۰-۹+]/g, '');
+    for (let i = 0; i < 10; i++) {
+      cleanWhatsApp = cleanWhatsApp.replace(persianDigits[i], String(i));
+    }
+    if (cleanWhatsApp.startsWith('+98')) cleanWhatsApp = '0' + cleanWhatsApp.slice(3);
+    else if (cleanWhatsApp.startsWith('98') && cleanWhatsApp.length === 12) cleanWhatsApp = '0' + cleanWhatsApp.slice(2);
+
+    let cleanSupportPhone = (supportPhone || '').replace(/[^0-9۰-۹+]/g, '');
+    for (let i = 0; i < 10; i++) {
+      cleanSupportPhone = cleanSupportPhone.replace(persianDigits[i], String(i));
+    }
+    if (cleanSupportPhone.startsWith('+98')) cleanSupportPhone = '0' + cleanSupportPhone.slice(3);
+    else if (cleanSupportPhone.startsWith('98') && cleanSupportPhone.length === 12) cleanSupportPhone = '0' + cleanSupportPhone.slice(2);
+
     const updated = saveBankSettings({
       bankName: bankName ? String(bankName).trim() : 'بانک ملی ایران',
       cardHolder: cardHolder ? String(cardHolder).trim() : 'پیمان نوری',
       cardNumber: cleanCard || '6037991823456789',
       shabaNumber: cleanShaba || 'IR120170000000123456789012',
       accountNumber: accountNumber ? String(accountNumber).trim() : '',
+      whatsappNumber: cleanWhatsApp || '09027959555',
+      adminWhatsApp: cleanWhatsApp || '09027959555',
+      supportPhone: cleanSupportPhone || cleanWhatsApp || '09027959555',
       description: description !== undefined ? String(description).trim() : 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
     });
 
