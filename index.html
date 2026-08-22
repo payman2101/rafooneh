@@ -2772,14 +2772,14 @@
                     <div class="inv-brand">
                         <div class="inv-logo"><i class="fa-solid fa-pump-soap"></i></div>
                         <div>
-                            <h2>محصولات بهداشتی پیمان</h2>
+                            <h2>پخش پیمان</h2>
                             <p>مرکز رسمی پخش و توزیع مستقیم شوینده و بهداشتی رافونه</p>
                         </div>
                     </div>
                     <div class="inv-title-box">
                         <h1>فاکتور فروش کالا و خدمات</h1>
                         <div class="inv-meta">
-                            <div><strong>شماره فاکتور:</strong> <span id="invOrderId">---</span></div>
+                            <div><strong>شماره فاکتور:</strong> <bdi dir="ltr"><span id="invOrderId">---</span></bdi></div>
                             <div><strong>تاریخ ثبت:</strong> <span id="invDate">---</span></div>
                             <div><strong>زمان:</strong> <span id="invTime">---</span></div>
                             <div><strong>روش پرداخت:</strong> <span id="invPaymentMethod">---</span></div>
@@ -2791,16 +2791,16 @@
                 <div class="inv-parties-grid">
                     <div class="inv-party-box">
                         <h3><i class="fa-solid fa-store"></i> مشخصات فروشنده:</h3>
-                        <div><strong>فروشگاه:</strong> مرکز پخش محصولات پیمان</div>
-                        <div><strong>تلفن پشتیبانی:</strong> <span id="invSellerSupportPhone">۰۹۰۲۷۹۵۹۵۵۵</span></div>
-                        <div><strong>واتساپ ثبت سفارش:</strong> <span id="invSellerWhatsApp">۰۹۰۲۷۹۵۹۵۵۵</span></div>
-                        <div><strong>وب‌سایت:</strong> rafooneh.com</div>
+                        <div><strong>فروشگاه:</strong> پخش پیمان</div>
+                        <div><strong>تلفن پشتیبانی:</strong> <bdi dir="ltr"><span id="invSellerSupportPhone">۰۹۰۲۷۹۵۹۵۵۵</span></bdi></div>
+                        <div><strong>واتساپ ثبت سفارش:</strong> <bdi dir="ltr"><span id="invSellerWhatsApp">۰۹۰۲۷۹۵۹۵۵۵</span></bdi></div>
+                        <div><strong>وب‌سایت:</strong> <bdi dir="ltr">paymancare.ir</bdi></div>
                         <div><strong>ارسال:</strong> تحویل مستقیم درب منزل مشتری</div>
                     </div>
                     <div class="inv-party-box">
                         <h3><i class="fa-solid fa-user"></i> مشخصات خریدار (مشتری):</h3>
                         <div><strong>نام خریدار:</strong> <span id="invCustName">---</span></div>
-                        <div><strong>شماره تماس:</strong> <span id="invCustPhone">---</span></div>
+                        <div><strong>شماره تماس:</strong> <bdi dir="ltr"><span id="invCustPhone">---</span></bdi></div>
                         <div><strong>آدرس تحویل:</strong> <span id="invCustAddress">---</span></div>
                         <div id="invCustNoteRow" style="display:none;"><strong>توضیحات:</strong> <span id="invCustNote">-</span></div>
                     </div>
@@ -2810,12 +2810,12 @@
                 <table class="inv-table">
                     <thead>
                         <tr>
-                            <th style="width: 50px;">ردیف</th>
-                            <th style="width: 90px;">کد کالا</th>
+                            <th style="width: 45px;">ردیف</th>
+                            <th style="width: 85px;">کد کالا</th>
                             <th>شرح کالا / محصول</th>
-                            <th style="width: 70px;">تعداد</th>
-                            <th style="width: 130px;">قیمت واحد (تومان)</th>
-                            <th style="width: 140px;">مبلغ کل (تومان)</th>
+                            <th style="width: 65px;">تعداد</th>
+                            <th style="width: 145px;">قیمت واحد (ریال)</th>
+                            <th style="width: 155px;">مبلغ کل (ریال)</th>
                         </tr>
                     </thead>
                     <tbody id="invItemsTableBody">
@@ -2828,7 +2828,7 @@
                     <div class="inv-totals-box">
                         <div class="inv-total-row">
                             <span>جمع کل اقلام:</span>
-                            <strong id="invSubtotal">۰ تومان</strong>
+                            <strong id="invSubtotal">۰ ریال</strong>
                         </div>
                         <div class="inv-total-row">
                             <span id="invDeliveryTitle">هزینه پیک / ارسال:</span>
@@ -2836,10 +2836,13 @@
                         </div>
                         <div class="inv-total-row grand-total">
                             <span>مبلغ کل قابل پرداخت:</span>
-                            <strong id="invGrandTotal">۰ تومان</strong>
+                            <div style="text-align: left;">
+                                <strong id="invGrandTotal" style="color: #00695c; font-size: 1.25rem;">۰ ریال</strong>
+                                <div id="invGrandTotalToman" style="font-size: 0.85rem; color: #0369a1; font-weight: bold; margin-top: 2px;">(معادل ۰ تومان)</div>
+                            </div>
                         </div>
                         <div class="inv-total-words" id="invGrandTotalWords">
-                            مبلغ به حروف: صفر تومان
+                            مبلغ به حروف: صفر ریال
                         </div>
                     </div>
                 </div>
@@ -2877,6 +2880,10 @@
                                         <i class="fa-regular fa-copy"></i> کپی
                                     </button>
                                 </div>
+                            </div>
+                            <div class="inv-bank-full-row" style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:8px 12px; margin-top:4px;">
+                                <span style="color:#166534; font-weight:bold;"><i class="fa-solid fa-calculator" style="margin-left:4px;"></i> مبلغ قابل واریز (ریال):</span>
+                                <strong id="invBankPayAmountRial" style="color:#15803d; font-size:1.05rem; direction:ltr;">۰ ریال</strong>
                             </div>
                         </div>
                         <div class="inv-bank-notice" id="invBankDesc">
@@ -4499,7 +4506,7 @@
             // Save locally right away so order is preserved on this device
             saveLocalOrder(fallbackLocalOrder);
 
-            let orderText = `🛒 *سفارش جدید از وب‌سایت محصولات پیمان*\n\n`;
+            let orderText = `🛒 *سفارش جدید از وب‌سایت پخش پیمان*\n\n`;
             orderText += `وقت بخیر *${name}* عزیز🌹\n\n`;
             orderText += `👤 *نام مشتری:* ${name}\n`;
             orderText += `📞 *شماره تماس:* ${phone}\n`;
@@ -4512,7 +4519,7 @@
 
             if (selectedDeliveryType === 'express') {
                 orderText += `⚡ *نوع تحویل:* تحویل فوری کمتر از ۲۴ ساعت (کرج)\n`;
-                orderText += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان\n`;
+                orderText += `🛵 *هزینه تحویل فوری:* ${(deliveryFee * 10).toLocaleString('fa-IR')} ریال (${deliveryFee.toLocaleString('fa-IR')} تومان)\n`;
             } else {
                 orderText += `🚚 *نوع تحویل:* تحویل عادی (رایگان درب منزل)\n`;
             }
@@ -4522,23 +4529,23 @@
                 const p = products.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
                 if (p) {
                     const itemTotal = p.price * qty;
-                    orderText += `▫️ ${p.name} × ${qty} عدد = ${itemTotal.toLocaleString('fa-IR')} تومان\n`;
+                    orderText += `▫️ ${p.name} × ${qty} عدد = ${(itemTotal * 10).toLocaleString('fa-IR')} ریال (${itemTotal.toLocaleString('fa-IR')} تومان)\n`;
                 }
             }
 
             if (giftsList.length > 0) {
                 orderText += `\n🎁 *اقلام هدیه رایگان ۵٪ خرید:*\n`;
                 giftsList.forEach(g => {
-                    orderText += `▫️ ${g.product.name} × ${g.qty} عدد (ارزش هر عدد: ${(Number(g.product.price) || 0).toLocaleString('fa-IR')} تومان - کاملاً رایگان)\n`;
+                    orderText += `▫️ ${g.product.name} × ${g.qty} عدد (ارزش هر عدد: ${((Number(g.product.price) || 0) * 10).toLocaleString('fa-IR')} ریال - کاملاً رایگان)\n`;
                 });
             }
 
             if (selectedDeliveryType === 'express') {
-                orderText += `\n▫️ *جمع اقلام:* ${itemsSubtotal.toLocaleString('fa-IR')} تومان\n`;
-                orderText += `▫️ *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان\n`;
+                orderText += `\n▫️ *جمع اقلام:* ${(itemsSubtotal * 10).toLocaleString('fa-IR')} ریال (${itemsSubtotal.toLocaleString('fa-IR')} تومان)\n`;
+                orderText += `▫️ *هزینه تحویل فوری:* ${(deliveryFee * 10).toLocaleString('fa-IR')} ریال (${deliveryFee.toLocaleString('fa-IR')} تومان)\n`;
             }
 
-            orderText += `\n💰 *مبلغ کل قابل پرداخت:* ${totalAmount.toLocaleString('fa-IR')} تومان\n`;
+            orderText += `\n💰 *مبلغ کل قابل پرداخت:* ${(totalAmount * 10).toLocaleString('fa-IR')} ریال (${totalAmount.toLocaleString('fa-IR')} تومان)\n`;
 
             const b = customerBankSettings;
             orderText += `\n💳 *اطلاعات واریز کارت به کارت:*\n`;
@@ -4546,12 +4553,13 @@
             orderText += `▫️ به نام: *${b.cardHolder || 'پیمان نوری'}*\n`;
             orderText += `▫️ شماره کارت: *${formatCardForWhatsApp(b.cardNumber || '6037991823456789')}*\n`;
             orderText += `▫️ شماره شبا: *${b.shabaNumber || 'IR120170000000123456789012'}*\n`;
+            orderText += `▫️ *مبلغ جهت واریز در اپلیکیشن بانکی:* *${(totalAmount * 10).toLocaleString('fa-IR')} ریال*\n`;
             if (b.description) {
                 orderText += `\n📝 ${b.description}\n`;
             }
-            orderText += `\n🌹 با سپاس از اعتماد و خرید شما از محصولات پیمان`;
+            orderText += `\n🌐 وب‌سایت: paymancare.ir\n🌹 با سپاس از اعتماد و خرید شما از پخش پیمان`;
 
-            const myPhoneNumber = "989027959555";
+            const myPhoneNumber = cleanPhoneForWhatsApp(b.adminWhatsApp || b.whatsappNumber || "09027959555") || "989027959555";
             const encodedMessage = encodeURIComponent(orderText);
             const waUrl = `https://wa.me/${myPhoneNumber}?text=${encodedMessage}`;
 
@@ -4981,8 +4989,8 @@
         }
 
         // Number to Persian Words Utility
-        function numToPersianWords(number) {
-            if (!number || isNaN(number) || number === 0) return 'صفر تومان';
+        function numToPersianWords(number, unit = 'تومان') {
+            if (!number || isNaN(number) || number === 0) return 'صفر ' + unit;
             const num = Math.abs(Math.floor(number));
 
             const ones = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
@@ -5030,7 +5038,7 @@
                 unitIndex++;
             }
 
-            return parts.join(' و ') + ' تومان';
+            return parts.join(' و ') + (unit ? ' ' + unit : '');
         }
 
         // Bank Settings & Invoice Card Data
@@ -5188,14 +5196,17 @@
                     ? `<span style="color:#059669; font-weight:bold;">${item.name}</span> <span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:8px; font-size:0.75rem; margin-right:4px;">هدیه رایگان</span>`
                     : (item.name || item.title || 'محصول');
 
+                const unitPriceRial = unitPrice * 10;
+                const rowTotalRial = rowTotal * 10;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${(index + 1).toLocaleString('fa-IR')}</td>
-                    <td><strong>${item.productId || item.code || item.id || '-'}</strong></td>
+                    <td><strong><bdi dir="ltr">${item.productId || item.code || item.id || '-'}</bdi></strong></td>
                     <td style="text-align: right; font-weight: bold;">${nameDisplay}</td>
                     <td><strong>${qty.toLocaleString('fa-IR')}</strong></td>
-                    <td>${isGift ? '<span style="color:#059669; font-weight:bold;">رایگان</span>' : unitPrice.toLocaleString('fa-IR')}</td>
-                    <td><strong>${isGift ? '<span style="color:#059669;">۰</span>' : rowTotal.toLocaleString('fa-IR')}</strong></td>
+                    <td>${isGift ? '<span style="color:#059669; font-weight:bold;">رایگان</span>' : `<span>${unitPriceRial.toLocaleString('fa-IR')}</span><div style="font-size:0.72rem; color:#64748b;">(${unitPrice.toLocaleString('fa-IR')} ت)</div>`}</td>
+                    <td><strong>${isGift ? '<span style="color:#059669;">۰</span>' : `<span>${rowTotalRial.toLocaleString('fa-IR')}</span><div style="font-size:0.72rem; color:#64748b; font-weight:normal;">(${rowTotal.toLocaleString('fa-IR')} ت)</div>`}</strong></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -5210,7 +5221,7 @@
                 if (isExpress) {
                     invDelTitle.innerHTML = `<i class="fa-solid fa-bolt" style="color:#d97706;"></i> هزینه تحویل فوری:`;
                     invDelFee.style.color = '#b45309';
-                    invDelFee.innerText = `${deliveryFee.toLocaleString('fa-IR')} تومان`;
+                    invDelFee.innerText = `${(deliveryFee * 10).toLocaleString('fa-IR')} ریال (${deliveryFee.toLocaleString('fa-IR')} تومان)`;
                 } else {
                     invDelTitle.innerHTML = `هزینه پیک / ارسال:`;
                     invDelFee.style.color = '#16a34a';
@@ -5219,10 +5230,19 @@
             }
 
             const totalAmount = Number(order.totalAmount) || (subtotal + deliveryFee);
+            const totalRial = totalAmount * 10;
+            const subtotalRial = subtotal * 10;
 
-            document.getElementById('invSubtotal').innerText = subtotal.toLocaleString('fa-IR') + ' تومان';
-            document.getElementById('invGrandTotal').innerText = totalAmount.toLocaleString('fa-IR') + ' تومان';
-            document.getElementById('invGrandTotalWords').innerText = 'مبلغ به حروف: ' + numToPersianWords(totalAmount);
+            document.getElementById('invSubtotal').innerHTML = `${subtotalRial.toLocaleString('fa-IR')} ریال <span style="font-size:0.8rem; color:#64748b; font-weight:normal; margin-right:4px;">(${subtotal.toLocaleString('fa-IR')} تومان)</span>`;
+            document.getElementById('invGrandTotal').innerText = totalRial.toLocaleString('fa-IR') + ' ریال';
+            if (document.getElementById('invGrandTotalToman')) {
+                document.getElementById('invGrandTotalToman').innerText = `(معادل ${totalAmount.toLocaleString('fa-IR')} تومان)`;
+            }
+            document.getElementById('invGrandTotalWords').innerText = 'مبلغ به حروف: ' + numToPersianWords(totalRial, 'ریال') + ` (معادل ${numToPersianWords(totalAmount, 'تومان')})`;
+
+            if (document.getElementById('invBankPayAmountRial')) {
+                document.getElementById('invBankPayAmountRial').innerText = totalRial.toLocaleString('fa-IR') + ' ریال';
+            }
 
             populateCustomerInvoiceBank();
 
@@ -5242,10 +5262,11 @@
             const o = order;
             const b = customerBankSettings;
             const total = Number(o.totalAmount || 0);
+            const totalRial = total * 10;
             const isExpress = o.deliveryType === 'express' || (Number(o.deliveryFee) > 0);
             const deliveryFee = Number(o.deliveryFee) || 0;
 
-            let msg = `🧾 *فاکتور رسمی سفارش محصولات بهداشتی پیمان*\n\n`;
+            let msg = `🧾 *فاکتور رسمی سفارش پخش پیمان*\n\n`;
             msg += `وقت بخیر *${o.customerName || 'مشتری گرامی'}* عزیز🌹\nسفارش شما با کد پیگیری *${o.id}* ثبت گردید.\n\n`;
             msg += `📞 *تلفن تماس:* ${o.phone || '-'}\n`;
             msg += `📍 *آدرس تحویل:* ${o.address || '-'}\n`;
@@ -5260,10 +5281,12 @@
                     const q = item.qty || 1;
                     const p = Number(item.price || 0);
                     const t = Number(item.total || (p * q));
+                    const pRial = p * 10;
+                    const tRial = t * 10;
                     if (item.isGift || p === 0) {
                         msg += `🎁 ${item.name || 'هدیه'} × ${q} عدد = رایگان\n`;
                     } else {
-                        msg += `▫️ ${item.name || 'کالا'} × ${q} عدد = ${t.toLocaleString('fa-IR')} تومان\n`;
+                        msg += `▫️ ${item.name || 'کالا'} × ${q} عدد = ${tRial.toLocaleString('fa-IR')} ریال (${t.toLocaleString('fa-IR')} تومان)\n`;
                     }
                 });
                 msg += `\n`;
@@ -5271,25 +5294,26 @@
 
             if (isExpress) {
                 msg += `⚡ *نوع تحویل:* تحویل اکسپرس فوری کمتر از ۲۴ ساعت (کرج)\n`;
-                msg += `🛵 *هزینه تحویل فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان\n\n`;
+                msg += `🛵 *هزینه تحویل فوری:* ${(deliveryFee * 10).toLocaleString('fa-IR')} ریال (${deliveryFee.toLocaleString('fa-IR')} تومان)\n\n`;
             } else {
                 msg += `🚚 *هزینه ارسال:* رایگان (تحویل ۲۴ الی ۴۸ ساعت درب منزل)\n\n`;
             }
 
-            msg += `💰 *مبلغ کل قابل پرداخت:* ${total.toLocaleString('fa-IR')} تومان\n\n`;
+            msg += `💰 *مبلغ کل قابل پرداخت:* ${totalRial.toLocaleString('fa-IR')} ریال (${total.toLocaleString('fa-IR')} تومان)\n\n`;
 
             msg += `💳 *اطلاعات کارت به کارت جهت واریز:*\n`;
             msg += `▫️ بانک: *${b.bankName || 'بانک ملی ایران'}*\n`;
             msg += `▫️ به نام: *${b.cardHolder || 'پیمان نوری'}*\n`;
             msg += `▫️ شماره کارت: *${formatCardForWhatsApp(b.cardNumber || '6037991823456789')}*\n`;
             msg += `▫️ شماره شبا: *${b.shabaNumber || 'IR120170000000123456789012'}*\n`;
+            msg += `▫️ *مبلغ جهت ورود در اپلیکیشن بانکی:* *${totalRial.toLocaleString('fa-IR')} ریال*\n`;
             if (b.accountNumber) {
                 msg += `▫️ شماره حساب: *${b.accountNumber}*\n`;
             }
             if (b.description) {
                 msg += `\n📝 ${b.description}\n`;
             }
-            msg += `\n🌹 با سپاس از حسن انتخاب و اعتماد شما - مرکز پخش محصولات پیمان`;
+            msg += `\n🌐 وب‌سایت: paymancare.ir\n🌹 با سپاس از حسن انتخاب و اعتماد شما - پخش پیمان`;
             return msg;
         }
 

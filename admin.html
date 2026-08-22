@@ -1003,6 +1003,13 @@
     <header class="topbar">
         <h1><i class="fa-solid fa-store"></i> پنل CRM توزیع رافونه</h1>
         <div class="topbar-actions">
+            <div class="notif-bell-container" style="position:relative;">
+                <button class="btn btn-secondary" id="adminNotifBellBtn" onclick="toggleAdminNotificationsModal()" title="اعلان‌های سفارشات جدید" style="position:relative; display:flex; align-items:center; gap:6px; background:#0f766e; color:#fff; border-color:#0f766e;">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>اعلان‌ها</span>
+                    <span class="badge badge-danger" id="adminNotifBadge" style="display:none; position:absolute; top:-8px; right:-8px; background:#ef4444; color:#fff; font-size:0.72rem; padding:2px 7px; border-radius:10px; font-weight:bold; border:2px solid #fff;">0</span>
+                </button>
+            </div>
             <a href="/" class="btn btn-secondary" style="text-decoration:none;">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> فروشگاه
             </a>
@@ -1021,6 +1028,7 @@
     <div class="mobile-tabs" id="mobileTabs">
         <button class="active" onclick="showSection('dashboard', this)">داشبورد</button>
         <button onclick="showSection('orders', this)">سفارشات</button>
+        <button onclick="toggleAdminNotificationsModal()" style="color:#0f766e; font-weight:bold;">اعلان‌ها <span class="badge badge-danger" id="adminNotifBadgeMobile" style="display:none; padding:2px 6px; font-size:0.7rem; background:#ef4444; color:#fff;">0</span></button>
         <button onclick="showSection('products', this)">انبار و برندها</button>
         <button onclick="showSection('delivery-settings', this)">تحویل فوری</button>
         <button onclick="showSection('bank-settings', this)">کارت و حساب</button>
@@ -2205,12 +2213,15 @@
                 <i class="fa-brands fa-whatsapp"></i> ارسال عکس فاکتور به واتساپ مشتری
             </button>
             <button class="btn btn-secondary" id="btnAdminSendWhatsAppSelf" style="background:#16a34a; color:#fff; border-color:#16a34a;" onclick="sendInvoiceImageToWhatsAppFromAdmin('admin')">
-                <i class="fa-brands fa-whatsapp"></i> ارسال به واتساپ ادمین / پشتیبانی
+                <i class="fa-brands fa-whatsapp"></i> ارسال به واتساپ خودم / پشتیبانی
+            </button>
+            <button class="btn btn-secondary" id="btnAdminCopyInvoiceImg" style="background:#0284c7; color:#fff; border-color:#0284c7;" onclick="copyInvoiceImageToClipboardFromAdmin()">
+                <i class="fa-solid fa-copy"></i> کپی عکس در کلیپ‌بورد
             </button>
             <button class="btn btn-secondary" id="btnAdminDownloadInvoiceImg" style="background:#7c3aed; color:#fff; border-color:#7c3aed;" onclick="downloadInvoiceImageFromAdmin()">
-                <i class="fa-solid fa-file-image"></i> دانلود فایل عکسی فاکتور (PNG)
+                <i class="fa-solid fa-file-image"></i> دانلود فایل عکسی (PNG)
             </button>
-            <button class="btn btn-primary" style="background:#0284c7;" onclick="window.print()">
+            <button class="btn btn-primary" style="background:#334155;" onclick="window.print()">
                 <i class="fa-solid fa-print"></i> چاپ A4 / دریافت PDF
             </button>
             <button class="btn btn-secondary" onclick="closeInvoiceModal()">
@@ -2224,14 +2235,14 @@
                 <div class="inv-brand">
                     <div class="inv-logo"><i class="fa-solid fa-pump-soap"></i></div>
                     <div>
-                        <h2>محصولات بهداشتی پیمان</h2>
+                        <h2>پخش پیمان</h2>
                         <p>مرکز رسمی پخش و توزیع مستقیم شوینده و بهداشتی رافونه</p>
                     </div>
                 </div>
                 <div class="inv-title-box">
                     <h1>فاکتور فروش کالا و خدمات</h1>
                     <div class="inv-meta">
-                        <div><strong>شماره فاکتور:</strong> <span id="invOrderId">---</span></div>
+                        <div><strong>شماره فاکتور:</strong> <bdi dir="ltr"><span id="invOrderId">---</span></bdi></div>
                         <div><strong>تاریخ ثبت:</strong> <span id="invDate">---</span></div>
                         <div><strong>زمان:</strong> <span id="invTime">---</span></div>
                         <div><strong>روش پرداخت:</strong> <span id="invPaymentMethod">---</span></div>
@@ -2242,16 +2253,16 @@
             <div class="inv-parties-grid">
                 <div class="inv-party-box">
                     <h3><i class="fa-solid fa-store"></i> مشخصات فروشنده:</h3>
-                    <div><strong>فروشگاه:</strong> مرکز پخش محصولات پیمان</div>
-                    <div><strong>تلفن پشتیبانی:</strong> <span id="invSellerSupportPhone">۰۹۰۲۷۹۵۹۵۵۵</span></div>
-                    <div><strong>واتساپ ثبت سفارش:</strong> <span id="invSellerWhatsApp">۰۹۰۲۷۹۵۹۵۵۵</span></div>
-                    <div><strong>وب‌سایت:</strong> rafooneh.com</div>
+                    <div><strong>فروشگاه:</strong> پخش پیمان</div>
+                    <div><strong>تلفن پشتیبانی:</strong> <bdi dir="ltr"><span id="invSellerSupportPhone">۰۹۰۲۷۹۵۹۵۵۵</span></bdi></div>
+                    <div><strong>واتساپ ثبت سفارش:</strong> <bdi dir="ltr"><span id="invSellerWhatsApp">۰۹۰۲۷۹۵۹۵۵۵</span></bdi></div>
+                    <div><strong>وب‌سایت:</strong> <bdi dir="ltr">paymancare.ir</bdi></div>
                     <div><strong>ارسال:</strong> تحویل مستقیم درب منزل مشتری</div>
                 </div>
                 <div class="inv-party-box">
                     <h3><i class="fa-solid fa-user"></i> مشخصات خریدار (مشتری):</h3>
                     <div><strong>نام خریدار:</strong> <span id="invCustName">---</span></div>
-                    <div><strong>شماره تماس:</strong> <span id="invCustPhone">---</span></div>
+                    <div><strong>شماره تماس:</strong> <bdi dir="ltr"><span id="invCustPhone">---</span></bdi></div>
                     <div><strong>آدرس تحویل:</strong> <span id="invCustAddress">---</span></div>
                     <div id="invCustNoteRow" style="display:none;"><strong>توضیحات:</strong> <span id="invCustNote">-</span></div>
                 </div>
@@ -2260,12 +2271,12 @@
             <table class="inv-table">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">ردیف</th>
-                        <th style="width: 90px;">کد کالا</th>
+                        <th style="width: 45px;">ردیف</th>
+                        <th style="width: 85px;">کد کالا</th>
                         <th>شرح کالا / محصول</th>
-                        <th style="width: 70px;">تعداد</th>
-                        <th style="width: 130px;">قیمت واحد (تومان)</th>
-                        <th style="width: 140px;">مبلغ کل (تومان)</th>
+                        <th style="width: 65px;">تعداد</th>
+                        <th style="width: 145px;">قیمت واحد (ریال)</th>
+                        <th style="width: 155px;">مبلغ کل (ریال)</th>
                     </tr>
                 </thead>
                 <tbody id="invItemsTableBody">
@@ -2277,7 +2288,7 @@
                 <div class="inv-totals-box">
                     <div class="inv-total-row">
                         <span>جمع کل اقلام:</span>
-                        <strong id="invSubtotal">۰ تومان</strong>
+                        <strong id="invSubtotal">۰ ریال</strong>
                     </div>
                     <div class="inv-total-row">
                         <span id="invDeliveryTitle">هزینه پیک / ارسال:</span>
@@ -2285,10 +2296,13 @@
                     </div>
                     <div class="inv-total-row grand-total">
                         <span>مبلغ کل قابل پرداخت:</span>
-                        <strong id="invGrandTotal">۰ تومان</strong>
+                        <div style="text-align: left;">
+                            <strong id="invGrandTotal" style="color: #00695c; font-size: 1.25rem;">۰ ریال</strong>
+                            <div id="invGrandTotalToman" style="font-size: 0.85rem; color: #0369a1; font-weight: bold; margin-top: 2px;">(معادل ۰ تومان)</div>
+                        </div>
                     </div>
                     <div class="inv-total-words" id="invGrandTotalWords">
-                        مبلغ به حروف: صفر تومان
+                        مبلغ به حروف: صفر ریال
                     </div>
                 </div>
             </div>
@@ -2327,12 +2341,46 @@
                                 </button>
                             </div>
                         </div>
+                        <div class="inv-bank-full-row" style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:8px 12px; margin-top:4px;">
+                            <span style="color:#166534; font-weight:bold;"><i class="fa-solid fa-calculator" style="margin-left:4px;"></i> مبلغ قابل واریز (ریال):</span>
+                            <strong id="invBankPayAmountRial" style="color:#15803d; font-size:1.05rem; direction:ltr;">۰ ریال</strong>
+                        </div>
                     </div>
                     <div class="inv-bank-notice" id="invBankDesc">
                         <i class="fa-solid fa-circle-info" style="color:#0284c7;"></i>
                         <span>لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Notifications Modal -->
+<div class="modal-overlay" id="adminNotificationsModal" style="display:none;" onclick="if(event.target.id==='adminNotificationsModal') closeAdminNotificationsModal();">
+    <div class="modal" style="max-width:620px; max-height:85vh; display:flex; flex-direction:column; padding:20px; border-radius:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:14px;">
+            <h3 style="margin:0; display:flex; align-items:center; gap:8px; font-size:1.1rem; color:#0f766e;">
+                <i class="fa-solid fa-bell"></i> اعلان‌های سفارشات جدید
+                <span class="badge badge-primary" id="adminNotifModalCountBadge" style="font-size:0.75rem; padding:3px 10px; border-radius:12px; background:#0f766e; color:#fff;">0</span>
+            </h3>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" onclick="markAllNotificationsRead()" title="خواندن همه اعلان‌ها" style="font-size:0.8rem; padding:6px 12px;">
+                    <i class="fa-solid fa-check-double"></i> خواندن همه
+                </button>
+                <button class="btn btn-secondary" onclick="clearAllNotificationsUI()" title="پاکسازی تاریخچه اعلان‌ها" style="font-size:0.8rem; padding:6px 10px; color:#ef4444;">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+                <button class="btn btn-secondary" onclick="closeAdminNotificationsModal()" style="font-size:0.8rem; padding:6px 10px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="adminNotifListContainer" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px; padding-right:2px; max-height:60vh;">
+            <div style="text-align:center; padding:35px 10px; color:var(--muted);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                <div style="margin-top:8px;">در حال بارگذاری اعلان‌ها...</div>
             </div>
         </div>
     </div>
@@ -2843,12 +2891,16 @@
         // Background non-blocking sync of local orders so UI opens instantly
         syncLocalOrdersToServer().catch(e => console.log('Local sync background notice:', e));
 
-        // 1. Instantly load active Dashboard stats & alerts in parallel
+        // 1. Instantly load active Dashboard stats, alerts & notifications in parallel
         renderStatsSkeleton();
         Promise.allSettled([
             loadStats(),
-            loadAlerts()
+            loadAlerts(),
+            loadNotifications(true)
         ]);
+
+        // Start background notification auto-polling
+        startNotificationPolling();
 
         // 2. Load secondary sections in non-blocking background
         setTimeout(() => {
@@ -3885,12 +3937,14 @@
     function buildOrderWhatsAppMessage(order) {
         if (!order) return '';
         const b = getEffectiveBankSettings();
-        const total = Number(order.totalAmount || 0);
-        const isExpress = order.deliveryType === 'express' || Number(order.deliveryFee || 0) > 0;
+        const subtotal = (order.items || []).reduce((acc, i) => acc + (Number(i.total) || (Number(i.price || 0) * Number(i.qty || 1))), 0);
         const deliveryFee = Number(order.deliveryFee || 0);
+        const total = Number(order.totalAmount || 0) || (subtotal + deliveryFee);
+        const totalRial = total * 10;
+        const isExpress = order.deliveryType === 'express' || deliveryFee > 0;
         const deliveryDistance = Number(order.deliveryDistance || 0);
 
-        let msg = `🧾 *فاکتور رسمی فروش محصولات بهداشتی پیمان*\n\n`;
+        let msg = `🧾 *فاکتور رسمی فروش پخش پیمان*\n\n`;
         msg += `وقت بخیر *${order.customerName || 'مشتری گرامی'}* عزیز🌹\n`;
         msg += `سفارش شما با کد پیگیری *${order.id || ''}* در سیستم ثبت گردید.\n\n`;
         msg += `📞 *تلفن تماس:* ${order.phone || '—'}\n`;
@@ -3906,23 +3960,25 @@
                 const qty = i.qty || 1;
                 const price = Number(i.price || 0);
                 const itemTotal = Number(i.total || (price * qty));
+                const itemTotalRial = itemTotal * 10;
                 if (i.isGift || price === 0) {
                     msg += `🎁 ${i.name || 'هدیه'} × ${qty} عدد = رایگان\n`;
                 } else {
-                    msg += `▫️ ${i.name || 'محصول'} × ${qty} عدد = ${itemTotal.toLocaleString('fa-IR')} تومان\n`;
+                    msg += `▫️ ${i.name || 'محصول'} × ${qty} عدد = ${itemTotalRial.toLocaleString('fa-IR')} ریال (${itemTotal.toLocaleString('fa-IR')} تومان)\n`;
                 }
             });
             msg += `\n`;
         }
 
         if (isExpress) {
+            const deliveryFeeRial = deliveryFee * 10;
             msg += `⚡ *نوع تحویل:* ارسال اکسپرس فوری (کمتر از ۲۴ ساعت)${deliveryDistance > 0 ? ` [فاصله: ${deliveryDistance} کیلومتر]` : ''}\n`;
-            msg += `🛵 *هزینه ارسال فوری:* ${deliveryFee.toLocaleString('fa-IR')} تومان\n\n`;
+            msg += `🛵 *هزینه ارسال فوری:* ${deliveryFeeRial.toLocaleString('fa-IR')} ریال (${deliveryFee.toLocaleString('fa-IR')} تومان)\n\n`;
         } else {
             msg += `🚚 *هزینه ارسال:* رایگان (تحویل ۲۴ الی ۴۸ ساعت)\n\n`;
         }
 
-        msg += `💰 *مبلغ کل قابل پرداخت:* ${total.toLocaleString('fa-IR')} تومان\n\n`;
+        msg += `💰 *مبلغ کل قابل پرداخت:* ${totalRial.toLocaleString('fa-IR')} ریال (${total.toLocaleString('fa-IR')} تومان)\n\n`;
 
         msg += `💳 *اطلاعات حساب بانکی جهت واریز:*\n`;
         msg += `▫️ *نام بانک:* ${b.bankName || 'بانک ملی ایران'}\n`;
@@ -3934,11 +3990,12 @@
         if (b.accountNumber) {
             msg += `▫️ *شماره حساب:* ${b.accountNumber}\n`;
         }
+        msg += `▫️ *مبلغ جهت ورود در اپلیکیشن بانکی:* *${totalRial.toLocaleString('fa-IR')} ریال*\n`;
         if (b.description) {
             msg += `\n📌 ${b.description}\n`;
         }
 
-        msg += `\n🌹 با سپاس از حسن انتخاب و اعتماد شما - مرکز پخش محصولات پیمان`;
+        msg += `\n🌐 *وب‌سایت:* paymancare.ir\n🌹 با سپاس از حسن انتخاب و اعتماد شما - پخش پیمان`;
         return msg;
     }
 
@@ -3987,7 +4044,7 @@
         }
 
         try {
-            const { blob, file } = await generateInvoiceImageFileFromAdmin(order, elementId);
+            const { blob } = await generateInvoiceImageFileFromAdmin(order, elementId);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -4004,6 +4061,55 @@
         } catch (err) {
             console.error('Download invoice image error:', err);
             alert('خطا در تبدیل فاکتور به عکس: ' + err.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    }
+
+    // Copy Invoice Image Directly to Clipboard
+    async function copyInvoiceImageToClipboardFromAdmin(elementId = 'printableInvoiceArea') {
+        const order = currentInvoiceOrder || currentOrderData;
+        if (!order) {
+            alert('اطلاعات سفارش جهت کپی یافت نشد.');
+            return;
+        }
+
+        const btn = document.getElementById('btnAdminCopyInvoiceImg');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال کپی عکس...`;
+        }
+
+        try {
+            const imgResult = await generateInvoiceImageFileFromAdmin(order, elementId);
+            if (navigator.clipboard && window.ClipboardItem && imgResult && imgResult.blob) {
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': imgResult.blob })
+                ]);
+                alert('📸 تصویر فاکتور با موفقیت در حافظه موقت (Clipboard) کپی شد!\nاکنون در هر برنامه‌ای (واتساپ، تلگرام و...) می‌توانید با زدن دکمه Paste (Ctrl+V) تصویر فاکتور را الصاق فرمایید.');
+            } else {
+                // Fallback upload
+                const uploadRes = await fetch('/api/invoices/upload-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: order.id, imageData: imgResult.dataUrl })
+                });
+                const uploadData = await uploadRes.json();
+                if (uploadData.success && uploadData.imageUrl) {
+                    const fullUrl = window.location.origin + uploadData.imageUrl;
+                    await navigator.clipboard.writeText(fullUrl);
+                    alert('📋 لینک اینترنتی تصویر فاکتور کپی شد:\n' + fullUrl);
+                } else {
+                    alert('مرورگر شما از کپی مستقیم تصویر پشتیبانی نمی‌کند.');
+                }
+            }
+        } catch (err) {
+            console.error('Copy invoice image error:', err);
+            alert('خطا در کپی تصویر: ' + err.message);
         } finally {
             if (btn) {
                 btn.disabled = false;
@@ -4031,18 +4137,53 @@
         }
 
         try {
-            const msg = buildOrderWhatsAppMessage(order);
+            let msg = buildOrderWhatsAppMessage(order);
             const rawPhone = isCustomer ? (order.phone || '') : (b.adminWhatsApp || b.whatsappNumber || '09027959555');
             const targetPhone = cleanPhoneForWhatsApp(rawPhone);
 
             let imgResult = null;
+            let uploadedImageUrl = '';
             try {
                 imgResult = await generateInvoiceImageFileFromAdmin(order, elementId);
             } catch (e) {
                 console.warn('Canvas capture fallback in admin:', e);
             }
 
-            // Web Share API with file support
+            // Upload image to server so a permanent live link is generated
+            if (imgResult && imgResult.dataUrl) {
+                try {
+                    const uploadRes = await fetch('/api/invoices/upload-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId: order.id, imageData: imgResult.dataUrl })
+                    });
+                    const uploadData = await uploadRes.json();
+                    if (uploadData.success && uploadData.imageUrl) {
+                        uploadedImageUrl = (uploadData.fullUrl || (window.location.origin + uploadData.imageUrl));
+                    }
+                } catch (upErr) {
+                    console.warn('Image upload error:', upErr);
+                }
+            }
+
+            // Copy image to clipboard so user can instantly Paste (Ctrl+V) inside WhatsApp
+            let copiedToClipboard = false;
+            if (imgResult && imgResult.blob && navigator.clipboard && window.ClipboardItem) {
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': imgResult.blob })
+                    ]);
+                    copiedToClipboard = true;
+                } catch (clipErr) {
+                    console.warn('Clipboard write error:', clipErr);
+                }
+            }
+
+            if (uploadedImageUrl) {
+                msg += `\n\n🖼️ *مشاهده تصویر باکیفیت فاکتور:*\n${uploadedImageUrl}`;
+            }
+
+            // Web Share API with file support if mobile/supported
             if (imgResult && navigator.canShare && navigator.canShare({ files: [imgResult.file] })) {
                 try {
                     await navigator.share({
@@ -4058,16 +4199,9 @@
                 }
             }
 
-            // Fallback: Download the invoice PNG file and open the WhatsApp link
-            if (imgResult && imgResult.blob) {
-                const dlUrl = URL.createObjectURL(imgResult.blob);
-                const dlLink = document.createElement('a');
-                dlLink.href = dlUrl;
-                dlLink.download = `factor-${order.id || 'order'}.png`;
-                document.body.appendChild(dlLink);
-                dlLink.click();
-                document.body.removeChild(dlLink);
-                setTimeout(() => URL.revokeObjectURL(dlUrl), 10000);
+            // Notice to user about clipboard paste
+            if (copiedToClipboard) {
+                alert('📸 تصویر فاکتور در حافظه موقت (Clipboard) کپی شد!\n\nاکنون در صفحه چت واتساپ کافیست دکمه Paste (الصاق / Ctrl+V) را بزنید تا تصویر فاکتور همراه با متن ارسال گردد.');
             }
 
             const targetUrl = targetPhone 
@@ -5132,8 +5266,8 @@
     }
 
     // Number to Persian Words Utility
-    function numToPersianWords(number) {
-        if (!number || isNaN(number) || number === 0) return 'صفر تومان';
+    function numToPersianWords(number, unit = 'تومان') {
+        if (!number || isNaN(number) || number === 0) return 'صفر ' + unit;
         const num = Math.abs(Math.floor(number));
 
         const ones = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
@@ -5181,7 +5315,7 @@
             unitIndex++;
         }
 
-        return parts.join(' و ') + ' تومان';
+        return parts.join(' و ') + (unit ? ' ' + unit : '');
     }
 
     function showCustomerInvoice(order) {
@@ -5225,19 +5359,26 @@
 
             subtotal += rowTotal;
 
+            const isGift = item.isGift || (item.price === 0 && item.name && item.name.includes('هدیه'));
+            const nameDisplay = isGift 
+                ? `<span style="color:#059669; font-weight:bold;">${item.name}</span> <span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:8px; font-size:0.75rem; margin-right:4px;">هدیه رایگان</span>`
+                : (item.name || item.title || 'محصول');
+
+            const unitPriceRial = unitPrice * 10;
+            const rowTotalRial = rowTotal * 10;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${(index + 1).toLocaleString('fa-IR')}</td>
-                <td><strong>${item.productId || item.code || item.id || '-'}</strong></td>
-                <td style="text-align: right; font-weight: bold;">${item.name || item.title || 'محصول رافونه'}</td>
+                <td><strong><bdi dir="ltr">${item.productId || item.code || item.id || '-'}</bdi></strong></td>
+                <td style="text-align: right; font-weight: bold;">${nameDisplay}</td>
                 <td><strong>${qty.toLocaleString('fa-IR')}</strong></td>
-                <td>${unitPrice.toLocaleString('fa-IR')}</td>
-                <td><strong>${rowTotal.toLocaleString('fa-IR')}</strong></td>
+                <td>${isGift ? '<span style="color:#059669; font-weight:bold;">رایگان</span>' : `<span>${unitPriceRial.toLocaleString('fa-IR')}</span><div style="font-size:0.72rem; color:#64748b;">(${unitPrice.toLocaleString('fa-IR')} ت)</div>`}</td>
+                <td><strong>${isGift ? '<span style="color:#059669;">۰</span>' : `<span>${rowTotalRial.toLocaleString('fa-IR')}</span><div style="font-size:0.72rem; color:#64748b; font-weight:normal;">(${rowTotal.toLocaleString('fa-IR')} ت)</div>`}</strong></td>
             `;
             tbody.appendChild(tr);
         });
 
-        const totalAmount = Number(order.totalAmount) || subtotal;
         const deliveryType = order.deliveryType || 'normal';
         const deliveryFee = Number(order.deliveryFee || 0);
         const deliveryDistance = Number(order.deliveryDistance || 0);
@@ -5248,7 +5389,7 @@
             if (deliveryType === 'express') {
                 deliveryTitleEl.innerText = `ارسال اکسپرس فوری ${deliveryDistance > 0 ? `(${deliveryDistance} کیلومتر)` : ''}:`;
                 deliveryFeeEl.style.color = '#d97706';
-                deliveryFeeEl.innerText = deliveryFee > 0 ? `${deliveryFee.toLocaleString('fa-IR')} تومان` : 'رایگان';
+                deliveryFeeEl.innerText = deliveryFee > 0 ? `${(deliveryFee * 10).toLocaleString('fa-IR')} ریال (${deliveryFee.toLocaleString('fa-IR')} تومان)` : 'رایگان';
             } else {
                 deliveryTitleEl.innerText = 'هزینه پیک / ارسال:';
                 deliveryFeeEl.style.color = '#16a34a';
@@ -5256,9 +5397,20 @@
             }
         }
 
-        document.getElementById('invSubtotal').innerText = subtotal.toLocaleString('fa-IR') + ' تومان';
-        document.getElementById('invGrandTotal').innerText = totalAmount.toLocaleString('fa-IR') + ' تومان';
-        document.getElementById('invGrandTotalWords').innerText = 'مبلغ به حروف: ' + numToPersianWords(totalAmount);
+        const totalAmount = Number(order.totalAmount) || (subtotal + deliveryFee);
+        const totalRial = totalAmount * 10;
+        const subtotalRial = subtotal * 10;
+
+        document.getElementById('invSubtotal').innerHTML = `${subtotalRial.toLocaleString('fa-IR')} ریال <span style="font-size:0.8rem; color:#64748b; font-weight:normal; margin-right:4px;">(${subtotal.toLocaleString('fa-IR')} تومان)</span>`;
+        document.getElementById('invGrandTotal').innerText = totalRial.toLocaleString('fa-IR') + ' ریال';
+        if (document.getElementById('invGrandTotalToman')) {
+            document.getElementById('invGrandTotalToman').innerText = `(معادل ${totalAmount.toLocaleString('fa-IR')} تومان)`;
+        }
+        document.getElementById('invGrandTotalWords').innerText = 'مبلغ به حروف: ' + numToPersianWords(totalRial, 'ریال') + ` (معادل ${numToPersianWords(totalAmount, 'تومان')})`;
+
+        if (document.getElementById('invBankPayAmountRial')) {
+            document.getElementById('invBankPayAmountRial').innerText = totalRial.toLocaleString('fa-IR') + ' ریال';
+        }
 
         populateInvoiceBankElements();
 
@@ -8627,6 +8779,256 @@
         closeOrderModal();
         if (currentOrder && currentOrder.id) {
             openOrderForm(currentOrder.id);
+        }
+    }
+
+    // ==========================================
+    // NOTIFICATION MANAGEMENT SYSTEM
+    // ==========================================
+    let lastKnownNotifCount = 0;
+    let cachedNotifications = [];
+    let notifPollingInterval = null;
+
+    function toggleAdminNotificationsModal() {
+        const modal = document.getElementById('adminNotificationsModal');
+        if (!modal) return;
+        if (modal.style.display === 'flex') {
+            closeAdminNotificationsModal();
+        } else {
+            modal.style.display = 'flex';
+            loadNotifications(true);
+        }
+    }
+
+    function closeAdminNotificationsModal() {
+        const modal = document.getElementById('adminNotificationsModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function loadNotifications(silently = true) {
+        try {
+            const res = await api('/api/admin/notifications');
+            if (res.ok) {
+                const data = await res.json();
+                const unread = data.unreadCount || 0;
+                const notifs = data.notifications || [];
+                cachedNotifications = notifs;
+
+                // Update badge in topbar and mobile tabs
+                const badge = document.getElementById('adminNotifBadge');
+                const badgeMobile = document.getElementById('adminNotifBadgeMobile');
+                const modalBadge = document.getElementById('adminNotifModalCountBadge');
+
+                const badgeText = unread.toLocaleString('fa-IR');
+                if (badge) {
+                    if (unread > 0) {
+                        badge.style.display = 'inline-block';
+                        badge.textContent = badgeText;
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                if (badgeMobile) {
+                    if (unread > 0) {
+                        badgeMobile.style.display = 'inline-block';
+                        badgeMobile.textContent = badgeText;
+                    } else {
+                        badgeMobile.style.display = 'none';
+                    }
+                }
+                if (modalBadge) {
+                    modalBadge.textContent = `${unread.toLocaleString('fa-IR')} جدید / ${notifs.length.toLocaleString('fa-IR')} کل`;
+                }
+
+                // If new notifications arrived and we were already initialized
+                if (unread > lastKnownNotifCount && lastKnownNotifCount >= 0 && !silently) {
+                    const latest = notifs[0];
+                    if (latest) {
+                        playNotificationSound();
+                        showNotificationToast(latest);
+                    }
+                }
+                lastKnownNotifCount = unread;
+                renderNotificationsList(notifs);
+            }
+        } catch (e) {
+            console.error('Error fetching notifications:', e);
+        }
+    }
+
+    function renderNotificationsList(notifs) {
+        const listEl = document.getElementById('adminNotifListContainer');
+        if (!listEl) return;
+        if (!notifs || notifs.length === 0) {
+            listEl.innerHTML = `
+                <div style="text-align:center; padding:35px 15px; color:var(--muted);">
+                    <i class="fa-solid fa-bell-slash fa-2x" style="color:#94a3b8; margin-bottom:10px;"></i>
+                    <p style="margin:0; font-size:0.9rem;">هیچ اعلانی در سیستم ثبت نشده است.</p>
+                </div>
+            `;
+            return;
+        }
+
+        listEl.innerHTML = notifs.map(n => {
+            const bg = n.isRead ? '#f8fafc' : '#ecfdf5';
+            const border = n.isRead ? '#e2e8f0' : '#a7f3d0';
+            const dotColor = n.isRead ? '#94a3b8' : '#059669';
+            return `
+                <div class="notif-item" style="background:${bg}; border:1px solid ${border}; border-radius:12px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start; position:relative; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.03);" onclick="handleNotificationClick('${n.id}', '${n.orderId || ''}')">
+                    <div style="width:10px; height:10px; border-radius:50%; background:${dotColor}; margin-top:6px; flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
+                            <strong style="font-size:0.92rem; color:#0f172a;">${escapeHtml(n.title || 'سفارش جدید')}</strong>
+                            <span style="font-size:0.75rem; color:#64748b;"><i class="fa-regular fa-clock"></i> ${formatDate(n.createdAt)}</span>
+                        </div>
+                        <div style="font-size:0.85rem; color:#334155; line-height:1.5;">${escapeHtml(n.message || '')}</div>
+                        ${n.orderId ? `
+                            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <button type="button" class="btn btn-primary" style="font-size:0.76rem; padding:4px 10px;" onclick="event.stopPropagation(); openOrder('${n.orderId}'); closeAdminNotificationsModal();">
+                                    <i class="fa-solid fa-eye"></i> بررسی جزئیات سفارش
+                                </button>
+                                <button type="button" class="btn btn-secondary" style="font-size:0.76rem; padding:4px 10px; background:#0d9488; color:#fff; border-color:#0d9488;" onclick="event.stopPropagation(); openInvoiceModalForOrder('${n.orderId}'); closeAdminNotificationsModal();">
+                                    <i class="fa-solid fa-file-invoice"></i> فاکتور و ارسال واتساپ
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function handleNotificationClick(notifId, orderId) {
+        try {
+            await api('/api/admin/notifications/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: notifId })
+            });
+            loadNotifications(true);
+        } catch (e) {}
+
+        if (orderId) {
+            closeAdminNotificationsModal();
+            openOrder(orderId);
+        }
+    }
+
+    async function markAllNotificationsRead() {
+        try {
+            await api('/api/admin/notifications/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ markAll: true })
+            });
+            loadNotifications(true);
+        } catch (e) {
+            alert('خطا در علامت‌گذاری اعلان‌ها');
+        }
+    }
+
+    async function clearAllNotificationsUI() {
+        if (!confirm('آیا از پاکسازی تمام اعلان‌ها اطمینان دارید؟')) return;
+        try {
+            await api('/api/admin/notifications/clear', {
+                method: 'POST'
+            });
+            loadNotifications(true);
+        } catch (e) {
+            alert('خطا در پاکسازی اعلان‌ها');
+        }
+    }
+
+    function showNotificationToast(notif) {
+        let container = document.getElementById('adminToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'adminToastContainer';
+            container.style.cssText = 'position:fixed; top:20px; left:20px; z-index:100000; display:flex; flex-direction:column; gap:10px; max-width:380px; pointer-events:none;';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.style.cssText = 'background:#0f766e; color:#ffffff; padding:14px 18px; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.28); pointer-events:auto; display:flex; gap:12px; align-items:flex-start; border:1px solid #14b8a6; cursor:pointer; direction:rtl;';
+        toast.onclick = () => {
+            if (notif.orderId) openOrder(notif.orderId);
+            toast.remove();
+        };
+        toast.innerHTML = `
+            <i class="fa-solid fa-bell" style="font-size:1.3rem; margin-top:2px; color:#5eead4;"></i>
+            <div style="flex:1;">
+                <strong style="display:block; font-size:0.95rem; margin-bottom:3px; color:#ffffff;">${escapeHtml(notif.title || 'سفارش جدید')}</strong>
+                <div style="font-size:0.84rem; opacity:0.95; line-height:1.5; color:#f0fdfa;">${escapeHtml(notif.message || '')}</div>
+                <div style="font-size:0.75rem; color:#99f6e4; margin-top:6px; font-weight:bold;"><i class="fa-solid fa-arrow-left"></i> کلیک برای مشاهده سفارش و صدور فاکتور</div>
+            </div>
+            <button type="button" onclick="event.stopPropagation(); this.parentElement.remove();" style="background:transparent; border:none; color:#fff; cursor:pointer; font-size:1.1rem; padding:0 4px;">&times;</button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.5s';
+            setTimeout(() => toast.remove(), 500);
+        }, 9000);
+    }
+
+    function playNotificationSound() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const now = ctx.currentTime;
+            const osc1 = ctx.createOscillator();
+            const osc2 = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, now); // D5
+            osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(880, now + 0.15);
+            osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.35); // D6
+
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc1.start(now);
+            osc1.stop(now + 0.6);
+            osc2.start(now + 0.15);
+            osc2.stop(now + 0.6);
+        } catch (e) {
+            // AudioContext might be blocked until user interaction
+        }
+    }
+
+    function startNotificationPolling() {
+        if (notifPollingInterval) clearInterval(notifPollingInterval);
+        // Poll every 12 seconds
+        notifPollingInterval = setInterval(() => {
+            const token = localStorage.getItem('crm_token');
+            if (token && document.getElementById('app').style.display !== 'none') {
+                loadNotifications(false);
+            }
+        }, 12000);
+    }
+
+    async function openInvoiceModalForOrder(orderId) {
+        try {
+            const res = await api(`/api/admin/orders/${orderId}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.order) {
+                    currentOrder = data.order;
+                    renderInvoice(data.order);
+                    const modal = document.getElementById('customerInvoiceModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+            }
+        } catch (e) {
+            console.error('Error opening invoice for order:', e);
         }
     }
 </script>

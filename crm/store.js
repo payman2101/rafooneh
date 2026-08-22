@@ -65,6 +65,7 @@ const PURCHASES_FILE = path.join(DATA_DIR, 'purchases.json');
 const DATA_PRODUCTS_FILE = path.join(DATA_DIR, 'products_data.json');
 const BANK_SETTINGS_FILE = path.join(DATA_DIR, 'bank_settings.json');
 const DELIVERY_SETTINGS_FILE = path.join(DATA_DIR, 'delivery_settings.json');
+const NOTIFICATIONS_FILE = path.join(DATA_DIR, 'notifications.json');
 
 const ROOT_ORDERS_FILE = path.join(process.cwd(), 'orders.json');
 const ROOT_CUSTOMERS_FILE = path.join(process.cwd(), 'customers.json');
@@ -74,6 +75,7 @@ const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
 const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
 const ROOT_BANK_SETTINGS_FILE = path.join(process.cwd(), 'bank_settings.json');
 const ROOT_DELIVERY_SETTINGS_FILE = path.join(process.cwd(), 'delivery_settings.json');
+const ROOT_NOTIFICATIONS_FILE = path.join(process.cwd(), 'notifications.json');
 
 let productsListCache = null;
 let productsMapCache = null;
@@ -771,6 +773,25 @@ export function createOrder(orderData) {
 
   // Stock Adjustment for Order Creation or Update
   adjustStockForOrderUpdate(oldOrder, order);
+
+  // Automatic Admin Notification for New Orders
+  if (existingIdx === -1) {
+    try {
+      createNotification({
+        type: 'new_order',
+        orderId: order.id,
+        title: 'ثبت سفارش جدید',
+        message: `سفارش جدید #${order.id} به مبلغ ${((order.totalAmount || 0) * 10).toLocaleString('fa-IR')} ریال (${(order.totalAmount || 0).toLocaleString('fa-IR')} تومان) توسط ${order.customerName || 'مشتری'} ثبت گردید.`,
+        customerName: order.customerName,
+        phone: order.phone,
+        totalAmount: order.totalAmount,
+        itemsCount: (order.items || []).length,
+        createdAt: order.createdAt
+      });
+    } catch (nErr) {
+      console.warn('Auto notification trigger notice:', nErr.message);
+    }
+  }
 
   return enrichOrderWithProfit(order, pMap);
 }
@@ -2034,4 +2055,54 @@ export async function initDatabaseSync() {
     console.error('SQLite init notice:', e);
   }
 }
+
+// -------------------------------------------------------------
+// Admin Notification Store
+// -------------------------------------------------------------
+export function createNotification(notifData = {}) {
+  const notifications = readJson(NOTIFICATIONS_FILE, readJson(ROOT_NOTIFICATIONS_FILE, []));
+  const newNotif = {
+    id: notifData.id || ('notif_' + Date.now() + '_' + Math.floor(Math.random() * 1000)),
+    type: notifData.type || 'new_order',
+    orderId: notifData.orderId || '',
+    title: notifData.title || 'ثبت سفارش جدید',
+    message: notifData.message || 'سفارش جدید با موفقیت ثبت شد.',
+    customerName: notifData.customerName || '',
+    phone: notifData.phone || '',
+    totalAmount: Number(notifData.totalAmount) || 0,
+    totalRial: (Number(notifData.totalAmount) || 0) * 10,
+    itemsCount: Number(notifData.itemsCount) || 0,
+    createdAt: notifData.createdAt || new Date().toISOString(),
+    isRead: false
+  };
+  notifications.unshift(newNotif);
+  const trimmed = notifications.slice(0, 200);
+  writeJson(NOTIFICATIONS_FILE, trimmed);
+  try { writeJson(ROOT_NOTIFICATIONS_FILE, trimmed); } catch (e) {}
+  return newNotif;
+}
+
+export function listNotifications() {
+  const notifications = readJson(NOTIFICATIONS_FILE, readJson(ROOT_NOTIFICATIONS_FILE, []));
+  return notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export function markNotificationAsRead(id) {
+  let notifications = readJson(NOTIFICATIONS_FILE, readJson(ROOT_NOTIFICATIONS_FILE, []));
+  if (!id || id === 'all') {
+    notifications = notifications.map(n => ({ ...n, isRead: true }));
+  } else {
+    notifications = notifications.map(n => String(n.id) === String(id) ? { ...n, isRead: true } : n);
+  }
+  writeJson(NOTIFICATIONS_FILE, notifications);
+  try { writeJson(ROOT_NOTIFICATIONS_FILE, notifications); } catch (e) {}
+  return { success: true, unreadCount: notifications.filter(n => !n.isRead).length };
+}
+
+export function clearAllNotifications() {
+  writeJson(NOTIFICATIONS_FILE, []);
+  try { writeJson(ROOT_NOTIFICATIONS_FILE, []); } catch (e) {}
+  return { success: true };
+}
+
 

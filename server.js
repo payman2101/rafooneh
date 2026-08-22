@@ -41,7 +41,11 @@ import {
   getBankSettings,
   saveBankSettings,
   getDeliverySettings,
-  saveDeliverySettings
+  saveDeliverySettings,
+  createNotification,
+  listNotifications,
+  markNotificationAsRead,
+  clearAllNotifications
 } from './crm/store.js';
 import { checkpointSqlite } from './crm/sqlite.js';
 import { authMiddleware, login, logout, changeAdminPassword } from './crm/auth.js';
@@ -122,9 +126,15 @@ app.get(['/admin', '/admin.html'], (req, res, next) => {
   next();
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(fileUpload());
+
+const invoicesDir = path.join(appDir, 'invoices');
+if (!fs.existsSync(invoicesDir)) {
+  fs.mkdirSync(invoicesDir, { recursive: true });
+}
+app.use('/invoices', express.static(invoicesDir));
 app.use(async (req, res, next) => {
   await ensureFirestoreLoaded().catch(() => {});
   next();
@@ -716,6 +726,61 @@ const handleImageUploadRoute = (req, res) => {
 
 app.post('/api/upload-image', handleImageUploadRoute);
 app.post('/api/admin/upload-image', handleImageUploadRoute);
+
+// Invoice image upload route
+app.post('/api/invoices/upload-image', async (req, res) => {
+  try {
+    const orderId = (req.body && req.body.orderId) || 'order';
+    const base64Data = (req.body && req.body.imageBase64) || '';
+    const cleanOrderId = String(orderId).replace(/[^a-zA-Z0-9_-]/g, '') || String(Date.now());
+    const filename = `factor-${cleanOrderId}.png`;
+    const savePath = path.join(invoicesDir, filename);
+    const invoiceUrl = `/invoices/${filename}`;
+    const invoiceFullUrl = `https://paymancare.ir/invoices/${filename}`;
+
+    const attachToOrder = () => {
+      try {
+        if (cleanOrderId && cleanOrderId !== 'order') {
+          updateOrder(cleanOrderId, {
+            invoiceImageUrl: invoiceUrl,
+            invoiceFullUrl: invoiceFullUrl
+          }).catch(() => {});
+        }
+      } catch (e) {}
+    };
+
+    if (req.files && req.files.imageFile) {
+      const file = req.files.imageFile;
+      file.mv(savePath, (err) => {
+        if (err) console.error('Save invoice image file error:', err);
+        else attachToOrder();
+      });
+      return res.json({
+        success: true,
+        filename: filename,
+        url: invoiceUrl,
+        fullUrl: invoiceFullUrl
+      });
+    }
+
+    if (base64Data) {
+      const rawBase64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+      fs.writeFileSync(savePath, Buffer.from(rawBase64, 'base64'));
+      attachToOrder();
+      return res.json({
+        success: true,
+        filename: filename,
+        url: invoiceUrl,
+        fullUrl: invoiceFullUrl
+      });
+    }
+
+    res.status(400).json({ success: false, message: 'داده‌های تصویر یافت نشد' });
+  } catch (err) {
+    console.error('Invoice image upload error:', err);
+    res.status(500).json({ success: false, message: 'خطا در ذخیره تصویر فاکتور: ' + err.message });
+  }
+});
 
 // CRM: Public order submission from website
 app.post('/api/orders', (req, res) => {
@@ -1346,6 +1411,36 @@ app.get('/api/admin/database/export-json', authMiddleware, (req, res) => {
     res.send(JSON.stringify(snapshot, null, 2));
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطا در خروجی گرفتن از اطلاعات دیتابیس' });
+  }
+});
+
+// API: Notifications (Admin Alerts for New Orders)
+app.get(['/api/admin/notifications', '/api/notifications'], (req, res) => {
+  try {
+    const notifs = listNotifications();
+    const unreadCount = notifs.filter(n => !n.isRead).length;
+    res.json({ success: true, count: notifs.length, unreadCount, notifications: notifs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت نوتیفیکیشن‌ها' });
+  }
+});
+
+app.post('/api/admin/notifications/mark-read', (req, res) => {
+  try {
+    const { id } = req.body || {};
+    const result = markNotificationAsRead(id || 'all');
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در علامت‌گذاری نوتیفیکیشن' });
+  }
+});
+
+app.post('/api/admin/notifications/clear', (req, res) => {
+  try {
+    const result = clearAllNotifications();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در حذف نوتیفیکیشن‌ها' });
   }
 });
 
