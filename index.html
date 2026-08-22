@@ -2419,30 +2419,45 @@
 
     <!-- Modal Gift Selection (5% Gift Offer) -->
     <div class="modal-overlay" id="giftSelectionModal" style="display: none; z-index: 10002;">
-        <div class="modal-card" style="max-width: 640px; max-height: 90vh; display: flex; flex-direction: column;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; border-radius: 16px 16px 0 0; padding: 14px 18px;">
+        <div class="modal-card" style="max-width: 680px; max-height: 92vh; display: flex; flex-direction: column; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 14px 18px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div style="width: 38px; height: 38px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
                         <i class="fa-solid fa-gift" style="color: #a7f3d0;"></i>
                     </div>
                     <div>
-                        <h3 style="margin: 0; font-size: 1.08rem; color: white;">انتخاب کالای هدیه رایگان (۵٪ مبلغ خرید)</h3>
+                        <h3 style="margin: 0; font-size: 1.08rem; color: white;">انتخاب هدایای رایگان (۵٪ مبلغ خرید)</h3>
                         <div id="giftModalQuotaSubtitle" style="font-size: 0.82rem; color: #d1fae5; margin-top: 2px; font-weight: 500;">سقف ارزش هدیه شما: ۰ تومان</div>
                     </div>
                 </div>
-                <button class="btn-close" onclick="closeGiftSelectionModal()" style="color: white; font-size: 1.6rem; line-height: 1;">×</button>
+                <button class="btn-close" onclick="closeGiftSelectionModal()" style="color: white; font-size: 1.6rem; line-height: 1;" title="بستن">×</button>
             </div>
 
-            <!-- Header Guidance & Active Gift Status -->
-            <div id="giftModalStatusBar" style="padding: 12px 16px; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; font-size: 0.84rem; color: #166534; line-height: 1.6;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                    <div>
-                        <i class="fa-solid fa-sparkles" style="color: #059669; margin-left: 4px;"></i>
-                        <span>شما می‌توانید یک محصول با قیمت کمتر یا مساوی سقف هدیه را به عنوان <strong>هدیه ۱۰۰٪ رایگان</strong> انتخاب کنید:</span>
+            <!-- Header Dynamic Quota & Selected Gifts Tracker -->
+            <div id="giftModalStatusBar" style="padding: 12px 16px; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; font-size: 0.84rem; color: #166534;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 8px;">
+                    <div style="background: white; border: 1px solid #bbf7d0; border-radius: 10px; padding: 6px 10px; text-align: center;">
+                        <span style="font-size: 0.72rem; color: #64748b; display: block;">سقف کل هدیه (۵٪)</span>
+                        <strong id="giftTotalQuotaDisplay" style="color: #065f46; font-size: 0.88rem;">۰ تومان</strong>
                     </div>
-                    <div id="giftSelectedBadgeInModal" style="display: none; background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 12px; padding: 3px 10px; font-size: 0.78rem; font-weight: bold;">
-                        <!-- Rendered dynamically -->
+                    <div style="background: white; border: 1px solid #86efac; border-radius: 10px; padding: 6px 10px; text-align: center;">
+                        <span style="font-size: 0.72rem; color: #64748b; display: block;">هدایای انتخاب شده</span>
+                        <strong id="giftUsedQuotaDisplay" style="color: #059669; font-size: 0.88rem;">۰ تومان (۰ کالا)</strong>
                     </div>
+                    <div style="background: white; border: 1px solid #fde68a; border-radius: 10px; padding: 6px 10px; text-align: center;">
+                        <span style="font-size: 0.72rem; color: #64748b; display: block;">باقیمانده سقف مجاز</span>
+                        <strong id="giftRemainingQuotaDisplay" style="color: #d97706; font-size: 0.88rem;">۰ تومان</strong>
+                    </div>
+                </div>
+
+                <!-- Visual Progress Bar -->
+                <div style="background: #e2e8f0; border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 6px;">
+                    <div id="giftQuotaProgressBar" style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                </div>
+
+                <!-- Quick list of chosen gifts chips -->
+                <div id="giftSelectedChipsContainer" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 24px;">
+                    <!-- Dynamically populated tags -->
                 </div>
             </div>
 
@@ -2471,18 +2486,23 @@
             </div>
 
             <!-- Products List Container -->
-            <div id="giftProductsListContainer" style="flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 240px; max-height: 52vh;">
+            <div id="giftProductsListContainer" style="flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 240px; max-height: 50vh;">
                 <!-- Gift products dynamically rendered here -->
             </div>
 
-            <!-- Footer Actions -->
-            <div style="padding: 12px 16px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px; gap: 10px;">
-                <button type="button" class="btn btn-secondary" onclick="skipGiftSelection()" style="font-size: 0.82rem; padding: 8px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: white; color: #64748b; cursor: pointer;">
-                    بدون انتخاب هدیه ادامه می‌دهم
-                </button>
-                <button type="button" class="btn btn-primary" onclick="closeGiftSelectionModal()" style="background: #059669; border: none; font-size: 0.85rem; padding: 8px 20px; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 2px 6px rgba(5,150,105,0.3);">
-                    تأیید و بستن پنجره
-                </button>
+            <!-- Sticky Footer Actions & Live Cart Gift Summary -->
+            <div id="giftModalFooter" style="padding: 12px 16px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div id="giftModalFooterSummary" style="font-size: 0.8rem; color: #334155;">
+                    <!-- Live summary text -->
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" class="btn btn-secondary" onclick="skipGiftSelection()" style="font-size: 0.8rem; padding: 8px 12px; border-radius: 10px; border: 1px solid #cbd5e1; background: white; color: #64748b; cursor: pointer;">
+                        حذف همه هدایا
+                    </button>
+                    <button type="button" id="giftModalConfirmBtn" class="btn btn-primary" onclick="closeGiftSelectionModal()" style="background: #059669; border: none; font-size: 0.86rem; padding: 9px 22px; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 3px 8px rgba(5,150,105,0.3);">
+                        <i class="fa-solid fa-check"></i> تأیید و بستن پنجره
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -3366,15 +3386,22 @@
                 
                 // Update 5% Gift allowance in floating cart bar
                 const giftAllowance = Math.round(totalPrice * 0.05);
+                const giftsCount = typeof getSelectedGiftsCount === 'function' ? getSelectedGiftsCount() : 0;
+                const giftsVal = typeof getSelectedGiftsTotalValue === 'function' ? getSelectedGiftsTotalValue() : 0;
+
                 if (cartBarGiftAmount) {
-                    cartBarGiftAmount.innerText = `${giftAllowance.toLocaleString('fa-IR')} تومان`;
+                    if (giftsVal > 0) {
+                        cartBarGiftAmount.innerText = `${giftsVal.toLocaleString('fa-IR')} از ${giftAllowance.toLocaleString('fa-IR')} ت`;
+                    } else {
+                        cartBarGiftAmount.innerText = `${giftAllowance.toLocaleString('fa-IR')} تومان`;
+                    }
                 }
                 if (cartBarGiftAction) {
-                    if (selectedGiftProduct && Number(selectedGiftProduct.price) <= giftAllowance) {
-                        cartBarGiftAction.innerHTML = '<i class="fa-solid fa-check"></i> هدیه انتخاب شد';
+                    if (giftsCount > 0) {
+                        cartBarGiftAction.innerHTML = `<i class="fa-solid fa-gift"></i> ${giftsCount.toLocaleString('fa-IR')} هدیه انتخاب شد`;
                         cartBarGiftAction.style.background = '#047857';
                     } else {
-                        cartBarGiftAction.innerHTML = 'انتخاب کالا <i class="fa-solid fa-angle-left" style="font-size:0.65rem; margin-right:2px;"></i>';
+                        cartBarGiftAction.innerHTML = 'انتخاب هدایا <i class="fa-solid fa-angle-left" style="font-size:0.65rem; margin-right:2px;"></i>';
                         cartBarGiftAction.style.background = '#059669';
                     }
                 }
@@ -3581,103 +3608,134 @@
             if (!container) return;
 
             if (!deliveryMapInstance) {
-                deliveryMapInstance = L.map('deliveryMapContainer', {
-                    center: customerCoordinates || [35.8124, 50.9415],
-                    zoom: 13
-                });
-
+                const mapEl = document.getElementById('deliveryMap');
+                if (!mapEl) return;
+                
+                const startLat = (customerCoordinates && customerCoordinates[0]) ? customerCoordinates[0] : (storeDeliverySettings.warehouseLat || 35.8124);
+                const startLng = (customerCoordinates && customerCoordinates[1]) ? customerCoordinates[1] : (storeDeliverySettings.warehouseLng || 50.9415);
+                
+                deliveryMapInstance = L.map('deliveryMap').setView([startLat, startLng], 14);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
                     attribution: '© OpenStreetMap'
                 }).addTo(deliveryMapInstance);
 
-                // Customer Pin Marker (Draggable) - Only customer pin is shown
-                const customerIcon = L.divIcon({
-                    className: 'custom-map-icon',
-                    html: '<div style="background:#ea580c; color:white; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(234,88,12,0.5); border:2.5px solid white; font-size:17px;"><i class="fa-solid fa-location-dot"></i></div>',
-                    iconSize: [36, 36],
-                    iconAnchor: [18, 18]
+                const icon = L.divIcon({
+                    html: '<div style="background:#059669; color:white; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,0,0,0.3); border:2px solid white; font-size:16px;"><i class="fa-solid fa-location-dot"></i></div>',
+                    className: 'custom-leaflet-marker',
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 34]
                 });
 
-                deliveryCustomerMarker = L.marker(customerCoordinates, { icon: customerIcon, draggable: true })
-                    .addTo(deliveryMapInstance)
-                    .bindPopup('<b>📍 موقعیت تحویل سفارش شما</b><br>می‌توانید نشانگر را جابجا کنید.');
+                deliveryCustomerMarker = L.marker([startLat, startLng], {
+                    draggable: true,
+                    icon: icon
+                }).addTo(deliveryMapInstance);
 
-                deliveryCustomerMarker.on('dragend', function (e) {
-                    const newLatLng = e.target.getLatLng();
-                    handleLocationChanged(newLatLng.lat, newLatLng.lng);
+                deliveryCustomerMarker.on('dragend', function(e) {
+                    const pos = e.target.getLatLng();
+                    handleLocationChanged(pos.lat, pos.lng);
                 });
 
-                deliveryMapInstance.on('click', function (e) {
-                    const newLatLng = e.latlng;
-                    deliveryCustomerMarker.setLatLng(newLatLng);
-                    handleLocationChanged(newLatLng.lat, newLatLng.lng);
+                deliveryMapInstance.on('click', function(e) {
+                    deliveryCustomerMarker.setLatLng(e.latlng);
+                    handleLocationChanged(e.latlng.lat, e.latlng.lng);
                 });
             }
 
             setTimeout(() => {
-                if (deliveryMapInstance) {
-                    deliveryMapInstance.invalidateSize();
-                    deliveryMapInstance.setView(customerCoordinates, 13);
-                }
-            }, 200);
+                if (deliveryMapInstance) deliveryMapInstance.invalidateSize();
+            }, 250);
         }
 
         function handleLocationChanged(lat, lng) {
             customerCoordinates = [lat, lng];
             hasCustomLocationSet = true;
-            const dist = calculateDistanceKm(WAREHOUSE_COORDS[0], WAREHOUSE_COORDS[1], lat, lng);
+            const wLat = storeDeliverySettings.warehouseLat || 35.8124;
+            const wLng = storeDeliverySettings.warehouseLng || 50.9415;
+            const dist = calculateDistanceKm(wLat, wLng, lat, lng);
+            
+            const distBadge = document.getElementById('expressDistanceBadge');
+            if (distBadge) distBadge.innerText = `فاصله تقریبی: ${dist.toLocaleString('fa-IR')} کیلومتر`;
+            
             updateExpressCostDisplay(dist);
-
-            const statusBadge = document.getElementById('locationStatusBadge');
-            if (statusBadge) {
-                statusBadge.style.display = 'block';
-                statusBadge.innerHTML = `<i class="fa-solid fa-check-circle"></i> موقعیت مکانی شما با موفقیت ثبت شد (هزینه تحویل فوری: ${expressDeliveryFee.toLocaleString('fa-IR')} تومان)`;
-            }
         }
 
         function detectCustomerGpsLocation() {
             if (!navigator.geolocation) {
-                alert('مرورگر شما از موقعیت‌یابی خودکار GPS پشتیبانی نمی‌کند.');
+                alert('مرورگر شما از موقعیت‌یاب پشتیبانی نمی‌کند.');
                 return;
             }
-
-            const btn = event?.currentTarget;
-            const orig = btn ? btn.innerHTML : '';
+            const btn = document.getElementById('btnDetectGps');
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> دریافت موقعیت...';
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال دریافت موقعیت...';
             }
-
             navigator.geolocation.getCurrentPosition(
-                pos => {
+                (pos) => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
-                    handleLocationChanged(lat, lng);
-
-                    toggleDeliveryMap(true);
-                    if (deliveryCustomerMarker && deliveryMapInstance) {
-                        deliveryCustomerMarker.setLatLng([lat, lng]);
-                        deliveryMapInstance.setView([lat, lng], 14);
+                    customerCoordinates = [lat, lng];
+                    if (deliveryMapInstance) {
+                        deliveryMapInstance.setView([lat, lng], 15);
+                        if (deliveryCustomerMarker) deliveryCustomerMarker.setLatLng([lat, lng]);
                     }
+                    handleLocationChanged(lat, lng);
                     if (btn) {
                         btn.disabled = false;
-                        btn.innerHTML = '<i class="fa-solid fa-check"></i> موقعیت دریافت شد';
-                        setTimeout(() => { btn.innerHTML = orig; }, 2500);
+                        btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> مکان‌یابی خودکار (GPS)';
                     }
                 },
-                err => {
-                    alert('دسترسی به موقعیت مکانی GPS داده نشد. لطفاً روی نقشه تعاملی موقعیت خود را مشخص فرمایید.');
+                (err) => {
+                    console.warn('Geolocation error:', err);
+                    alert('امکان دریافت خودکار موقعیت مکانی میسر نشد. لطفاً نشانگر را روی نقشه جابجا کنید.');
                     if (btn) {
                         btn.disabled = false;
-                        btn.innerHTML = orig;
+                        btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> مکان‌یابی خودکار (GPS)';
                     }
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
         }
 
-        let selectedGiftProduct = null;
+        let selectedGiftProducts = {}; // Map of productId/code -> quantity (e.g. { "101": 2, "105": 1 })
         let activeGiftCategory = 'all';
+
+        function getSelectedGiftsList() {
+            const prodList = (typeof products !== 'undefined' && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== 'undefined' ? productsData : []);
+            const list = [];
+            for (const [id, qty] of Object.entries(selectedGiftProducts)) {
+                const numericQty = Number(qty) || 0;
+                if (numericQty > 0) {
+                    const p = prodList.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
+                    if (p) {
+                        const price = Number(p.price) || 0;
+                        list.push({
+                            product: p,
+                            qty: numericQty,
+                            price: price,
+                            totalRealPrice: price * numericQty
+                        });
+                    }
+                }
+            }
+            return list;
+        }
+
+        function getSelectedGiftsTotalValue() {
+            return getSelectedGiftsList().reduce((sum, item) => sum + item.totalRealPrice, 0);
+        }
+
+        function getSelectedGiftsCount() {
+            return getSelectedGiftsList().reduce((sum, item) => sum + item.qty, 0);
+        }
+
+        function getRemainingGiftAllowance() {
+            const itemsSubtotal = calculateCartTotal();
+            const giftAllowance = Math.round(itemsSubtotal * 0.05);
+            const used = getSelectedGiftsTotalValue();
+            return Math.max(0, giftAllowance - used);
+        }
 
         function filterGiftCategory(cat, btn) {
             activeGiftCategory = cat;
@@ -3686,10 +3744,15 @@
             renderGiftProductList();
         }
 
-        function openGiftSelectionModal() {
+        function updateGiftModalTracker() {
             try {
                 const itemsSubtotal = calculateCartTotal();
                 const giftAllowance = Math.round(itemsSubtotal * 0.05);
+                const used = getSelectedGiftsTotalValue();
+                const remaining = Math.max(0, giftAllowance - used);
+                const giftsList = getSelectedGiftsList();
+                const totalCount = getSelectedGiftsCount();
+
                 const subtitle = document.getElementById('giftModalQuotaSubtitle');
                 if (subtitle) {
                     if (giftAllowance > 0) {
@@ -3699,16 +3762,82 @@
                     }
                 }
 
-                const badgeEl = document.getElementById('giftSelectedBadgeInModal');
-                if (badgeEl) {
-                    if (selectedGiftProduct) {
-                        badgeEl.style.display = 'inline-block';
-                        badgeEl.innerHTML = `<i class="fa-solid fa-check"></i> انتخاب فعلی: <strong>${escapeHtml(selectedGiftProduct.name)}</strong>`;
+                const totalQuotaEl = document.getElementById('giftTotalQuotaDisplay');
+                if (totalQuotaEl) totalQuotaEl.textContent = `${giftAllowance.toLocaleString('fa-IR')} تومان`;
+
+                const usedQuotaEl = document.getElementById('giftUsedQuotaDisplay');
+                if (usedQuotaEl) usedQuotaEl.textContent = `${used.toLocaleString('fa-IR')} تومان (${totalCount.toLocaleString('fa-IR')} قلم)`;
+
+                const remQuotaEl = document.getElementById('giftRemainingQuotaDisplay');
+                if (remQuotaEl) {
+                    remQuotaEl.textContent = `${remaining.toLocaleString('fa-IR')} تومان`;
+                    remQuotaEl.style.color = remaining > 0 ? '#059669' : '#64748b';
+                }
+
+                const progressBar = document.getElementById('giftQuotaProgressBar');
+                if (progressBar) {
+                    const pct = giftAllowance > 0 ? Math.min(100, Math.round((used / giftAllowance) * 100)) : 0;
+                    progressBar.style.width = pct + '%';
+                    if (pct >= 100) {
+                        progressBar.style.background = 'linear-gradient(90deg, #10b981, #047857)';
                     } else {
-                        badgeEl.style.display = 'none';
+                        progressBar.style.background = 'linear-gradient(90deg, #34d399, #10b981)';
                     }
                 }
 
+                const chipsContainer = document.getElementById('giftSelectedChipsContainer');
+                if (chipsContainer) {
+                    if (giftsList.length === 0) {
+                        chipsContainer.innerHTML = `
+                            <span style="font-size:0.75rem; color:#64748b;">
+                                <i class="fa-solid fa-hand-pointer" style="margin-left:3px; color:#059669;"></i>
+                                از لیست زیر، کالاهای مورد نظرتان را تا سقف هدیه انتخاب نمایید (می‌توانید چند قلم مختلف بردارید).
+                            </span>
+                        `;
+                    } else {
+                        let chipsHtml = `<span style="font-size:0.75rem; font-weight:bold; color:#065f46; margin-left:4px;">هدایای انتخاب شده:</span>`;
+                        giftsList.forEach(g => {
+                            chipsHtml += `
+                                <div style="background:#ffffff; border:1px solid #86efac; border-radius:14px; padding:3px 8px; font-size:0.75rem; color:#065f46; display:inline-flex; align-items:center; gap:5px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                                    <i class="fa-solid fa-gift" style="color:#059669; font-size:0.7rem;"></i>
+                                    <span><strong>${escapeHtml(g.product.name)}</strong> × ${g.qty.toLocaleString('fa-IR')}</span>
+                                    <button type="button" onclick="removeGiftProduct('${g.product.id || g.product.code}', event)" style="border:none; background:transparent; color:#ef4444; cursor:pointer; font-size:0.85rem; padding:0 2px; line-height:1; font-weight:bold;" title="حذف">×</button>
+                                </div>
+                            `;
+                        });
+                        chipsContainer.innerHTML = chipsHtml;
+                    }
+                }
+
+                const footerSummary = document.getElementById('giftModalFooterSummary');
+                if (footerSummary) {
+                    if (giftsList.length > 0) {
+                        footerSummary.innerHTML = `
+                            <span style="color:#065f46; font-weight:bold;">
+                                ${totalCount.toLocaleString('fa-IR')} قلم هدیه (ارزش: ${used.toLocaleString('fa-IR')} ت)
+                            </span>
+                            <span style="color:#64748b; margin-right:6px;">| باقیمانده سقف: <strong>${remaining.toLocaleString('fa-IR')} ت</strong></span>
+                        `;
+                    } else {
+                        footerSummary.innerHTML = `<span style="color:#64748b;">هنوز هدیه‌ای انتخاب نکرده‌اید.</span>`;
+                    }
+                }
+
+                const confirmBtn = document.getElementById('giftModalConfirmBtn');
+                if (confirmBtn) {
+                    if (giftsList.length > 0) {
+                        confirmBtn.innerHTML = `<i class="fa-solid fa-check"></i> تأیید و بستن (${totalCount.toLocaleString('fa-IR')} هدیه)`;
+                    } else {
+                        confirmBtn.innerHTML = `<i class="fa-solid fa-check"></i> تأیید و بستن پنجره`;
+                    }
+                }
+            } catch (err) {
+                console.error('Error updating gift modal tracker:', err);
+            }
+        }
+
+        function openGiftSelectionModal() {
+            try {
                 const searchInput = document.getElementById('giftSearchInput');
                 if (searchInput) searchInput.value = '';
                 
@@ -3719,6 +3848,7 @@
                     else b.classList.remove('active');
                 });
 
+                updateGiftModalTracker();
                 renderGiftProductList();
                 const modal = document.getElementById('giftSelectionModal');
                 if (modal) modal.style.display = 'flex';
@@ -3733,14 +3863,15 @@
         }
 
         function skipGiftSelection() {
-            selectedGiftProduct = null;
+            selectedGiftProducts = {};
             closeGiftSelectionModal();
             updateCartBar();
             refreshOrderSummaryList();
             showGiftToast('سفارش بدون انتخاب محصول هدیه ثبت خواهد شد.', 'fa-info-circle', '#64748b');
         }
 
-        function selectGiftProduct(productId) {
+        function addGiftProduct(productId, e) {
+            if (e && e.stopPropagation) e.stopPropagation();
             try {
                 const itemsSubtotal = calculateCartTotal();
                 const giftAllowance = Math.round(itemsSubtotal * 0.05);
@@ -3749,33 +3880,78 @@
                 if (!p) return;
                 const price = Number(p.price) || 0;
 
-                selectedGiftProduct = p;
-                closeGiftSelectionModal();
+                if (giftAllowance <= 0) {
+                    showGiftToast('ابتدا اقلامی را به سبد خرید اضافه فرمایید تا ۵٪ هدیه فعال شود.', 'fa-circle-info', '#d97706');
+                    return;
+                }
+
+                const currentUsed = getSelectedGiftsTotalValue();
+                const remaining = giftAllowance - currentUsed;
+
+                if (price > remaining) {
+                    showGiftToast(`ارزش این کالا (${price.toLocaleString('fa-IR')} ت) از باقیمانده سقف هدیه (${remaining.toLocaleString('fa-IR')} ت) بیشتر است.`, 'fa-triangle-exclamation', '#d97706');
+                    return;
+                }
+
+                const key = String(p.id || p.code);
+                selectedGiftProducts[key] = (selectedGiftProducts[key] || 0) + 1;
+
                 updateCartBar();
                 refreshOrderSummaryList();
+                renderGiftProductList();
+                updateGiftModalTracker();
 
-                if (giftAllowance > 0 && price <= giftAllowance) {
-                    showGiftToast(`🎁 محصول «${p.name}» به عنوان هدیه ۱۰۰٪ رایگان به سفارش شما اضافه شد!`, 'fa-gift', '#059669');
-                } else if (giftAllowance > 0 && price > giftAllowance) {
-                    const neededSubtotal = Math.ceil(price / 0.05);
-                    showGiftToast(`🎁 کالای «${p.name}» به عنوان هدیه انتخاب شد. با افزایش مجموع سفارش به ${neededSubtotal.toLocaleString('fa-IR')} تومان، این هدیه ۱۰۰٪ رایگان خواهد شد.`, 'fa-gift', '#059669');
+                const newRemaining = Math.max(0, remaining - price);
+                if (newRemaining > 0) {
+                    showGiftToast(`🎁 «${p.name}» اضافه شد. (باقیمانده سقف: ${newRemaining.toLocaleString('fa-IR')} ت)`, 'fa-gift', '#059669');
                 } else {
-                    const neededSubtotal = Math.ceil(price / 0.05);
-                    showGiftToast(`🎁 محصول «${p.name}» به عنوان هدیه انتخابی نشان شد. با خرید حداقل ${neededSubtotal.toLocaleString('fa-IR')} تومان کالا، این هدیه ۱۰۰٪ رایگان فعال می‌شود.`, 'fa-gift', '#059669');
+                    showGiftToast(`🎁 «${p.name}» به هدایا اضافه شد و سقف هدیه شما تکمیل گردید!`, 'fa-gift', '#059669');
                 }
             } catch (err) {
-                console.error('Error selecting gift product:', err);
+                console.error('Error adding gift product:', err);
             }
         }
 
-        function removeGiftProduct() {
-            selectedGiftProduct = null;
-            updateCartBar();
-            refreshOrderSummaryList();
-            renderGiftProductList();
-            const badgeEl = document.getElementById('giftSelectedBadgeInModal');
-            if (badgeEl) badgeEl.style.display = 'none';
-            showGiftToast('محصول هدیه از سفارش شما برداشته شد.', 'fa-trash-can', '#ef4444');
+        // Backward-compatible alias
+        function selectGiftProduct(productId, e) {
+            addGiftProduct(productId, e);
+        }
+
+        function decreaseGiftProduct(productId, e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            try {
+                const key = String(productId);
+                if (selectedGiftProducts[key] > 1) {
+                    selectedGiftProducts[key]--;
+                } else {
+                    delete selectedGiftProducts[key];
+                }
+                updateCartBar();
+                refreshOrderSummaryList();
+                renderGiftProductList();
+                updateGiftModalTracker();
+            } catch (err) {
+                console.error('Error decreasing gift product:', err);
+            }
+        }
+
+        function removeGiftProduct(productId, e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            try {
+                if (productId) {
+                    delete selectedGiftProducts[String(productId)];
+                    showGiftToast('کالای هدیه حذف شد.', 'fa-trash-can', '#ef4444');
+                } else {
+                    selectedGiftProducts = {};
+                    showGiftToast('همه کالاهای هدیه برداشته شدند.', 'fa-trash-can', '#ef4444');
+                }
+                updateCartBar();
+                refreshOrderSummaryList();
+                renderGiftProductList();
+                updateGiftModalTracker();
+            } catch (err) {
+                console.error('Error removing gift product:', err);
+            }
         }
 
         function showGiftToast(message, icon = 'fa-gift', color = '#059669') {
@@ -3813,6 +3989,7 @@
 
             const itemsSubtotal = calculateCartTotal();
             const giftAllowance = Math.round(itemsSubtotal * 0.05);
+            const remainingAllowance = getRemainingGiftAllowance();
             const query = (document.getElementById('giftSearchInput')?.value || '').trim().toLowerCase();
 
             // All valid products
@@ -3834,10 +4011,10 @@
             }
 
             // Partition products:
-            // 1. Eligible for 100% free gift (price <= giftAllowance)
+            // 1. Eligible for 100% free gift with remaining allowance (price <= remainingAllowance)
             // 2. Other products
-            const eligible = allValid.filter(p => (Number(p.price) || 0) <= giftAllowance && giftAllowance > 0);
-            const otherItems = allValid.filter(p => (Number(p.price) || 0) > giftAllowance || giftAllowance === 0);
+            const eligible = allValid.filter(p => (Number(p.price) || 0) <= remainingAllowance && remainingAllowance > 0);
+            const otherItems = allValid.filter(p => (Number(p.price) || 0) > remainingAllowance || remainingAllowance === 0);
 
             // Sort eligible by price descending (highest value free gifts first)
             eligible.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
@@ -3846,7 +4023,7 @@
 
             if (countText) {
                 if (giftAllowance > 0) {
-                    countText.textContent = `${eligible.length.toLocaleString('fa-IR')} کالا واجد شرایط ۱۰۰٪ رایگان (${allValid.length.toLocaleString('fa-IR')} کل)`;
+                    countText.textContent = `${eligible.length.toLocaleString('fa-IR')} کالا واجد شرایط با باقیمانده سقف (${allValid.length.toLocaleString('fa-IR')} کل)`;
                 } else {
                     countText.textContent = `${allValid.length.toLocaleString('fa-IR')} محصول موجود در لیست هدایا`;
                 }
@@ -3861,35 +4038,61 @@
                         <i class="fa-solid fa-gift" style="font-size:1.6rem; color:#059669; margin-bottom:4px; display:block;"></i>
                         <strong style="font-size:0.88rem; color:#1e293b; display:block; margin-bottom:4px;">مشاهده و انتخاب کالای هدیه ۵٪</strong>
                         <p style="font-size:0.8rem; margin:0; line-height:1.6; color:#64748b;">
-                            با خرید از فروشگاه، به میزان <strong>۵٪ مبلغ فاکتور</strong> می‌توانید هر یک از کالاهای زیر را به عنوان <strong>هدیه ۱۰۰٪ رایگان</strong> دریافت کنید:
-                        </p>
-                    </div>
-                `;
-            } else if (eligible.length === 0) {
-                const minPrice = allValid.length > 0 ? Number(otherItems[0]?.price || 25000) : 25000;
-                const neededCart = Math.max(0, Math.ceil((minPrice - giftAllowance) / 0.05));
-                html += `
-                    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:12px 14px; color:#92400e; margin-bottom:6px;">
-                        <div style="display:flex; align-items:center; gap:8px; font-weight:bold; font-size:0.86rem; margin-bottom:3px;">
-                            <i class="fa-solid fa-circle-info" style="color:#d97706;"></i>
-                            <span>سقف هدیه فعلی: ${giftAllowance.toLocaleString('fa-IR')} تومان</span>
-                        </div>
-                        <p style="font-size:0.78rem; margin:0; line-height:1.6; color:#78350f;">
-                            کمترین قیمت کالای هدیه در این دسته <strong>${minPrice.toLocaleString('fa-IR')} تومان</strong> است. با افزودن تنها <strong>${neededCart.toLocaleString('fa-IR')} تومان</strong> دیگر به سبد خرید، این کالا به صورت ۱۰۰٪ رایگان فعال می‌شود.
+                            با خرید از فروشگاه، به میزان <strong>۵٪ مبلغ فاکتور</strong> می‌توانید کالای هدیه ۱۰۰٪ رایگان انتخاب فرمایید.
                         </p>
                     </div>
                 `;
             }
 
-            if (allValid.length === 0) {
-                html += `
-                    <div style="text-align:center; padding:30px 15px; color:#94a3b8;">
-                        <i class="fa-solid fa-box-open" style="font-size:2.2rem; margin-bottom:8px; display:block;"></i>
-                        <p style="font-size:0.85rem; color:#64748b;">کالایی با این عنوان در این دسته‌بندی یافت نشد.</p>
+            function renderProductRow(p, isEligible) {
+                const price = Number(p.price) || 0;
+                const giftQty = selectedGiftProducts[String(p.id || p.code)] || 0;
+                const isSelected = giftQty > 0;
+                const canAddMore = isEligible;
+                const categoryName = getCategoryLabel(p.category);
+
+                return `
+                    <div class="gift-item-card" style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:${isSelected ? '#f0fdf4' : (isEligible ? '#ffffff' : '#f8fafc')}; border:1.5px solid ${isSelected ? '#10b981' : (isEligible ? '#e2e8f0' : '#e2e8f0')}; border-radius:12px; gap:10px; transition:all 0.2s ease;">
+                        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                            <img src="${p.image || 'https://via.placeholder.com/60?text=Gift'}" alt="${escapeHtml(p.name)}" style="width:48px; height:48px; object-fit:contain; border-radius:8px; background:#f8fafc; border:1px solid #e2e8f0; flex-shrink:0;">
+                            <div style="flex:1; min-width:0;">
+                                <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                                    <span style="background:#f1f5f9; color:#475569; font-size:0.68rem; padding:1px 5px; border-radius:5px; font-weight:bold;">کد ${escapeHtml(p.code || p.id)}</span>
+                                    <span style="color:#64748b; font-size:0.7rem;">${categoryName}</span>
+                                </div>
+                                <h4 style="margin:0 0 4px 0; font-size:0.85rem; color:#1e293b; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.name)}</h4>
+                                <div style="display:flex; align-items:center; gap:6px; font-size:0.75rem; flex-wrap:wrap;">
+                                    <span style="color:#64748b;">ارزش: <strong style="color:#1e293b;">${price.toLocaleString('fa-IR')} ت</strong></span>
+                                    ${isSelected ? `
+                                        <span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; padding:1px 6px; border-radius:8px; font-weight:bold; font-size:0.7rem;">🎁 ${giftQty.toLocaleString('fa-IR')} عدد انتخاب شد</span>
+                                    ` : (isEligible ? `
+                                        <span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; padding:1px 6px; border-radius:8px; font-weight:bold; font-size:0.7rem;">🎁 ۱۰۰٪ رایگان</span>
+                                    ` : `
+                                        <span style="color:#64748b; font-size:0.7rem;">(نیاز به سقف بیشتر)</span>
+                                    `)}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="flex-shrink:0;">
+                            ${isSelected ? `
+                                <div style="display:flex; align-items:center; gap:5px; background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:3px 6px;">
+                                    <button type="button" onclick="decreaseGiftProduct('${p.id || p.code}', event)" style="width:26px; height:26px; border-radius:7px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; font-weight:bold; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="کاهش تعداد">−</button>
+                                    <span style="font-weight:bold; font-size:0.85rem; color:#065f46; min-width:18px; text-align:center;">${giftQty.toLocaleString('fa-IR')}</span>
+                                    <button type="button" onclick="addGiftProduct('${p.id || p.code}', event)" style="width:26px; height:26px; border-radius:7px; border:none; background:${canAddMore ? '#059669' : '#cbd5e1'}; color:white; font-weight:bold; font-size:0.9rem; cursor:${canAddMore ? 'pointer' : 'not-allowed'}; display:flex; align-items:center; justify-content:center;" title="${canAddMore ? 'افزودن یک عدد دیگر' : 'سقف باقیمانده کافی نیست'}">+</button>
+                                    <button type="button" onclick="removeGiftProduct('${p.id || p.code}', event)" style="width:26px; height:26px; border-radius:7px; border:none; background:#fee2e2; color:#b91c1c; font-size:0.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; margin-right:2px;" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            ` : (canAddMore ? `
+                                <button type="button" class="btn btn-sm" onclick="addGiftProduct('${p.id || p.code}', event)" style="background:#059669; color:white; border:none; border-radius:8px; padding:6px 12px; font-size:0.78rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px; box-shadow:0 2px 5px rgba(5,150,105,0.2);">
+                                    <i class="fa-solid fa-plus"></i> انتخاب هدیه
+                                </button>
+                            ` : `
+                                <button type="button" class="btn btn-sm" onclick="showGiftToast('برای افزودن این کالا، به سقف هدیه بیشتری نیاز دارید.', 'fa-circle-info', '#d97706')" style="background:#f1f5f9; color:#94a3b8; border:1px solid #cbd5e1; border-radius:8px; padding:6px 10px; font-size:0.74rem; cursor:not-allowed; display:flex; align-items:center; gap:3px;">
+                                    <i class="fa-solid fa-lock" style="font-size:0.7rem;"></i> سقف ناکافی
+                                </button>
+                            `)}
+                        </div>
                     </div>
                 `;
-                container.innerHTML = html;
-                return;
             }
 
             // 1. Render Eligible Free Gift Products
@@ -3897,101 +4100,26 @@
                 html += `
                     <div style="font-size:0.82rem; font-weight:bold; color:#065f46; display:flex; align-items:center; gap:6px; margin:4px 0;">
                         <i class="fa-solid fa-circle-check" style="color:#059669;"></i>
-                        <span>کالاهای ۱۰۰٪ رایگان مجاز (ارزش تا سقف ${giftAllowance.toLocaleString('fa-IR')} تومان):</span>
+                        <span>کالاهای قابل انتخاب با باقیمانده سقف (${remainingAllowance.toLocaleString('fa-IR')} ت):</span>
                     </div>
                 `;
-
                 eligible.forEach(p => {
-                    const isSelected = selectedGiftProduct && (String(selectedGiftProduct.id) === String(p.id) || String(selectedGiftProduct.code) === String(p.code));
-                    const price = Number(p.price) || 0;
-                    const imgUrl = p.image || p.imageUrl || 'assets/placeholder.jpg';
-                    const categoryName = getCategoryLabel(p.category);
-
-                    html += `
-                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background:${isSelected ? '#ecfdf5' : '#ffffff'}; border:1.5px solid ${isSelected ? '#059669' : '#bbf7d0'}; border-radius:14px; transition:all 0.2s ease; box-shadow: ${isSelected ? '0 4px 12px rgba(5,150,105,0.15)' : '0 1px 3px rgba(0,0,0,0.03)'};">
-                            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
-                                <div style="position:relative; flex-shrink:0;">
-                                    <img src="${imgUrl}" alt="${escapeHtml(p.name)}" onerror="this.src='https://placehold.co/80x80?text=محصول'" style="width:48px; height:48px; object-fit:contain; border-radius:10px; background:#f8fafc; border:1px solid #e2e8f0;">
-                                    ${isSelected ? '<span style="position:absolute; top:-5px; right:-5px; background:#059669; color:white; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.65rem;"><i class="fa-solid fa-check"></i></span>' : ''}
-                                </div>
-                                <div style="min-width:0; flex:1;">
-                                    <div style="display:flex; align-items:center; gap:5px; margin-bottom:2px; flex-wrap:wrap;">
-                                        <span style="background:#f1f5f9; color:#475569; font-size:0.68rem; padding:1px 5px; border-radius:5px; font-weight:bold;">کد ${escapeHtml(p.code || p.id)}</span>
-                                        <span style="color:#64748b; font-size:0.7rem;">${categoryName}</span>
-                                    </div>
-                                    <h4 style="margin:0 0 4px 0; font-size:0.85rem; color:#1e293b; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.name)}</h4>
-                                    <div style="display:flex; align-items:center; gap:6px; font-size:0.75rem;">
-                                        <span style="color:#64748b;">ارزش: <strong style="color:#1e293b;">${price.toLocaleString('fa-IR')} ت</strong></span>
-                                        <span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; padding:1px 6px; border-radius:8px; font-weight:bold; font-size:0.7rem;">🎁 ۱۰۰٪ رایگان</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style="flex-shrink:0;">
-                                ${isSelected ? `
-                                    <button type="button" class="btn btn-sm" onclick="removeGiftProduct()" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:8px; padding:6px 10px; font-size:0.78rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px;" title="حذف این هدیه">
-                                        <i class="fa-solid fa-check"></i> انتخاب شده
-                                    </button>
-                                ` : `
-                                    <button type="button" class="btn btn-sm" onclick="selectGiftProduct('${p.id || p.code}')" style="background:#059669; color:white; border:none; border-radius:8px; padding:6px 12px; font-size:0.8rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px; box-shadow:0 2px 5px rgba(5,150,105,0.2);">
-                                        <i class="fa-solid fa-gift"></i> انتخاب هدیه
-                                    </button>
-                                `}
-                            </div>
-                        </div>
-                    `;
+                    html += renderProductRow(p, true);
                 });
             }
 
-            // 2. Render Other Products in the store
+            // 2. Render Other Products
             if (otherItems.length > 0) {
                 if (eligible.length > 0) {
                     html += `
                         <div style="font-size:0.8rem; font-weight:bold; color:#64748b; display:flex; align-items:center; gap:6px; margin:10px 0 4px 0; padding-top:6px; border-top:1px dashed #cbd5e1;">
                             <i class="fa-solid fa-gift" style="color:#94a3b8;"></i>
-                            <span>سایر هدایای پیشنهادی فروشگاه:</span>
+                            <span>سایر اقلام (نیازمند افزایش سقف هدیه یا حذف هدایای قبلی):</span>
                         </div>
                     `;
                 }
-
                 otherItems.forEach(p => {
-                    const isSelected = selectedGiftProduct && (String(selectedGiftProduct.id) === String(p.id) || String(selectedGiftProduct.code) === String(p.code));
-                    const price = Number(p.price) || 0;
-                    const imgUrl = p.image || p.imageUrl || 'assets/placeholder.jpg';
-                    const categoryName = getCategoryLabel(p.category);
-                    const neededSubtotal = Math.ceil(price / 0.05);
-
-                    html += `
-                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; background:${isSelected ? '#ecfdf5' : '#ffffff'}; border:1px solid ${isSelected ? '#059669' : '#e2e8f0'}; border-radius:12px; transition:all 0.2s ease;">
-                            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
-                                <div style="position:relative; flex-shrink:0;">
-                                    <img src="${imgUrl}" alt="${escapeHtml(p.name)}" onerror="this.src='https://placehold.co/80x80?text=محصول'" style="width:44px; height:44px; object-fit:contain; border-radius:8px; background:#f8fafc; border:1px solid #e2e8f0;">
-                                    ${isSelected ? '<span style="position:absolute; top:-5px; right:-5px; background:#059669; color:white; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.65rem;"><i class="fa-solid fa-check"></i></span>' : ''}
-                                </div>
-                                <div style="min-width:0; flex:1;">
-                                    <div style="display:flex; align-items:center; gap:5px; margin-bottom:2px;">
-                                        <span style="background:#f1f5f9; color:#475569; font-size:0.66rem; padding:1px 4px; border-radius:4px;">کد ${escapeHtml(p.code || p.id)}</span>
-                                        <span style="color:#64748b; font-size:0.68rem;">${categoryName}</span>
-                                    </div>
-                                    <h4 style="margin:0 0 3px 0; font-size:0.83rem; color:#334155; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.name)}</h4>
-                                    <div style="font-size:0.74rem; color:#64748b; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                                        <span>قیمت: <strong style="color:#1e293b;">${price.toLocaleString('fa-IR')} ت</strong></span>
-                                        <span style="color:#047857; background:#dcfce7; padding:1px 6px; border-radius:6px; font-size:0.68rem; font-weight:bold;">رایگان با ${neededSubtotal.toLocaleString('fa-IR')} ت خرید</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style="flex-shrink:0;">
-                                ${isSelected ? `
-                                    <button type="button" class="btn btn-sm" onclick="removeGiftProduct()" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:8px; padding:6px 10px; font-size:0.76rem; font-weight:bold; cursor:pointer;" title="حذف این هدیه">
-                                        <i class="fa-solid fa-check"></i> انتخاب شده
-                                    </button>
-                                ` : `
-                                    <button type="button" class="btn btn-sm" onclick="selectGiftProduct('${p.id || p.code}')" style="background:#f1f5f9; color:#0f766e; border:1px solid #cbd5e1; border-radius:8px; padding:6px 11px; font-size:0.78rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                                        <i class="fa-solid fa-gift"></i> انتخاب هدیه
-                                    </button>
-                                `}
-                            </div>
-                        </div>
-                    `;
+                    html += renderProductRow(p, false);
                 });
             }
 
@@ -4023,19 +4151,58 @@
             // 5% Gift Offer Box
             const giftAllowance = Math.round(itemsSubtotal * 0.05);
             if (giftAllowance > 0) {
-                // If previously selected gift is now over the new quota (e.g. cart items decreased), clear it
-                if (selectedGiftProduct && Number(selectedGiftProduct.price) > giftAllowance) {
-                    selectedGiftProduct = null;
+                // If total used gift value exceeds quota due to cart changes, trim excess
+                let usedGiftVal = getSelectedGiftsTotalValue();
+                if (usedGiftVal > giftAllowance) {
+                    for (const key of Object.keys(selectedGiftProducts)) {
+                        while (selectedGiftProducts[key] > 0 && getSelectedGiftsTotalValue() > giftAllowance) {
+                            selectedGiftProducts[key]--;
+                            if (selectedGiftProducts[key] === 0) delete selectedGiftProducts[key];
+                        }
+                    }
+                    usedGiftVal = getSelectedGiftsTotalValue();
                 }
+
+                const giftsList = getSelectedGiftsList();
+                const totalGiftCount = getSelectedGiftsCount();
+                const remainingAllowance = Math.max(0, giftAllowance - usedGiftVal);
 
                 const giftBox = document.createElement('div');
                 giftBox.className = 'gift-offer-box';
                 giftBox.style.cssText = 'background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:1.5px solid #10b981; border-radius:12px; padding:12px 14px; margin:10px 0; cursor:pointer; box-shadow:0 2px 8px rgba(16,185,129,0.15); transition:transform 0.2s ease;';
                 giftBox.onclick = function(e) {
-                    if (e.target.tagName !== 'BUTTON') {
+                    if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
                         openGiftSelectionModal();
                     }
                 };
+
+                let giftItemsHtml = '';
+                if (giftsList.length > 0) {
+                    giftItemsHtml = `<div style="margin-top:10px; padding-top:8px; border-top:1px dashed #6ee7b7; display:flex; flex-direction:column; gap:6px;">`;
+                    giftsList.forEach(g => {
+                        giftItemsHtml += `
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#065f46;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <i class="fa-solid fa-gift" style="color:#059669; font-size:0.85rem;"></i>
+                                    <span><strong>${escapeHtml(g.product.name)}</strong> × ${g.qty.toLocaleString('fa-IR')}</span>
+                                    <span style="color:#64748b; font-size:0.75rem;">(${g.totalRealPrice.toLocaleString('fa-IR')} ت)</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span style="font-weight:bold; color:#059669; background:#dcfce7; padding:1px 6px; border-radius:8px; font-size:0.7rem;">۱۰۰٪ رایگان</span>
+                                    <button type="button" onclick="event.stopPropagation(); removeGiftProduct('${g.product.id || g.product.code}', event);" style="background:transparent; border:none; color:#ef4444; font-size:0.85rem; cursor:pointer; padding:2px 4px;" title="حذف این هدیه">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    giftItemsHtml += `
+                        <div style="margin-top:4px; padding-top:6px; border-top:1px dotted #a7f3d0; font-size:0.76rem; color:#047857; display:flex; justify-content:space-between; align-items:center;">
+                            <span>مجموع ارزش هدایا: <strong>${usedGiftVal.toLocaleString('fa-IR')} تومان</strong></span>
+                            <span>باقیمانده سقف: <strong>${remainingAllowance.toLocaleString('fa-IR')} تومان</strong></span>
+                        </div>
+                    </div>`;
+                }
 
                 giftBox.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -4048,35 +4215,24 @@
                                     ۵٪ هدیه رایگان روی سفارش شما:
                                 </strong>
                                 <span style="font-size:0.78rem; color:#047857; display:block; margin-top:2px;">
-                                    سقف انتخاب کالا: <strong>${giftAllowance.toLocaleString('fa-IR')} تومان</strong>
+                                    سقف کل انتخاب کالا: <strong>${giftAllowance.toLocaleString('fa-IR')} تومان</strong>
                                 </span>
                             </div>
                         </div>
                         <button type="button" class="btn btn-sm" onclick="openGiftSelectionModal()" style="background:#059669; color:white; border:none; border-radius:20px; padding:6px 14px; font-size:0.78rem; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(5,150,105,0.25);">
-                            ${selectedGiftProduct ? '🎁 تغییر محصول هدیه' : '🎁 انتخاب کالای هدیه'}
+                            ${giftsList.length > 0 ? `🎁 مدیریت هدایا (${totalGiftCount.toLocaleString('fa-IR')})` : '🎁 انتخاب کالاهای هدیه'}
                         </button>
                     </div>
-                    ${selectedGiftProduct ? `
-                        <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #6ee7b7; font-size:0.82rem; color:#065f46; display:flex; justify-content:space-between; align-items:center;">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <i class="fa-solid fa-circle-check" style="color:#059669; font-size:0.9rem;"></i>
-                                <span>هدیه انتخابی شما: <strong>${escapeHtml(selectedGiftProduct.name)}</strong></span>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <span style="font-weight:bold; color:#059669; background:#dcfce7; padding:2px 8px; border-radius:10px; font-size:0.75rem;">۱۰۰٪ رایگان</span>
-                                <button type="button" onclick="event.stopPropagation(); removeGiftProduct();" style="background:transparent; border:none; color:#ef4444; font-size:0.8rem; cursor:pointer; padding:2px 4px;" title="حذف هدیه">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-                        </div>
-                    ` : `
+                    ${giftsList.length > 0 ? giftItemsHtml : `
                         <div style="margin-top:8px; font-size:0.76rem; color:#047857; display:flex; align-items:center; gap:4px;">
                             <i class="fa-solid fa-hand-pointer" style="font-size:0.7rem;"></i>
-                            <span>برای مشاهده و انتخاب کالاهای واجد شرایط، روی این بخش کلیک کنید.</span>
+                            <span>برای انتخاب یک یا چند قلم کالا تا سقف ۵٪، روی این بخش کلیک کنید.</span>
                         </div>
                     `}
                 `;
                 summaryList.appendChild(giftBox);
+            } else {
+                selectedGiftProducts = {};
             }
 
             // Subtotal Row
@@ -4262,18 +4418,21 @@
                 }
             }
 
-            // If a gift product was selected, add it to order items as a free gift
-            if (selectedGiftProduct) {
-                orderItems.push({
-                    id: 'gift-' + (selectedGiftProduct.id || selectedGiftProduct.code || Date.now()),
-                    productId: selectedGiftProduct.id || selectedGiftProduct.code,
-                    code: selectedGiftProduct.code || selectedGiftProduct.id,
-                    name: '🎁 هدیه خرید (رایگان ۵٪): ' + selectedGiftProduct.name,
-                    qty: 1,
-                    price: 0,
-                    realPrice: Number(selectedGiftProduct.price) || 0,
-                    isGift: true,
-                    total: 0
+            // If gift products were selected, add them to order items as free gifts
+            const giftsList = getSelectedGiftsList();
+            if (giftsList.length > 0) {
+                giftsList.forEach(g => {
+                    orderItems.push({
+                        id: 'gift-' + (g.product.id || g.product.code || Date.now()) + '-' + Math.random().toString(36).substring(2, 5),
+                        productId: g.product.id || g.product.code,
+                        code: g.product.code || g.product.id,
+                        name: '🎁 هدیه خرید (رایگان ۵٪): ' + g.product.name,
+                        qty: g.qty,
+                        price: 0,
+                        realPrice: Number(g.product.price) || 0,
+                        isGift: true,
+                        total: 0
+                    });
                 });
             }
 
@@ -4289,11 +4448,12 @@
                 address,
                 note,
                 items: orderItems,
-                giftItem: selectedGiftProduct ? {
-                    id: selectedGiftProduct.id || selectedGiftProduct.code,
-                    name: selectedGiftProduct.name,
-                    price: selectedGiftProduct.price
-                } : null,
+                giftItems: giftsList.map(g => ({
+                    id: g.product.id || g.product.code,
+                    name: g.product.name,
+                    qty: g.qty,
+                    price: g.product.price
+                })),
                 totalAmount,
                 paymentMethod: 'whatsapp',
                 deliveryType: selectedDeliveryType,
@@ -4342,8 +4502,11 @@
                 }
             }
 
-            if (selectedGiftProduct) {
-                orderText += `🎁 *هدیه رایگان ۵٪ خرید:* ${selectedGiftProduct.name} (ارزش: ${(Number(selectedGiftProduct.price) || 0).toLocaleString('fa-IR')} تومان - کاملاً رایگان)\n`;
+            if (giftsList.length > 0) {
+                orderText += `\n🎁 *اقلام هدیه رایگان ۵٪ خرید:*\n`;
+                giftsList.forEach(g => {
+                    orderText += `▫️ ${g.product.name} × ${g.qty} عدد (ارزش هر عدد: ${(Number(g.product.price) || 0).toLocaleString('fa-IR')} تومان - کاملاً رایگان)\n`;
+                });
             }
 
             if (selectedDeliveryType === 'express') {
@@ -4390,7 +4553,7 @@
             } finally {
                 closeCheckoutModal();
                 cart = {};
-                selectedGiftProduct = null;
+                selectedGiftProducts = {};
                 updateCartBar();
                 renderProducts();
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnHtml; }
