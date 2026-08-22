@@ -313,3 +313,33 @@ export async function saveAdminAuthConfigToFirestore(configData) {
     return false;
   }
 }
+
+// --- DELIVERY SETTINGS ---
+export async function getDeliverySettingsFromFirestore() {
+  const database = getFirestoreDb();
+  if (!database) return null;
+  try {
+    const docRef = doc(database, 'config', 'delivery');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data();
+    }
+    return null;
+  } catch (err) {
+    handleFirestoreError('getting delivery settings', err);
+    return null;
+  }
+}
+
+export async function saveDeliverySettingsToFirestore(settingObj) {
+  const database = getFirestoreDb();
+  if (!database || !settingObj) return false;
+  try {
+    const docRef = doc(database, 'config', 'delivery');
+    await setDoc(docRef, settingObj, { merge: true });
+    return true;
+  } catch (err) {
+    handleFirestoreError('saving delivery settings', err);
+    return false;
+  }
+}

@@ -17,7 +17,9 @@ import {
   deleteCompanyPaymentFromFirestore,
   getPurchasesFromFirestore,
   savePurchaseToFirestore,
-  deletePurchaseFromFirestore
+  deletePurchaseFromFirestore,
+  getDeliverySettingsFromFirestore,
+  saveDeliverySettingsToFirestore
 } from './firestore.js';
 import {
   initCloudSql,
@@ -38,7 +40,9 @@ import {
   getAllPurchasesCloudSql,
   deletePurchaseCloudSql,
   getBankSettingsCloudSql,
-  saveBankSettingsCloudSql
+  saveBankSettingsCloudSql,
+  getDeliverySettingsCloudSql,
+  saveDeliverySettingsCloudSql
 } from './cloudsql.js';
 import {
   seedSqliteFromJson,
@@ -54,6 +58,8 @@ import {
   savePurchaseSqlite,
   getAllPurchasesSqlite,
   deletePurchaseSqlite,
+  saveDeliverySettingsSqlite,
+  getDeliverySettingsSqlite,
   getDb
 } from './sqlite.js';
 
@@ -141,6 +147,16 @@ export async function ensureFirestoreLoaded() {
           purchasesListCache = fsPurs;
         } else {
           purchasesListCache = readJsonLocal(PURCHASES_FILE, []);
+        }
+      }
+
+      if (!deliverySettingsCache) {
+        const fsDelivery = await getDeliverySettingsFromFirestore();
+        if (fsDelivery && typeof fsDelivery === 'object' && typeof fsDelivery.isExpressDeliveryEnabled !== 'undefined') {
+          deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS, ...fsDelivery };
+          writeJson(DELIVERY_SETTINGS_FILE, deliverySettingsCache);
+          writeJson(ROOT_DELIVERY_SETTINGS_FILE, deliverySettingsCache);
+          try { saveDeliverySettingsSqlite(deliverySettingsCache); } catch (e) {}
         }
       }
     } catch (err) {
@@ -1979,6 +1995,14 @@ export const DEFAULT_DELIVERY_SETTINGS = {
 export function getDeliverySettings() {
   if (deliverySettingsCache) return deliverySettingsCache;
   try {
+    const sqliteLoaded = getDeliverySettingsSqlite();
+    if (sqliteLoaded && typeof sqliteLoaded === 'object' && typeof sqliteLoaded.isExpressDeliveryEnabled !== 'undefined') {
+      deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS, ...sqliteLoaded };
+      return deliverySettingsCache;
+    }
+  } catch (e) {}
+
+  try {
     if (fs.existsSync(DELIVERY_SETTINGS_FILE)) {
       const content = fs.readFileSync(DELIVERY_SETTINGS_FILE, 'utf8');
       if (content && content.trim() !== 'null' && content.trim() !== '' && content.trim() !== '{}') {
@@ -2027,6 +2051,21 @@ export function saveDeliverySettings(settings) {
   } catch (e) {
     console.error('Error writing delivery settings file:', e);
   }
+
+  try {
+    saveDeliverySettingsSqlite(updated);
+  } catch (e) {
+    console.error('[SQLite] Error saving delivery settings:', e.message);
+  }
+
+  saveDeliverySettingsCloudSql(updated).catch(e => {
+    console.error('[Cloud SQL] Save delivery settings error:', e.message);
+  });
+
+  saveDeliverySettingsToFirestore(updated).catch(e => {
+    console.error('[Firestore] Save delivery settings error:', e.message);
+  });
+
   return updated;
 }
 
@@ -2045,6 +2084,18 @@ export async function initDatabaseSync() {
       }
     } catch (bErr) {
       console.error('[Database Sync] Bank settings hydrate error:', bErr.message);
+    }
+    try {
+      const sqlDelivery = await getDeliverySettingsCloudSql();
+      if (sqlDelivery && typeof sqlDelivery === 'object' && typeof sqlDelivery.isExpressDeliveryEnabled !== 'undefined') {
+        deliverySettingsCache = { ...DEFAULT_DELIVERY_SETTINGS, ...sqlDelivery };
+        writeJson(DELIVERY_SETTINGS_FILE, deliverySettingsCache);
+        writeJson(ROOT_DELIVERY_SETTINGS_FILE, deliverySettingsCache);
+        try { saveDeliverySettingsSqlite(deliverySettingsCache); } catch (e) {}
+        console.log('[Database Sync] Hydrated delivery settings from Supabase/Cloud SQL. isExpressDeliveryEnabled =', deliverySettingsCache.isExpressDeliveryEnabled);
+      }
+    } catch (dErr) {
+      console.error('[Database Sync] Delivery settings hydrate error:', dErr.message);
     }
   } catch (e) {
     console.error('Cloud SQL init notice:', e);

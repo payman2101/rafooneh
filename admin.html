@@ -5742,7 +5742,7 @@
         const isEditing = formEl && formEl.contains(document.activeElement);
 
         try {
-            const res = await api('/api/settings/delivery');
+            const res = await api('/api/settings/delivery?_=' + Date.now());
             if (res && res.ok) {
                 const data = await res.json();
                 if (data && data.settings) {
