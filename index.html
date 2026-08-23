@@ -694,16 +694,27 @@
             background: linear-gradient(135deg, var(--whatsapp), var(--whatsapp-dark));
             color: white;
             border: none;
-            padding: 12px 22px;
+            padding: 10px 18px;
             border-radius: 12px;
-            font-weight: bold;
+            font-weight: 800;
             font-size: 0.95rem;
             cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
-            transition: transform 0.2s;
+            box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            flex-shrink: 0;
+            user-select: none;
+            touch-action: manipulation;
+            min-height: 44px;
+        }
+
+        .btn-checkout:hover {
+            box-shadow: 0 6px 18px rgba(37, 211, 102, 0.5);
+            transform: translateY(-1px);
         }
 
         .btn-checkout:active {
@@ -850,18 +861,31 @@
             background: linear-gradient(135deg, var(--whatsapp), var(--whatsapp-dark));
             color: white;
             border: none;
-            padding: 14px;
+            padding: 13px 18px;
             border-radius: 12px;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 0.98rem;
+            font-weight: 800;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            margin-top: 10px;
+            margin-top: 12px;
             box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 48px;
+            user-select: none;
+            touch-action: manipulation;
+            line-height: 1.35;
+        }
+
+        .btn-submit-order:hover {
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.55);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit-order:active {
+            transform: scale(0.98);
         }
 
         /* Payment Methods */
@@ -2040,14 +2064,87 @@
 
         @media (max-width: 768px) {
             body {
-                padding-bottom: 120px !important;
+                padding-bottom: 140px !important;
             }
             .mobile-bottom-nav {
                 display: block;
             }
             .bottom-cart-bar {
-                bottom: 72px !important;
+                bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 8px) !important;
+                left: 10px !important;
+                right: 10px !important;
+                width: calc(100% - 20px) !important;
+                max-width: 540px !important;
+                margin: 0 auto !important;
+                border-radius: 16px !important;
+                padding: 8px 12px !important;
+                box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 137, 123, 0.15) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 8px !important;
             }
+            .cart-info {
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                flex-shrink: 0 !important;
+            }
+            .cart-icon-wrapper {
+                width: 38px !important;
+                height: 38px !important;
+                font-size: 1rem !important;
+                border-radius: 10px !important;
+            }
+            .cart-total-text {
+                font-size: 0.68rem !important;
+                color: #64748b !important;
+            }
+            .cart-total-price {
+                font-size: 0.92rem !important;
+                font-weight: 800 !important;
+                color: var(--primary-dark) !important;
+                white-space: nowrap !important;
+            }
+            .cart-bar-gift-pill {
+                padding: 4px 8px !important;
+                gap: 5px !important;
+                border-radius: 12px !important;
+                flex-shrink: 1 !important;
+                min-width: 0 !important;
+            }
+            .gift-icon-sparkle {
+                width: 24px !important;
+                height: 24px !important;
+                font-size: 0.75rem !important;
+            }
+            .gift-pill-title {
+                display: none !important;
+            }
+            .gift-pill-amount {
+                font-size: 0.74rem !important;
+                white-space: nowrap !important;
+            }
+            .gift-pill-action {
+                font-size: 0.68rem !important;
+                padding: 2px 6px !important;
+                white-space: nowrap !important;
+            }
+            .btn-checkout {
+                padding: 9px 15px !important;
+                font-size: 0.88rem !important;
+                font-weight: 800 !important;
+                gap: 6px !important;
+                min-height: 42px !important;
+                border-radius: 11px !important;
+                box-shadow: 0 3px 12px rgba(37, 211, 102, 0.4) !important;
+                white-space: nowrap !important;
+                flex-shrink: 0 !important;
+            }
+            .btn-checkout i {
+                font-size: 1.15rem !important;
+            }
+
             header {
                 padding: 14px 12px;
             }
@@ -2219,8 +2316,9 @@
 
             /* Submit Button Mobile Wrap Safety */
             .btn-submit-order {
-                font-size: 0.85rem !important;
-                padding: 12px 10px !important;
+                font-size: 0.92rem !important;
+                padding: 12px 14px !important;
+                min-height: 48px !important;
                 line-height: 1.35 !important;
                 text-align: center !important;
                 justify-content: center !important;
@@ -2279,30 +2377,76 @@
             .btn-add, .qty-picker {
                 width: 100%;
                 justify-content: center;
-                height: 32px;
+                height: 34px;
                 font-size: 0.8rem;
                 border-radius: 8px;
             }
             .qty-picker .qty-btn {
-                width: 32px;
-                height: 32px;
+                width: 34px;
+                height: 34px;
             }
             .bottom-cart-bar {
-                bottom: 70px !important;
-                padding: 10px 12px;
-                border-radius: 14px;
-                margin: 0 8px;
-                width: calc(100% - 16px) !important;
-                left: 0;
-                right: 0;
+                padding: 7px 10px !important;
+                gap: 6px !important;
             }
-            .btn-checkout {
-                padding: 10px 12px;
-                font-size: 0.82rem;
-                gap: 6px;
+            .cart-total-text {
+                display: none !important;
             }
             .cart-total-price {
-                font-size: 0.95rem;
+                font-size: 0.88rem !important;
+            }
+            .btn-checkout {
+                padding: 8px 12px !important;
+                font-size: 0.84rem !important;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .bottom-cart-bar {
+                padding: 6px 8px !important;
+                gap: 4px !important;
+            }
+            .cart-info {
+                gap: 6px !important;
+            }
+            .cart-icon-wrapper {
+                width: 34px !important;
+                height: 34px !important;
+                font-size: 0.9rem !important;
+            }
+            .cart-total-price {
+                font-size: 0.82rem !important;
+            }
+            .cart-bar-gift-pill {
+                padding: 3px 6px !important;
+                gap: 4px !important;
+            }
+            .gift-pill-action {
+                display: none !important;
+            }
+            .gift-pill-amount {
+                font-size: 0.7rem !important;
+            }
+            .btn-checkout {
+                padding: 8px 11px !important;
+                font-size: 0.82rem !important;
+                gap: 5px !important;
+            }
+            .btn-checkout i {
+                font-size: 1rem !important;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .cart-bar-gift-pill {
+                display: none !important; /* Prioritize checkout and total price on extra narrow screens */
+            }
+            .bottom-cart-bar {
+                padding: 6px 8px !important;
+            }
+            .btn-checkout {
+                padding: 8px 10px !important;
+                font-size: 0.8rem !important;
             }
         }
     </style>
@@ -2524,7 +2668,7 @@
 
                 <button type="submit" class="btn-submit-order" id="submitBtn">
                     <i class="fa-brands fa-whatsapp" style="font-size: 1.3rem;"></i>
-                    ثبت سفارش و ارسال به واتساپ (989027959555)
+                    <span>ثبت نهایی سفارش و ارسال به واتساپ</span>
                 </button>
             </form>
         </div>
@@ -2788,7 +2932,7 @@
             <div style="display:flex; flex-direction:column; gap:10px;">
                 <button class="btn-submit-order" onclick="sendReceiptToWhatsApp()">
                     <i class="fa-brands fa-whatsapp" style="font-size: 1.2rem;"></i>
-                    ارسال فاکتور به واتساپ پشتیبانی (09027959555)
+                    <span>ارسال فاکتور به واتساپ پشتیبانی</span>
                 </button>
                 <button class="btn-cancel-pay" onclick="finishOrderAndClose()" style="width:100%;">
                     بازگشت به فروشگاه
