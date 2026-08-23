@@ -3558,7 +3558,7 @@
         const EXPRESS_PER_KM_FEE = 20000;
 
         let storeDeliverySettings = {
-            isExpressDeliveryEnabled: true,
+            isExpressDeliveryEnabled: false,
             disabledNoticeMessage: 'در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.',
             expressBaseFee: 100000,
             expressPerKmFee: 20000,
@@ -3609,7 +3609,7 @@
         }
 
         function applyStoreDeliverySettingsUI() {
-            const isExpressAvailable = storeDeliverySettings.isExpressDeliveryEnabled !== false;
+            const isExpressAvailable = storeDeliverySettings.isExpressDeliveryEnabled === true;
             const expressOptionEl = document.getElementById('optionDeliveryExpress');
             const disabledNoticeEl = document.getElementById('expressDeliveryDisabledNotice');
             const disabledNoticeTextEl = document.getElementById('expressDeliveryDisabledNoticeText');

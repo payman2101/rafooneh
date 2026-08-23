@@ -5753,7 +5753,7 @@
     // Delivery & Express Control Module
     // ==========================================
     let currentDeliverySettings = {
-        isExpressDeliveryEnabled: true,
+        isExpressDeliveryEnabled: false,
         disabledNoticeMessage: 'در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.',
         expressBaseFee: 100000,
         expressPerKmFee: 20000,
@@ -5793,7 +5793,7 @@
         }
 
         if (force || !isEditing) {
-            const isEnabled = currentDeliverySettings.isExpressDeliveryEnabled !== false;
+            const isEnabled = currentDeliverySettings.isExpressDeliveryEnabled === true;
             const switchEl = document.getElementById('isExpressDeliveryEnabledSwitch');
             if (switchEl) switchEl.checked = isEnabled;
 
@@ -5828,7 +5828,7 @@
 
     function updateDeliverySettingsUI() {
         const switchEl = document.getElementById('isExpressDeliveryEnabledSwitch');
-        const isEnabled = switchEl ? switchEl.checked : (currentDeliverySettings.isExpressDeliveryEnabled !== false);
+        const isEnabled = switchEl ? switchEl.checked : (currentDeliverySettings.isExpressDeliveryEnabled === true);
         
         const cardBox = document.getElementById('expressStatusCard');
         const iconBox = document.getElementById('expressStatusIconBox');
@@ -5983,7 +5983,7 @@
     }
 
     async function toggleQuickExpressStatus() {
-        const currentlyEnabled = currentDeliverySettings.isExpressDeliveryEnabled !== false;
+        const currentlyEnabled = currentDeliverySettings.isExpressDeliveryEnabled === true;
         const newStatus = !currentlyEnabled;
         
         currentDeliverySettings.isExpressDeliveryEnabled = newStatus;
@@ -6022,7 +6022,7 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...';
         }
 
-        const isEnabled = document.getElementById('isExpressDeliveryEnabledSwitch')?.checked ?? true;
+        const isEnabled = document.getElementById('isExpressDeliveryEnabledSwitch')?.checked ?? false;
         const disabledNotice = document.getElementById('disabledNoticeMessageInput')?.value?.trim() || '';
         const baseFee = Number(document.getElementById('expressBaseFeeInput')?.value) || 100000;
         const perKmFee = Number(document.getElementById('expressPerKmFeeInput')?.value) || 20000;

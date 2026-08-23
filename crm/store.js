@@ -1982,7 +1982,7 @@ export function saveBankSettings(settings) {
 }
 
 export const DEFAULT_DELIVERY_SETTINGS = {
-  isExpressDeliveryEnabled: true,
+  isExpressDeliveryEnabled: false,
   disabledNoticeMessage: 'در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.',
   expressBaseFee: 100000,
   expressPerKmFee: 20000,

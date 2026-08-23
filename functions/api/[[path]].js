@@ -94,7 +94,7 @@ let memoryBankSettings = {
 };
 
 let memoryDeliverySettings = {
-  isExpressDeliveryEnabled: true,
+  isExpressDeliveryEnabled: false,
   disabledNoticeMessage: 'در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.',
   expressBaseFee: 100000,
   expressPerKmFee: 20000,
@@ -684,6 +684,39 @@ async function saveBankSettingsToPg(env, settings) {
     return true;
   } catch (err) {
     console.error('[Supabase Save Bank Settings Exception]:', err);
+    return false;
+  }
+}
+
+// Delivery Settings DB Helpers
+async function getDeliverySettingsFromPg(env) {
+  try {
+    const supabase = getSupabaseClient(env);
+    if (!supabase) return null;
+    const { data: sData, error: sErr } = await supabase.from('settings').select('*').eq('key', 'delivery_settings').limit(1);
+    if (!sErr && sData && sData.length > 0) {
+      const val = typeof sData[0].value === 'string' ? JSON.parse(sData[0].value) : sData[0].value;
+      if (val && typeof val === 'object') return val;
+    }
+  } catch (err) {
+    console.error('[Supabase Get Delivery Settings Error]:', err);
+  }
+  return null;
+}
+
+async function saveDeliverySettingsToPg(env, settings) {
+  try {
+    const supabase = getSupabaseClient(env);
+    if (!supabase) return false;
+    const sPayload = {
+      key: 'delivery_settings',
+      value: JSON.stringify(settings),
+      updated_at: settings.updatedAt || new Date().toISOString()
+    };
+    await supabase.from('settings').upsert(sPayload, { onConflict: 'key' });
+    return true;
+  } catch (err) {
+    console.error('[Supabase Save Delivery Settings Exception]:', err);
     return false;
   }
 }
@@ -1812,9 +1845,22 @@ export async function onRequest(context) {
   // --- DELIVERY & EXPRESS SETTINGS ENDPOINTS ---
   if (path === '/api/settings/delivery' || path === '/api/admin/settings/delivery') {
     if (method === 'POST') {
+      let isEnabled = false;
+      if (typeof body.isExpressDeliveryEnabled === 'boolean') {
+        isEnabled = body.isExpressDeliveryEnabled;
+      } else if (body.isExpressDeliveryEnabled === 'false' || body.isExpressDeliveryEnabled === 0 || body.isExpressDeliveryEnabled === '0') {
+        isEnabled = false;
+      } else if (body.isExpressDeliveryEnabled === 'true' || body.isExpressDeliveryEnabled === 1 || body.isExpressDeliveryEnabled === '1') {
+        isEnabled = true;
+      } else if (body.isExpressDeliveryEnabled !== undefined) {
+        isEnabled = Boolean(body.isExpressDeliveryEnabled);
+      } else {
+        isEnabled = memoryDeliverySettings.isExpressDeliveryEnabled;
+      }
+
       memoryDeliverySettings = {
         ...memoryDeliverySettings,
-        isExpressDeliveryEnabled: typeof body.isExpressDeliveryEnabled === 'boolean' ? body.isExpressDeliveryEnabled : Boolean(body.isExpressDeliveryEnabled),
+        isExpressDeliveryEnabled: isEnabled,
         disabledNoticeMessage: body.disabledNoticeMessage !== undefined ? String(body.disabledNoticeMessage).trim() : memoryDeliverySettings.disabledNoticeMessage,
         expressBaseFee: !isNaN(Number(body.expressBaseFee)) ? Number(body.expressBaseFee) : memoryDeliverySettings.expressBaseFee,
         expressPerKmFee: !isNaN(Number(body.expressPerKmFee)) ? Number(body.expressPerKmFee) : memoryDeliverySettings.expressPerKmFee,
@@ -1824,11 +1870,17 @@ export async function onRequest(context) {
         warehouseLng: !isNaN(Number(body.warehouseLng)) ? Number(body.warehouseLng) : memoryDeliverySettings.warehouseLng,
         updatedAt: new Date().toISOString()
       };
+      await saveDeliverySettingsToPg(env, memoryDeliverySettings);
       return jsonRes({
         success: true,
         message: 'تنظیمات ارسال و تحویل فوری با موفقیت ذخیره گردید.',
         settings: memoryDeliverySettings
       });
+    }
+
+    const pgDelivery = await getDeliverySettingsFromPg(env);
+    if (pgDelivery && typeof pgDelivery === 'object' && typeof pgDelivery.isExpressDeliveryEnabled !== 'undefined') {
+      memoryDeliverySettings = { ...memoryDeliverySettings, ...pgDelivery };
     }
 
     return jsonRes({ success: true, settings: memoryDeliverySettings });
