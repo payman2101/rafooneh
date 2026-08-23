@@ -710,48 +710,59 @@
             transform: scale(0.97);
         }
 
-        /* Checkout Modal */
+        /* Checkout & General Modals */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             display: none;
             justify-content: center;
-            align-items: flex-end;
-            z-index: 200;
+            align-items: center;
+            z-index: 10000;
+            padding: 16px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
 
-        @media (min-width: 600px) {
+        @media (max-width: 600px) {
             .modal-overlay {
-                align-items: center;
+                align-items: flex-end;
+                padding: 0;
             }
         }
 
         .modal-card {
             background: white;
             width: 100%;
-            max-width: 500px;
-            border-top-left-radius: 24px;
-            border-top-right-radius: 24px;
+            max-width: 520px;
+            border-radius: 24px;
             padding: 24px;
-            max-height: 90vh;
+            max-height: min(92vh, calc(100dvh - 24px));
             overflow-y: auto;
-            animation: slideUp 0.3s ease-out;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
         }
 
-        @media (min-width: 600px) {
+        @media (max-width: 600px) {
             .modal-card {
-                border-radius: 24px;
+                border-radius: 22px 22px 0 0;
+                padding: 20px 16px max(20px, env(safe-area-inset-bottom)) 16px;
+                max-height: min(94vh, calc(100dvh - 12px));
+                max-width: 100%;
             }
         }
 
         @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-header {
@@ -2082,28 +2093,42 @@
                 min-height: 44px;
             }
             .modal-overlay {
-                padding: 8px;
+                padding: 0;
                 align-items: flex-end;
             }
             .modal-card {
-                border-radius: 20px 20px 12px 12px;
-                padding: 18px 14px;
-                max-height: 94vh;
-                width: 100%;
-                max-width: 100%;
+                border-radius: 22px 22px 0 0 !important;
+                padding: 18px 14px max(20px, env(safe-area-inset-bottom)) 14px !important;
+                max-height: min(94vh, calc(100dvh - 12px)) !important;
+                width: 100% !important;
+                max-width: 100% !important;
             }
             .product-detail-modal {
-                padding: 16px 12px;
-                border-radius: 20px 20px 12px 12px;
-                max-height: 94vh;
+                padding: 16px 14px max(20px, env(safe-area-inset-bottom)) 14px !important;
+                border-radius: 22px 22px 0 0 !important;
+                max-height: min(94vh, calc(100dvh - 12px)) !important;
+                width: 100% !important;
             }
             .invoice-container-card {
-                padding: 16px 10px;
-                border-radius: 16px;
-                max-height: 94vh;
+                padding: 16px 12px max(20px, env(safe-area-inset-bottom)) 12px !important;
+                border-radius: 20px 20px 0 0 !important;
+                max-height: min(94vh, calc(100dvh - 12px)) !important;
+                width: 100% !important;
+            }
+            .invoice-actions {
+                justify-content: stretch !important;
+                gap: 6px !important;
+            }
+            .btn-invoice-action {
+                flex: 1 1 calc(50% - 6px) !important;
+                justify-content: center !important;
+                font-size: 0.78rem !important;
+                padding: 8px 10px !important;
+                min-height: 38px;
             }
             .printable-invoice {
                 padding: 14px 10px;
+                border-width: 1.5px;
             }
             .inv-header {
                 flex-direction: column;
@@ -2116,6 +2141,14 @@
             .inv-parties-grid {
                 grid-template-columns: 1fr !important;
                 gap: 10px;
+            }
+            .inv-table-wrap {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                margin-bottom: 12px;
+            }
+            .inv-table {
+                min-width: 520px;
             }
             .inv-table th, .inv-table td {
                 padding: 6px 4px;
@@ -2135,9 +2168,72 @@
                 justify-content: space-between;
                 width: 100%;
             }
+
+            /* Gift Selection Modal Mobile Tweaks */
+            #giftSelectionModal .modal-card {
+                border-radius: 22px 22px 0 0 !important;
+                max-height: min(94vh, calc(100dvh - 10px)) !important;
+            }
+            #giftModalStatusBar > div:first-child {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 6px !important;
+            }
+            #giftModalFooter {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 10px !important;
+                padding: 12px 14px max(16px, env(safe-area-inset-bottom)) 14px !important;
+            }
+            #giftModalFooter > div:last-child {
+                display: grid !important;
+                grid-template-columns: 1fr 1.5fr !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+            #giftModalFooterSummary {
+                text-align: center !important;
+                font-size: 0.76rem !important;
+            }
+            .gift-item-card {
+                padding: 8px 10px !important;
+                gap: 8px !important;
+            }
+
+            /* Track Order Modal Mobile Tweaks */
+            #trackOrderModal .modal {
+                border-radius: 22px 22px 0 0 !important;
+                padding: 18px 14px max(20px, env(safe-area-inset-bottom)) 14px !important;
+                max-height: min(94vh, calc(100dvh - 12px)) !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: auto 0 0 0 !important;
+            }
+            #trackOrderModal form {
+                flex-direction: column !important;
+                gap: 8px !important;
+            }
+            #trackOrderModal form button {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+
+            /* Submit Button Mobile Wrap Safety */
+            .btn-submit-order {
+                font-size: 0.85rem !important;
+                padding: 12px 10px !important;
+                line-height: 1.35 !important;
+                text-align: center !important;
+                justify-content: center !important;
+            }
         }
 
         @media (max-width: 560px) {
+            #giftModalStatusBar > div:first-child {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            #giftModalStatusBar > div:first-child > div:last-child {
+                grid-column: 1 / -1;
+            }
             .container {
                 padding: 8px 10px;
             }
@@ -2807,21 +2903,23 @@
                 </div>
 
                 <!-- Invoice Table -->
-                <table class="inv-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 45px;">ردیف</th>
-                            <th style="width: 85px;">کد کالا</th>
-                            <th>شرح کالا / محصول</th>
-                            <th style="width: 65px;">تعداد</th>
-                            <th style="width: 145px;">قیمت واحد (ریال)</th>
-                            <th style="width: 155px;">مبلغ کل (ریال)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="invItemsTableBody">
-                        <!-- Dynamic items -->
-                    </tbody>
-                </table>
+                <div class="inv-table-wrap">
+                    <table class="inv-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 45px;">ردیف</th>
+                                <th style="width: 85px;">کد کالا</th>
+                                <th>شرح کالا / محصول</th>
+                                <th style="width: 65px;">تعداد</th>
+                                <th style="width: 145px;">قیمت واحد (ریال)</th>
+                                <th style="width: 155px;">مبلغ کل (ریال)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invItemsTableBody">
+                            <!-- Dynamic items -->
+                        </tbody>
+                    </table>
+                </div>
 
                 <!-- Summary -->
                 <div class="inv-summary-section">

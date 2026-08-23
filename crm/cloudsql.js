@@ -104,6 +104,23 @@ export async function initCloudSql() {
       }
     }
 
+    // 6. Check & Seed Delivery Settings
+    const existingDelivery = await db.select().from(settings).where(eq(settings.key, 'delivery_settings')).limit(1);
+    if (!existingDelivery || existingDelivery.length === 0) {
+      const jsonPath = path.join(DATA_DIR, 'delivery_settings.json');
+      const rootJsonPath = path.join(process.cwd(), 'delivery_settings.json');
+      let deliveryData = null;
+      if (fs.existsSync(jsonPath)) {
+        try { deliveryData = JSON.parse(fs.readFileSync(jsonPath, 'utf8')); } catch (e) {}
+      } else if (fs.existsSync(rootJsonPath)) {
+        try { deliveryData = JSON.parse(fs.readFileSync(rootJsonPath, 'utf8')); } catch (e) {}
+      }
+      if (deliveryData && typeof deliveryData === 'object') {
+        console.log(`[Cloud SQL Seeding] Migrating delivery settings to PostgreSQL...`);
+        await saveDeliverySettingsCloudSql(deliveryData);
+      }
+    }
+
     console.log('[Cloud SQL] Database ready.');
   } catch (err) {
     console.error('[Cloud SQL Initialization Error]:', err.message);
@@ -491,6 +508,38 @@ export async function saveBankSettingsCloudSql(settingObj) {
       });
   } catch (err) {
     console.error('[Cloud SQL] Error saving bank settings:', err.message);
+  }
+}
+
+export async function getDeliverySettingsCloudSql() {
+  try {
+    const sRows = await db.select().from(settings).where(eq(settings.key, 'delivery_settings')).limit(1);
+    if (sRows && sRows.length > 0) {
+      try {
+        const parsed = JSON.parse(sRows[0].value);
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (e) {}
+    }
+  } catch (err) {
+    console.error('[Cloud SQL] Error getting delivery settings:', err.message);
+  }
+  return null;
+}
+
+export async function saveDeliverySettingsCloudSql(settingObj) {
+  try {
+    const sPayload = {
+      key: 'delivery_settings',
+      value: JSON.stringify(settingObj),
+      updatedAt: settingObj.updatedAt || new Date().toISOString()
+    };
+    await db.insert(settings).values(sPayload)
+      .onConflictDoUpdate({
+        target: settings.key,
+        set: sPayload
+      });
+  } catch (err) {
+    console.error('[Cloud SQL] Error saving delivery settings:', err.message);
   }
 }
 

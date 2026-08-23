@@ -123,6 +123,12 @@ export function getDb() {
       createdAt TEXT,
       updatedAt TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updatedAt TEXT
+    );
   `);
   }
 
@@ -227,6 +233,23 @@ export async function seedSqliteFromJson() {
       for (const p of payments) {
         saveCompanyPaymentSqlite(p, db);
       }
+    }
+  }
+
+  // 5. Seed Delivery Settings
+  const deliveryRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('delivery_settings');
+  if (!deliveryRow || !deliveryRow.value) {
+    const dJsonPath = path.join(DATA_DIR, 'delivery_settings.json');
+    const rootDJsonPath = path.join(process.cwd(), 'delivery_settings.json');
+    let deliveryData = null;
+    if (fs.existsSync(dJsonPath)) {
+      try { deliveryData = JSON.parse(fs.readFileSync(dJsonPath, 'utf8')); } catch (e) {}
+    } else if (fs.existsSync(rootDJsonPath)) {
+      try { deliveryData = JSON.parse(fs.readFileSync(rootDJsonPath, 'utf8')); } catch (e) {}
+    }
+    if (deliveryData && typeof deliveryData === 'object') {
+      console.log('[SQLite Seeding] Migrating delivery settings to SQLite...');
+      saveDeliverySettingsSqlite(deliveryData, db);
     }
   }
 }
@@ -539,9 +562,50 @@ export function deletePurchaseSqlite(id) {
 export function checkpointSqlite() {
   try {
     const db = getDb();
+    if (!db) return;
     db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
     console.log('[SQLite] Checkpoint completed before export.');
   } catch (err) {
     console.error('[SQLite] Checkpoint error:', err.message);
   }
+}
+
+export function saveSettingSqlite(key, value, dbConn = null) {
+  const db = dbConn || getDb();
+  if (!db) return;
+  const valStr = typeof value === 'string' ? value : JSON.stringify(value);
+  const now = new Date().toISOString();
+  const stmt = db.prepare(`
+    INSERT INTO settings (key, value, updatedAt)
+    VALUES (?, ?, ?)
+    ON CONFLICT(key) DO UPDATE SET
+      value = excluded.value,
+      updatedAt = excluded.updatedAt
+  `);
+  stmt.run(String(key), valStr, now);
+}
+
+export function getSettingSqlite(key) {
+  const db = getDb();
+  if (!db) return null;
+  try {
+    const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(String(key));
+    if (!row || !row.value) return null;
+    try {
+      return JSON.parse(row.value);
+    } catch (e) {
+      return row.value;
+    }
+  } catch (err) {
+    console.error('[SQLite] Error reading setting:', err.message);
+    return null;
+  }
+}
+
+export function saveDeliverySettingsSqlite(settings, dbConn = null) {
+  saveSettingSqlite('delivery_settings', settings, dbConn);
+}
+
+export function getDeliverySettingsSqlite() {
+  return getSettingSqlite('delivery_settings');
 }
