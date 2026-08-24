@@ -492,7 +492,7 @@ export function getAllStatuses() {
   return ORDER_STATUSES.map(id => ({ id, label: STATUS_LABELS[id] }));
 }
 
-export function upsertCustomer({ name, phone, address }) {
+export function upsertCustomer({ name, phone, address, walletBalance, password }) {
   const customers = readJson(CUSTOMERS_FILE, []);
   const normalizedPhone = normalizePhone(phone);
   let customer = customers.find(c => normalizePhone(c.phone) === normalizedPhone);
@@ -500,13 +500,23 @@ export function upsertCustomer({ name, phone, address }) {
   if (customer) {
     customer.name = name || customer.name;
     customer.address = address || customer.address;
+    if (walletBalance !== undefined && walletBalance !== null) {
+      customer.walletBalance = Number(walletBalance);
+    }
+    if (password) {
+      customer.passwordHash = String(password);
+    }
     customer.updatedAt = new Date().toISOString();
   } else {
     customer = {
       id: generateId('cust'),
-      name,
+      name: name || 'مشتری عزیز',
       phone: normalizedPhone,
       address: address || '',
+      walletBalance: Number(walletBalance) || 0,
+      giftCredit: 0,
+      passwordHash: password ? String(password) : '',
+      walletHistory: [],
       totalOrders: 0,
       totalSpent: 0,
       notes: '',
@@ -715,6 +725,15 @@ export function createOrder(orderData) {
     return oId === reqIdStr || cleanOId === cleanReqId;
   });
 
+  // Calculate gift quota & wallet rollover
+  const regularItems = items.filter(i => !i.isGift);
+  const giftItems = items.filter(i => i.isGift);
+  const itemsSubtotal = regularItems.reduce((sum, i) => sum + ((Number(i.price) || 0) * (Number(i.qty) || 1)), 0);
+  const standardGiftQuota = Math.round(itemsSubtotal * 0.05);
+  const usedGiftValue = giftItems.reduce((sum, g) => sum + ((Number(g.realPrice) || Number(g.price) || 0) * (Number(g.qty) || 1)), 0);
+  const walletUsed = Math.max(0, Number(orderData.walletUsed) || 0);
+  const remainingGiftToCredit = Math.max(0, standardGiftQuota - usedGiftValue);
+
   let order;
   let oldOrder = null;
   if (existingIdx !== -1) {
@@ -725,7 +744,12 @@ export function createOrder(orderData) {
       phone: normalizePhone(orderData.phone) || orders[existingIdx].phone,
       address: orderData.address || orders[existingIdx].address,
       items: (items && items.length) ? items : orders[existingIdx].items,
+      giftItems: (giftItems && giftItems.length) ? giftItems : (orders[existingIdx].giftItems || []),
       totalAmount: Number(orderData.totalAmount) || orders[existingIdx].totalAmount,
+      walletUsed: orderData.walletUsed !== undefined ? walletUsed : (orders[existingIdx].walletUsed || 0),
+      giftQuota: standardGiftQuota,
+      usedGiftValue,
+      remainingGiftCredited: remainingGiftToCredit,
       paymentMethod: orderData.paymentMethod || orders[existingIdx].paymentMethod,
       deliveryType: orderData.deliveryType !== undefined ? orderData.deliveryType : (orders[existingIdx].deliveryType || 'normal'),
       deliveryFee: orderData.deliveryFee !== undefined ? Number(orderData.deliveryFee) : (orders[existingIdx].deliveryFee || 0),
@@ -744,6 +768,11 @@ export function createOrder(orderData) {
       address: orderData.address,
       note: orderData.note || '',
       items,
+      giftItems,
+      giftQuota: standardGiftQuota,
+      usedGiftValue,
+      remainingGiftCredited: remainingGiftToCredit,
+      walletUsed,
       totalAmount: Number(orderData.totalAmount) || 0,
       paymentMethod: orderData.paymentMethod || 'cod',
       deliveryType: orderData.deliveryType || 'normal',
@@ -760,11 +789,42 @@ export function createOrder(orderData) {
   }
 
   const customers = readJson(CUSTOMERS_FILE, []);
-  const customerIdx = customers.findIndex(c => String(c.id) === String(customer.id));
+  const customerIdx = customers.findIndex(c => String(c.id) === String(customer.id) || normalizePhone(c.phone) === normalizePhone(order.phone));
   if (customerIdx !== -1) {
     if (existingIdx === -1) {
-      customers[customerIdx].totalOrders += 1;
-      customers[customerIdx].totalSpent += order.totalAmount;
+      customers[customerIdx].totalOrders = (Number(customers[customerIdx].totalOrders) || 0) + 1;
+      customers[customerIdx].totalSpent = (Number(customers[customerIdx].totalSpent) || 0) + order.totalAmount;
+      
+      // Update customer wallet balance
+      const currentWallet = Number(customers[customerIdx].walletBalance) || 0;
+      let newWallet = Math.max(0, currentWallet - walletUsed + remainingGiftToCredit);
+      customers[customerIdx].walletBalance = newWallet;
+      if (!Array.isArray(customers[customerIdx].walletHistory)) {
+        customers[customerIdx].walletHistory = [];
+      }
+      
+      if (walletUsed > 0) {
+        customers[customerIdx].walletHistory.unshift({
+          id: 'wh_' + Date.now() + '_use',
+          type: 'used_in_order',
+          amount: -walletUsed,
+          orderId: order.id,
+          description: `استفاده از موجودی کیف پول در سفارش ${order.id}`,
+          createdAt: new Date().toISOString(),
+          balanceAfter: currentWallet - walletUsed
+        });
+      }
+      if (remainingGiftToCredit > 0) {
+        customers[customerIdx].walletHistory.unshift({
+          id: 'wh_' + (Date.now() + 1) + '_gift',
+          type: 'gift_rollover',
+          amount: remainingGiftToCredit,
+          orderId: order.id,
+          description: `انتقال مانده هدیه ۵٪ سفارش ${order.id} به کیف پول`,
+          createdAt: new Date().toISOString(),
+          balanceAfter: newWallet
+        });
+      }
     }
     customers[customerIdx].lastOrderAt = order.createdAt;
     customers[customerIdx].name = order.customerName;
@@ -1343,6 +1403,133 @@ export async function deleteCustomer(id) {
   deleteCustomerFromFirestore(id).catch(e => console.error('Firestore delete customer error:', e));
   try { deleteCustomerSqlite(id); } catch (e) { console.error('SQLite delete customer notice:', e.message); }
   return initialLen !== customers.length;
+}
+
+// Customer Account & Wallet Helpers
+export function getCustomerByPhone(phone) {
+  if (!phone) return null;
+  const customers = readJson(CUSTOMERS_FILE, []);
+  const norm = normalizePhone(phone);
+  return customers.find(c => normalizePhone(c.phone) === norm || String(c.phone) === String(phone)) || null;
+}
+
+export function getCustomerOrders(idOrPhone) {
+  if (!idOrPhone) return [];
+  const norm = normalizePhone(idOrPhone);
+  const orders = readJson(ORDERS_FILE, []);
+  return orders.filter(o =>
+    String(o.customerId) === String(idOrPhone) ||
+    normalizePhone(o.phone) === norm ||
+    String(o.phone) === String(idOrPhone)
+  ).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+}
+
+export async function adjustCustomerWallet(idOrPhone, { amount, type = 'manual_adjustment', description = '', orderId = null }) {
+  const customers = readJson(CUSTOMERS_FILE, []);
+  const norm = normalizePhone(idOrPhone);
+  const idx = customers.findIndex(c => String(c.id) === String(idOrPhone) || normalizePhone(c.phone) === norm || String(c.phone) === String(idOrPhone));
+  if (idx === -1) {
+    throw new Error('مشتری یافت نشد');
+  }
+
+  const customer = customers[idx];
+  const delta = Number(amount) || 0;
+  const currentWallet = Number(customer.walletBalance) || 0;
+  const newWallet = Math.max(0, currentWallet + delta);
+  customer.walletBalance = newWallet;
+  if (!Array.isArray(customer.walletHistory)) {
+    customer.walletHistory = [];
+  }
+
+  customer.walletHistory.unshift({
+    id: 'wh_' + Date.now(),
+    type,
+    amount: delta,
+    orderId,
+    description: description || (delta >= 0 ? `شارژ دستی کیف پول (+${delta.toLocaleString('fa-IR')} تومان)` : `کسر دستی از کیف پول (${delta.toLocaleString('fa-IR')} تومان)`),
+    createdAt: new Date().toISOString(),
+    balanceAfter: newWallet
+  });
+  customer.updatedAt = new Date().toISOString();
+
+  writeJson(CUSTOMERS_FILE, customers);
+  writeJson(ROOT_CUSTOMERS_FILE, customers);
+  try { saveCustomerSqlite(customer); } catch (e) {}
+  saveCustomerToFirestore(customer).catch(() => {});
+  saveCustomerCloudSql(customer).catch(() => {});
+
+  return customer;
+}
+
+export async function authenticateCustomer({ phone, name, password, address }) {
+  if (!phone) throw new Error('شماره تلفن الزامی است');
+  const normalizedPhone = normalizePhone(phone);
+  const customers = readJson(CUSTOMERS_FILE, []);
+  let customer = customers.find(c => normalizePhone(c.phone) === normalizedPhone);
+  let isNew = false;
+
+  if (!customer) {
+    isNew = true;
+    customer = {
+      id: generateId('cust'),
+      name: (name && name.trim()) || 'مشتری عزیز',
+      phone: normalizedPhone,
+      address: address || '',
+      walletBalance: 0,
+      giftCredit: 0,
+      passwordHash: password ? String(password) : '',
+      walletHistory: [{
+        id: 'wh_' + Date.now(),
+        type: 'welcome',
+        amount: 0,
+        description: 'افتتاح حساب کاربری در فروشگاه محصولات پیمان',
+        createdAt: new Date().toISOString(),
+        balanceAfter: 0
+      }],
+      totalOrders: 0,
+      totalSpent: 0,
+      notes: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastOrderAt: null
+    };
+    customers.push(customer);
+    writeJson(CUSTOMERS_FILE, customers);
+    writeJson(ROOT_CUSTOMERS_FILE, customers);
+    try { saveCustomerSqlite(customer); } catch (e) {}
+    saveCustomerToFirestore(customer).catch(() => {});
+    saveCustomerCloudSql(customer).catch(() => {});
+  } else {
+    // If name or address provided on existing customer and not empty
+    let changed = false;
+    if (name && name.trim() && customer.name === 'مشتری عزیز') {
+      customer.name = name.trim();
+      changed = true;
+    }
+    if (address && !customer.address) {
+      customer.address = address;
+      changed = true;
+    }
+    if (password && !customer.passwordHash) {
+      customer.passwordHash = String(password);
+      changed = true;
+    }
+    if (changed) {
+      customer.updatedAt = new Date().toISOString();
+      writeJson(CUSTOMERS_FILE, customers);
+      writeJson(ROOT_CUSTOMERS_FILE, customers);
+      try { saveCustomerSqlite(customer); } catch (e) {}
+      saveCustomerToFirestore(customer).catch(() => {});
+      saveCustomerCloudSql(customer).catch(() => {});
+    }
+  }
+
+  const customerOrders = getCustomerOrders(customer.id);
+  return {
+    customer,
+    orders: customerOrders,
+    isNew
+  };
 }
 
 export function clearAllTestData() {

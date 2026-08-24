@@ -213,11 +213,16 @@ export async function deleteProductCloudSql(id) {
 export async function saveCustomerCloudSql(c) {
   if (!c || !c.id) return;
   const id = String(c.id);
+  const walletHistoryJson = typeof c.walletHistory === 'string' ? c.walletHistory : JSON.stringify(c.walletHistory || []);
   const record = {
     id,
     name: c.name || '',
     phone: c.phone || '',
     address: c.address || '',
+    walletBalance: Number(c.walletBalance) || 0,
+    giftCredit: Number(c.giftCredit) || 0,
+    passwordHash: c.passwordHash || '',
+    walletHistory: walletHistoryJson,
     totalOrders: Number(c.totalOrders) || 0,
     totalSpent: Number(c.totalSpent) || 0,
     notes: c.notes || '',
@@ -232,6 +237,10 @@ export async function saveCustomerCloudSql(c) {
         name: record.name,
         phone: record.phone,
         address: record.address,
+        walletBalance: record.walletBalance,
+        giftCredit: record.giftCredit,
+        passwordHash: record.passwordHash,
+        walletHistory: record.walletHistory,
         totalOrders: record.totalOrders,
         totalSpent: record.totalSpent,
         notes: record.notes,

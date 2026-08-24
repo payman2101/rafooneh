@@ -71,6 +71,10 @@ export function getDb() {
       name TEXT NOT NULL,
       phone TEXT UNIQUE,
       address TEXT,
+      walletBalance REAL DEFAULT 0,
+      giftCredit REAL DEFAULT 0,
+      passwordHash TEXT,
+      walletHistory TEXT,
       totalOrders INTEGER DEFAULT 0,
       totalSpent REAL DEFAULT 0,
       notes TEXT,
@@ -134,6 +138,11 @@ export function getDb() {
 
   try {
     initDbSchema(dbInstance);
+    // Lightweight schema migrations
+    try { dbInstance.exec('ALTER TABLE customers ADD COLUMN walletBalance REAL DEFAULT 0;'); } catch (e) {}
+    try { dbInstance.exec('ALTER TABLE customers ADD COLUMN giftCredit REAL DEFAULT 0;'); } catch (e) {}
+    try { dbInstance.exec('ALTER TABLE customers ADD COLUMN passwordHash TEXT;'); } catch (e) {}
+    try { dbInstance.exec('ALTER TABLE customers ADD COLUMN walletHistory TEXT;'); } catch (e) {}
   } catch (e) {
     console.warn('[SQLite] Schema init warning:', e.message);
     if (e.message && e.message.includes('malformed')) {
@@ -341,10 +350,12 @@ export function saveCustomerSqlite(c, dbConn = null) {
   const id = String(c.id || '');
   if (!id) return;
 
+  const walletHistoryJson = typeof c.walletHistory === 'string' ? c.walletHistory : JSON.stringify(c.walletHistory || []);
+
   const stmt = db.prepare(
     `INSERT INTO customers (
-      id, name, phone, address, totalOrders, totalSpent, notes, createdAt, updatedAt, lastOrderAt
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, name, phone, address, totalOrders, totalSpent, notes, createdAt, updatedAt, lastOrderAt, walletBalance, giftCredit, passwordHash, walletHistory
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       phone = excluded.phone,
@@ -353,7 +364,11 @@ export function saveCustomerSqlite(c, dbConn = null) {
       totalSpent = excluded.totalSpent,
       notes = excluded.notes,
       updatedAt = excluded.updatedAt,
-      lastOrderAt = excluded.lastOrderAt;`
+      lastOrderAt = excluded.lastOrderAt,
+      walletBalance = excluded.walletBalance,
+      giftCredit = excluded.giftCredit,
+      passwordHash = excluded.passwordHash,
+      walletHistory = excluded.walletHistory;`
   );
 
   stmt.run(
@@ -366,13 +381,29 @@ export function saveCustomerSqlite(c, dbConn = null) {
     c.notes || '',
     c.createdAt || new Date().toISOString(),
     c.updatedAt || new Date().toISOString(),
-    c.lastOrderAt || null
+    c.lastOrderAt || null,
+    Number(c.walletBalance) || 0,
+    Number(c.giftCredit) || 0,
+    c.passwordHash || '',
+    walletHistoryJson
   );
 }
 
 export function getAllCustomersSqlite() {
   const db = getDb();
-  return db.prepare('SELECT * FROM customers ORDER BY datetime(updatedAt) DESC').all();
+  const rows = db.prepare('SELECT * FROM customers ORDER BY datetime(updatedAt) DESC').all();
+  return rows.map(r => {
+    let walletHistory = [];
+    if (r.walletHistory) {
+      try { walletHistory = JSON.parse(r.walletHistory); } catch (e) {}
+    }
+    return {
+      ...r,
+      walletBalance: Number(r.walletBalance) || 0,
+      giftCredit: Number(r.giftCredit) || 0,
+      walletHistory
+    };
+  });
 }
 
 export function deleteCustomerSqlite(id) {

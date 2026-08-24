@@ -9,6 +9,10 @@ import {
   getDashboardStats,
   getOrderById,
   getCustomerById,
+  getCustomerByPhone,
+  getCustomerOrders,
+  adjustCustomerWallet,
+  authenticateCustomer,
   listCustomers,
   listOrders,
   updateCustomer,
@@ -785,7 +789,7 @@ app.post('/api/invoices/upload-image', async (req, res) => {
 // CRM: Public order submission from website
 app.post('/api/orders', (req, res) => {
   try {
-    const { id, customerName, phone, address, note, items, totalAmount, paymentMethod, deliveryType, deliveryFee, deliveryDistance, deliveryCity, deliveryCoordinates, giftItems } = req.body || {};
+    const { id, customerName, phone, address, note, items, totalAmount, paymentMethod, deliveryType, deliveryFee, deliveryDistance, deliveryCity, deliveryCoordinates, giftItems, walletUsed } = req.body || {};
 
     if (!customerName || !phone || !address) {
       return res.status(400).json({ success: false, message: 'نام، تلفن و آدرس الزامی است' });
@@ -810,6 +814,7 @@ app.post('/api/orders', (req, res) => {
       deliveryCity,
       deliveryCoordinates,
       giftItems,
+      walletUsed,
       source: 'website'
     });
 
@@ -817,6 +822,80 @@ app.post('/api/orders', (req, res) => {
   } catch (err) {
     console.error('Create order error:', err);
     res.status(500).json({ success: false, message: 'خطا در ثبت سفارش' });
+  }
+});
+
+// Customer Account & Profile APIs
+app.post('/api/customer/auth', async (req, res) => {
+  try {
+    const { phone, name, password, address } = req.body || {};
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ success: false, message: 'شماره تلفن همراه الزامی است' });
+    }
+    const result = await authenticateCustomer({ phone: phone.trim(), name, password, address });
+    const token = 'cust_' + Buffer.from(`${result.customer.id}:${Date.now()}`).toString('base64');
+    res.json({
+      success: true,
+      token,
+      customer: result.customer,
+      orders: result.orders,
+      isNew: result.isNew,
+      message: result.isNew ? 'حساب کاربری شما با موفقیت ایجاد شد' : 'خوش آمدید'
+    });
+  } catch (err) {
+    console.error('Customer auth error:', err);
+    res.status(400).json({ success: false, message: err.message || 'خطا در ورود به حساب کاربری' });
+  }
+});
+
+app.get('/api/customer/profile', (req, res) => {
+  try {
+    const queryKey = req.query.phone || req.query.id;
+    if (!queryKey) {
+      return res.status(400).json({ success: false, message: 'شناسه یا شماره تلفن مشتری الزامی است' });
+    }
+    const customer = getCustomerById(queryKey) || getCustomerByPhone(queryKey);
+    if (!customer) {
+      return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
+    }
+    const orders = getCustomerOrders(customer.id);
+    res.json({ success: true, customer, orders });
+  } catch (err) {
+    console.error('Customer profile error:', err);
+    res.status(500).json({ success: false, message: 'خطا در دریافت اطلاعات حساب' });
+  }
+});
+
+app.put('/api/customer/profile', async (req, res) => {
+  try {
+    const { id, phone, name, address, notes, password } = req.body || {};
+    const target = id || phone;
+    if (!target) {
+      return res.status(400).json({ success: false, message: 'شناسه یا شماره تلفن مشتری الزامی است' });
+    }
+    const updated = await updateCustomer(target, { name, address, notes, password });
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
+    }
+    const orders = getCustomerOrders(updated.id);
+    res.json({ success: true, customer: updated, orders, message: 'اطلاعات حساب با موفقیت بروزرسانی شد' });
+  } catch (err) {
+    console.error('Customer profile update error:', err);
+    res.status(500).json({ success: false, message: 'خطا در بروزرسانی پروفایل' });
+  }
+});
+
+app.get('/api/customer/orders', (req, res) => {
+  try {
+    const queryKey = req.query.phone || req.query.id;
+    if (!queryKey) {
+      return res.status(400).json({ success: false, message: 'شناسه یا شماره تلفن الزامی است' });
+    }
+    const orders = getCustomerOrders(queryKey);
+    res.json({ success: true, orders });
+  } catch (err) {
+    console.error('Customer orders error:', err);
+    res.status(500).json({ success: false, message: 'خطا در دریافت سفارشات مشتری' });
   }
 });
 
@@ -1118,6 +1197,21 @@ app.patch('/api/admin/customers/:id', authMiddleware, async (req, res) => {
     return res.status(404).json({ success: false, message: 'مشتری یافت نشد' });
   }
   res.json({ success: true, customer });
+});
+
+app.post('/api/admin/customers/:id/wallet', authMiddleware, async (req, res) => {
+  try {
+    const { amount, type, description } = req.body || {};
+    const customer = await adjustCustomerWallet(req.params.id, {
+      amount: Number(amount) || 0,
+      type: type || 'manual_adjustment',
+      description: description || 'تغییر موجودی توسط مدیریت فروشگاه'
+    });
+    res.json({ success: true, customer, message: 'موجودی کیف پول مشتری با موفقیت بروزرسانی شد' });
+  } catch (err) {
+    console.error('Admin adjust customer wallet error:', err);
+    res.status(400).json({ success: false, message: err.message || 'خطا در ویرایش موجودی کیف پول' });
+  }
 });
 
 app.delete('/api/admin/customers/:id', authMiddleware, async (req, res) => {

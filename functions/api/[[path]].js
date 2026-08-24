@@ -1137,6 +1137,128 @@ export async function onRequest(context) {
     return jsonRes({ success: true, alerts });
   }
 
+  // --- CUSTOMER AUTH & WALLET ENDPOINTS ---
+  if (path === '/api/customer/auth' && method === 'POST') {
+    const customers = await getCombinedCustomers(env);
+    const phone = body.phone ? normalizePhone(body.phone) : '';
+    if (!phone) {
+      return jsonRes({ success: false, message: 'شماره تلفن همراه الزامی است' }, 400);
+    }
+
+    let existing = customers.find(c => normalizePhone(c.phone) === phone || String(c.phone) === phone);
+    let isNew = false;
+
+    if (!existing) {
+      isNew = true;
+      existing = {
+        id: 'CUST-' + phone.replace(/\D/g, '') + '-' + Date.now(),
+        name: (body.name && body.name.trim()) || 'مشتری عزیز',
+        phone,
+        address: body.address || '',
+        walletBalance: 0,
+        giftCredit: 0,
+        passwordHash: body.password ? String(body.password) : '',
+        walletHistory: [{
+          id: 'wh_' + Date.now(),
+          type: 'welcome',
+          amount: 0,
+          description: 'افتتاح حساب کاربری در فروشگاه محصولات پیمان',
+          createdAt: new Date().toISOString(),
+          balanceAfter: 0
+        }],
+        totalOrders: 0,
+        totalSpent: 0,
+        notes: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      memoryCustomers.push(existing);
+      await saveCustomerToPg(env, existing);
+    } else {
+      if (body.name && body.name.trim() && existing.name === 'مشتری عزیز') {
+        existing.name = body.name.trim();
+      }
+      if (body.address && !existing.address) {
+        existing.address = body.address;
+      }
+      existing.updatedAt = new Date().toISOString();
+      await saveCustomerToPg(env, existing);
+    }
+
+    const orders = await getCombinedOrders(env);
+    const customerOrders = orders.filter(o =>
+      String(o.customerId) === String(existing.id) ||
+      normalizePhone(o.phone) === phone ||
+      String(o.phone) === phone
+    );
+
+    const token = 'cust_' + btoa(`${existing.id}:${Date.now()}`);
+    return jsonRes({
+      success: true,
+      token,
+      customer: existing,
+      orders: customerOrders,
+      isNew,
+      message: isNew ? 'حساب کاربری شما با موفقیت ایجاد شد' : 'خوش آمدید'
+    });
+  }
+
+  if (path === '/api/customer/profile') {
+    const customers = await getCombinedCustomers(env);
+    const queryKey = url.searchParams.get('phone') || url.searchParams.get('id');
+    if (!queryKey) {
+      return jsonRes({ success: false, message: 'شناسه یا تلفن الزامی است' }, 400);
+    }
+    const normKey = normalizePhone(queryKey);
+    let customer = customers.find(c => String(c.id) === queryKey || normalizePhone(c.phone) === normKey || String(c.phone) === queryKey);
+    if (!customer) {
+      return jsonRes({ success: false, message: 'مشتری یافت نشد' }, 404);
+    }
+
+    if (method === 'GET') {
+      const orders = await getCombinedOrders(env);
+      const userOrders = orders.filter(o =>
+        String(o.customerId) === String(customer.id) ||
+        normalizePhone(o.phone) === normalizePhone(customer.phone) ||
+        String(o.phone) === String(customer.phone)
+      );
+      return jsonRes({ success: true, customer, orders: userOrders });
+    }
+
+    if (method === 'PUT' || method === 'PATCH') {
+      const updated = {
+        ...customer,
+        name: body.name || customer.name,
+        address: body.address !== undefined ? body.address : customer.address,
+        notes: body.notes !== undefined ? body.notes : customer.notes,
+        updatedAt: new Date().toISOString()
+      };
+      await saveCustomerToPg(env, updated);
+      const orders = await getCombinedOrders(env);
+      const userOrders = orders.filter(o =>
+        String(o.customerId) === String(updated.id) ||
+        normalizePhone(o.phone) === normalizePhone(updated.phone) ||
+        String(o.phone) === String(updated.phone)
+      );
+      return jsonRes({ success: true, customer: updated, orders: userOrders, message: 'پروفایل بروزرسانی شد' });
+    }
+  }
+
+  if (path === '/api/customer/orders' && method === 'GET') {
+    const queryKey = url.searchParams.get('phone') || url.searchParams.get('id');
+    if (!queryKey) {
+      return jsonRes({ success: false, message: 'شناسه یا تلفن الزامی است' }, 400);
+    }
+    const normKey = normalizePhone(queryKey);
+    const orders = await getCombinedOrders(env);
+    const matched = orders.filter(o =>
+      String(o.customerId) === queryKey ||
+      normalizePhone(o.phone) === normKey ||
+      String(o.phone) === queryKey
+    );
+    return jsonRes({ success: true, orders: matched });
+  }
+
   // --- ORDERS TRACKING ---
   if (path === '/api/orders/track') {
     const code = (url.searchParams.get('code') || url.searchParams.get('query') || '').trim().toLowerCase();

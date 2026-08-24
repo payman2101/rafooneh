@@ -33,7 +33,17 @@
       "fields": {
         "id": { "type": "string", "required": true },
         "name": { "type": "string", "required": true },
-        "phone": { "type": "string", "required": true }
+        "phone": { "type": "string", "required": true },
+        "address": { "type": "string", "required": false },
+        "walletBalance": { "type": "number", "required": false },
+        "giftCredit": { "type": "number", "required": false },
+        "walletHistory": { "type": "array", "required": false },
+        "passwordHash": { "type": "string", "required": false },
+        "totalOrders": { "type": "number", "required": false },
+        "totalSpent": { "type": "number", "required": false },
+        "lastOrderAt": { "type": "string", "required": false },
+        "createdAt": { "type": "string", "required": false },
+        "updatedAt": { "type": "string", "required": false }
       }
     },
     "transactions": {

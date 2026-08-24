@@ -2449,6 +2449,100 @@
                 font-size: 0.8rem !important;
             }
         }
+
+        /* Customer Account & Wallet Styling */
+        .header-wallet-badge {
+            background: rgba(255, 255, 255, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            margin-right: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #fef08a;
+        }
+        .customer-wallet-card {
+            background: linear-gradient(135deg, #065f46 0%, #047857 50%, #0d9488 100%);
+            color: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(4, 120, 87, 0.22);
+            margin-bottom: 16px;
+        }
+        .customer-wallet-card::after {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: -40px;
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .customer-tabs-nav {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 14px;
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+        .customer-tab-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px 6px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+        .customer-tab-btn.active {
+            background: #ffffff;
+            color: #0f766e;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .wallet-history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 13px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+        .wallet-history-item:hover {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+        .cust-order-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s ease;
+        }
+        .cust-order-card:hover {
+            border-color: #00897b;
+            box-shadow: 0 6px 16px rgba(0, 137, 123, 0.08);
+        }
     </style>
 </head>
 <body>
@@ -2464,6 +2558,10 @@
                 <div class="badge-trust">
                     <i class="fa-solid fa-shield-halved"></i> ۶ سال سابقه خدمت و اعتماد مشتریان
                 </div>
+                <button class="btn-header-action" id="btnHeaderCustomerAuth" onclick="handleHeaderCustomerClick()" style="background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.38);">
+                    <i class="fa-regular fa-user" id="headerCustomerIcon"></i> <span id="headerCustomerBtnText">ورود / عضویت</span>
+                    <span class="header-wallet-badge" id="headerWalletBadge" style="display:none;" title="موجودی کیف پول هدیه"><i class="fa-solid fa-wallet"></i> <span id="headerWalletBalanceText">۰</span> ت</span>
+                </button>
                 <button class="btn-header-action" onclick="openTrackOrderModal()">
                     <i class="fa-solid fa-file-invoice"></i> پیگیری سفارش و فاکتور
                 </button>
@@ -2664,6 +2762,20 @@
                 <div class="form-group">
                     <label for="custNote"><i class="fa-solid fa-comment-dots"></i> توضیحات یا زمان تحویل (اختیاری):</label>
                     <input type="text" id="custNote" class="form-control" placeholder="مثلاً: تحویل ساعت ۵ به بعد">
+                </div>
+
+                <!-- Interactive Wallet Discount Box (if logged in customer has positive balance) -->
+                <div id="checkoutWalletBox" style="display:none; background: linear-gradient(135deg, #ecfdf5, #f0fdf4); border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700; color:#065f46; font-size:0.88rem; margin:0;">
+                            <input type="checkbox" id="useWalletDiscountCheck" onchange="toggleWalletDiscountCheckout()" style="width:18px; height:18px; accent-color:#059669; cursor:pointer;" />
+                            <span>استفاده از موجودی کیف پول به عنوان تخفیف نقدی فاکتور</span>
+                        </label>
+                        <span style="font-size:0.84rem; font-weight:800; color:#047857;" id="checkoutWalletAvailableLabel">۰ تومان</span>
+                    </div>
+                    <div style="font-size:0.76rem; color:#15803d; line-height:1.5;">
+                        مبلغ تخفیف اعمالی از کیف پول: <strong id="checkoutWalletDeductionLabel">۰ تومان</strong>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-submit-order" id="submitBtn">
@@ -3195,6 +3307,180 @@
         </div>
     </div>
 
+    <!-- Customer Auth Modal (Login / Signup) -->
+    <div class="modal-overlay" id="customerAuthModal" style="display: none;" onclick="if(event.target.id==='customerAuthModal') closeCustomerAuthModal();">
+        <div class="modal" style="max-width: 440px; border-radius: 22px; padding: 24px; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #e2e8f0; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 36px; height: 36px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                        <i class="fa-solid fa-user-check"></i>
+                    </span>
+                    ورود به حساب کاربری / عضویت
+                </h3>
+                <button onclick="closeCustomerAuthModal()" style="border: none; background: #f1f5f9; color: #64748b; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: background 0.2s;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #bbf7d0; border-radius: 14px; padding: 12px 14px; margin-bottom: 16px;">
+                <div style="font-size: 0.84rem; color: #166534; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                    <i class="fa-solid fa-gift" style="color: #059669;"></i> مزایای حساب کاربری پخش پیمان:
+                </div>
+                <ul style="margin: 0; padding-right: 18px; font-size: 0.78rem; color: #15803d; line-height: 1.6;">
+                    <li>ذخیره دائمی مانده ۵٪ اعتبار هدیه خریدها در کیف پول شما</li>
+                    <li>امکان تجمیع و استفاده از مانده هدیه در خریدهای بعدی</li>
+                    <li>دسترسی همیشگی به سوابق فاکتورها و وضعیت سفارشات</li>
+                </ul>
+            </div>
+
+            <form id="customerAuthForm" onsubmit="handleCustomerAuthSubmit(event)">
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                        شماره تلفن همراه <span style="color: #ef4444;">*</span>
+                    </label>
+                    <div style="position: relative;">
+                        <i class="fa-solid fa-mobile-screen" style="position: absolute; right: 12px; top: 12px; color: #94a3b8; font-size: 1rem;"></i>
+                        <input type="tel" id="authPhoneInput" dir="ltr" placeholder="09123456789" style="width: 100%; padding: 10px 38px 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 0.95rem; font-weight: 600; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#cbd5e1'" required />
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                        نام و نام خانوادگی <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">(جهت صدور فاکتور و ارسال)</span>
+                    </label>
+                    <div style="position: relative;">
+                        <i class="fa-regular fa-id-card" style="position: absolute; right: 12px; top: 12px; color: #94a3b8; font-size: 1rem;"></i>
+                        <input type="text" id="authNameInput" placeholder="مثلاً: خانم احمدی" style="width: 100%; padding: 10px 38px 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 0.92rem; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#cbd5e1'" />
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                        آدرس پیش‌فرض تحویل <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">(اختیاری)</span>
+                    </label>
+                    <textarea id="authAddressInput" rows="2" placeholder="شهر، خیابان، پلاک، واحد..." style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 0.88rem; outline: none; resize: none;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
+                </div>
+
+                <button type="submit" id="btnCustomerAuthSubmit" class="btn-submit-order" style="background: linear-gradient(135deg, #059669, #047857); border-radius: 12px; font-size: 0.95rem; padding: 12px; font-weight: 700; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> ورود و مشاهده کیف پول
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Dashboard & Wallet Modal -->
+    <div class="modal-overlay" id="customerDashboardModal" style="display: none;" onclick="if(event.target.id==='customerDashboardModal') closeCustomerDashboardModal();">
+        <div class="modal" style="max-width: 600px; max-height: 90vh; overflow-y: auto; border-radius: 22px; padding: 22px; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #e2e8f0; position: relative;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #059669, #0d9488); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 10px rgba(5,150,105,0.25);">
+                        <i class="fa-solid fa-circle-user"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a;" id="dashCustName">مشتری عزیز</h3>
+                        <div style="font-size: 0.8rem; color: #64748b;" id="dashCustPhone">09123456789</div>
+                    </div>
+                </div>
+                <button onclick="closeCustomerDashboardModal()" style="border: none; background: #f1f5f9; color: #64748b; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="customer-tabs-nav">
+                <button class="customer-tab-btn active" id="cTabWallet" onclick="switchCustomerTab('wallet')">
+                    <i class="fa-solid fa-wallet"></i> کیف پول هدیه
+                </button>
+                <button class="customer-tab-btn" id="cTabOrders" onclick="switchCustomerTab('orders')">
+                    <i class="fa-solid fa-box-open"></i> سفارشات من (<span id="dashOrdersCountBadge">0</span>)
+                </button>
+                <button class="customer-tab-btn" id="cTabProfile" onclick="switchCustomerTab('profile')">
+                    <i class="fa-solid fa-user-gear"></i> مشخصات و آدرس
+                </button>
+            </div>
+
+            <!-- Tab 1: Wallet & History -->
+            <div id="cTabWalletContent">
+                <!-- Wallet Card -->
+                <div class="customer-wallet-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                        <div>
+                            <div style="font-size: 0.82rem; opacity: 0.9; font-weight: 500; margin-bottom: 4px;">
+                                <i class="fa-solid fa-gift" style="margin-left: 4px; color: #fef08a;"></i> موجودی اعتبار هدیه شما
+                            </div>
+                            <div style="font-size: 1.85rem; font-weight: 900; letter-spacing: -0.5px; color: #ffffff;">
+                                <span id="dashWalletBalanceToman">۰</span> <span style="font-size: 0.95rem; font-weight: 600; opacity: 0.9;">تومان</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: #a7f3d0; margin-top: 2px;">
+                                معادل <span id="dashWalletBalanceRial">۰</span> ریال
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; padding: 6px 12px; text-align: center;">
+                            <div style="font-size: 0.7rem; opacity: 0.85;">نرخ هدیه هر خرید</div>
+                            <div style="font-size: 0.95rem; font-weight: 800; color: #fef08a;">۵٪ نقدی</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.18); padding-top: 10px; font-size: 0.78rem;">
+                        <span style="opacity: 0.9;">قابل استفاده برای انتخاب هدایای بزرگتر یا تخفیف فاکتور</span>
+                        <button onclick="closeCustomerDashboardModal(); openCheckoutModal();" style="border: none; background: #ffffff; color: #065f46; padding: 5px 12px; border-radius: 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">
+                            خرید و استفاده
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Smart Notice -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.82rem; color: #334155; line-height: 1.6;">
+                    <div style="font-weight: 700; color: #0f766e; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-circle-info"></i> مانده هدیه چگونه محاسبه و ذخیره می‌شود؟
+                    </div>
+                    در هر خرید ۵٪ از مبلغ به عنوان سقف هدیه به شما تعلق می‌گیرد. چنانچه کالای کم‌قیمت‌تری انتخاب فرمایید یا هدیه‌ای بر ندارید، باقیمانده مبلغ به صورت خودکار در این کیف پول ذخیره شده و در خریدهای بعدی قابل استفاده است.
+                </div>
+
+                <!-- Transactions Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0; font-size: 0.92rem; font-weight: 700; color: #1e293b;">
+                        <i class="fa-solid fa-clock-rotate-left" style="color: #059669; margin-left: 4px;"></i> گردش و تاریخچه کیف پول
+                    </h4>
+                </div>
+
+                <div id="dashWalletTransactionsList">
+                    <!-- Transactions rendered here -->
+                </div>
+            </div>
+
+            <!-- Tab 2: Orders -->
+            <div id="cTabOrdersContent" style="display: none;">
+                <div id="dashOrdersListContainer">
+                    <!-- Orders rendered here -->
+                </div>
+            </div>
+
+            <!-- Tab 3: Profile & Settings -->
+            <div id="cTabProfileContent" style="display: none;">
+                <form onsubmit="handleSaveCustomerProfile(event)">
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px;">نام و نام خانوادگی</label>
+                        <input type="text" id="profileNameInput" class="search-input" style="padding: 10px 14px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 0.92rem; width: 100%;" required />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px;">شماره تلفن همراه</label>
+                        <input type="tel" id="profilePhoneInput" dir="ltr" class="search-input" style="padding: 10px 14px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 0.92rem; width: 100%; background: #f8fafc;" readonly />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px;">آدرس تحویل پیش‌فرض</label>
+                        <textarea id="profileAddressInput" rows="3" class="search-input" style="padding: 10px 14px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; width: 100%; resize: vertical;" placeholder="آدرس دقیق جهت تحویل سریع در خریدهای بعدی"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" id="btnSaveProfile" class="btn-submit-order" style="flex: 2; background: #059669; border-radius: 12px; padding: 11px; font-weight: 700;">
+                            <i class="fa-solid fa-floppy-disk"></i> ذخیره تغییرات
+                        </button>
+                        <button type="button" onclick="logoutCustomer()" style="flex: 1; border: 1.5px solid #ef4444; background: #fff; color: #ef4444; border-radius: 12px; padding: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="fa-solid fa-right-from-bracket"></i> خروج
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav">
         <div class="mobile-nav-items">
@@ -3215,9 +3501,10 @@
                 <i class="fa-solid fa-file-invoice"></i>
                 <span>پیگیری</span>
             </button>
-            <button class="mobile-nav-btn" id="mNavSupport" onclick="mobileNavAction('support')">
-                <i class="fa-brands fa-whatsapp"></i>
-                <span>پشتیبانی</span>
+            <button class="mobile-nav-btn" id="mNavAccount" onclick="mobileNavAction('account')">
+                <i class="fa-regular fa-user" id="mNavAccountIcon"></i>
+                <span id="mNavAccountText">حساب من</span>
+                <span class="mobile-nav-badge" id="mNavWalletDot" style="display:none; background:#10b981; width:8px; height:8px; min-width:8px; padding:0; border-radius:50%; top:4px; right:calc(50% - 14px);"></span>
             </button>
         </div>
     </nav>
@@ -4005,9 +4292,11 @@
 
         function getRemainingGiftAllowance() {
             const itemsSubtotal = calculateCartTotal();
-            const giftAllowance = Math.round(itemsSubtotal * 0.05);
+            const orderGiftQuota = Math.round(itemsSubtotal * 0.05);
+            const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
+            const totalAllowance = orderGiftQuota + walletCredit;
             const used = getSelectedGiftsTotalValue();
-            return Math.max(0, giftAllowance - used);
+            return Math.max(0, totalAllowance - used);
         }
 
         function filterGiftCategory(cat, btn) {
@@ -4020,23 +4309,29 @@
         function updateGiftModalTracker() {
             try {
                 const itemsSubtotal = calculateCartTotal();
-                const giftAllowance = Math.round(itemsSubtotal * 0.05);
+                const orderGiftQuota = Math.round(itemsSubtotal * 0.05);
+                const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
+                const totalAllowance = orderGiftQuota + walletCredit;
                 const used = getSelectedGiftsTotalValue();
-                const remaining = Math.max(0, giftAllowance - used);
+                const remaining = Math.max(0, totalAllowance - used);
                 const giftsList = getSelectedGiftsList();
                 const totalCount = getSelectedGiftsCount();
 
                 const subtitle = document.getElementById('giftModalQuotaSubtitle');
                 if (subtitle) {
-                    if (giftAllowance > 0) {
-                        subtitle.textContent = `سقف ارزش هدیه شما: ${giftAllowance.toLocaleString('fa-IR')} تومان (۵٪ مبلغ کل خرید)`;
+                    if (totalAllowance > 0) {
+                        if (walletCredit > 0) {
+                            subtitle.textContent = `سقف ارزش هدیه: ${totalAllowance.toLocaleString('fa-IR')} تومان (${orderGiftQuota.toLocaleString('fa-IR')} ت هدیه خرید + ${walletCredit.toLocaleString('fa-IR')} ت کیف پول)`;
+                        } else {
+                            subtitle.textContent = `سقف ارزش هدیه شما: ${totalAllowance.toLocaleString('fa-IR')} تومان (۵٪ مبلغ کل خرید)`;
+                        }
                     } else {
                         subtitle.textContent = `با افزودن کالا به سبد خرید، ۵٪ مبلغ خرید به عنوان هدیه فعال می‌شود`;
                     }
                 }
 
                 const totalQuotaEl = document.getElementById('giftTotalQuotaDisplay');
-                if (totalQuotaEl) totalQuotaEl.textContent = `${giftAllowance.toLocaleString('fa-IR')} تومان`;
+                if (totalQuotaEl) totalQuotaEl.textContent = `${totalAllowance.toLocaleString('fa-IR')} تومان`;
 
                 const usedQuotaEl = document.getElementById('giftUsedQuotaDisplay');
                 if (usedQuotaEl) usedQuotaEl.textContent = `${used.toLocaleString('fa-IR')} تومان (${totalCount.toLocaleString('fa-IR')} قلم)`;
@@ -4049,7 +4344,7 @@
 
                 const progressBar = document.getElementById('giftQuotaProgressBar');
                 if (progressBar) {
-                    const pct = giftAllowance > 0 ? Math.min(100, Math.round((used / giftAllowance) * 100)) : 0;
+                    const pct = totalAllowance > 0 ? Math.min(100, Math.round((used / totalAllowance) * 100)) : 0;
                     progressBar.style.width = pct + '%';
                     if (pct >= 100) {
                         progressBar.style.background = 'linear-gradient(90deg, #10b981, #047857)';
@@ -4064,7 +4359,7 @@
                         chipsContainer.innerHTML = `
                             <span style="font-size:0.75rem; color:#64748b;">
                                 <i class="fa-solid fa-hand-pointer" style="margin-left:3px; color:#059669;"></i>
-                                از لیست زیر، کالاهای مورد نظرتان را تا سقف هدیه انتخاب نمایید (می‌توانید چند قلم مختلف بردارید).
+                                از لیست زیر کالاهای مورد نظرتان را انتخاب کنید. مانده سقف هدیه به صورت خودکار در کیف پول حساب شما برای خریدهای بعدی ذخیره خواهد شد.
                             </span>
                         `;
                     } else {
@@ -4089,10 +4384,10 @@
                             <span style="color:#065f46; font-weight:bold;">
                                 ${totalCount.toLocaleString('fa-IR')} قلم هدیه (ارزش: ${used.toLocaleString('fa-IR')} ت)
                             </span>
-                            <span style="color:#64748b; margin-right:6px;">| باقیمانده سقف: <strong>${remaining.toLocaleString('fa-IR')} ت</strong></span>
+                            <span style="color:#64748b; margin-right:6px;">| مانده ذخیره‌شونده در کیف پول: <strong style="color:#059669;">${remaining.toLocaleString('fa-IR')} ت</strong></span>
                         `;
                     } else {
-                        footerSummary.innerHTML = `<span style="color:#64748b;">هنوز هدیه‌ای انتخاب نکرده‌اید.</span>`;
+                        footerSummary.innerHTML = `<span style="color:#64748b;">مانده ۵٪ هدیه (${orderGiftQuota.toLocaleString('fa-IR')} ت) در کیف پول حساب شما محفوظ خواهد ماند.</span>`;
                     }
                 }
 
@@ -4140,26 +4435,29 @@
             closeGiftSelectionModal();
             updateCartBar();
             refreshOrderSummaryList();
-            showGiftToast('سفارش بدون انتخاب محصول هدیه ثبت خواهد شد.', 'fa-info-circle', '#64748b');
+            showGiftToast('هدایا حذف شدند و کل ۵٪ مبلغ به کیف پول حساب شما منتقل خواهد شد.', 'fa-info-circle', '#059669');
         }
 
         function addGiftProduct(productId, e) {
             if (e && e.stopPropagation) e.stopPropagation();
             try {
                 const itemsSubtotal = calculateCartTotal();
-                const giftAllowance = Math.round(itemsSubtotal * 0.05);
+                const orderGiftQuota = Math.round(itemsSubtotal * 0.05);
+                const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
+                const totalAllowance = orderGiftQuota + walletCredit;
+                
                 const prodList = (typeof products !== 'undefined' && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== 'undefined' ? productsData : []);
                 const p = prodList.find(prod => String(prod.id) === String(productId) || String(prod.code) === String(productId));
                 if (!p) return;
                 const price = Number(p.price) || 0;
 
-                if (giftAllowance <= 0) {
+                if (totalAllowance <= 0) {
                     showGiftToast('ابتدا اقلامی را به سبد خرید اضافه فرمایید تا ۵٪ هدیه فعال شود.', 'fa-circle-info', '#d97706');
                     return;
                 }
 
                 const currentUsed = getSelectedGiftsTotalValue();
-                const remaining = giftAllowance - currentUsed;
+                const remaining = totalAllowance - currentUsed;
 
                 if (price > remaining) {
                     showGiftToast(`ارزش این کالا (${price.toLocaleString('fa-IR')} ت) از باقیمانده سقف هدیه (${remaining.toLocaleString('fa-IR')} ت) بیشتر است.`, 'fa-triangle-exclamation', '#d97706');
@@ -4521,6 +4819,7 @@
             summaryList.appendChild(subtotalRow);
 
             // Delivery Row
+            const deliveryFee = selectedDeliveryType === 'express' ? expressDeliveryFee : 0;
             const deliveryRow = document.createElement('div');
             deliveryRow.className = 'summary-item';
             if (selectedDeliveryType === 'express') {
@@ -4536,8 +4835,23 @@
             }
             summaryList.appendChild(deliveryRow);
 
+            // Wallet Deduction Row (if applied)
+            let walletDeduct = 0;
+            if (useWalletDiscount && currentCustomer && Number(currentCustomer.walletBalance) > 0) {
+                walletDeduct = Math.min(Number(currentCustomer.walletBalance), itemsSubtotal + deliveryFee);
+                const walletRow = document.createElement('div');
+                walletRow.className = 'summary-item';
+                walletRow.style.color = '#059669';
+                walletRow.style.fontWeight = '600';
+                walletRow.innerHTML = `
+                    <span><i class="fa-solid fa-wallet"></i> کسر از کیف پول هدیه:</span>
+                    <span style="direction:ltr; font-weight:bold;">-${walletDeduct.toLocaleString('fa-IR')} تومان</span>
+                `;
+                summaryList.appendChild(walletRow);
+            }
+
             // Final Payable Grand Total Row
-            const grandTotal = itemsSubtotal + (selectedDeliveryType === 'express' ? expressDeliveryFee : 0);
+            const grandTotal = Math.max(0, itemsSubtotal + deliveryFee - walletDeduct);
             const totalRow = document.createElement('div');
             totalRow.className = 'summary-item';
             totalRow.style.fontWeight = 'bold';
@@ -4558,6 +4872,7 @@
             const normRadio = document.querySelector('input[name="deliveryMethod"][value="normal"]');
             if (normRadio) normRadio.checked = true;
             toggleDeliveryType('normal');
+            prefillCustomerInCheckout();
             refreshOrderSummaryList();
             modal.style.display = 'flex';
         }
@@ -4714,6 +5029,14 @@
 
             // Save order to CRM
             const generatedOrderId = 'ord-' + Date.now().toString().slice(-6);
+            
+            // Calculate wallet deduction if requested
+            let walletUsedAmount = 0;
+            if (useWalletDiscount && currentCustomer && Number(currentCustomer.walletBalance) > 0) {
+                walletUsedAmount = Math.min(Number(currentCustomer.walletBalance), totalAmount);
+            }
+            const finalPayableTotal = Math.max(0, totalAmount - walletUsedAmount);
+
             const newOrderPayload = {
                 id: generatedOrderId,
                 customerName: name,
@@ -4727,7 +5050,9 @@
                     qty: g.qty,
                     price: g.product.price
                 })),
-                totalAmount,
+                totalAmount: finalPayableTotal,
+                originalTotalAmount: totalAmount,
+                walletUsed: walletUsedAmount,
                 paymentMethod: 'whatsapp',
                 deliveryType: selectedDeliveryType,
                 deliveryFee,
@@ -4787,7 +5112,11 @@
                 orderText += `▫️ *هزینه تحویل فوری:* ${(deliveryFee * 10).toLocaleString('fa-IR')} ریال (${deliveryFee.toLocaleString('fa-IR')} تومان)\n`;
             }
 
-            orderText += `\n💰 *مبلغ کل قابل پرداخت:* ${(totalAmount * 10).toLocaleString('fa-IR')} ریال (${totalAmount.toLocaleString('fa-IR')} تومان)\n`;
+            if (walletUsedAmount > 0) {
+                orderText += `\n🎁 *تخفیف کسر شده از کیف پول هدیه:* -${(walletUsedAmount * 10).toLocaleString('fa-IR')} ریال (-${walletUsedAmount.toLocaleString('fa-IR')} تومان)\n`;
+            }
+
+            orderText += `\n💰 *مبلغ کل قابل پرداخت:* ${(finalPayableTotal * 10).toLocaleString('fa-IR')} ریال (${finalPayableTotal.toLocaleString('fa-IR')} تومان)\n`;
 
             const b = customerBankSettings;
             orderText += `\n💳 *اطلاعات واریز کارت به کارت:*\n`;
@@ -4795,7 +5124,7 @@
             orderText += `▫️ به نام: *${b.cardHolder || 'پیمان نوری'}*\n`;
             orderText += `▫️ شماره کارت: *${formatCardForWhatsApp(b.cardNumber || '6037991823456789')}*\n`;
             orderText += `▫️ شماره شبا: *${b.shabaNumber || 'IR120170000000123456789012'}*\n`;
-            orderText += `▫️ *مبلغ جهت واریز در اپلیکیشن بانکی:* *${(totalAmount * 10).toLocaleString('fa-IR')} ریال*\n`;
+            orderText += `▫️ *مبلغ جهت واریز در اپلیکیشن بانکی:* *${(finalPayableTotal * 10).toLocaleString('fa-IR')} ریال*\n`;
             if (b.description) {
                 orderText += `\n📝 ${b.description}\n`;
             }
@@ -4822,12 +5151,22 @@
                         saveLocalOrder(finalOrder);
                     }
                 }
+                // Refresh customer wallet balance
+                if (phone) {
+                    try {
+                        localStorage.setItem('peyman_cust_phone', phone);
+                        initCustomerSession();
+                    } catch (e) {}
+                }
             } catch (err) {
                 console.warn('CRM save notice:', err);
             } finally {
                 closeCheckoutModal();
                 cart = {};
                 selectedGiftProducts = {};
+                useWalletDiscount = false;
+                const check = document.getElementById('useWalletDiscountCheck');
+                if (check) check.checked = false;
                 updateCartBar();
                 renderProducts();
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnHtml; }
@@ -5837,6 +6176,465 @@
             }
         }
 
+        /* --- Customer Account & Wallet Management System --- */
+        let currentCustomer = null;
+        let customerToken = null;
+        let useWalletDiscount = false;
+
+        function getSavedCustomerToken() {
+            try {
+                return localStorage.getItem('peyman_cust_token') || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function saveCustomerSession(customer, token) {
+            currentCustomer = customer;
+            if (token) {
+                customerToken = token;
+                try {
+                    localStorage.setItem('peyman_cust_token', token);
+                } catch (e) {}
+            }
+            if (customer && customer.phone) {
+                try {
+                    localStorage.setItem('peyman_cust_phone', customer.phone);
+                    localStorage.setItem('peyman_cust_data', JSON.stringify(customer));
+                } catch (e) {}
+            }
+            updateCustomerUI();
+        }
+
+        function clearCustomerSession() {
+            currentCustomer = null;
+            customerToken = null;
+            useWalletDiscount = false;
+            try {
+                localStorage.removeItem('peyman_cust_token');
+                localStorage.removeItem('peyman_cust_phone');
+                localStorage.removeItem('peyman_cust_data');
+            } catch (e) {}
+            updateCustomerUI();
+        }
+
+        async function initCustomerSession() {
+            try {
+                const cachedData = localStorage.getItem('peyman_cust_data');
+                const cachedToken = localStorage.getItem('peyman_cust_token');
+                if (cachedData) {
+                    currentCustomer = JSON.parse(cachedData);
+                    customerToken = cachedToken;
+                    updateCustomerUI();
+                }
+
+                const phone = localStorage.getItem('peyman_cust_phone');
+                if (phone) {
+                    const url = getApiUrl(`/api/customer/profile?phone=${encodeURIComponent(phone)}&_=${Date.now()}`);
+                    const headers = {};
+                    if (customerToken) headers['Authorization'] = `Bearer ${customerToken}`;
+                    const res = await fetch(url, { headers });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.success && data.customer) {
+                            currentCustomer = data.customer;
+                            saveCustomerSession(data.customer, customerToken);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Customer session init notice:', err);
+            }
+        }
+
+        function updateCustomerUI() {
+            const btnText = document.getElementById('headerCustomerBtnText');
+            const btnIcon = document.getElementById('headerCustomerIcon');
+            const badge = document.getElementById('headerWalletBadge');
+            const badgeText = document.getElementById('headerWalletBalanceText');
+            
+            const mNavText = document.getElementById('mNavAccountText');
+            const mNavDot = document.getElementById('mNavWalletDot');
+            
+            if (currentCustomer) {
+                const nameShort = currentCustomer.name ? currentCustomer.name.split(' ')[0] : 'حساب من';
+                if (btnText) btnText.textContent = nameShort;
+                if (btnIcon) btnIcon.className = 'fa-solid fa-user-check';
+                if (mNavText) mNavText.textContent = nameShort;
+
+                const balance = Number(currentCustomer.walletBalance) || 0;
+                if (balance > 0) {
+                    if (badge) badge.style.display = 'inline-flex';
+                    if (badgeText) badgeText.textContent = balance.toLocaleString('fa-IR');
+                    if (mNavDot) mNavDot.style.display = 'block';
+                } else {
+                    if (badge) badge.style.display = 'none';
+                    if (mNavDot) mNavDot.style.display = 'none';
+                }
+            } else {
+                if (btnText) btnText.textContent = 'ورود / عضویت';
+                if (btnIcon) btnIcon.className = 'fa-regular fa-user';
+                if (badge) badge.style.display = 'none';
+                if (mNavText) mNavText.textContent = 'حساب من';
+                if (mNavDot) mNavDot.style.display = 'none';
+            }
+
+            updateCheckoutWalletBox();
+        }
+
+        function handleHeaderCustomerClick() {
+            if (currentCustomer) {
+                openCustomerDashboardModal();
+            } else {
+                openCustomerAuthModal();
+            }
+        }
+
+        function openCustomerAuthModal() {
+            const modal = document.getElementById('customerAuthModal');
+            if (modal) {
+                const custPhoneVal = document.getElementById('custPhone')?.value;
+                const authPhoneInput = document.getElementById('authPhoneInput');
+                if (authPhoneInput && custPhoneVal && !authPhoneInput.value) {
+                    authPhoneInput.value = custPhoneVal;
+                }
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closeCustomerAuthModal() {
+            const modal = document.getElementById('customerAuthModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function handleCustomerAuthSubmit(e) {
+            if (e) e.preventDefault();
+            const phoneInput = document.getElementById('authPhoneInput');
+            const nameInput = document.getElementById('authNameInput');
+            const addressInput = document.getElementById('authAddressInput');
+            const submitBtn = document.getElementById('btnCustomerAuthSubmit');
+            
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+            const name = nameInput ? nameInput.value.trim() : '';
+            const address = addressInput ? addressInput.value.trim() : '';
+
+            if (!phone || phone.length < 10) {
+                alert('لطفاً شماره تلفن همراه معتبر وارد فرمایید.');
+                return;
+            }
+
+            const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال برقراری ارتباط...';
+            }
+
+            try {
+                const res = await fetch(getApiUrl('/api/customer/auth'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, name, address })
+                });
+                const data = await res.json();
+                if (res.ok && data && data.success && data.customer) {
+                    saveCustomerSession(data.customer, data.token);
+                    closeCustomerAuthModal();
+                    showGiftToast(`خوش آمدید ${data.customer.name || ''} عزیز! موجودی کیف پول: ${Number(data.customer.walletBalance || 0).toLocaleString('fa-IR')} تومان`, 'fa-circle-check', '#059669');
+                    openCustomerDashboardModal();
+                } else {
+                    alert(data.error || 'خطا در ورود به حساب کاربری. لطفاً دوباره تلاش کنید.');
+                }
+            } catch (err) {
+                console.error('Customer auth error:', err);
+                alert('خطای اتصال به سرور. لطفاً اتصال اینترنت خود را بررسی فرمایید.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origBtnHtml;
+                }
+            }
+        }
+
+        function openCustomerDashboardModal() {
+            if (!currentCustomer) {
+                openCustomerAuthModal();
+                return;
+            }
+            const modal = document.getElementById('customerDashboardModal');
+            if (!modal) return;
+
+            const nameEl = document.getElementById('dashCustName');
+            const phoneEl = document.getElementById('dashCustPhone');
+            if (nameEl) nameEl.textContent = currentCustomer.name || 'مشتری گرامی';
+            if (phoneEl) phoneEl.textContent = currentCustomer.phone || '-';
+
+            switchCustomerTab('wallet');
+            modal.style.display = 'flex';
+        }
+
+        function closeCustomerDashboardModal() {
+            const modal = document.getElementById('customerDashboardModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function switchCustomerTab(tab) {
+            document.querySelectorAll('.customer-tab-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById('cTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            if (btn) btn.classList.add('active');
+
+            const walletContent = document.getElementById('cTabWalletContent');
+            const ordersContent = document.getElementById('cTabOrdersContent');
+            const profileContent = document.getElementById('cTabProfileContent');
+
+            if (walletContent) walletContent.style.display = tab === 'wallet' ? 'block' : 'none';
+            if (ordersContent) ordersContent.style.display = tab === 'orders' ? 'block' : 'none';
+            if (profileContent) profileContent.style.display = tab === 'profile' ? 'block' : 'none';
+
+            if (tab === 'wallet') renderCustomerWalletTab();
+            if (tab === 'orders') renderCustomerOrdersTab();
+            if (tab === 'profile') renderCustomerProfileTab();
+        }
+
+        function renderCustomerWalletTab() {
+            if (!currentCustomer) return;
+            const balance = Number(currentCustomer.walletBalance) || 0;
+            const balTomanEl = document.getElementById('dashWalletBalanceToman');
+            const balRialEl = document.getElementById('dashWalletBalanceRial');
+            if (balTomanEl) balTomanEl.textContent = balance.toLocaleString('fa-IR');
+            if (balRialEl) balRialEl.textContent = (balance * 10).toLocaleString('fa-IR');
+
+            const listEl = document.getElementById('dashWalletTransactionsList');
+            if (!listEl) return;
+
+            const history = Array.isArray(currentCustomer.walletHistory) ? currentCustomer.walletHistory : [];
+            if (history.length === 0) {
+                listEl.innerHTML = `
+                    <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; padding:16px; text-align:center; color:#64748b; font-size:0.84rem;">
+                        <i class="fa-solid fa-receipt" style="font-size:1.5rem; color:#94a3b8; display:block; margin-bottom:6px;"></i>
+                        هنوز تراکنشی در کیف پول شما ثبت نشده است. با هر خرید، مانده ۵٪ هدیه در اینجا اضافه می‌شود.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            const sorted = [...history].reverse();
+            sorted.forEach(t => {
+                const isCredit = t.type === 'credit' || (t.amount > 0 && t.type !== 'debit');
+                const icon = isCredit ? 'fa-plus' : 'fa-minus';
+                const color = isCredit ? '#059669' : '#e11d48';
+                const sign = isCredit ? '+' : '-';
+                const dateStr = t.date ? new Date(t.date).toLocaleDateString('fa-IR') : '---';
+
+                html += `
+                    <div class="wallet-history-item">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:34px; height:34px; border-radius:10px; background:${isCredit ? '#ecfdf5' : '#fff1f2'}; color:${color}; display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:bold;">
+                                <i class="fa-solid ${icon}"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:0.86rem; font-weight:700; color:#1e293b;">${escapeHtml(t.description || (isCredit ? 'اعتبار هدیه سفارش' : 'استفاده در خرید'))}</div>
+                                <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                                    <span>${dateStr}</span>
+                                    ${t.orderId ? `<span style="margin-right:6px; color:#0284c7;">سفارش ${escapeHtml(t.orderId)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align:left; font-weight:800; font-size:0.92rem; color:${color};">
+                            ${sign}${Math.abs(Number(t.amount) || 0).toLocaleString('fa-IR')} <span style="font-size:0.75rem; font-weight:600;">تومان</span>
+                        </div>
+                    </div>
+                `;
+            });
+            listEl.innerHTML = html;
+        }
+
+        async function renderCustomerOrdersTab() {
+            if (!currentCustomer) return;
+            const container = document.getElementById('dashOrdersListContainer');
+            const countBadge = document.getElementById('dashOrdersCountBadge');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div style="text-align:center; padding:24px; color:#64748b; font-size:0.86rem;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:1.4rem; color:#059669; margin-bottom:8px; display:block;"></i>
+                    در حال بارگذاری لیست سفارشات...
+                </div>
+            `;
+
+            try {
+                const url = getApiUrl(`/api/customer/orders?phone=${encodeURIComponent(currentCustomer.phone)}&_=${Date.now()}`);
+                const headers = {};
+                if (customerToken) headers['Authorization'] = `Bearer ${customerToken}`;
+                const res = await fetch(url, { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    const orders = (data && Array.isArray(data.orders)) ? data.orders : [];
+                    if (countBadge) countBadge.textContent = orders.length.toLocaleString('fa-IR');
+
+                    if (orders.length === 0) {
+                        container.innerHTML = `
+                            <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:14px; padding:24px; text-align:center; color:#64748b;">
+                                <i class="fa-solid fa-box-open" style="font-size:2rem; color:#94a3b8; margin-bottom:8px; display:block;"></i>
+                                هنوز سفارشی ثبت نفرموده‌اید.
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    let html = '';
+                    orders.forEach(o => {
+                        const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString('fa-IR') : '---';
+                        const itemsCount = Array.isArray(o.items) ? o.items.reduce((s, i) => s + (Number(i.qty) || 1), 0) : 0;
+                        const giftsCount = Array.isArray(o.giftItems) ? o.giftItems.reduce((s, g) => s + (Number(g.qty) || 1), 0) : 0;
+                        const total = Number(o.totalAmount) || 0;
+                        const status = o.statusLabel || (o.status === 'delivered' ? 'تحویل شده' : o.status === 'processing' ? 'در حال ارسال' : 'ثبت شده');
+                        const statusClass = o.status === 'delivered' ? 'color:#059669; background:#ecfdf5; border-color:#a7f3d0;' : 'color:#0284c7; background:#f0f9ff; border-color:#bae6fd;';
+
+                        html += `
+                            <div class="cust-order-card">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                                    <div>
+                                        <span style="font-weight:800; font-size:0.92rem; color:#0f172a;">کد سفارش: <bdi dir="ltr">${escapeHtml(o.id)}</bdi></span>
+                                        <span style="font-size:0.76rem; color:#64748b; margin-right:8px;">${dateStr}</span>
+                                    </div>
+                                    <span style="font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:8px; border:1px solid; ${statusClass}">${status}</span>
+                                </div>
+                                <div style="font-size:0.82rem; color:#475569; margin-bottom:10px; line-height:1.6;">
+                                    <span>${itemsCount.toLocaleString('fa-IR')} قلم کالا</span>
+                                    ${giftsCount > 0 ? `<span style="color:#059669; margin-right:6px;"><i class="fa-solid fa-gift"></i> ${giftsCount.toLocaleString('fa-IR')} قلم هدیه رایگان</span>` : ''}
+                                    ${o.walletUsed > 0 ? `<span style="color:#0f766e; margin-right:6px;">(کسر ${Number(o.walletUsed).toLocaleString('fa-IR')} ت از کیف پول)</span>` : ''}
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:10px;">
+                                    <div>
+                                        <span style="font-size:0.78rem; color:#64748b;">مبلغ فاکتور:</span>
+                                        <strong style="color:#047857; font-size:0.95rem; margin-right:4px;">${total.toLocaleString('fa-IR')} تومان</strong>
+                                    </div>
+                                    <button onclick="closeCustomerDashboardModal(); showCustomerInvoice(${JSON.stringify(o).replace(/"/g, '&quot;')});" style="background:#f0fdf4; border:1px solid #86efac; color:#065f46; padding:6px 12px; border-radius:10px; font-size:0.78rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px;">
+                                        <i class="fa-solid fa-file-invoice"></i> مشاهده فاکتور
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `<div style="color:#ef4444; text-align:center; padding:16px;">خطا در دریافت سفارشات.</div>`;
+                }
+            } catch (err) {
+                console.error('Error loading customer orders:', err);
+                container.innerHTML = `<div style="color:#ef4444; text-align:center; padding:16px;">عدم امکان برقراری ارتباط با سرور.</div>`;
+            }
+        }
+
+        function renderCustomerProfileTab() {
+            if (!currentCustomer) return;
+            const nameInput = document.getElementById('profileNameInput');
+            const phoneInput = document.getElementById('profilePhoneInput');
+            const addressInput = document.getElementById('profileAddressInput');
+
+            if (nameInput) nameInput.value = currentCustomer.name || '';
+            if (phoneInput) phoneInput.value = currentCustomer.phone || '';
+            if (addressInput) addressInput.value = currentCustomer.address || '';
+        }
+
+        async function handleSaveCustomerProfile(e) {
+            if (e) e.preventDefault();
+            if (!currentCustomer) return;
+
+            const name = document.getElementById('profileNameInput')?.value.trim() || '';
+            const address = document.getElementById('profileAddressInput')?.value.trim() || '';
+            const submitBtn = document.getElementById('btnSaveProfile');
+            const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...';
+            }
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (customerToken) headers['Authorization'] = `Bearer ${customerToken}`;
+
+                const res = await fetch(getApiUrl('/api/customer/profile'), {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify({ phone: currentCustomer.phone, name, address })
+                });
+                const data = await res.json();
+                if (res.ok && data && data.success && data.customer) {
+                    saveCustomerSession(data.customer, customerToken);
+                    showGiftToast('مشخصات شما با موفقیت به روز شد.', 'fa-circle-check', '#059669');
+                } else {
+                    alert(data.error || 'خطا در ذخیره مشخصات.');
+                }
+            } catch (err) {
+                console.error('Error saving customer profile:', err);
+                alert('خطای اتصال به سرور.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origBtnHtml;
+                }
+            }
+        }
+
+        function logoutCustomer() {
+            if (confirm('آیا مایل به خروج از حساب کاربری هستید؟')) {
+                clearCustomerSession();
+                closeCustomerDashboardModal();
+                showGiftToast('از حساب کاربری خود خارج شدید.', 'fa-right-from-bracket', '#64748b');
+            }
+        }
+
+        function updateCheckoutWalletBox() {
+            const box = document.getElementById('checkoutWalletBox');
+            const availLabel = document.getElementById('checkoutWalletAvailableLabel');
+            const deductLabel = document.getElementById('checkoutWalletDeductionLabel');
+            const check = document.getElementById('useWalletDiscountCheck');
+
+            const balance = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
+            
+            if (box) {
+                if (balance > 0) {
+                    box.style.display = 'block';
+                    if (availLabel) availLabel.textContent = balance.toLocaleString('fa-IR') + ' تومان';
+                    
+                    const itemsSubtotal = calculateCartTotal();
+                    const deliveryFee = selectedDeliveryType === 'express' ? expressDeliveryFee : 0;
+                    const maxDeductible = Math.min(balance, itemsSubtotal + deliveryFee);
+                    
+                    if (deductLabel) {
+                        deductLabel.textContent = (check && check.checked ? maxDeductible : 0).toLocaleString('fa-IR') + ' تومان';
+                    }
+                } else {
+                    box.style.display = 'none';
+                    if (check) check.checked = false;
+                    useWalletDiscount = false;
+                }
+            }
+        }
+
+        function toggleWalletDiscountCheckout() {
+            const check = document.getElementById('useWalletDiscountCheck');
+            useWalletDiscount = check ? check.checked : false;
+            updateCheckoutWalletBox();
+            refreshOrderSummaryList();
+        }
+
+        function prefillCustomerInCheckout() {
+            if (currentCustomer) {
+                const nameInput = document.getElementById('custName');
+                const phoneInput = document.getElementById('custPhone');
+                const addrInput = document.getElementById('custAddress');
+
+                if (nameInput && !nameInput.value && currentCustomer.name) nameInput.value = currentCustomer.name;
+                if (phoneInput && !phoneInput.value && currentCustomer.phone) phoneInput.value = currentCustomer.phone;
+                if (addrInput && !addrInput.value && currentCustomer.address) addrInput.value = currentCustomer.address;
+            }
+            updateCheckoutWalletBox();
+        }
+
         /* --- PWA & Mobile App Navigation Logic --- */
         let deferredPrompt = null;
         const isIos = () => {
@@ -5922,6 +6720,8 @@
                 }
             } else if (action === 'cart') {
                 openCheckoutModal();
+            } else if (action === 'account') {
+                handleHeaderCustomerClick();
             } else if (action === 'track') {
                 openTrackOrderModal();
             } else if (action === 'support') {
@@ -6019,16 +6819,19 @@
                 checkForAppUpdates();
                 loadProductsFromApi();
                 loadStoreDeliverySettings();
+                initCustomerSession();
             }
         });
         window.addEventListener('focus', () => {
             checkForAppUpdates();
+            initCustomerSession();
         });
 
         renderProducts();
         loadProductsFromApi();
         loadCustomerBankSettings();
         loadStoreDeliverySettings();
+        initCustomerSession();
         syncPendingLocalOrders();
         setInterval(loadProductsFromApi, 3000);
         setInterval(loadStoreDeliverySettings, 5000);

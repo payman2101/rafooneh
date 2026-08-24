@@ -1673,6 +1673,9 @@
                                     <th onclick="sortCustomersTable('totalSpent')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس مجموع خرید">
                                         مجموع خرید <i id="sortIcon-cust-totalSpent" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
                                     </th>
+                                    <th onclick="sortCustomersTable('walletBalance')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس موجودی کیف پول">
+                                        موجودی کیف پول <i id="sortIcon-cust-walletBalance" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
+                                    </th>
                                     <th onclick="sortCustomersTable('lastOrderAt')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس آخرین تاریخ سفارش">
                                         آخرین سفارش <i id="sortIcon-cust-lastOrderAt" class="fa-solid fa-sort-down" style="font-size:0.8rem; margin-right:4px; color:var(--primary);"></i>
                                     </th>
@@ -3886,7 +3889,7 @@
         if (!tbody) return;
 
         if (!paginatedList.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">مشتری با این مشخصات یافت نشد</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">مشتری با این مشخصات یافت نشد</td></tr>';
         } else {
             tbody.innerHTML = paginatedList.map(c => `
                 <tr>
@@ -3894,6 +3897,12 @@
                     <td dir="ltr"><span style="font-family:monospace; font-weight:bold;">${escapeHtml(c.phone || '-')}</span></td>
                     <td>${(c.totalOrders || 0).toLocaleString('fa-IR')} سفارش</td>
                     <td><strong style="color:#059669;">${formatPrice(c.totalSpent)}</strong></td>
+                    <td>
+                        <span style="display:inline-flex; align-items:center; gap:4px; font-weight:bold; color:${(Number(c.walletBalance) || 0) > 0 ? '#059669' : '#64748b'};">
+                            <i class="fa-solid fa-wallet" style="font-size:0.8rem;"></i>
+                            ${(Number(c.walletBalance) || 0).toLocaleString('fa-IR')} <span style="font-size:0.75rem; font-weight:normal;">ت</span>
+                        </span>
+                    </td>
                     <td>${formatDate(c.lastOrderAt)}</td>
                     <td>
                         <div style="display:flex; gap:6px;">
