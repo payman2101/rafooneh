@@ -1529,6 +1529,9 @@
             color: #1e293b;
             font-size: 0.88rem;
             line-height: 1.6;
+            direction: rtl;
+            text-align: right;
+            unicode-bidi: embed;
         }
 
         .inv-header {
@@ -6067,8 +6070,8 @@
                     <td><strong><bdi dir="ltr">${item.productId || item.code || item.id || '-'}</bdi></strong></td>
                     <td style="text-align: right; font-weight: bold;">${nameDisplay}</td>
                     <td><strong>${qty.toLocaleString('fa-IR')}</strong></td>
-                    <td>${isGift ? '<span style="color:#059669; font-weight:bold;">رایگان</span>' : `<span>${unitPriceRial.toLocaleString('fa-IR')}</span><div style="font-size:0.72rem; color:#64748b;">(${unitPrice.toLocaleString('fa-IR')} ت)</div>`}</td>
-                    <td><strong>${isGift ? '<span style="color:#059669;">۰</span>' : `<span>${rowTotalRial.toLocaleString('fa-IR')}</span><div style="font-size:0.72rem; color:#64748b; font-weight:normal;">(${rowTotal.toLocaleString('fa-IR')} ت)</div>`}</strong></td>
+                    <td>${isGift ? '<span style="color:#059669; font-weight:bold;">رایگان</span>' : `<span>${unitPriceRial.toLocaleString('fa-IR')}</span><div style="font-size:0.72rem; color:#64748b; direction:rtl; unicode-bidi:isolate;">(${unitPrice.toLocaleString('fa-IR')} ت)</div>`}</td>
+                    <td><strong>${isGift ? '<span style="color:#059669;">۰</span>' : `<span>${rowTotalRial.toLocaleString('fa-IR')}</span><div style="font-size:0.72rem; color:#64748b; font-weight:normal; direction:rtl; unicode-bidi:isolate;">(${rowTotal.toLocaleString('fa-IR')} ت)</div>`}</strong></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -6095,7 +6098,7 @@
             const totalRial = totalAmount * 10;
             const subtotalRial = subtotal * 10;
 
-            document.getElementById('invSubtotal').innerHTML = `${subtotalRial.toLocaleString('fa-IR')} ریال <span style="font-size:0.8rem; color:#64748b; font-weight:normal; margin-right:4px;">(${subtotal.toLocaleString('fa-IR')} تومان)</span>`;
+            document.getElementById('invSubtotal').innerHTML = `${subtotalRial.toLocaleString('fa-IR')} ریال <span style="font-size:0.8rem; color:#64748b; font-weight:normal; margin-right:4px; direction:rtl; unicode-bidi:isolate;">(${subtotal.toLocaleString('fa-IR')} تومان)</span>`;
             document.getElementById('invGrandTotal').innerText = totalRial.toLocaleString('fa-IR') + ' ریال';
             if (document.getElementById('invGrandTotalToman')) {
                 document.getElementById('invGrandTotalToman').innerText = `(معادل ${totalAmount.toLocaleString('fa-IR')} تومان)`;
@@ -6179,6 +6182,40 @@
             return msg;
         }
 
+        // Fix for RTL Persian Parentheses & Brackets in html2canvas renderings
+        function fixRtlParenthesesForCanvas(clonedDoc, elementId) {
+            try {
+                const target = (elementId && clonedDoc.getElementById(elementId)) || clonedDoc.querySelector('.printable-invoice');
+                if (!target) return;
+
+                target.style.direction = 'rtl';
+                target.style.textAlign = 'right';
+
+                const walker = clonedDoc.createTreeWalker(target, NodeFilter.SHOW_TEXT, null, false);
+                let node;
+                while ((node = walker.nextNode())) {
+                    const val = node.nodeValue;
+                    if (!val) continue;
+                    if (val.includes('(') || val.includes(')') || val.includes('[') || val.includes(']') || val.includes('«') || val.includes('»')) {
+                        // In html2canvas, characters are rendered glyph-by-glyph without OpenType bidi mirroring.
+                        // Swapping ( and ) and other brackets ensures they render visually correctly in Persian RTL images.
+                        node.nodeValue = val
+                            .replace(/\(/g, '\uE001')
+                            .replace(/\)/g, '(')
+                            .replace(/\uE001/g, ')')
+                            .replace(/\[/g, '\uE002')
+                            .replace(/\]/g, '[')
+                            .replace(/\uE002/g, ']')
+                            .replace(/«/g, '\uE003')
+                            .replace(/»/g, '«')
+                            .replace(/\uE003/g, '»');
+                    }
+                }
+            } catch (e) {
+                console.warn('Canvas RTL parentheses notice:', e);
+            }
+        }
+
         // Generate High-Quality Invoice PNG Image
         async function generateInvoiceImageFile(order, elementId = 'printableInvoiceArea') {
             const invoiceEl = document.getElementById(elementId);
@@ -6194,7 +6231,10 @@
                     logging: false,
                     allowTaint: true,
                     windowWidth: invoiceEl.scrollWidth,
-                    windowHeight: invoiceEl.scrollHeight
+                    windowHeight: invoiceEl.scrollHeight,
+                    onclone: (clonedDoc) => {
+                        fixRtlParenthesesForCanvas(clonedDoc, elementId);
+                    }
                 });
 
                 return new Promise((resolve) => {
