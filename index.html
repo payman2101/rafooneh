@@ -130,24 +130,32 @@
 
         @media (max-width: 768px) {
             header {
-                padding: 14px 15px;
+                padding: 12px 14px;
             }
             .header-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 10px;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                gap: 8px;
             }
             .header-brand-section {
-                text-align: center;
+                text-align: right;
+            }
+            .header-brand-section p {
+                display: none;
             }
             header h1 {
-                justify-content: center;
-                font-size: 1.25rem;
+                justify-content: flex-start;
+                font-size: 1.05rem;
             }
             .header-actions-section {
-                justify-content: center;
-                width: 100%;
-                gap: 8px;
+                justify-content: flex-end;
+                width: auto;
+                gap: 6px;
+            }
+            .badge-trust {
+                display: none;
             }
         }
 
@@ -2146,24 +2154,29 @@
             }
 
             header {
-                padding: 14px 12px;
+                padding: 12px 14px;
             }
             .header-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 10px;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                gap: 8px;
             }
             .header-brand-section {
-                text-align: center;
+                text-align: right;
+            }
+            .header-brand-section p {
+                display: none;
             }
             header h1 {
-                justify-content: center;
-                font-size: 1.2rem;
+                justify-content: flex-start;
+                font-size: 1.05rem;
             }
             .header-actions-section {
-                justify-content: center;
-                width: 100%;
-                gap: 8px;
+                justify-content: flex-end;
+                width: auto;
+                gap: 6px;
             }
             .btn-header-action {
                 padding: 8px 12px;
@@ -2543,6 +2556,141 @@
             border-color: #00897b;
             box-shadow: 0 6px 16px rgba(0, 137, 123, 0.08);
         }
+
+        /* ------------------------------------------------------------- */
+        /* Slide-over Drawer / Sidebar Navigation Styles                 */
+        /* ------------------------------------------------------------- */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .drawer-container {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 320px;
+            max-width: 86vw;
+            background: #ffffff;
+            z-index: 10001;
+            box-shadow: -10px 0 35px rgba(0, 0, 0, 0.22);
+            transform: translateX(100%);
+            transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .drawer-overlay.active .drawer-container {
+            transform: translateX(0);
+        }
+        .drawer-header {
+            padding: 18px 20px;
+            background: linear-gradient(135deg, #004d40 0%, #00796b 100%);
+            color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .drawer-close-btn {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        .drawer-close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+        .drawer-user-card {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 20px;
+        }
+        .drawer-menu-list {
+            padding: 14px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+        .drawer-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            border-radius: 12px;
+            color: #1e293b;
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: right;
+        }
+        .drawer-menu-item:hover {
+            background: #f1f5f9;
+            color: #00796b;
+            transform: translateX(-3px);
+        }
+        .drawer-menu-item i {
+            width: 22px;
+            font-size: 1.1rem;
+            color: #00796b;
+            text-align: center;
+        }
+        .drawer-menu-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 8px 10px;
+        }
+        .drawer-footer {
+            padding: 14px 20px;
+            border-top: 1px solid #f1f5f9;
+            background: #fafafa;
+            font-size: 0.8rem;
+            color: #64748b;
+            text-align: center;
+        }
+        .btn-hamburger-toggle {
+            background: rgba(255, 255, 255, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-hamburger-toggle:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -2550,30 +2698,153 @@
     <!-- Header -->
     <header>
         <div class="header-content">
-            <div class="header-brand-section">
-                <h1><i class="fa-solid fa-pump-soap"></i> محصولات بهداشتی پیمان</h1>
-                <p>تأمین مستقیم محصولات بهداشتی رافونه و لوازم نظافت درب منزل</p>
+            <div class="header-brand-section" style="display: flex; align-items: center; gap: 12px;">
+                <button class="btn-hamburger-toggle" id="btnHamburgerToggle" onclick="toggleDrawer(true)" title="منوی دسترسی و پروفایل" aria-label="منو">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div>
+                    <h1><i class="fa-solid fa-pump-soap"></i> محصولات بهداشتی پیمان</h1>
+                    <p>تأمین مستقیم محصولات بهداشتی رافونه و لوازم نظافت درب منزل</p>
+                </div>
             </div>
             <div class="header-actions-section">
                 <div class="badge-trust">
-                    <i class="fa-solid fa-shield-halved"></i> ۶ سال سابقه خدمت و اعتماد مشتریان
+                    <i class="fa-solid fa-shield-halved"></i> ۶ سال سابقه خدمت و اعتماد
                 </div>
                 <button class="btn-header-action" id="btnHeaderCustomerAuth" onclick="handleHeaderCustomerClick()" style="background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.38);">
                     <i class="fa-regular fa-user" id="headerCustomerIcon"></i> <span id="headerCustomerBtnText">ورود / عضویت</span>
                     <span class="header-wallet-badge" id="headerWalletBadge" style="display:none;" title="موجودی کیف پول هدیه"><i class="fa-solid fa-wallet"></i> <span id="headerWalletBalanceText">۰</span> ت</span>
                 </button>
-                <button class="btn-header-action" id="btnHeaderCustomerLogout" onclick="logoutCustomer()" style="display:none; background: rgba(239,68,68,0.22); border-color: rgba(239,68,68,0.42); color: #fee2e2;" title="خروج از حساب کاربری">
-                    <i class="fa-solid fa-right-from-bracket"></i> <span>خروج</span>
-                </button>
-                <button class="btn-header-action" onclick="openTrackOrderModal()">
-                    <i class="fa-solid fa-file-invoice"></i> پیگیری سفارش و فاکتور
-                </button>
-                <button class="btn-header-action" id="btnHeaderInstall" onclick="handlePwaInstallClick()" style="background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.4);">
-                    <i class="fa-solid fa-mobile-screen-button"></i> نصب اپلیکیشن
+                <button class="btn-header-action" id="btnHeaderDrawerMenu" onclick="toggleDrawer(true)" style="background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.38);">
+                    <i class="fa-solid fa-ellipsis-vertical"></i> <span>منو و دسترسی‌ها</span>
                 </button>
             </div>
         </div>
     </header>
+
+    <!-- Slide-over Drawer (ساید منوی کشویی مدرن) -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="if(event.target.id==='drawerOverlay') toggleDrawer(false);">
+        <div class="drawer-container" id="drawerContainer">
+            <!-- Drawer Header -->
+            <div class="drawer-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 38px; height: 38px; border-radius: 12px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
+                        <i class="fa-solid fa-pump-soap"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 1rem;">محصولات بهداشتی پیمان</div>
+                        <div style="font-size: 0.75rem; opacity: 0.85;">منوی خدمات و دسترسی سریع</div>
+                    </div>
+                </div>
+                <button class="drawer-close-btn" onclick="toggleDrawer(false)" title="بستن منو">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Drawer User Profile Card -->
+            <div class="drawer-user-card" id="drawerUserCard">
+                <!-- Logged In View -->
+                <div id="drawerUserLoggedIn" style="display: none;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #059669, #0d9488); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold;">
+                                <i class="fa-solid fa-user-check"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 800; font-size: 0.95rem; color: #0f172a;" id="drawerUserName">مشتری عزیز</div>
+                                <div style="font-size: 0.78rem; color: #64748b;" id="drawerUserPhone">09123456789</div>
+                            </div>
+                        </div>
+                        <button onclick="toggleDrawer(false); logoutCustomer();" style="border: 1px solid #fecaca; background: #fff; color: #dc2626; border-radius: 10px; padding: 5px 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="خروج از حساب">
+                            <i class="fa-solid fa-right-from-bracket"></i> خروج
+                        </button>
+                    </div>
+                    <!-- Mini Wallet Balance in Drawer -->
+                    <div onclick="toggleDrawer(false); openCustomerDashboardModal('wallet');" style="background: linear-gradient(135deg, #065f46, #047857); color: white; padding: 10px 14px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 4px 12px rgba(4,120,87,0.18);">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-wallet" style="color: #fef08a; font-size: 1.1rem;"></i>
+                            <span style="font-size: 0.8rem; opacity: 0.95;">موجودی کیف پول:</span>
+                        </div>
+                        <div>
+                            <strong style="font-size: 0.95rem; color: #fef08a;" id="drawerUserWallet">۰</strong> <span style="font-size: 0.75rem;">تومان</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guest / Logged Out View -->
+                <div id="drawerUserLoggedOut">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                            <i class="fa-regular fa-user"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.92rem; color: #1e293b;">حساب کاربری</div>
+                            <div style="font-size: 0.78rem; color: #64748b;">برای پیگیری سفارشات و کیف پول هدیه</div>
+                        </div>
+                    </div>
+                    <button onclick="toggleDrawer(false); openCustomerAuthModal();" style="width: 100%; background: linear-gradient(135deg, #059669, #047857); color: white; border: none; border-radius: 12px; padding: 9px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 3px 10px rgba(5,150,105,0.22);">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> ورود یا ایجاد حساب کاربری
+                    </button>
+                </div>
+            </div>
+
+            <!-- Drawer Menu Navigation List -->
+            <div class="drawer-menu-list">
+                <button class="drawer-menu-item" onclick="toggleDrawer(false); window.scrollTo({ top: 0, behavior: 'smooth' });">
+                    <i class="fa-solid fa-house"></i>
+                    <span>صفحه اصلی و کاتالوگ محصولات</span>
+                </button>
+
+                <button class="drawer-menu-item" onclick="toggleDrawer(false); handleHeaderCustomerClick();">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span>پروفایل و اطلاعات کاربری</span>
+                </button>
+
+                <button class="drawer-menu-item" onclick="toggleDrawer(false); openCustomerDashboardModal('wallet');">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span>کیف پول و اعتبارات هدیه (۵٪)</span>
+                </button>
+
+                <button class="drawer-menu-item" onclick="toggleDrawer(false); openCustomerDashboardModal('orders');">
+                    <i class="fa-solid fa-box-open"></i>
+                    <span>سوابق و پیگیری سفارش‌های من</span>
+                </button>
+
+                <button class="drawer-menu-item" onclick="toggleDrawer(false); openGiftSelectionModal();">
+                    <i class="fa-solid fa-gift" style="color: #ea580c;"></i>
+                    <span>انتخاب هدایای رایگان (۵٪ تخفیف هدیه)</span>
+                </button>
+
+                <button class="drawer-menu-item" onclick="toggleDrawer(false); openTrackOrderModal();">
+                    <i class="fa-solid fa-file-invoice"></i>
+                    <span>استعلام سریع فاکتور با شماره تماس</span>
+                </button>
+
+                <div class="drawer-menu-divider"></div>
+
+                <button class="drawer-menu-item" onclick="toggleDrawer(false); handlePwaInstallClick();">
+                    <i class="fa-solid fa-mobile-screen-button" style="color: #2563eb;"></i>
+                    <span>نصب نسخه اپلیکیشن (PWA)</span>
+                </button>
+
+                <a href="https://wa.me/989027959555" target="_blank" class="drawer-menu-item" onclick="toggleDrawer(false);">
+                    <i class="fa-brands fa-whatsapp" style="color: #16a34a;"></i>
+                    <span>پشتیبانی و سفارش در واتساپ</span>
+                </a>
+
+                <a href="tel:09027959555" class="drawer-menu-item" onclick="toggleDrawer(false);">
+                    <i class="fa-solid fa-phone" style="color: #0284c7;"></i>
+                    <span>تماس تلفنی با واحد فروش</span>
+                </a>
+            </div>
+
+            <!-- Drawer Footer -->
+            <div class="drawer-footer">
+                <div>محصولات بهداشتی رافونه و لوازم نظافت</div>
+                <div style="font-size: 0.75rem; margin-top: 4px; color: #94a3b8;">نسخه ۲.۶.۰ • پشتیبانی: ۰۹۰۲۷۹۵۹۵۵۵</div>
+            </div>
+        </div>
+    </div>
 
     <!-- PWA Install Banner -->
     <div class="pwa-install-banner" id="pwaInstallBanner">
@@ -6264,6 +6535,13 @@
             
             const mNavText = document.getElementById('mNavAccountText');
             const mNavDot = document.getElementById('mNavWalletDot');
+
+            // Drawer user card elements
+            const drawerLoggedIn = document.getElementById('drawerUserLoggedIn');
+            const drawerLoggedOut = document.getElementById('drawerUserLoggedOut');
+            const drawerUserName = document.getElementById('drawerUserName');
+            const drawerUserPhone = document.getElementById('drawerUserPhone');
+            const drawerUserWallet = document.getElementById('drawerUserWallet');
             
             if (currentCustomer) {
                 const nameShort = currentCustomer.name ? currentCustomer.name.split(' ')[0] : 'حساب من';
@@ -6272,7 +6550,14 @@
                 if (mNavText) mNavText.textContent = nameShort;
                 if (logoutBtn) logoutBtn.style.display = 'inline-flex';
 
+                if (drawerLoggedIn) drawerLoggedIn.style.display = 'block';
+                if (drawerLoggedOut) drawerLoggedOut.style.display = 'none';
+                if (drawerUserName) drawerUserName.textContent = currentCustomer.name || 'مشتری عزیز';
+                if (drawerUserPhone) drawerUserPhone.textContent = currentCustomer.phone || '-';
+
                 const balance = Number(currentCustomer.walletBalance) || 0;
+                if (drawerUserWallet) drawerUserWallet.textContent = balance.toLocaleString('fa-IR');
+
                 if (balance > 0) {
                     if (badge) badge.style.display = 'inline-flex';
                     if (badgeText) badgeText.textContent = balance.toLocaleString('fa-IR');
@@ -6288,14 +6573,29 @@
                 if (logoutBtn) logoutBtn.style.display = 'none';
                 if (mNavText) mNavText.textContent = 'حساب من';
                 if (mNavDot) mNavDot.style.display = 'none';
+
+                if (drawerLoggedIn) drawerLoggedIn.style.display = 'none';
+                if (drawerLoggedOut) drawerLoggedOut.style.display = 'block';
             }
 
             updateCheckoutWalletBox();
         }
 
+        function toggleDrawer(open) {
+            const overlay = document.getElementById('drawerOverlay');
+            if (!overlay) return;
+            if (open) {
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
         function handleHeaderCustomerClick() {
             if (currentCustomer) {
-                openCustomerDashboardModal();
+                openCustomerDashboardModal('profile');
             } else {
                 openCustomerAuthModal();
             }
@@ -6366,7 +6666,7 @@
             }
         }
 
-        function openCustomerDashboardModal() {
+        function openCustomerDashboardModal(defaultTab = 'wallet') {
             if (!currentCustomer) {
                 openCustomerAuthModal();
                 return;
@@ -6379,7 +6679,7 @@
             if (nameEl) nameEl.textContent = currentCustomer.name || 'مشتری گرامی';
             if (phoneEl) phoneEl.textContent = currentCustomer.phone || '-';
 
-            switchCustomerTab('wallet');
+            switchCustomerTab(defaultTab || 'wallet');
             modal.style.display = 'flex';
         }
 
