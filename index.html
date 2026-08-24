@@ -2562,6 +2562,9 @@
                     <i class="fa-regular fa-user" id="headerCustomerIcon"></i> <span id="headerCustomerBtnText">ورود / عضویت</span>
                     <span class="header-wallet-badge" id="headerWalletBadge" style="display:none;" title="موجودی کیف پول هدیه"><i class="fa-solid fa-wallet"></i> <span id="headerWalletBalanceText">۰</span> ت</span>
                 </button>
+                <button class="btn-header-action" id="btnHeaderCustomerLogout" onclick="logoutCustomer()" style="display:none; background: rgba(239,68,68,0.22); border-color: rgba(239,68,68,0.42); color: #fee2e2;" title="خروج از حساب کاربری">
+                    <i class="fa-solid fa-right-from-bracket"></i> <span>خروج</span>
+                </button>
                 <button class="btn-header-action" onclick="openTrackOrderModal()">
                     <i class="fa-solid fa-file-invoice"></i> پیگیری سفارش و فاکتور
                 </button>
@@ -3380,7 +3383,12 @@
                         <div style="font-size: 0.8rem; color: #64748b;" id="dashCustPhone">09123456789</div>
                     </div>
                 </div>
-                <button onclick="closeCustomerDashboardModal()" style="border: none; background: #f1f5f9; color: #64748b; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem;"><i class="fa-solid fa-xmark"></i></button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" onclick="logoutCustomer()" style="border: 1px solid #fecaca; background: #fef2f2; color: #dc2626; border-radius: 10px; padding: 6px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;" title="خروج از حساب کاربری">
+                        <i class="fa-solid fa-right-from-bracket"></i> خروج از حساب
+                    </button>
+                    <button onclick="closeCustomerDashboardModal()" style="border: none; background: #f1f5f9; color: #64748b; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
             </div>
 
             <!-- Navigation Tabs -->
@@ -6252,6 +6260,7 @@
             const btnIcon = document.getElementById('headerCustomerIcon');
             const badge = document.getElementById('headerWalletBadge');
             const badgeText = document.getElementById('headerWalletBalanceText');
+            const logoutBtn = document.getElementById('btnHeaderCustomerLogout');
             
             const mNavText = document.getElementById('mNavAccountText');
             const mNavDot = document.getElementById('mNavWalletDot');
@@ -6261,6 +6270,7 @@
                 if (btnText) btnText.textContent = nameShort;
                 if (btnIcon) btnIcon.className = 'fa-solid fa-user-check';
                 if (mNavText) mNavText.textContent = nameShort;
+                if (logoutBtn) logoutBtn.style.display = 'inline-flex';
 
                 const balance = Number(currentCustomer.walletBalance) || 0;
                 if (balance > 0) {
@@ -6275,6 +6285,7 @@
                 if (btnText) btnText.textContent = 'ورود / عضویت';
                 if (btnIcon) btnIcon.className = 'fa-regular fa-user';
                 if (badge) badge.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'none';
                 if (mNavText) mNavText.textContent = 'حساب من';
                 if (mNavDot) mNavDot.style.display = 'none';
             }
