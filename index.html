@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>محصولات بهداشتی پیمان | تحویل درب منزل</title>
+    <title>پخش بهداشتی پیمان | تحویل درب منزل</title>
     
     <!-- PWA & Mobile Web App Meta Tags -->
     <link rel="manifest" href="/manifest.json">
@@ -24,6 +24,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <!-- html2canvas for Invoice Image Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- jsPDF for Invoice PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <script>
         const PRODUCT_PLACEHOLDER_SVG = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f1f5f9'/%3E%3Cpath d='M160 140h80v20h-80zM170 120h60v20h-60zM150 160h100v160c0 11-9 20-20 20h-60c-11 0-20-9-20-20V160z' fill='%230284c7' opacity='0.3'/%3E%3Ctext x='200' y='320' font-family='sans-serif' font-size='16' fill='%2364748b' text-anchor='middle'%3Eتصویر کالا%3E%3C/text%3E%3C/svg%3E";
@@ -2703,8 +2705,8 @@
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <div>
-                    <h1><i class="fa-solid fa-pump-soap"></i> محصولات بهداشتی پیمان</h1>
-                    <p>تأمین مستقیم محصولات بهداشتی رافونه و لوازم نظافت درب منزل</p>
+                    <h1><i class="fa-solid fa-pump-soap"></i> پخش بهداشتی پیمان</h1>
+                    <p>پخش و توزیع مستقیم شوینده، بهداشتی و لوازم نظافت درب منزل</p>
                 </div>
             </div>
             <div class="header-actions-section">
@@ -2732,7 +2734,7 @@
                         <i class="fa-solid fa-pump-soap"></i>
                     </div>
                     <div>
-                        <div style="font-weight: 800; font-size: 1rem;">محصولات بهداشتی پیمان</div>
+                        <div style="font-weight: 800; font-size: 1rem;">پخش بهداشتی پیمان</div>
                         <div style="font-size: 0.75rem; opacity: 0.85;">منوی خدمات و دسترسی سریع</div>
                     </div>
                 </div>
@@ -2840,7 +2842,7 @@
 
             <!-- Drawer Footer -->
             <div class="drawer-footer">
-                <div>محصولات بهداشتی رافونه و لوازم نظافت</div>
+                <div>پخش و توزیع شوینده، بهداشتی و لوازم نظافت</div>
                 <div style="font-size: 0.75rem; margin-top: 4px; color: #94a3b8;">نسخه ۲.۶.۰ • پشتیبانی: ۰۹۰۲۷۹۵۹۵۵۵</div>
             </div>
         </div>
@@ -2853,7 +2855,7 @@
                 <img src="/icons/icon-192.svg" alt="پیمان">
             </div>
             <div>
-                <div class="pwa-install-title">نصب وب‌اپلیکیشن محصولات بهداشتی پیمان</div>
+                <div class="pwa-install-title">نصب وب‌اپلیکیشن پخش بهداشتی پیمان</div>
                 <div class="pwa-install-sub">دسترسی سریع و آفلاین بدون نیاز به باز کردن مرورگر</div>
             </div>
         </div>
@@ -3206,7 +3208,7 @@
             <div class="gateway-merchant-info">
                 <div class="merchant-field">
                     <span>نام پذیرنده:</span>
-                    <strong>فروشگاه رافونه</strong>
+                    <strong>پخش بهداشتی پیمان</strong>
                 </div>
                 <div class="merchant-field">
                     <span>کد پذیرنده:</span>
@@ -3286,7 +3288,7 @@
                 <i class="fa-solid fa-check"></i>
             </div>
             <h3 style="color:#15803d; margin-bottom: 6px;">پرداخت آنلاین با موفقیت انجام شد</h3>
-            <p style="font-size:0.85rem; color:var(--text-muted);">سفارش شما در سامانه توزیع رافونه ثبت گردید.</p>
+            <p style="font-size:0.85rem; color:var(--text-muted);">سفارش شما در سامانه پخش بهداشتی پیمان ثبت گردید.</p>
 
             <div class="receipt-details">
                 <div class="receipt-row">
@@ -3399,7 +3401,7 @@
                         <div class="inv-logo"><i class="fa-solid fa-pump-soap"></i></div>
                         <div>
                             <h2>پخش پیمان</h2>
-                            <p>مرکز رسمی پخش و توزیع مستقیم شوینده و بهداشتی رافونه</p>
+                            <p>مرکز رسمی پخش و توزیع مستقیم شوینده و بهداشتی</p>
                         </div>
                     </div>
                     <div class="inv-title-box">
@@ -3790,7 +3792,7 @@
 
     <!-- Footer -->
     <footer>
-        <p>توزیع مستقیم محصولات بهداشتی رافونه درب منزل</p>
+        <p>پخش و توزیع مستقیم شوینده و بهداشتی درب منزل</p>
         <a href="https://wa.me/989027959555" class="contact-direct" target="_blank">
             <i class="fa-brands fa-whatsapp"></i> پشتیبانی و سفارش تلفنی: 09027959555
         </a>
@@ -3964,12 +3966,12 @@
                             <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
                                 <span class="product-code-badge">کد: ${p.id}</span>
                                 <span style="font-size:0.7rem; padding:2px 8px; border-radius:12px; font-weight:700; ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? 'background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;' : 'background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;'}">
-                                    ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند رافونه')}
+                                    ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند داخلی')}
                                 </span>
                             </div>
                             <div class="product-title" onclick="openProductDetailModal('${p.id}')">${p.name}</div>
                         </div>
-                        <div class="product-desc" onclick="openProductDetailModal('${p.id}')" title="کلیک کنید تا مشخصات کامل را ببینید">${p.description || 'توضیحات و مشخصات کامل محصول رافونه'}</div>
+                        <div class="product-desc" onclick="openProductDetailModal('${p.id}')" title="کلیک کنید تا مشخصات کامل را ببینید">${p.description || 'توضیحات و مشخصات کامل کالا'}</div>
                         <div class="product-price-row">
                             <div>
                                 ${hasOldPriceDiscount ? `
@@ -4028,8 +4030,8 @@
             currentDetailProductId = productId;
 
             document.getElementById('detailModalImg').src = p.image;
-            document.getElementById('detailModalCode').innerText = `کد کالا: ${p.id} | برند: ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند رافونه')}`;
-            document.getElementById('detailModalCategory').innerText = p.categoryName || (p.brand === 'foreign' ? 'محصولات خارجی' : 'محصولات رافونه');
+            document.getElementById('detailModalCode').innerText = `کد کالا: ${p.id} | برند: ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند داخلی')}`;
+            document.getElementById('detailModalCategory').innerText = p.categoryName || (p.brand === 'foreign' ? 'کالاهای خارجی' : 'شوینده و بهداشتی');
             document.getElementById('detailModalTitle').innerText = p.name;
             document.getElementById('detailModalDesc').innerText = p.description || 'توضیحات و مشخصات کامل برای این محصول ثبت نشده است.';
             
@@ -4829,7 +4831,7 @@
                 'imported': 'محصولات خارجی',
                 'other': 'سایر اقلام'
             };
-            return catMap[cat] || 'محصولات رافونه';
+            return catMap[cat] || 'شوینده و بهداشتی';
         }
 
         function renderGiftProductList() {
@@ -5648,7 +5650,7 @@
             const refId = document.getElementById('receiptRefId').innerText;
             const bankRef = document.getElementById('receiptBankRef').innerText;
 
-            let msg = `✅ *تاییدیه پرداخت آنلاین سفارش رافونه*\n\n`;
+            let msg = `✅ *تاییدیه پرداخت آنلاین سفارش پخش پیمان*\n\n`;
             msg += `👤 *نام مشتری:* ${currentOrderData.name}\n`;
             msg += `📞 *تماس:* ${currentOrderData.phone}\n`;
             msg += `📍 *آدرس:* ${currentOrderData.address}\n`;

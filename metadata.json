@@ -1,6 +1,6 @@
 {
-  "name": "محصولات بهداشتی پیمان",
-  "description": "توزیع مستقیم محصولات بهداشتی رافونه و لوازم نظافت درب منزل با سفارش آنلاین از طریق واتساپ",
+  "name": "پخش بهداشتی پیمان",
+  "description": "پخش و توزیع مستقیم شوینده، بهداشتی و لوازم نظافت درب منزل با سفارش آنلاین از طریق واتساپ",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

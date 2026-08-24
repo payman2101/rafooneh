@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CRM | مدیریت سفارشات رافونه</title>
+    <title>CRM | مدیریت سفارشات و پخش بهداشتی پیمان</title>
     
     <!-- PWA & Mobile Web App Meta Tags -->
     <link rel="manifest" href="/manifest.json">
@@ -11,14 +11,15 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="مدیریت رافونه">
+    <meta name="apple-mobile-web-app-title" content="مدیریت پخش بهداشتی">
     <link rel="apple-touch-icon" href="/icons/icon-192.svg">
     <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg">
     
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- html2canvas for Invoice Image Generation -->
+    <!-- html2canvas and jsPDF for Invoice Image & PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --primary: #00897b;
@@ -1012,7 +1013,7 @@
 
 <div class="login-screen" id="loginScreen">
     <div class="login-card">
-        <h1><i class="fa-solid fa-chart-line"></i> CRM رافونه</h1>
+        <h1><i class="fa-solid fa-chart-line"></i> CRM پخش بهداشتی پیمان</h1>
         <p>مدیریت سفارشات، مشتریان و پیگیری تحویل</p>
         <div class="error-msg" id="loginError"></div>
         <form onsubmit="handleLogin(event)" id="loginForm" autocomplete="off">
@@ -1037,7 +1038,7 @@
 
 <div class="app" id="app">
     <header class="topbar">
-        <h1><i class="fa-solid fa-store"></i> پنل CRM توزیع رافونه</h1>
+        <h1><i class="fa-solid fa-store"></i> پنل CRM پخش بهداشتی پیمان</h1>
         <div class="topbar-actions">
             <div class="notif-bell-container" style="position:relative;">
                 <button class="btn btn-secondary" id="adminNotifBellBtn" onclick="toggleAdminNotificationsModal()" title="اعلان‌های سفارشات جدید" style="position:relative; display:flex; align-items:center; gap:6px; background:#0f766e; color:#fff; border-color:#0f766e;">
@@ -1262,9 +1263,9 @@
                 <div class="panel" style="margin-bottom:20px;">
                     <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
                         <div>
-                            <h2><i class="fa-solid fa-file-invoice-dollar"></i> محاسبه فروش و تسویه پرداختی به شرکت (اختصاصی برند رافونه)</h2>
+                            <h2><i class="fa-solid fa-file-invoice-dollar"></i> محاسبه فروش و تسویه پرداختی تامین‌کنندگان</h2>
                             <p style="font-size:0.85rem; color:var(--muted); margin-top:4px;">
-                                محاسبه تعداد اقلام فروخته‌شده برند رافونه و مبلغ پرداختی به شرکت بر اساس قیمت خرید در بازه زمانی مشخص و ثبت تاریخچه پرداختی‌ها
+                                محاسبه تعداد اقلام فروخته‌شده و مبلغ پرداختی بر اساس قیمت خرید در بازه زمانی مشخص و ثبت تاریخچه پرداختی‌ها
                             </p>
                         </div>
                     </div>
@@ -1515,12 +1516,12 @@
                         <div class="sub">تنوع کل اقلام</div>
                     </div>
                     <div class="stat-card">
-                        <div class="label">برند رافونه</div>
+                        <div class="label">برندهای داخلی</div>
                         <div class="value" id="statRafoonehProducts" style="color:var(--primary);">0</div>
-                        <div class="sub">محصولات شرکت رافونه</div>
+                        <div class="sub">اقلام تولید داخل</div>
                     </div>
                     <div class="stat-card">
-                        <div class="label">محصولات خارجی / وارداتی</div>
+                        <div class="label">کالاهای خارجی / وارداتی</div>
                         <div class="value" id="statForeignProducts" style="color:#0284c7;">0</div>
                         <div class="sub">برندهای بین‌المللی و وارداتی</div>
                     </div>
@@ -1532,8 +1533,8 @@
                         <div class="filters" style="gap:10px; align-items:center;">
                             <select id="productBrandFilter" onchange="loadAdminProducts()">
                                 <option value="all">همه برندها</option>
-                                <option value="rafooneh">برند رافونه</option>
-                                <option value="foreign">محصولات خارجی / وارداتی</option>
+                                <option value="domestic">برندهای داخلی</option>
+                                <option value="foreign">کالاهای خارجی / وارداتی</option>
                             </select>
                             <select id="productCategoryFilter" onchange="loadAdminProducts()">
                                 <option value="all">همه دسته‌بندی‌ها</option>
@@ -1765,7 +1766,7 @@
                         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
                             <div>
                                 <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">نام تامین‌کننده / فروشنده *</label>
-                                <input type="text" id="pagePSupplierName" class="form-control" placeholder="مثال: صنایع رافونه / بازرگانی نوری" style="font-size:0.9rem;">
+                                <input type="text" id="pagePSupplierName" class="form-control" placeholder="مثال: بازرگانی نوری / شرکت تامین‌کننده" style="font-size:0.9rem;">
                             </div>
                             <div>
                                 <label style="font-size:0.88rem; font-weight:bold; display:block; margin-bottom:6px; color:#1e293b;">شماره فاکتور / سند تامین *</label>
@@ -2138,8 +2139,8 @@
 
                             <div class="form-group" style="margin-bottom:16px;">
                                 <label for="warehouseAddressInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
-                                    <i class="fa-solid fa-warehouse" style="color:#6366f1; margin-left:4px;"></i> آدرس مبدأ انبار رافونه:
-                                </label>
+                                    <i class="fa-solid fa-warehouse" style="color:#6366f1; margin-left:4px;"></i> آدرس مبدأ انبار و مرکز پخش:
+                                 </label>
                                 <input type="text" id="warehouseAddressInput" class="form-control" placeholder="کرج - فاز ۴ مهرشهر - خیابان ۴۰۹ شرقی - پلاک ۱۱۲" oninput="updateDeliverySettingsUI()">
                             </div>
 
@@ -2248,20 +2249,26 @@
     <div class="invoice-container-card">
         <!-- Action Bar (Hidden in Print) -->
         <div class="invoice-actions no-print" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-            <button class="btn btn-secondary" id="btnAdminSendWhatsAppCust" style="background:#0d9488; color:#fff; border-color:#0d9488;" onclick="sendInvoiceImageToWhatsAppFromAdmin('customer')">
-                <i class="fa-brands fa-whatsapp"></i> ارسال عکس فاکتور به واتساپ مشتری
+            <button class="btn btn-secondary" id="btnAdminSendWhatsAppCust" style="background:#0d9488; color:#fff; border-color:#0d9488;" onclick="sendInvoiceToWhatsAppFromAdmin('image', 'customer')">
+                <i class="fa-brands fa-whatsapp"></i> ارسال عکس به واتساپ مشتری
             </button>
-            <button class="btn btn-secondary" id="btnAdminSendWhatsAppSelf" style="background:#16a34a; color:#fff; border-color:#16a34a;" onclick="sendInvoiceImageToWhatsAppFromAdmin('admin')">
+            <button class="btn btn-secondary" id="btnAdminSendPdfWhatsAppCust" style="background:#047857; color:#fff; border-color:#047857;" onclick="sendInvoiceToWhatsAppFromAdmin('pdf', 'customer')">
+                <i class="fa-solid fa-file-pdf"></i> ارسال PDF به واتساپ مشتری
+            </button>
+            <button class="btn btn-secondary" id="btnAdminSendWhatsAppSelf" style="background:#16a34a; color:#fff; border-color:#16a34a;" onclick="sendInvoiceToWhatsAppFromAdmin('image', 'admin')">
                 <i class="fa-brands fa-whatsapp"></i> ارسال به واتساپ خودم / پشتیبانی
+            </button>
+            <button class="btn btn-secondary" id="btnAdminDownloadInvoicePdf" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="downloadInvoicePdfFromAdmin()">
+                <i class="fa-solid fa-file-pdf"></i> دانلود سند فاکتور (PDF)
+            </button>
+            <button class="btn btn-secondary" id="btnAdminDownloadInvoiceImg" style="background:#7c3aed; color:#fff; border-color:#7c3aed;" onclick="downloadInvoiceImageFromAdmin()">
+                <i class="fa-solid fa-file-image"></i> دانلود عکس فاکتور (PNG)
             </button>
             <button class="btn btn-secondary" id="btnAdminCopyInvoiceImg" style="background:#0284c7; color:#fff; border-color:#0284c7;" onclick="copyInvoiceImageToClipboardFromAdmin()">
                 <i class="fa-solid fa-copy"></i> کپی عکس در کلیپ‌بورد
             </button>
-            <button class="btn btn-secondary" id="btnAdminDownloadInvoiceImg" style="background:#7c3aed; color:#fff; border-color:#7c3aed;" onclick="downloadInvoiceImageFromAdmin()">
-                <i class="fa-solid fa-file-image"></i> دانلود فایل عکسی (PNG)
-            </button>
             <button class="btn btn-primary" style="background:#334155;" onclick="window.print()">
-                <i class="fa-solid fa-print"></i> چاپ A4 / دریافت PDF
+                <i class="fa-solid fa-print"></i> پرینت / چاپ مستقیم
             </button>
             <button class="btn btn-secondary" onclick="closeInvoiceModal()">
                 <i class="fa-solid fa-xmark"></i> بستن
@@ -2275,7 +2282,7 @@
                     <div class="inv-logo"><i class="fa-solid fa-pump-soap"></i></div>
                     <div>
                         <h2>پخش پیمان</h2>
-                        <p>مرکز رسمی پخش و توزیع مستقیم شوینده و بهداشتی رافونه</p>
+                        <p>مرکز پخش و توزیع مستقیم کالاهای شوینده و بهداشتی</p>
                     </div>
                 </div>
                 <div class="inv-title-box">
@@ -2462,8 +2469,8 @@
                 <div class="form-group">
                     <label for="newProdBrand">انتخاب برند</label>
                     <select id="newProdBrand" class="form-control" onchange="handleBrandChange('new')">
-                        <option value="rafooneh" selected>برند رافونه</option>
-                        <option value="foreign">محصولات خارجی / وارداتی</option>
+                        <option value="domestic" selected>برند داخلی</option>
+                        <option value="foreign">کالاهای خارجی / وارداتی</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -2560,8 +2567,8 @@
                 <div class="form-group">
                     <label for="editProdBrand">انتخاب برند</label>
                     <select id="editProdBrand" class="form-control" onchange="handleBrandChange('edit')">
-                        <option value="rafooneh">برند رافونه</option>
-                        <option value="foreign">محصولات خارجی / وارداتی</option>
+                        <option value="domestic">برند داخلی</option>
+                        <option value="foreign">کالاهای خارجی / وارداتی</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -4073,6 +4080,91 @@
         }
     }
 
+    // Generate High-Quality PDF from Invoice Modal
+    async function generateInvoicePdfBlobFromAdmin(order, elementId = 'printableInvoiceArea') {
+        const invoiceEl = document.getElementById(elementId);
+        if (!invoiceEl) throw new Error('المان فاکتور یافت نشد');
+
+        const { blob, dataUrl, canvas } = await generateInvoiceImageFileFromAdmin(order, elementId);
+
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) {
+            throw new Error('کتابخانه jsPDF لود نشده است.');
+        }
+
+        // A4 dimension in mm: 210 x 297
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            compress: true
+        });
+
+        const pdfWidth = 210;
+        const pdfHeight = 297;
+        const imgProps = pdf.getImageProperties(dataUrl);
+        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+            heightLeft -= pdfHeight;
+        }
+
+        const pdfBlob = pdf.output('blob');
+        const fileName = `factor-${order?.id || 'order'}.pdf`;
+        const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        return { pdf, blob: pdfBlob, file: pdfFile, fileName };
+    }
+
+    // Download Invoice PDF from Admin Modal
+    async function downloadInvoicePdfFromAdmin(elementId = 'printableInvoiceArea') {
+        const order = currentInvoiceOrder || currentOrderData;
+        if (!order) {
+            alert('اطلاعات سفارش جهت دانلود یافت نشد.');
+            return;
+        }
+
+        const btn = document.getElementById('btnAdminDownloadInvoicePdf');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال ساخت PDF...`;
+        }
+
+        try {
+            const { blob, fileName } = await generateInvoicePdfBlobFromAdmin(order, elementId);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
+            if (typeof showToast === 'function') {
+                showToast(`✅ فایل PDF فاکتور سفارش ${order.id} با موفقیت دانلود شد.`, 'success');
+            } else {
+                alert(`✅ فایل PDF فاکتور سفارش ${order.id} با موفقیت دانلود شد.`);
+            }
+        } catch (err) {
+            console.error('Download invoice PDF error:', err);
+            alert('خطا در تبدیل فاکتور به PDF: ' + err.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    }
+
     // Download Invoice PNG from Admin Modal
     async function downloadInvoiceImageFromAdmin(elementId = 'printableInvoiceArea') {
         const order = currentInvoiceOrder || currentOrderData;
@@ -4163,8 +4255,8 @@
         }
     }
 
-    // Send Invoice Image + Text to WhatsApp (to Customer or Admin)
-    async function sendInvoiceImageToWhatsAppFromAdmin(target = 'customer', elementId = 'printableInvoiceArea') {
+    // Send Invoice (Image or PDF) + Text to WhatsApp (to Customer or Admin)
+    async function sendInvoiceToWhatsAppFromAdmin(format = 'image', target = 'customer', elementId = 'printableInvoiceArea') {
         const order = currentInvoiceOrder || currentOrderData;
         if (!order) {
             alert('اطلاعات سفارش جهت ارسال یافت نشد.');
@@ -4173,12 +4265,14 @@
 
         const b = getEffectiveBankSettings();
         const isCustomer = target === 'customer';
-        const btnId = isCustomer ? 'btnAdminSendWhatsAppCust' : 'btnAdminSendWhatsAppSelf';
+        const btnId = isCustomer 
+            ? (format === 'pdf' ? 'btnAdminSendPdfWhatsAppCust' : 'btnAdminSendWhatsAppCust')
+            : 'btnAdminSendWhatsAppSelf';
         const btn = document.getElementById(btnId);
         const origHtml = btn ? btn.innerHTML : '';
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> آماده‌سازی عکس و چت...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> آماده‌سازی ${format === 'pdf' ? 'فایل PDF' : 'عکس'}...`;
         }
 
         try {
@@ -4187,11 +4281,16 @@
             const targetPhone = cleanPhoneForWhatsApp(rawPhone);
 
             let imgResult = null;
-            let uploadedImageUrl = '';
+            let pdfResult = null;
+            let uploadedFileUrl = '';
+
             try {
                 imgResult = await generateInvoiceImageFileFromAdmin(order, elementId);
+                if (format === 'pdf') {
+                    pdfResult = await generateInvoicePdfBlobFromAdmin(order, elementId);
+                }
             } catch (e) {
-                console.warn('Canvas capture fallback in admin:', e);
+                console.warn('Canvas/PDF capture fallback in admin:', e);
             }
 
             // Upload image to server so a permanent live link is generated
@@ -4204,16 +4303,16 @@
                     });
                     const uploadData = await uploadRes.json();
                     if (uploadData.success && uploadData.imageUrl) {
-                        uploadedImageUrl = (uploadData.fullUrl || (window.location.origin + uploadData.imageUrl));
+                        uploadedFileUrl = (uploadData.fullUrl || (window.location.origin + uploadData.imageUrl));
                     }
                 } catch (upErr) {
                     console.warn('Image upload error:', upErr);
                 }
             }
 
-            // Copy image to clipboard so user can instantly Paste (Ctrl+V) inside WhatsApp
+            // Copy image to clipboard if image format so user can instantly Paste (Ctrl+V) inside WhatsApp
             let copiedToClipboard = false;
-            if (imgResult && imgResult.blob && navigator.clipboard && window.ClipboardItem) {
+            if (format === 'image' && imgResult && imgResult.blob && navigator.clipboard && window.ClipboardItem) {
                 try {
                     await navigator.clipboard.write([
                         new ClipboardItem({ 'image/png': imgResult.blob })
@@ -4224,15 +4323,16 @@
                 }
             }
 
-            if (uploadedImageUrl) {
-                msg += `\n\n🖼️ *مشاهده تصویر باکیفیت فاکتور:*\n${uploadedImageUrl}`;
+            if (uploadedFileUrl) {
+                msg += `\n\n🖼️ *مشاهده آنلاین فاکتور رسمی:*\n${uploadedFileUrl}`;
             }
 
             // Web Share API with file support if mobile/supported
-            if (imgResult && navigator.canShare && navigator.canShare({ files: [imgResult.file] })) {
+            const shareFile = (format === 'pdf' && pdfResult?.file) ? pdfResult.file : (imgResult?.file);
+            if (shareFile && navigator.canShare && navigator.canShare({ files: [shareFile] })) {
                 try {
                     await navigator.share({
-                        files: [imgResult.file],
+                        files: [shareFile],
                         title: `فاکتور سفارش ${order.id}`,
                         text: msg
                     });
@@ -4244,9 +4344,18 @@
                 }
             }
 
-            // Notice to user about clipboard paste
+            // Notice to user about clipboard paste or PDF download
             if (copiedToClipboard) {
                 alert('📸 تصویر فاکتور در حافظه موقت (Clipboard) کپی شد!\n\nاکنون در صفحه چت واتساپ کافیست دکمه Paste (الصاق / Ctrl+V) را بزنید تا تصویر فاکتور همراه با متن ارسال گردد.');
+            } else if (format === 'pdf' && pdfResult?.blob) {
+                const url = URL.createObjectURL(pdfResult.blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = pdfResult.fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
             }
 
             const targetUrl = targetPhone 
@@ -4264,8 +4373,12 @@
         }
     }
 
+    function sendInvoiceImageToWhatsAppFromAdmin(target = 'customer') {
+        sendInvoiceToWhatsAppFromAdmin('image', target);
+    }
+
     function shareInvoiceWhatsAppFromAdmin() {
-        sendInvoiceImageToWhatsAppFromAdmin('customer');
+        sendInvoiceToWhatsAppFromAdmin('image', 'customer');
     }
 
     function printInvoiceFromAdminModal() {
@@ -4898,8 +5011,9 @@
         }
 
         const brandBadges = {
-            rafooneh: '<span class="badge badge-confirmed">برند رافونه</span>',
-            foreign: '<span class="badge badge-new">خارجی / وارداتی</span>'
+            domestic: '<span class="badge badge-confirmed">برند داخلی</span>',
+            rafooneh: '<span class="badge badge-confirmed">برند داخلی</span>',
+            foreign: '<span class="badge badge-new">کالای خارجی / وارداتی</span>'
         };
 
         tbody.innerHTML = products.map(p => {
@@ -6192,9 +6306,9 @@
                 const brand = String(item.brand || prod.brand || '').toLowerCase();
                 const brandName = String(item.brandName || prod.brandName || '').toLowerCase();
 
-                // Calculate ONLY items under the Rafooneh brand
-                const isRafooneh = (brand === 'rafooneh' || brandName.includes('رافونه')) || (brand !== 'foreign' && !brandName.includes('خارجی'));
-                if (!isRafooneh) return;
+                // Calculate sales items
+                const isDomesticOrValid = (brand === 'domestic' || brand === 'rafooneh' || brandName.includes('داخلی') || brandName.includes('رافونه')) || (brand !== 'foreign' && !brandName.includes('خارجی'));
+                if (!isDomesticOrValid) return;
 
                 orderHasRafooneh = true;
 
@@ -6214,7 +6328,7 @@
                     productSummaryMap[mapKey] = {
                         id: mapKey,
                         code: prod.code || item.code || prod.id || item.id || mapKey,
-                        name: item.name || prod.name || 'محصول رافونه',
+                        name: item.name || prod.name || 'کالای توزیعی',
                         unitsSold: 0,
                         buyPrice: buyPrice,
                         totalBuyCost: 0,
@@ -6361,7 +6475,7 @@
                 <tr>
                     <td>${(idx + 1).toLocaleString('fa-IR')}</td>
                     <td><strong>${p.code || p.id || '-'}</strong></td>
-                    <td style="font-weight:bold; color:var(--text);">${p.name || 'محصول رافونه'}</td>
+                    <td style="font-weight:bold; color:var(--text);">${p.name || 'کالای توزیعی'}</td>
                     <td><span class="badge" style="background:var(--primary-light); color:var(--primary-dark); font-size:0.9rem; padding:4px 10px;">${(p.unitsSold || 0).toLocaleString('fa-IR')}</span></td>
                     <td>${(p.buyPrice || 0).toLocaleString('fa-IR')}</td>
                     <td style="color:var(--danger); font-weight:bold;">${formatPrice(p.totalBuyCost)}</td>
@@ -7349,7 +7463,7 @@
                         <h2 style="margin:0; font-size:1.3rem; color:#0f766e; font-weight:800;">
                             <i class="fa-solid fa-cart-flatbed"></i> فاکتور رسمی خرید و تامین کالا
                         </h2>
-                        <span style="font-size:0.85rem; color:#64748b;">شرکت صنایع شیمیایی رافونه</span>
+                        <span style="font-size:0.85rem; color:#64748b;">مرکز پخش و توزیع بهداشتی پیمان</span>
                     </div>
                     <div style="text-align:left;">
                         <div style="font-size:0.9rem; font-weight:bold; color:#1e293b;">شماره سند / فاکتور: <span style="font-family:monospace; color:#0f766e;">${escapeHtml(purchase.refNumber || purchase.id)}</span></div>
@@ -7361,7 +7475,7 @@
                 <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px 16px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                     <div>
                         <span style="font-size:0.8rem; color:#166534; font-weight:bold;">تأمین‌کننده / فروشنده:</span>
-                        <strong style="font-size:1rem; color:#0f766e; margin-right:6px;">${escapeHtml(purchase.supplierName || 'تأمین‌کننده رافونه')}</strong>
+                        <strong style="font-size:1rem; color:#0f766e; margin-right:6px;">${escapeHtml(purchase.supplierName || 'تأمین‌کننده کالای بهداشتی')}</strong>
                     </div>
                     <div>
                         <span style="font-size:0.8rem; color:#166534; font-weight:bold;">وضعیت انبار:</span>
@@ -7475,7 +7589,7 @@
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:20px; background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #e2e8f0;">
                 <div>
                     <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:4px;">نام تامین‌کننده / فروشنده</label>
-                    <input type="text" id="pSupplierName" class="form-control" placeholder="مثال: صنایع رافونه / بازرگانی نوری">
+                    <input type="text" id="pSupplierName" class="form-control" placeholder="مثال: بازرگانی نوری / شرکت تامین‌کننده">
                 </div>
                 <div>
                     <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:4px;">شماره فاکتور / سند تامین</label>
@@ -8077,7 +8191,7 @@
                 const refInput = document.getElementById('pagePRefNumber');
                 const notesInput = document.getElementById('pagePNotes');
 
-                if (supplierInput) supplierInput.value = purchase.supplierName || purchase.supplier_name || 'تأمین‌کننده رافونه';
+                if (supplierInput) supplierInput.value = purchase.supplierName || purchase.supplier_name || 'تأمین‌کننده کالای بهداشتی';
                 if (refInput) refInput.value = purchase.refNumber || purchase.ref_number || '';
                 if (notesInput) notesInput.value = purchase.notes || '';
 
@@ -8128,7 +8242,7 @@
             const notesInput = document.getElementById('pagePNotes');
             const dateInput = document.getElementById('pagePPurchaseDate');
 
-            if (supplierInput) supplierInput.value = 'تأمین‌کننده رافونه';
+            if (supplierInput) supplierInput.value = 'تأمین‌کننده کالای بهداشتی';
             if (refInput) refInput.value = 'FACT-' + Math.floor(100000 + Math.random() * 900000);
             if (notesInput) notesInput.value = '';
 
