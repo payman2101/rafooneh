@@ -465,12 +465,12 @@ export async function getBankSettingsCloudSql() {
     if (rows && rows.length > 0) {
       const b = rows[0];
       return {
-        bankName: b.bankName || 'بانک ملی ایران',
-        cardHolder: b.cardHolder || 'پیمان نوری',
-        cardNumber: b.cardNumber || '6037991823456789',
-        shabaNumber: b.shabaNumber || 'IR120170000000123456789012',
+        bankName: b.bankName || 'بانک پارسیان',
+        cardHolder: b.cardHolder || 'پیمان کوشکباغی',
+        cardNumber: b.cardNumber || '6221061078249531',
+        shabaNumber: b.shabaNumber || 'IR980540203383100013660005',
         accountNumber: b.accountNumber || '',
-        description: b.description || 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.',
+        description: b.description || 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.',
         updatedAt: b.updatedAt
       };
     }
@@ -491,10 +491,10 @@ export async function saveBankSettingsCloudSql(settingObj) {
   try {
     const payload = {
       id: 'default',
-      bankName: settingObj.bankName || 'بانک ملی ایران',
-      cardHolder: settingObj.cardHolder || 'پیمان نوری',
-      cardNumber: settingObj.cardNumber || '6037991823456789',
-      shabaNumber: settingObj.shabaNumber || 'IR120170000000123456789012',
+      bankName: settingObj.bankName || 'بانک پارسیان',
+      cardHolder: settingObj.cardHolder || 'پیمان کوشکباغی',
+      cardNumber: settingObj.cardNumber || '6221061078249531',
+      shabaNumber: settingObj.shabaNumber || 'IR980540203383100013660005',
       accountNumber: settingObj.accountNumber || '',
       description: settingObj.description || '',
       updatedAt: settingObj.updatedAt || new Date().toISOString()

@@ -85,12 +85,12 @@ const memoryCompanyPayments = [];
 const memoryPurchases = [];
 const memoryTransactions = new Map();
 let memoryBankSettings = {
-  bankName: 'بانک ملی ایران',
-  cardHolder: 'پیمان نوری',
-  cardNumber: '6037991823456789',
-  shabaNumber: 'IR120170000000123456789012',
+  bankName: 'بانک پارسیان',
+  cardHolder: 'پیمان کوشکباغی',
+  cardNumber: '6221061078249531',
+  shabaNumber: 'IR980540203383100013660005',
   accountNumber: '',
-  description: 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
+  description: 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.'
 };
 
 let memoryDeliverySettings = {
@@ -626,12 +626,12 @@ async function getBankSettingsFromPg(env) {
     if (!bankErr && bankData && bankData.length > 0) {
       const b = bankData[0];
       return {
-        bankName: b.bank_name || b.bankName || 'بانک ملی ایران',
-        cardHolder: b.card_holder || b.cardHolder || 'پیمان نوری',
-        cardNumber: b.card_number || b.cardNumber || '6037991823456789',
-        shabaNumber: b.shaba_number || b.shabaNumber || 'IR120170000000123456789012',
+        bankName: b.bank_name || b.bankName || 'بانک پارسیان',
+        cardHolder: b.card_holder || b.cardHolder || 'پیمان کوشکباغی',
+        cardNumber: b.card_number || b.cardNumber || '6221061078249531',
+        shabaNumber: b.shaba_number || b.shabaNumber || 'IR980540203383100013660005',
         accountNumber: b.account_number || b.accountNumber || '',
-        description: b.description !== undefined ? b.description : 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.',
+        description: b.description !== undefined ? b.description : 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.',
         updatedAt: b.updated_at || b.updatedAt || new Date().toISOString()
       };
     }
@@ -658,10 +658,10 @@ async function saveBankSettingsToPg(env, settings) {
 
     const payload = {
       id: 'default',
-      bank_name: settings.bankName || 'بانک ملی ایران',
-      card_holder: settings.cardHolder || 'پیمان نوری',
-      card_number: settings.cardNumber || '6037991823456789',
-      shaba_number: settings.shabaNumber || 'IR120170000000123456789012',
+      bank_name: settings.bankName || 'بانک پارسیان',
+      card_holder: settings.cardHolder || 'پیمان کوشکباغی',
+      card_number: settings.cardNumber || '6221061078249531',
+      shaba_number: settings.shabaNumber || 'IR980540203383100013660005',
       account_number: settings.accountNumber || '',
       description: settings.description !== undefined ? settings.description : '',
       updated_at: settings.updatedAt || new Date().toISOString()
@@ -1945,12 +1945,12 @@ export async function onRequest(context) {
 
       memoryBankSettings = {
         ...memoryBankSettings,
-        bankName: body.bankName ? String(body.bankName).trim() : 'بانک ملی ایران',
-        cardHolder: body.cardHolder ? String(body.cardHolder).trim() : 'پیمان نوری',
-        cardNumber: cleanCard || '6037991823456789',
-        shabaNumber: cleanShaba || 'IR120170000000123456789012',
+        bankName: body.bankName ? String(body.bankName).trim() : 'بانک پارسیان',
+        cardHolder: body.cardHolder ? String(body.cardHolder).trim() : 'پیمان کوشکباغی',
+        cardNumber: cleanCard || '6221061078249531',
+        shabaNumber: cleanShaba || 'IR980540203383100013660005',
         accountNumber: body.accountNumber ? String(body.accountNumber).trim() : '',
-        description: body.description !== undefined ? String(body.description).trim() : 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.',
+        description: body.description !== undefined ? String(body.description).trim() : 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.',
         updatedAt: new Date().toISOString()
       };
       await saveBankSettingsToPg(env, memoryBankSettings);

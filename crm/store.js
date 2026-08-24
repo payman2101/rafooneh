@@ -2117,15 +2117,15 @@ export function deletePurchase(id) {
 }
 
 export const DEFAULT_BANK_SETTINGS = {
-  bankName: 'بانک ملی ایران',
-  cardHolder: 'پیمان نوری',
-  cardNumber: '6037991823456789',
-  shabaNumber: 'IR120170000000123456789012',
+  bankName: 'بانک پارسیان',
+  cardHolder: 'پیمان کوشکباغی',
+  cardNumber: '6221061078249531',
+  shabaNumber: 'IR980540203383100013660005',
   accountNumber: '',
   whatsappNumber: '09027959555',
   adminWhatsApp: '09027959555',
   supportPhone: '09027959555',
-  description: 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
+  description: 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.'
 };
 
 export function getBankSettings() {

@@ -1942,7 +1942,7 @@
                                 <label for="cardHolderInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
                                     <i class="fa-solid fa-user-check" style="color:#0284c7; margin-left:4px;"></i> نام و نام خانوادگی صاحب حساب / کارت:
                                 </label>
-                                <input type="text" id="cardHolderInput" class="form-control" placeholder="مثال: پیمان نوری" required oninput="updateLiveBankCardPreview()">
+                                <input type="text" id="cardHolderInput" class="form-control" placeholder="مثال: پیمان کوشکباغی" required oninput="updateLiveBankCardPreview()">
                             </div>
 
                             <div class="form-group" style="margin-bottom:16px;">
@@ -1950,7 +1950,7 @@
                                     <span><i class="fa-solid fa-credit-card" style="color:#e11d48; margin-left:4px;"></i> شماره کارت ۱۶ رقمی:</span>
                                     <span id="bankDetectedBadge" style="font-size:0.75rem; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:6px;">شتاب</span>
                                 </label>
-                                <input type="text" id="cardNumberInput" class="form-control" placeholder="6037-XXXX-XXXX-XXXX" maxlength="19" required style="direction:ltr; text-align:left; font-family:monospace; font-size:1.05rem; letter-spacing:2px;" oninput="handleCardNumberInput(this)">
+                                <input type="text" id="cardNumberInput" class="form-control" placeholder="6221-XXXX-XXXX-XXXX" maxlength="19" required style="direction:ltr; text-align:left; font-family:monospace; font-size:1.05rem; letter-spacing:2px;" oninput="handleCardNumberInput(this)">
                                 <small style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;">شماره کارت ۱۶ رقمی را با یا بدون خط تیره وارد کنید.</small>
                             </div>
 
@@ -1958,7 +1958,7 @@
                                 <label for="shabaNumberInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
                                     <i class="fa-solid fa-receipt" style="color:#7c3aed; margin-left:4px;"></i> شماره شبا (IBAN - با یا بدون IR):
                                 </label>
-                                <input type="text" id="shabaNumberInput" class="form-control" placeholder="IR120170000000123456789012" maxlength="28" required style="direction:ltr; text-align:left; font-family:monospace; font-size:0.95rem; letter-spacing:1px;" oninput="handleShabaInput(this)">
+                                <input type="text" id="shabaNumberInput" class="form-control" placeholder="IR980540203383100013660005" maxlength="28" required style="direction:ltr; text-align:left; font-family:monospace; font-size:0.95rem; letter-spacing:1px;" oninput="handleShabaInput(this)">
                                 <small style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;">شماره شبا ۲۴ رقم پس از IR است (مخصوص حواله پایا و ساتنا).</small>
                             </div>
 
@@ -2014,20 +2014,20 @@
 
                             <div class="bank-preview-card" id="bankPreviewCardBox">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                                    <strong id="previewBankName" style="font-size:1.15rem; font-weight:800; letter-spacing:0.5px;">بانک ملی ایران</strong>
+                                    <strong id="previewBankName" style="font-size:1.15rem; font-weight:800; letter-spacing:0.5px;">بانک پارسیان</strong>
                                     <span style="font-size:0.8rem; background:rgba(255,255,255,0.25); padding:3px 10px; border-radius:12px; font-weight:bold;">عضو شتاب</span>
                                 </div>
 
                                 <div class="bank-preview-chip"></div>
 
                                 <div class="bank-preview-number" id="previewCardNumber">
-                                    6037-9918-2345-6789
+                                    6221-0610-7824-9531
                                 </div>
 
                                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.88rem; border-top:1px solid rgba(255,255,255,0.15); padding-top:10px; margin-top:8px;">
                                     <div>
                                         <div style="font-size:0.7rem; opacity:0.8;">صاحب حساب:</div>
-                                        <strong id="previewCardHolder" style="font-size:0.98rem;">پیمان نوری</strong>
+                                        <strong id="previewCardHolder" style="font-size:0.98rem;">پیمان کوشکباغی</strong>
                                     </div>
                                     <div id="previewAccountBox" style="text-align:left; display:none;">
                                         <div style="font-size:0.7rem; opacity:0.8;">شماره حساب:</div>
@@ -2037,7 +2037,7 @@
 
                                 <div class="bank-preview-shaba">
                                     <span style="opacity:0.8; font-size:0.75rem; margin-right:4px;">IBAN:</span>
-                                    <strong id="previewShabaNumber">IR120170000000123456789012</strong>
+                                    <strong id="previewShabaNumber">IR980540203383100013660005</strong>
                                 </div>
                             </div>
 
@@ -2363,16 +2363,16 @@
                     <div class="inv-bank-grid">
                         <div>
                             <span style="color:#64748b;">نام بانک:</span>
-                            <strong id="invBankName" style="margin-right:4px;">بانک ملی ایران</strong>
+                            <strong id="invBankName" style="margin-right:4px;">بانک پارسیان</strong>
                         </div>
                         <div>
                             <span style="color:#64748b;">به نام:</span>
-                            <strong id="invCardHolder" style="margin-right:4px;">پیمان نوری</strong>
+                            <strong id="invCardHolder" style="margin-right:4px;">پیمان کوشکباغی</strong>
                         </div>
                         <div class="inv-bank-full-row">
                             <span><strong>شماره کارت (۱۶ رقمی):</strong></span>
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <strong id="invCardNumber" class="inv-card-digits" style="direction:ltr; font-family:monospace; letter-spacing:1.5px; font-size:1rem;">6037-9918-2345-6789</strong>
+                                <strong id="invCardNumber" class="inv-card-digits" style="direction:ltr; font-family:monospace; letter-spacing:1.5px; font-size:1rem;">6221-0610-7824-9531</strong>
                                 <button type="button" class="no-print inv-copy-btn" onclick="copyInvoiceText('invCardNumber', this)" title="کپی شماره کارت">
                                     <i class="fa-regular fa-copy"></i> کپی
                                 </button>
@@ -2381,7 +2381,7 @@
                         <div class="inv-bank-full-row">
                             <span><strong>شماره شبا (IBAN):</strong></span>
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <strong id="invShabaNumber" class="inv-shaba-digits" style="direction:ltr; font-family:monospace; letter-spacing:1px; font-size:0.92rem;">IR120170000000123456789012</strong>
+                                <strong id="invShabaNumber" class="inv-shaba-digits" style="direction:ltr; font-family:monospace; letter-spacing:1px; font-size:0.92rem;">IR980540203383100013660005</strong>
                                 <button type="button" class="no-print inv-copy-btn" onclick="copyInvoiceText('invShabaNumber', this)" title="کپی شماره شبا">
                                     <i class="fa-regular fa-copy"></i> کپی
                                 </button>
@@ -3946,10 +3946,10 @@
 
     function getEffectiveBankSettings() {
         let b = {
-            bankName: 'بانک ملی ایران',
-            cardHolder: 'پیمان نوری',
-            cardNumber: '6037991823456789',
-            shabaNumber: 'IR120170000000123456789012',
+            bankName: 'بانک پارسیان',
+            cardHolder: 'پیمان کوشکباغی',
+            cardNumber: '6221061078249531',
+            shabaNumber: 'IR980540203383100013660005',
             accountNumber: '',
             whatsappNumber: '09027959555',
             adminWhatsApp: '09027959555',
@@ -3957,10 +3957,10 @@
             description: 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا شماره پیگیری را در همین واتساپ ارسال فرمایید.'
         };
         try {
-            if (typeof currentBankSettings !== 'undefined' && currentBankSettings && (currentBankSettings.cardNumber || currentBankSettings.adminWhatsApp)) {
+            if (typeof currentBankSettings !== 'undefined' && currentBankSettings && (currentBankSettings.cardNumber || currentBankSettings.adminWhatsApp || currentBankSettings.cardHolder)) {
                 b = { ...b, ...currentBankSettings };
             }
-            const saved = localStorage.getItem('rafooneh_bank_settings');
+            const saved = localStorage.getItem('rafooneh_bank_settings') || localStorage.getItem('peyman_bank_settings');
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (parsed && (parsed.cardNumber || parsed.cardHolder || parsed.adminWhatsApp)) {
@@ -4033,9 +4033,9 @@
         msg += `💰 *مبلغ کل قابل پرداخت:* ${totalRial.toLocaleString('fa-IR')} ریال (${total.toLocaleString('fa-IR')} تومان)\n\n`;
 
         msg += `💳 *اطلاعات حساب بانکی جهت واریز:*\n`;
-        msg += `▫️ *نام بانک:* ${b.bankName || 'بانک ملی ایران'}\n`;
-        msg += `▫️ *به نام:* ${b.cardHolder || 'پیمان نوری'}\n`;
-        msg += `▫️ *شماره کارت:* ${formatCardForWhatsApp(b.cardNumber || '6037991823456789')}\n`;
+        msg += `▫️ *نام بانک:* ${b.bankName || 'بانک پارسیان'}\n`;
+        msg += `▫️ *به نام:* ${b.cardHolder || 'پیمان کوشکباغی'}\n`;
+        msg += `▫️ *شماره کارت:* ${formatCardForWhatsApp(b.cardNumber || '6221061078249531')}\n`;
         if (b.shabaNumber) {
             msg += `▫️ *شماره شبا:* ${b.shabaNumber}\n`;
         }
@@ -4055,6 +4055,9 @@
     async function generateInvoiceImageFileFromAdmin(order, elementId = 'printableInvoiceArea') {
         const invoiceEl = document.getElementById(elementId);
         if (!invoiceEl) throw new Error('المان فاکتور یافت نشد');
+
+        // Always ensure bank info is fully populated before canvas capture
+        populateInvoiceBankElements();
 
         if (typeof html2canvas === 'function') {
             const canvas = await html2canvas(invoiceEl, {
@@ -5580,11 +5583,14 @@
     // Bank Settings & Card Helpers
     // -------------------------------------------------------------
     let currentBankSettings = {
-        bankName: 'بانک ملی ایران',
-        cardHolder: 'پیمان نوری',
-        cardNumber: '6037991823456789',
-        shabaNumber: 'IR120170000000123456789012',
+        bankName: 'بانک پارسیان',
+        cardHolder: 'پیمان کوشکباغی',
+        cardNumber: '6221061078249531',
+        shabaNumber: 'IR980540203383100013660005',
         accountNumber: '',
+        whatsappNumber: '09027959555',
+        adminWhatsApp: '09027959555',
+        supportPhone: '09027959555',
         description: 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا شماره پیگیری را در همین واتساپ ارسال فرمایید.'
     };
 
@@ -5661,10 +5667,10 @@
     }
 
     function updateLiveBankCardPreview() {
-        const bankName = document.getElementById('bankNameInput')?.value.trim() || currentBankSettings.bankName || 'بانک ملی ایران';
-        const cardHolder = document.getElementById('cardHolderInput')?.value.trim() || currentBankSettings.cardHolder || 'پیمان نوری';
-        const rawCard = document.getElementById('cardNumberInput')?.value.trim() || formatCardDigits(currentBankSettings.cardNumber || '6037991823456789');
-        const rawShaba = document.getElementById('shabaNumberInput')?.value.trim() || currentBankSettings.shabaNumber || 'IR120170000000123456789012';
+        const bankName = document.getElementById('bankNameInput')?.value.trim() || currentBankSettings.bankName || 'بانک پارسیان';
+        const cardHolder = document.getElementById('cardHolderInput')?.value.trim() || currentBankSettings.cardHolder || 'پیمان کوشکباغی';
+        const rawCard = document.getElementById('cardNumberInput')?.value.trim() || formatCardDigits(currentBankSettings.cardNumber || '6221061078249531');
+        const rawShaba = document.getElementById('shabaNumberInput')?.value.trim() || currentBankSettings.shabaNumber || 'IR980540203383100013660005';
         const accountNum = document.getElementById('accountNumberInput')?.value.trim() || '';
         const desc = document.getElementById('bankDescriptionInput')?.value.trim() || currentBankSettings.description || 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.';
 
@@ -5735,15 +5741,15 @@
 
         // Only populate inputs if it's a forced reload, or if the form is not currently being edited
         if (force || !isEditing) {
-            if (document.getElementById('bankNameInput')) document.getElementById('bankNameInput').value = currentBankSettings.bankName || 'بانک ملی ایران';
-            if (document.getElementById('cardHolderInput')) document.getElementById('cardHolderInput').value = currentBankSettings.cardHolder || 'پیمان نوری';
+            if (document.getElementById('bankNameInput')) document.getElementById('bankNameInput').value = currentBankSettings.bankName || 'بانک پارسیان';
+            if (document.getElementById('cardHolderInput')) document.getElementById('cardHolderInput').value = currentBankSettings.cardHolder || 'پیمان کوشکباغی';
             if (document.getElementById('cardNumberInput')) {
-                document.getElementById('cardNumberInput').value = formatCardDigits(currentBankSettings.cardNumber || '6037991823456789');
+                document.getElementById('cardNumberInput').value = formatCardDigits(currentBankSettings.cardNumber || '6221061078249531');
                 if (document.getElementById('bankDetectedBadge')) {
                     document.getElementById('bankDetectedBadge').innerText = detectBankFromCard(currentBankSettings.cardNumber);
                 }
             }
-            if (document.getElementById('shabaNumberInput')) document.getElementById('shabaNumberInput').value = currentBankSettings.shabaNumber || 'IR120170000000123456789012';
+            if (document.getElementById('shabaNumberInput')) document.getElementById('shabaNumberInput').value = currentBankSettings.shabaNumber || 'IR980540203383100013660005';
             if (document.getElementById('accountNumberInput')) document.getElementById('accountNumberInput').value = currentBankSettings.accountNumber || '';
             if (document.getElementById('adminWhatsAppInput')) document.getElementById('adminWhatsAppInput').value = currentBankSettings.adminWhatsApp || currentBankSettings.whatsappNumber || '09027959555';
             if (document.getElementById('supportPhoneInput')) document.getElementById('supportPhoneInput').value = currentBankSettings.supportPhone || currentBankSettings.whatsappNumber || '09027959555';
@@ -5767,11 +5773,11 @@
     }
 
     function populateInvoiceBankElements() {
-        const s = currentBankSettings;
-        if (document.getElementById('invBankName')) document.getElementById('invBankName').innerText = s.bankName || 'بانک ملی ایران';
-        if (document.getElementById('invCardHolder')) document.getElementById('invCardHolder').innerText = s.cardHolder || 'پیمان نوری';
-        if (document.getElementById('invCardNumber')) document.getElementById('invCardNumber').innerText = formatCardDigits(s.cardNumber || '6037991823456789');
-        if (document.getElementById('invShabaNumber')) document.getElementById('invShabaNumber').innerText = s.shabaNumber || 'IR120170000000123456789012';
+        const s = getEffectiveBankSettings();
+        if (document.getElementById('invBankName')) document.getElementById('invBankName').innerText = s.bankName || 'بانک پارسیان';
+        if (document.getElementById('invCardHolder')) document.getElementById('invCardHolder').innerText = s.cardHolder || 'پیمان کوشکباغی';
+        if (document.getElementById('invCardNumber')) document.getElementById('invCardNumber').innerText = formatCardDigits(s.cardNumber || '6221061078249531');
+        if (document.getElementById('invShabaNumber')) document.getElementById('invShabaNumber').innerText = s.shabaNumber || 'IR980540203383100013660005';
         if (document.getElementById('invSellerSupportPhone')) document.getElementById('invSellerSupportPhone').innerText = s.supportPhone || s.adminWhatsApp || s.whatsappNumber || '۰۹۰۲۷۹۵۹۵۵۵';
         if (document.getElementById('invSellerWhatsApp')) document.getElementById('invSellerWhatsApp').innerText = s.adminWhatsApp || s.whatsappNumber || '۰۹۰۲۷۹۵۹۵۵۵';
         if (document.getElementById('invBankDesc')) {

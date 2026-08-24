@@ -1364,15 +1364,15 @@ function handleUpdateBankSettings(req, res) {
     else if (cleanSupportPhone.startsWith('98') && cleanSupportPhone.length === 12) cleanSupportPhone = '0' + cleanSupportPhone.slice(2);
 
     const updated = saveBankSettings({
-      bankName: bankName ? String(bankName).trim() : 'بانک ملی ایران',
-      cardHolder: cardHolder ? String(cardHolder).trim() : 'پیمان نوری',
-      cardNumber: cleanCard || '6037991823456789',
-      shabaNumber: cleanShaba || 'IR120170000000123456789012',
+      bankName: bankName ? String(bankName).trim() : 'بانک پارسیان',
+      cardHolder: cardHolder ? String(cardHolder).trim() : 'پیمان کوشکباغی',
+      cardNumber: cleanCard || '6221061078249531',
+      shabaNumber: cleanShaba || 'IR980540203383100013660005',
       accountNumber: accountNumber ? String(accountNumber).trim() : '',
       whatsappNumber: cleanWhatsApp || '09027959555',
       adminWhatsApp: cleanWhatsApp || '09027959555',
       supportPhone: cleanSupportPhone || cleanWhatsApp || '09027959555',
-      description: description !== undefined ? String(description).trim() : 'لطفاً پس از واریز، تصویر فیش واریزی را به همین واتساپ ارسال فرمایید.'
+      description: description !== undefined ? String(description).trim() : 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.'
     });
 
     res.json({
