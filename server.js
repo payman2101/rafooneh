@@ -732,7 +732,7 @@ app.post('/api/admin/upload-image', handleImageUploadRoute);
 app.post('/api/invoices/upload-image', async (req, res) => {
   try {
     const orderId = (req.body && req.body.orderId) || 'order';
-    const base64Data = (req.body && req.body.imageBase64) || '';
+    const base64Data = (req.body && (req.body.imageBase64 || req.body.imageData || req.body.image)) || '';
     const cleanOrderId = String(orderId).replace(/[^a-zA-Z0-9_-]/g, '') || String(Date.now());
     const filename = `factor-${cleanOrderId}.png`;
     const savePath = path.join(invoicesDir, filename);

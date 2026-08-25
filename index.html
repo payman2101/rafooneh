@@ -6305,16 +6305,51 @@
             }
 
             try {
-                const msgText = buildOrderWhatsAppMessage(ord);
+                let msgText = buildOrderWhatsAppMessage(ord);
                 const targetPhone = isTargetAdmin 
                     ? cleanPhoneForWhatsApp(customerBankSettings.adminWhatsApp || customerBankSettings.whatsappNumber || '09027959555')
                     : cleanPhoneForWhatsApp(ord.phone || '');
 
                 let imgResult = null;
+                let uploadedFileUrl = '';
                 try {
                     imgResult = await generateInvoiceImageFile(ord, elementId);
                 } catch (e) {
                     console.warn('Canvas capture fallback:', e);
+                }
+
+                // Upload image to server for persistent direct image link
+                if (imgResult && imgResult.dataUrl) {
+                    try {
+                        const uploadRes = await fetch('/api/invoices/upload-image', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orderId: ord.id, imageData: imgResult.dataUrl })
+                        });
+                        const uploadData = await uploadRes.json();
+                        if (uploadData.success && uploadData.imageUrl) {
+                            uploadedFileUrl = (uploadData.fullUrl || (window.location.origin + uploadData.imageUrl));
+                        }
+                    } catch (upErr) {
+                        console.warn('Invoice image upload error:', upErr);
+                    }
+                }
+
+                if (uploadedFileUrl) {
+                    msgText += `\n\n🖼️ *مشاهده مستقیم تصویر باکیفیت فاکتور:*\n${uploadedFileUrl}`;
+                }
+
+                // Copy image to clipboard so user can instantly Paste (Ctrl+V / الصاق) inside WhatsApp
+                let copiedToClipboard = false;
+                if (imgResult && imgResult.blob && navigator.clipboard && window.ClipboardItem) {
+                    try {
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': imgResult.blob })
+                        ]);
+                        copiedToClipboard = true;
+                    } catch (clipErr) {
+                        console.warn('Clipboard write error:', clipErr);
+                    }
                 }
 
                 // Check for Web Share API with file support (e.g. mobile Chrome / Safari)
@@ -6325,7 +6360,7 @@
                             title: `فاکتور سفارش ${ord.id}`,
                             text: msgText
                         });
-                        showToastNotification('✅ فاکتور با موفقیت به اشتراک گذاشته شد.');
+                        showToastNotification('✅ تصویر فاکتور با موفقیت به اشتراک گذاشته شد.');
                         return;
                     } catch (shareErr) {
                         if (shareErr.name !== 'AbortError') {
@@ -6351,9 +6386,9 @@
                     : `https://wa.me/?text=${encodeURIComponent(msgText)}`;
 
                 window.open(waUrl, '_blank');
-                showToastNotification(isTargetAdmin 
-                    ? '📸 تصویر باکیفیت فاکتور دانلود شد و واتساپ پشتیبانی باز گردید.' 
-                    : '📸 تصویر فاکتور دانلود شد و واتساپ مشتری باز گردید.');
+                showToastNotification(copiedToClipboard
+                    ? '📸 تصویر باکیفیت فاکتور در حافظه کپی و دانلود شد! در صفحه چت واتساپ کافیست دکمه Paste (Ctrl+V) را بزنید تا تصویر ارسال گردد.'
+                    : (isTargetAdmin ? '📸 تصویر فاکتور دانلود شد و واتساپ پشتیبانی باز گردید.' : '📸 تصویر فاکتور دانلود شد و واتساپ مشتری باز گردید.'));
             } catch (err) {
                 console.error('Share WhatsApp error:', err);
                 alert('خطا در ارسال: ' + err.message);

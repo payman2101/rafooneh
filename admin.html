@@ -2233,13 +2233,13 @@
             <button class="btn btn-secondary" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1;" onclick="openOrderFormFromModal()">
                 <i class="fa-solid fa-pen-to-square"></i> ویرایش کامل سفارش
             </button>
-            <button class="btn btn-primary" style="background:#0284c7;" onclick="printInvoiceFromAdminModal()">
+            <button type="button" class="btn btn-primary" style="background:#0284c7;" onclick="printInvoiceFromAdminModal()">
                 <i class="fa-solid fa-print"></i> صدور / چاپ فاکتور مشتری
             </button>
-            <a id="whatsappOrderLink" href="#" target="_blank" class="btn btn-secondary" style="text-decoration:none;">
-                <i class="fa-brands fa-whatsapp"></i> واتساپ
-            </a>
-            <button class="btn btn-secondary" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="deleteCurrentOrder()">
+            <button type="button" id="whatsappOrderLink" class="btn btn-secondary" style="background:#0d9488; color:#fff; border-color:#0d9488;" onclick="sendInvoiceImageFromOrderDetailsModal()">
+                <i class="fa-brands fa-whatsapp"></i> ارسال عکس فاکتور به واتساپ مشتری
+            </button>
+            <button type="button" class="btn btn-secondary" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="deleteCurrentOrder()">
                 <i class="fa-solid fa-trash"></i> حذف سفارش
             </button>
             <button class="btn btn-secondary" onclick="closeOrderModal()">بستن</button>
@@ -4387,9 +4387,16 @@
                 }
             }
 
-            // Notice to user about clipboard paste or PDF download
-            if (copiedToClipboard) {
-                alert('📸 تصویر فاکتور در حافظه موقت (Clipboard) کپی شد!\n\nاکنون در صفحه چت واتساپ کافیست دکمه Paste (الصاق / Ctrl+V) را بزنید تا تصویر فاکتور همراه با متن ارسال گردد.');
+            // Notice to user about clipboard paste or PDF/PNG download
+            if (format === 'image' && imgResult && imgResult.blob) {
+                const url = URL.createObjectURL(imgResult.blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `factor-${order.id || 'order'}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
             } else if (format === 'pdf' && pdfResult?.blob) {
                 const url = URL.createObjectURL(pdfResult.blob);
                 const a = document.createElement('a');
@@ -4399,6 +4406,10 @@
                 a.click();
                 document.body.removeChild(a);
                 setTimeout(() => URL.revokeObjectURL(url), 10000);
+            }
+
+            if (copiedToClipboard) {
+                alert('📸 تصویر فاکتور در حافظه موقت (Clipboard) کپی و دانلود شد!\n\nاکنون در صفحه چت واتساپ کافیست دکمه Paste (الصاق / Ctrl+V) را بزنید تا تصویر باکیفیت فاکتور برای مشتری ارسال گردد.');
             }
 
             const targetUrl = targetPhone 
@@ -4434,6 +4445,16 @@
         } else {
             alert('اطلاعات سفارش بارگذاری نشده است.');
         }
+    }
+
+    async function sendInvoiceImageFromOrderDetailsModal() {
+        const order = currentOrderData || (currentOrderId ? getLocalOrders().find(item => item.id === currentOrderId) : null);
+        if (!order) {
+            alert('اطلاعات سفارش بارگذاری نشده است.');
+            return;
+        }
+        showCustomerInvoice(order);
+        await sendInvoiceToWhatsAppFromAdmin('image', 'customer');
     }
 
     function closeInvoiceModal() {
