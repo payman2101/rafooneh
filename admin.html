@@ -3485,12 +3485,12 @@
                         <td>${formatDate(c.lastOrderAt)}</td>
                         <td>
                             <span class="badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:bold; font-size:0.8rem;">
-                                <i class="fa-solid fa-calendar-xmark"></i> ${Number(c.daysSinceLastOrder || 0).toLocaleString('fa-IR')} روز پیش
+                                <i class="fa-solid fa-calendar-xmark"></i> ${Number(c.daysSinceLastOrder || c.daysInactive || 0).toLocaleString('fa-IR')} روز پیش
                             </span>
                         </td>
                         <td>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                <button class="btn btn-secondary" style="background:#25d366; color:white; border-color:#22c55e; padding:5px 10px; font-size:0.82rem;" onclick="contactInactiveCustomerWhatsApp('${escapeHtml(c.name || 'مشتری')}', '${escapeHtml(c.phone || '')}', ${c.daysSinceLastOrder || 60})" title="ارسال پیام یادآوری و تخفیف در واتساپ">
+                                <button class="btn btn-secondary" style="background:#25d366; color:white; border-color:#22c55e; padding:5px 10px; font-size:0.82rem;" onclick="contactInactiveCustomerWhatsApp('${escapeHtml(c.name || 'مشتری')}', '${escapeHtml(c.phone || '')}', ${c.daysSinceLastOrder || c.daysInactive || 60})" title="ارسال پیام یادآوری و تخفیف در واتساپ">
                                     <i class="fa-brands fa-whatsapp"></i> پیام واتساپ
                                 </button>
                                 <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.82rem;" onclick="openCustomer('${c.customerId || c.id || c.phone}')">

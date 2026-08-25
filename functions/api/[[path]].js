@@ -1129,12 +1129,75 @@ export async function onRequest(context) {
 
   if (path === '/api/admin/alerts') {
     const orders = await getCombinedOrders(env);
-    const pendingCount = orders.filter(o => o.status === 'pending').length;
-    const alerts = [];
-    if (pendingCount > 0) {
-      alerts.push({ id: 'pending_orders', message: `${pendingCount} سفارش جدید در انتظار بررسی است.`, type: 'info' });
-    }
-    return jsonRes({ success: true, alerts });
+    const customers = await getCombinedCustomers(env);
+    const pgProds = await getAllProductsFromPg(env) || [];
+
+    const products = (pgProds && pgProds.length > 0) ? pgProds : defaultProducts;
+
+    // 1. Low stock products (stock < 5)
+    const lowStockProducts = products
+      .filter(p => Number(p.stock) < 5)
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        categoryName: p.categoryName || '',
+        price: p.price,
+        buyPrice: p.buyPrice || 0,
+        stock: Number(p.stock),
+        badge: Number(p.stock) <= 0 ? 'ناموجود' : `تعداد محدود (${p.stock} عدد)`
+      }))
+      .sort((a, b) => a.stock - b.stock);
+
+    // 2. Delayed delivery orders (> 7 days since createdAt and not delivered/cancelled)
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const delayedOrders = orders
+      .filter(o => !['delivered', 'cancelled'].includes(o.status))
+      .map(o => {
+        const createdTime = new Date(o.createdAt).getTime();
+        const elapsedMs = now - createdTime;
+        const delayDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+        return {
+          ...o,
+          delayDays,
+          elapsedMs,
+          isDelayed: elapsedMs >= SEVEN_DAYS_MS
+        };
+      })
+      .filter(o => o.isDelayed)
+      .sort((a, b) => b.elapsedMs - a.elapsedMs);
+
+    // 3. Inactive customers (> 60 days since last order)
+    const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
+    const inactiveCustomers = customers
+      .map(c => {
+        const lastOrderTime = new Date(c.lastOrderAt || c.createdAt || 0).getTime();
+        const elapsedMs = now - lastOrderTime;
+        const daysInactive = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+        return {
+          ...c,
+          daysInactive: isNaN(daysInactive) ? 60 : daysInactive,
+          daysSinceLastOrder: isNaN(daysInactive) ? 60 : daysInactive,
+          elapsedMs,
+          isInactive: lastOrderTime > 0 && elapsedMs >= SIXTY_DAYS_MS
+        };
+      })
+      .filter(c => c.isInactive)
+      .sort((a, b) => b.elapsedMs - a.elapsedMs);
+
+    return jsonRes({
+      success: true,
+      alerts: {
+        lowStockCount: lowStockProducts.length,
+        lowStockProducts,
+        delayedOrdersCount: delayedOrders.length,
+        delayedOrders,
+        inactiveCustomersCount: inactiveCustomers.length,
+        inactiveCustomers,
+        totalAlertsCount: lowStockProducts.length + delayedOrders.length + inactiveCustomers.length
+      }
+    });
   }
 
   // --- CUSTOMER AUTH & WALLET ENDPOINTS ---

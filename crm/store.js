@@ -977,6 +977,7 @@ export function getAdminAlerts() {
       return {
         ...c,
         daysInactive: isNaN(daysInactive) ? 60 : daysInactive,
+        daysSinceLastOrder: isNaN(daysInactive) ? 60 : daysInactive,
         elapsedMs,
         isInactive: lastOrderTime > 0 && elapsedMs >= SIXTY_DAYS_MS
       };
