@@ -771,13 +771,11 @@ export async function onRequest(context) {
     return jsonRes({ success: true, message: 'رمز عبور با موفقیت تغییر یافت' });
   }
 
-  // --- STATUS & GSHEETS STATUS ENDPOINTS ---
-  if (path === '/api/admin/status' || path === '/api/admin/gsheets/status') {
+  // --- STATUS ENDPOINT ---
+  if (path === '/api/admin/status') {
     return jsonRes({
       success: true,
       status: 'active',
-      spreadsheetId: '1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8',
-      csvUrl: 'https://docs.google.com/spreadsheets/d/1t2sL76hWvxMusDMDu-rgYI4QiGpvGGbDfB2wIDdrgG8/gviz/tq?tqx=out:csv',
       productCount: defaultProducts.length,
       lastSyncTime: new Date().toISOString()
     });
@@ -2075,11 +2073,6 @@ export async function onRequest(context) {
   if (path === '/api/upload-image' || path === '/api/admin/upload-image' || path === '/api/upload') {
     const imgUrl = body.image || body.url || 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg';
     return jsonRes({ success: true, url: imgUrl, message: 'تصویر با موفقیت آپلود شد.' });
-  }
-
-  // --- GSHEETS SYNC ENDPOINT ---
-  if (path === '/api/gsheets/sync') {
-    return jsonRes({ success: true, message: 'همگام‌سازی انجام شد', count: defaultProducts.length });
   }
 
   // --- PAYMENT GATEWAY ENDPOINTS ---
