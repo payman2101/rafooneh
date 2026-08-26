@@ -1282,6 +1282,9 @@
                                 <i class="fa-solid fa-calculator"></i> محاسبه کارکرد بازه
                             </button>
                             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-right:auto;">
+                                <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('sinceLastPayment')" style="padding:6px 10px; font-size:0.8rem; background:#0f766e; color:#fff; font-weight:bold;">
+                                    <i class="fa-solid fa-clock-rotate-left"></i> از آخرین تسویه
+                                </button>
                                 <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('today')" style="padding:6px 10px; font-size:0.8rem;">امروز</button>
                                 <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('7days')" style="padding:6px 10px; font-size:0.8rem;">۷ روز اخیر</button>
                                 <button class="btn btn-secondary" onclick="setCompanyPaymentPreset('30days')" style="padding:6px 10px; font-size:0.8rem;">۳۰ روز اخیر</button>
@@ -4428,9 +4431,32 @@
         });
     }
 
-    function initCompanyPaymentsSection() {
-        if (typeof loadCompanyPaymentStats === 'function') loadCompanyPaymentStats();
-        if (typeof loadCompanyPaymentHistory === 'function') loadCompanyPaymentHistory();
+    async function initCompanyPaymentsSection() {
+        const fromInp = document.getElementById('cpFromDate');
+        const toInp = document.getElementById('cpToDate');
+        
+        // Fetch history first so we know the latest settlement date
+        await loadCompanyPaymentHistory();
+
+        // Default: If fromDate is not already set, automatically set 'sinceLastPayment'
+        if (fromInp && !fromInp.value) {
+            setCompanyPaymentPreset('sinceLastPayment');
+        } else {
+            if (typeof loadCompanyPaymentStats === 'function') loadCompanyPaymentStats();
+        }
+    }
+
+    function getLatestCompanyPaymentDate() {
+        if (!Array.isArray(companyPaymentHistoryList) || companyPaymentHistoryList.length === 0) {
+            try {
+                const local = JSON.parse(localStorage.getItem('rafooneh_company_payments') || '[]');
+                if (Array.isArray(local) && local.length > 0) return local[0].paymentDate || local[0].toDate || (local[0].createdAt ? local[0].createdAt.split('T')[0] : null);
+            } catch (e) {}
+            return null;
+        }
+        // companyPaymentHistoryList is sorted newest first
+        const latest = companyPaymentHistoryList[0];
+        return latest ? (latest.paymentDate || latest.toDate || (latest.createdAt ? latest.createdAt.split('T')[0] : null)) : null;
     }
 
     function setCompanyPaymentPreset(preset) {
@@ -4442,7 +4468,15 @@
         const toStr = now.toISOString().split('T')[0];
         toInp.value = toStr;
 
-        if (preset === 'today') {
+        if (preset === 'sinceLastPayment') {
+            const lastDate = getLatestCompanyPaymentDate();
+            if (lastDate) {
+                fromInp.value = lastDate;
+            } else {
+                // If no payment recorded yet, default to today or all
+                fromInp.value = '';
+            }
+        } else if (preset === 'today') {
             fromInp.value = toStr;
         } else if (preset === '7days') {
             const d = new Date();
@@ -6547,6 +6581,7 @@
         if (refInp) refInp.value = '';
         if (notesInp) notesInp.value = '';
         await loadCompanyPaymentHistory();
+        setCompanyPaymentPreset('sinceLastPayment');
     }
 
     async function loadCompanyPaymentHistory() {
