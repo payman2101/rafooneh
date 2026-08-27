@@ -1076,6 +1076,7 @@
         <button onclick="showSection('company-payments', this)">پرداختی شرکت</button>
         <button onclick="showSection('alerts', this)">هشدارها <span class="badge badge-cancelled" id="alertBadgeMobile" style="display:none; padding:2px 6px; font-size:0.7rem;">0</span></button>
         <button onclick="showSection('customers', this)">مشتریان</button>
+        <button onclick="showSection('whatsapp-campaigns', this)" style="color:#16a34a; font-weight:bold;"><i class="fa-brands fa-whatsapp"></i> کمپین واتساپ</button>
         <button onclick="showSection('purchases', this)">فاکتورهای خرید</button>
     </div>
 
@@ -1111,6 +1112,9 @@
             </button>
             <button class="nav-item" data-section="customers" onclick="showSection('customers', this)">
                 <i class="fa-solid fa-users"></i> مشتریان
+            </button>
+            <button class="nav-item" data-section="whatsapp-campaigns" onclick="showSection('whatsapp-campaigns', this)" style="border-right: 3px solid #22c55e;">
+                <i class="fa-brands fa-whatsapp" style="color:#22c55e;"></i> کمپین و اطلاع‌رسانی واتساپ
             </button>
         </aside>
 
@@ -1614,9 +1618,15 @@
             <section class="section" id="section-customers">
                 <div class="panel">
                     <div class="panel-header" style="flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center;">
-                        <h2>لیست مشتریان</h2>
+                        <div>
+                            <h2><i class="fa-solid fa-users"></i> لیست مشتریان</h2>
+                            <p style="font-size:0.85rem; color:var(--muted); margin-top:4px;">مدیریت اطلاعات خریداران، سابقه سفارشات و ارسال پیام سریع واتساپ</p>
+                        </div>
                         <div class="filters" style="flex-wrap:wrap; gap:10px; align-items:center;">
                             <input type="text" id="customerSearch" placeholder="جستجو نام / تلفن / آدرس..." oninput="debounceCustomers()" style="min-width:220px;">
+                            <button class="btn btn-secondary" onclick="showSection('whatsapp-campaigns')" style="background:#16a34a; color:#fff; font-weight:bold; border-color:#16a34a;">
+                                <i class="fa-brands fa-whatsapp"></i> کمپین و ارسال پیام انبوه
+                            </button>
                         </div>
                     </div>
                     <div class="table-wrap">
@@ -1649,6 +1659,180 @@
                     </div>
                     <!-- Customers Pagination Bar -->
                     <div id="customersPaginationContainer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 20px; border-top:1px solid #e2e8f0; background:#f8fafc;"></div>
+                </div>
+            </section>
+
+            <!-- WhatsApp Marketing & Customer Engagement Campaigns Section -->
+            <section class="section" id="section-whatsapp-campaigns">
+                <div class="panel" style="margin-bottom: 20px;">
+                    <div class="panel-header" style="flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px;">
+                        <div>
+                            <h2><i class="fa-brands fa-whatsapp" style="color: #16a34a;"></i> مرکز اطلاع‌رسانی و کمپین‌های واتساپ</h2>
+                            <p style="font-size: 0.85rem; color: var(--muted); margin-top: 4px;">
+                                ارسال پیام‌های هوشمند به مشتریان راکد، اطلاع‌رسانی محصولات جدید، شارژ اقلام مصرفی و تخفیف‌های ویژه با قالب‌های آماده
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" onclick="exportWhatsappAudienceCsv()" style="font-size:0.85rem;">
+                                <i class="fa-solid fa-file-csv"></i> خروجی اکسل / شماره‌ها
+                            </button>
+                            <button class="btn btn-primary" onclick="initWhatsappCampaignSection()" style="font-size:0.85rem; background:#16a34a; border-color:#16a34a;">
+                                <i class="fa-solid fa-arrows-rotate"></i> بروزرسانی آمار مخاطبان
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Segment Cards / Insights -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; padding: 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                        <div onclick="selectWaSegment('inactive60')" style="background: #fff; border: 2px solid #fed7aa; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s;" id="waSegCard-inactive60" class="wa-seg-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.82rem; font-weight: bold; color: #c2410c;"><i class="fa-solid fa-user-clock"></i> مشتریان راکد (۶۰+ روز)</span>
+                                <span class="badge" style="background:#ffedd5; color:#c2410c; font-weight:bold;" id="waCount-inactive60">0</span>
+                            </div>
+                            <p style="font-size: 0.76rem; color: #64748b; margin-top: 6px; line-height: 1.4;">خریدارانی که بیش از ۲ ماه سفارش جدید ثبت نکرده‌اند.</p>
+                        </div>
+
+                        <div onclick="selectWaSegment('inactive30')" style="background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s;" id="waSegCard-inactive30" class="wa-seg-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.82rem; font-weight: bold; color: #d97706;"><i class="fa-solid fa-hourglass-half"></i> موعد شارژ (۳۰ الی ۶۰ روز)</span>
+                                <span class="badge" style="background:#fef3c7; color:#b45309; font-weight:bold;" id="waCount-inactive30">0</span>
+                            </div>
+                            <p style="font-size: 0.76rem; color: #64748b; margin-top: 6px; line-height: 1.4;">مناسب یادآوری خرید مجدد شوینده‌های مصرفی.</p>
+                        </div>
+
+                        <div onclick="selectWaSegment('loyal')" style="background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s;" id="waSegCard-loyal" class="wa-seg-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.82rem; font-weight: bold; color: #059669;"><i class="fa-solid fa-crown"></i> مشتریان وفادار (۳+ خرید)</span>
+                                <span class="badge" style="background:#d1fae5; color:#065f46; font-weight:bold;" id="waCount-loyal">0</span>
+                            </div>
+                            <p style="font-size: 0.76rem; color: #64748b; margin-top: 6px; line-height: 1.4;">مشتریان با بیشترین تکرار خرید و ارزش سبد.</p>
+                        </div>
+
+                        <div onclick="selectWaSegment('all')" style="background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s;" id="waSegCard-all" class="wa-seg-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.82rem; font-weight: bold; color: #0284c7;"><i class="fa-solid fa-users"></i> تمامی مشتریان</span>
+                                <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:bold;" id="waCount-all">0</span>
+                            </div>
+                            <p style="font-size: 0.76rem; color: #64748b; margin-top: 6px; line-height: 1.4;">تمام شماره‌های معتبر ثبت‌شده در فروشگاه.</p>
+                        </div>
+                    </div>
+
+                    <!-- Campaign Composer & Templates -->
+                    <div style="padding: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="wa-composer-grid">
+                            <!-- Left: Template & Message Form -->
+                            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
+                                <h3 style="font-size: 0.98rem; color: var(--primary-dark); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-pen-fancy" style="color: #16a34a;"></i> ۱. تنظیم متن و قالب پیام
+                                </h3>
+
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <label style="font-size: 0.82rem; font-weight: bold; margin-bottom: 4px; display: block;">انتخاب قالب پیام پیشنهادی:</label>
+                                    <select id="waTemplateSelect" class="form-control" onchange="applyWhatsappTemplate(this.value)">
+                                        <option value="inactive60">💡 بازگشت مشتریان راکد (۶۰ روز عدم سفارش + تخفیف)</option>
+                                        <option value="newProducts">✨ معرفی محصولات جدید / تخفیف‌دار پخش رافونه</option>
+                                        <option value="refill">🧴 پیشنهاد شارژ مجدد شوینده و مواد مصرفی</option>
+                                        <option value="vipThanks">⭐ قدردانی و آفر ویژه مشتریان وفادار</option>
+                                        <option value="custom">✍️ متن آزاد و دلخواه</option>
+                                    </select>
+                                </div>
+
+                                <div id="waProductSelectContainer" style="margin-bottom: 12px; display: none; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px;">
+                                    <label style="font-size: 0.8rem; font-weight: bold; color: #166534; display: block; margin-bottom: 4px;">انتخاب کالای جدید جهت درج نام و قیمت در متن:</label>
+                                    <select id="waProductInsertSelect" class="form-control" onchange="injectProductIntoWaTemplate()" style="background:#fff; font-size:0.85rem;"></select>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <label style="font-size: 0.82rem; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                                        <span>متن ارسالی در واتساپ:</span>
+                                        <span style="font-size: 0.75rem; color: #0284c7; font-weight: normal;">متغیرهای مجاز: {name} {storeUrl}</span>
+                                    </label>
+                                    <textarea id="waMessageBody" class="form-control" rows="6" style="font-size: 0.88rem; line-height: 1.6;" oninput="updateWhatsappPreview()"></textarea>
+                                </div>
+
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-secondary" onclick="insertWaVariable('{name}')" style="padding: 4px 8px; font-size: 0.75rem;">
+                                        + درج نام مشتری {name}
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="insertWaVariable('{storeUrl}')" style="padding: 4px 8px; font-size: 0.75rem;">
+                                        + لینک فروشگاه {storeUrl}
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="resetWaTemplate()" style="padding: 4px 8px; font-size: 0.75rem; margin-right: auto;">
+                                        <i class="fa-solid fa-rotate-left"></i> بازنشانی
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Right: Live WhatsApp Chat Preview & Send Controls -->
+                            <div style="background: #efeae2; border: 1px solid #d1d7db; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d7db; padding-bottom: 8px; margin-bottom: 12px;">
+                                        <span style="font-size: 0.82rem; font-weight: bold; color: #111b21;">
+                                            <i class="fa-brands fa-whatsapp" style="color: #25d366; font-size: 1.1rem;"></i> پیش‌نمایش پیام در واتساپ
+                                        </span>
+                                        <span style="font-size: 0.75rem; color: #667781;" id="waPreviewRecipient">برای: علی اکبری</span>
+                                    </div>
+                                    <div style="background: #ffffff; border-radius: 8px 0px 8px 8px; padding: 12px 14px; box-shadow: 0 1px 1px rgba(11,20,26,0.1); max-width: 90%; margin-right: auto; position: relative;">
+                                        <div id="waPreviewText" style="font-size: 0.88rem; line-height: 1.5; color: #111b21; white-space: pre-wrap;"></div>
+                                        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.7rem; color: #667781;">
+                                            <span>۱۰:۳۰</span>
+                                            <i class="fa-solid fa-check-double" style="color: #53bdeb;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 18px; background: rgba(255,255,255,0.9); border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0;">
+                                    <div style="font-size: 0.82rem; font-weight: bold; color: #1e293b; margin-bottom: 6px;">
+                                        🎯 نحوه ارسال:
+                                    </div>
+                                    <p style="font-size: 0.76rem; color: #64748b; line-height: 1.4; margin-bottom: 10px;">
+                                        با کلیک روی دکمه هر مشتری در جدول زیر، صفحه چت واتساپ مشتری با متن شخصی‌سازی‌شده و لینک مستقیم فوراً باز می‌شود.
+                                    </p>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <button class="btn btn-primary" onclick="startSequentialWhatsappSending()" style="background: #16a34a; border-color: #16a34a; font-size: 0.85rem; flex: 1;">
+                                            <i class="fa-solid fa-forward-step"></i> شروع ارسال زنجیره‌ای (پاپ‌آپ نوبتی)
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="copyAllWhatsappMessageText()" style="font-size: 0.85rem;">
+                                            <i class="fa-solid fa-copy"></i> کپی متن نمونه
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filtered Audience Table -->
+                        <div style="margin-top: 24px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #fff;">
+                            <div style="padding: 12px 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <h4 style="font-size: 0.92rem; color: var(--primary-dark); margin: 0;">
+                                        <i class="fa-solid fa-list-check"></i> لیست مشتریان هدف در این کمپین
+                                    </h4>
+                                    <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:bold;" id="waAudienceTableCount">0 مخاطب</span>
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="text" id="waAudienceSearch" placeholder="جستجوی نام یا تلفن..." oninput="filterWaAudienceTable()" class="form-control" style="max-width: 220px; font-size: 0.82rem; padding: 6px 10px;">
+                                </div>
+                            </div>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>نام مشتری</th>
+                                            <th>شماره همراه</th>
+                                            <th>تعداد سفارش</th>
+                                            <th>مجموع خرید</th>
+                                            <th>آخرین خرید</th>
+                                            <th>فاصله از آخرین خرید</th>
+                                            <th style="text-align:center;">عملیات واتساپ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="waAudienceTableBody">
+                                        <tr><td colspan="7" class="empty-state">در حال بررسی اطلاعات مخاطبان...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -2402,10 +2586,56 @@
             <button class="btn btn-primary" onclick="saveCustomerProfile()">
                 <i class="fa-solid fa-floppy-disk"></i> ذخیره تغییرات مشخصات مشتری
             </button>
+            <button class="btn btn-secondary" style="background:#16a34a; color:#fff; border-color:#16a34a;" onclick="openDirectWhatsappModalForCustomer(currentCustomerId)">
+                <i class="fa-brands fa-whatsapp"></i> پیام واتساپ
+            </button>
             <button class="btn btn-secondary" style="background:#dc2626; color:#fff; border-color:#dc2626;" onclick="deleteCurrentCustomer()">
                 <i class="fa-solid fa-trash"></i> حذف مشتری
             </button>
             <button class="btn btn-secondary" onclick="closeCustomerModal()">بستن</button>
+        </div>
+    </div>
+</div>
+
+<!-- Direct Single WhatsApp Send Modal -->
+<div class="modal-overlay" id="directWhatsappModal" style="display:none;" onclick="if(event.target.id==='directWhatsappModal') closeDirectWhatsappModal();">
+    <div class="modal" style="max-width: 540px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:16px;">
+            <h3 style="margin:0; color:#16a34a; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                <i class="fa-brands fa-whatsapp"></i> ارسال پیام اختصاصی در واتساپ
+            </h3>
+            <button onclick="closeDirectWhatsappModal()" style="border:none; background:transparent; font-size:1.2rem; cursor:pointer; color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <strong id="directWaCustName" style="color:var(--text); font-size:0.95rem;">-</strong>
+                <div id="directWaCustPhone" dir="ltr" style="font-size:0.8rem; color:#64748b; font-family:monospace;">-</div>
+            </div>
+            <span class="badge" style="background:#e0f2fe; color:#0369a1;" id="directWaCustStatus">-</span>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+            <label style="font-size:0.82rem; font-weight:bold; margin-bottom:4px; display:block;">قالب پیام آماده:</label>
+            <select id="directWaTemplateSelect" class="form-control" onchange="applyDirectWaTemplate(this.value)">
+                <option value="inactive60">💡 یادآوری و بازگشت مشتری راکد (تخفیف ویژه)</option>
+                <option value="newProducts">✨ معرفی کاتالوگ جدید و تخفیف‌ها</option>
+                <option value="refill">🧴 پیشنهاد شارژ مایع دستشویی/ظرفشویی/لباس</option>
+                <option value="vipThanks">⭐ قدردانی از خرید و آفر ویژه</option>
+                <option value="custom">✍️ متن آزاد</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-size:0.82rem; font-weight:bold; margin-bottom:4px; display:block;">متن نهایی پیام:</label>
+            <textarea id="directWaMessageText" class="form-control" rows="5" style="font-size:0.88rem; line-height:1.5;"></textarea>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closeDirectWhatsappModal()">انصراف</button>
+            <button type="button" class="btn btn-primary" onclick="sendDirectWhatsappSubmit()" style="background:#16a34a; border-color:#16a34a;">
+                <i class="fa-brands fa-whatsapp"></i> باز کردن چت واتساپ و ارسال
+            </button>
         </div>
     </div>
 </div>
@@ -2939,6 +3169,7 @@
         if (name === 'bank-settings') loadBankSettings();
         if (name === 'delivery-settings') loadDeliverySettings();
         if (name === 'alerts') loadAlerts();
+        if (name === 'whatsapp-campaigns') initWhatsappCampaignSection();
         if (name === 'dashboard') { loadStats(); loadDeliverySettings(); }
     }
 
@@ -2956,6 +3187,8 @@
                 tasks.push(loadOrders());
             } else if (activeSec === 'customers') {
                 tasks.push(loadCustomers());
+            } else if (activeSec === 'whatsapp-campaigns') {
+                tasks.push(initWhatsappCampaignSection());
             } else if (activeSec === 'purchases') {
                 tasks.push(loadPurchases());
             } else if (activeSec === 'products') {
@@ -3870,7 +4103,10 @@
                     <td>${formatDate(c.lastOrderAt)}</td>
                     <td>
                         <div style="display:flex; gap:6px;">
-                            <button class="btn btn-secondary" onclick="openCustomer('${c.id}')">پروفایل</button>
+                            <button class="btn btn-secondary" onclick="openCustomer('${c.id}')" title="مشاهده پروفایل">پروفایل</button>
+                            <button class="btn btn-secondary" style="color:#16a34a; border-color:#86efac; padding:6px 9px;" onclick="openDirectWhatsappModalForCustomer('${c.id}')" title="ارسال پیام اختصاصی در واتساپ">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </button>
                             <button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5; padding:6px 10px;" onclick="quickDeleteCustomer('${c.id}')" title="حذف مشتری">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
@@ -9198,6 +9434,491 @@
         } catch (e) {
             console.error('Error opening invoice for order:', e);
         }
+    }
+
+    /* ==========================================================================
+       WHATSAPP CAMPAIGNS & CUSTOMER ENGAGEMENT ENGINE
+       ========================================================================== */
+    let currentWaSegment = 'inactive60';
+    let filteredWaAudience = [];
+    let currentDirectWaCustomer = null;
+
+    const WA_TEMPLATES = {
+        inactive60: {
+            title: 'بازگشت مشتریان راکد (۶۰ روز عدم سفارش)',
+            text: `سلام {name} عزیز 🌸
+از آخرین سفارش شما در پخش رافونه بیش از ۲ ماه می‌گذرد و جای خالی شما را حس می‌کنیم!
+برای قدردانی از همراهی‌تان، کد تخفیف ویژه خرید این هفته برای شما فعال شد:
+🎁 کد تخفیف: WELCOME10 (۱۰٪ تخفیف ویژه ثبت سفارش جدید)
+
+مشاهده کاتالوگ و ثبت سریع سفارش:
+{storeUrl}
+
+با احترام، پخش شوینده و بهداشتی رافونه`
+        },
+        newProducts: {
+            title: 'معرفی محصولات جدید و تخفیف‌های پخش',
+            text: `سلام همکار و خریدار گرامی، {name} عزیز 🌟
+لیست محصولات جدید و شارژ شده در انبار پخش رافونه هم‌اکنون در دسترس است:
+✨ مایع ظرفشویی، دستشویی و پودرهای لباسشویی با قیمت همکاری و تحویل فوری.
+
+جهت مشاهده لیست موجودی، قیمت‌های به روز و ثبت سفارش آنلاین:
+{storeUrl}
+
+پخش مستقیم رافونه - تضمین بهترین قیمت و کیفیت`
+        },
+        refill: {
+            title: 'پیشنهاد شارژ مجدد مواد شوینده مصرفی',
+            text: `سلام {name} گرامی 🧴
+طبق بازه زمانی مصرف شوینده‌های بهداشتی، احتمالاً زمان شارژ مجدد اقلام مصرفی فروشگاه یا منزلتان فرا رسیده است.
+می‌توانید سفارش جدید خود را در کمتر از ۱ دقیقه ثبت کنید تا سریع‌ترین ارسال برای شما انجام گیرد:
+🛒 {storeUrl}
+
+همواره در خدمت شما هستیم - پخش رافونه`
+        },
+        vipThanks: {
+            title: 'قدردانی و آفر ویژه مشتریان وفادار',
+            text: `سلام و احترام {name} عزیز 💎
+شما یکی از خریداران ویژه و ارزشمند خانواده بزرگ رافونه هستید!
+سفارشات بعدی شما با اولویت بسته‌بندی VIP و ارسال سریع انجام خواهد شد.
+مشاهده تخفیف‌های ویژه این ماه:
+{storeUrl}
+
+ارادتمند شما، مجموعه رافونه`
+        },
+        custom: {
+            title: 'متن آزاد و دلخواه',
+            text: `سلام {name} عزیز 💐
+پیام اطلاع‌رسانی از طرف پخش رافونه:
+
+مشاهده وبسایت و محصولات:
+{storeUrl}`
+        }
+    };
+
+    function normalizeWaPhone(phone) {
+        if (!phone) return '';
+        let clean = String(phone).replace(/[^\d+]/g, '').trim();
+        if (clean.startsWith('0098')) {
+            clean = '98' + clean.slice(4);
+        } else if (clean.startsWith('+98')) {
+            clean = '98' + clean.slice(3);
+        } else if (clean.startsWith('0')) {
+            clean = '98' + clean.slice(1);
+        } else if (clean.startsWith('9') && clean.length === 10) {
+            clean = '98' + clean;
+        }
+        return clean;
+    }
+
+    function getStoreUrl() {
+        return window.location.origin || 'https://rafooneh.ir';
+    }
+
+    async function initWhatsappCampaignSection() {
+        if (!cachedCustomersList || cachedCustomersList.length === 0) {
+            await loadCustomers();
+        }
+        populateWaProductOptions();
+        updateWaAudienceSegments();
+        applyWhatsappTemplate(currentWaSegment);
+    }
+
+    function populateWaProductOptions() {
+        const sel = document.getElementById('waProductInsertSelect');
+        if (!sel) return;
+        const catalog = window.productsCatalog || (typeof window.getProductsCatalog === 'function' ? window.getProductsCatalog() : []);
+        if (catalog && catalog.length > 0) {
+            sel.innerHTML = '<option value="">-- انتخاب کالا جهت درج در متن --</option>' + catalog.map(p => `
+                <option value="${p.id}" data-name="${escapeHtml(p.name)}" data-price="${p.price || p.consumerPrice || 0}">
+                    ${escapeHtml(p.name)} (${formatPrice(p.price || p.consumerPrice || 0)})
+                </option>
+            `).join('');
+        } else {
+            sel.innerHTML = '<option value="">کاتالوگ کالاها بارگذاری نشد</option>';
+        }
+    }
+
+    function updateWaAudienceSegments() {
+        const list = cachedCustomersList || [];
+        const now = Date.now();
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        let inactive60Count = 0;
+        let inactive30Count = 0;
+        let loyalCount = 0;
+        let allCount = list.length;
+
+        list.forEach(c => {
+            const lastTime = c.lastOrderAt ? new Date(c.lastOrderAt).getTime() : 0;
+            const daysSince = lastTime > 0 ? (now - lastTime) / DAY_MS : 999;
+            const orders = Number(c.totalOrders || 0);
+
+            if (daysSince >= 60) inactive60Count++;
+            if (daysSince >= 30 && daysSince < 60) inactive30Count++;
+            if (orders >= 3 || (Number(c.totalSpent) || 0) > 5000000) loyalCount++;
+        });
+
+        const el60 = document.getElementById('waCount-inactive60');
+        const el30 = document.getElementById('waCount-inactive30');
+        const elLoyal = document.getElementById('waCount-loyal');
+        const elAll = document.getElementById('waCount-all');
+
+        if (el60) el60.textContent = inactive60Count.toLocaleString('fa-IR');
+        if (el30) el30.textContent = inactive30Count.toLocaleString('fa-IR');
+        if (elLoyal) elLoyal.textContent = loyalCount.toLocaleString('fa-IR');
+        if (elAll) elAll.textContent = allCount.toLocaleString('fa-IR');
+
+        filterWaAudienceList();
+    }
+
+    function selectWaSegment(segKey) {
+        currentWaSegment = segKey;
+        document.querySelectorAll('.wa-seg-card').forEach(card => {
+            card.style.borderColor = '#e2e8f0';
+            card.style.boxShadow = 'none';
+        });
+        const activeCard = document.getElementById('waSegCard-' + segKey);
+        if (activeCard) {
+            activeCard.style.borderColor = '#16a34a';
+            activeCard.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.15)';
+        }
+
+        const templateDropdown = document.getElementById('waTemplateSelect');
+        if (templateDropdown) {
+            if (segKey === 'inactive60') templateDropdown.value = 'inactive60';
+            else if (segKey === 'inactive30') templateDropdown.value = 'refill';
+            else if (segKey === 'loyal') templateDropdown.value = 'vipThanks';
+            else templateDropdown.value = 'newProducts';
+            applyWhatsappTemplate(templateDropdown.value);
+        }
+
+        filterWaAudienceList();
+    }
+
+    function filterWaAudienceList() {
+        const list = cachedCustomersList || [];
+        const now = Date.now();
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        filteredWaAudience = list.filter(c => {
+            const lastTime = c.lastOrderAt ? new Date(c.lastOrderAt).getTime() : 0;
+            const daysSince = lastTime > 0 ? (now - lastTime) / DAY_MS : 999;
+            const orders = Number(c.totalOrders || 0);
+
+            if (currentWaSegment === 'inactive60') {
+                return daysSince >= 60;
+            } else if (currentWaSegment === 'inactive30') {
+                return daysSince >= 30 && daysSince < 60;
+            } else if (currentWaSegment === 'loyal') {
+                return orders >= 3 || (Number(c.totalSpent) || 0) > 5000000;
+            } else {
+                return true;
+            }
+        });
+
+        renderWaAudienceTable();
+    }
+
+    function filterWaAudienceTable() {
+        const q = (document.getElementById('waAudienceSearch')?.value || '').trim().toLowerCase();
+        renderWaAudienceTable(q);
+    }
+
+    function renderWaAudienceTable(searchQuery = '') {
+        const tbody = document.getElementById('waAudienceTableBody');
+        const countBadge = document.getElementById('waAudienceTableCount');
+        if (!tbody) return;
+
+        let displayList = [...filteredWaAudience];
+        if (searchQuery) {
+            displayList = displayList.filter(c =>
+                (c.name && String(c.name).toLowerCase().includes(searchQuery)) ||
+                (c.phone && String(c.phone).includes(searchQuery))
+            );
+        }
+
+        if (countBadge) {
+            countBadge.textContent = `${displayList.length.toLocaleString('fa-IR')} مخاطب هدف`;
+        }
+
+        if (!displayList.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:24px; text-align:center; color:var(--muted);">مشتری با این شرایط در این بخش‌بندی یافت نشد.</td></tr>';
+            return;
+        }
+
+        const now = Date.now();
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        tbody.innerHTML = displayList.map(c => {
+            const lastTime = c.lastOrderAt ? new Date(c.lastOrderAt).getTime() : 0;
+            const daysSince = lastTime > 0 ? Math.floor((now - lastTime) / DAY_MS) : null;
+            let daysBadge = '<span class="badge" style="background:#f1f5f9; color:#475569;">بدون سفارش ثبت‌شده</span>';
+            if (daysSince !== null) {
+                if (daysSince >= 60) {
+                    daysBadge = `<span class="badge" style="background:#ffedd5; color:#c2410c; font-weight:bold;">${daysSince.toLocaleString('fa-IR')} روز قبل (راکد)</span>`;
+                } else if (daysSince >= 30) {
+                    daysBadge = `<span class="badge" style="background:#fef3c7; color:#b45309;">${daysSince.toLocaleString('fa-IR')} روز قبل</span>`;
+                } else {
+                    daysBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">${daysSince.toLocaleString('fa-IR')} روز قبل (فعال)</span>`;
+                }
+            }
+
+            const cleanPhone = normalizeWaPhone(c.phone);
+            const rawMsg = getCompiledWaMessageForCustomer(c);
+            const waLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(rawMsg)}` : '#';
+
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(c.name || 'مشتری')}</strong></td>
+                    <td dir="ltr"><span style="font-family:monospace; font-weight:bold;">${escapeHtml(c.phone || '-')}</span></td>
+                    <td>${(c.totalOrders || 0).toLocaleString('fa-IR')} سفارش</td>
+                    <td><strong style="color:#059669;">${formatPrice(c.totalSpent)}</strong></td>
+                    <td style="font-size:0.85rem;">${formatDate(c.lastOrderAt)}</td>
+                    <td>${daysBadge}</td>
+                    <td style="text-align:center;">
+                        <div style="display:flex; gap:6px; justify-content:center;">
+                            <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="background:#16a34a; border-color:#16a34a; padding:5px 10px; font-size:0.8rem;" title="ارسال پیام به ${escapeHtml(c.name || '')}">
+                                <i class="fa-brands fa-whatsapp"></i> ارسال در واتساپ
+                            </a>
+                            <button class="btn btn-secondary" onclick="openDirectWhatsappModalForCustomer('${c.id}')" style="padding:5px 8px; font-size:0.8rem;" title="ویرایش و ارسال اختصاصی">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function applyWhatsappTemplate(templateKey) {
+        const tpl = WA_TEMPLATES[templateKey] || WA_TEMPLATES.custom;
+        const msgBox = document.getElementById('waMessageBody');
+        const prodContainer = document.getElementById('waProductSelectContainer');
+
+        if (prodContainer) {
+            prodContainer.style.display = (templateKey === 'newProducts') ? 'block' : 'none';
+        }
+
+        if (msgBox) {
+            msgBox.value = tpl.text;
+        }
+        updateWhatsappPreview();
+    }
+
+    function injectProductIntoWaTemplate() {
+        const sel = document.getElementById('waProductInsertSelect');
+        const opt = sel?.options[sel.selectedIndex];
+        if (!opt || !opt.value) return;
+
+        const prodName = opt.getAttribute('data-name');
+        const prodPrice = opt.getAttribute('data-price');
+        const textToAppend = `\n🔥 کالای پیشنهادی: ${prodName} - قیمت: ${formatPrice(prodPrice)}`;
+
+        const msgBox = document.getElementById('waMessageBody');
+        if (msgBox) {
+            msgBox.value = msgBox.value + textToAppend;
+            updateWhatsappPreview();
+        }
+    }
+
+    function insertWaVariable(varName) {
+        const msgBox = document.getElementById('waMessageBody');
+        if (!msgBox) return;
+        const start = msgBox.selectionStart || msgBox.value.length;
+        const end = msgBox.selectionEnd || msgBox.value.length;
+        const text = msgBox.value;
+        msgBox.value = text.substring(0, start) + varName + text.substring(end);
+        msgBox.focus();
+        updateWhatsappPreview();
+    }
+
+    function resetWaTemplate() {
+        const templateDropdown = document.getElementById('waTemplateSelect');
+        applyWhatsappTemplate(templateDropdown?.value || 'inactive60');
+    }
+
+    function updateWhatsappPreview() {
+        const msgBox = document.getElementById('waMessageBody');
+        const previewEl = document.getElementById('waPreviewText');
+        const previewRecipient = document.getElementById('waPreviewRecipient');
+        if (!previewEl) return;
+
+        const raw = msgBox ? msgBox.value : '';
+        const sampleCustomer = filteredWaAudience[0] || (cachedCustomersList && cachedCustomersList[0]) || { name: 'علی اکبری', phone: '09123456789' };
+
+        if (previewRecipient) {
+            previewRecipient.textContent = `برای: ${sampleCustomer.name || 'مشتری'}`;
+        }
+
+        let compiled = raw
+            .replace(/\{name\}/g, sampleCustomer.name || 'مشتری گرامی')
+            .replace(/\{storeUrl\}/g, getStoreUrl());
+
+        previewEl.textContent = compiled;
+        renderWaAudienceTable(document.getElementById('waAudienceSearch')?.value || '');
+    }
+
+    function getCompiledWaMessageForCustomer(cust) {
+        const msgBox = document.getElementById('waMessageBody');
+        const raw = msgBox ? msgBox.value : WA_TEMPLATES.inactive60.text;
+        const name = (cust && cust.name) ? cust.name.trim() : 'مشتری گرامی';
+        return raw
+            .replace(/\{name\}/g, name)
+            .replace(/\{storeUrl\}/g, getStoreUrl());
+    }
+
+    function copyAllWhatsappMessageText() {
+        const previewEl = document.getElementById('waPreviewText');
+        if (!previewEl || !previewEl.textContent) return;
+        navigator.clipboard.writeText(previewEl.textContent).then(() => {
+            alert('متن پیام نمونه با موفقیت در کلیپ‌بورد کپی شد.');
+        }).catch(() => {
+            alert('خطا در کپی متن.');
+        });
+    }
+
+    function exportWhatsappAudienceCsv() {
+        const list = filteredWaAudience.length > 0 ? filteredWaAudience : (cachedCustomersList || []);
+        if (!list || list.length === 0) {
+            alert('مخاطبی برای خروجی اکسل وجود ندارد.');
+            return;
+        }
+
+        let csvContent = 'data:text/csv;charset=utf-8,\uFEFF';
+        csvContent += 'نام مشتری,شماره همراه,تعداد سفارش,مجموع خرید (تومان),آخرین تاریخ سفارش\n';
+
+        list.forEach(c => {
+            const row = [
+                `"${(c.name || '').replace(/"/g, '""')}"`,
+                `"${(c.phone || '')}"`,
+                c.totalOrders || 0,
+                c.totalSpent || 0,
+                `"${c.lastOrderAt || ''}"`
+            ];
+            csvContent += row.join(',') + '\n';
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `rafooneh_whatsapp_audience_${currentWaSegment}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    let sequentialIndex = 0;
+    function startSequentialWhatsappSending() {
+        if (!filteredWaAudience || filteredWaAudience.length === 0) {
+            alert('هیچ مشتری در این فیلتر انتخاب نشده است.');
+            return;
+        }
+
+        const validAudience = filteredWaAudience.filter(c => normalizeWaPhone(c.phone));
+        if (validAudience.length === 0) {
+            alert('هیچ شماره همراه معتبری در میان مخاطبان انتخابی یافت نشد.');
+            return;
+        }
+
+        sequentialIndex = 0;
+        sendNextSequentialWhatsapp(validAudience);
+    }
+
+    function sendNextSequentialWhatsapp(audience) {
+        if (sequentialIndex >= audience.length) {
+            alert('ارسال زنجیره‌ای به تمامی مخاطبان هدف با موفقیت پایان یافت.');
+            return;
+        }
+
+        const cust = audience[sequentialIndex];
+        const cleanPhone = normalizeWaPhone(cust.phone);
+        const rawMsg = getCompiledWaMessageForCustomer(cust);
+        const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(rawMsg)}`;
+
+        const confirmSend = confirm(`[مخاطب ${sequentialIndex + 1} از ${audience.length}]\nآیا چت واتساپ برای «${cust.name || 'مشتری'}» با شماره ${cust.phone} باز شود؟`);
+        if (confirmSend) {
+            window.open(waLink, '_blank');
+            sequentialIndex++;
+            if (sequentialIndex < audience.length) {
+                setTimeout(() => sendNextSequentialWhatsapp(audience), 1000);
+            }
+        }
+    }
+
+    /* DIRECT SINGLE CUSTOMER WHATSAPP MODAL */
+    function openDirectWhatsappModalForCustomer(custId) {
+        const cust = (cachedCustomersList || []).find(c => String(c.id) === String(custId));
+        if (!cust) {
+            alert('مشتری مورد نظر یافت نشد.');
+            return;
+        }
+        currentDirectWaCustomer = cust;
+
+        const modal = document.getElementById('directWhatsappModal');
+        const nameEl = document.getElementById('directWaCustName');
+        const phoneEl = document.getElementById('directWaCustPhone');
+        const statusEl = document.getElementById('directWaCustStatus');
+
+        if (nameEl) nameEl.textContent = cust.name || 'مشتری بدون نام';
+        if (phoneEl) phoneEl.textContent = cust.phone || 'فاقد شماره تماس';
+
+        const lastTime = cust.lastOrderAt ? new Date(cust.lastOrderAt).getTime() : 0;
+        const now = Date.now();
+        const daysSince = lastTime > 0 ? Math.floor((now - lastTime) / (24 * 60 * 60 * 1000)) : null;
+
+        if (statusEl) {
+            if (daysSince !== null) {
+                statusEl.textContent = `آخرین خرید: ${daysSince} روز پیش`;
+            } else {
+                statusEl.textContent = 'بدون سابقه سفارش';
+            }
+        }
+
+        const sel = document.getElementById('directWaTemplateSelect');
+        if (sel) {
+            sel.value = (daysSince !== null && daysSince >= 60) ? 'inactive60' : 'newProducts';
+            applyDirectWaTemplate(sel.value);
+        }
+
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeDirectWhatsappModal() {
+        const modal = document.getElementById('directWhatsappModal');
+        if (modal) modal.style.display = 'none';
+        currentDirectWaCustomer = null;
+    }
+
+    function applyDirectWaTemplate(templateKey) {
+        const tpl = WA_TEMPLATES[templateKey] || WA_TEMPLATES.custom;
+        const msgBox = document.getElementById('directWaMessageText');
+        if (!msgBox) return;
+
+        const cust = currentDirectWaCustomer || { name: 'مشتری گرامی' };
+        const name = (cust && cust.name) ? cust.name.trim() : 'مشتری گرامی';
+
+        let compiled = tpl.text
+            .replace(/\{name\}/g, name)
+            .replace(/\{storeUrl\}/g, getStoreUrl());
+
+        msgBox.value = compiled;
+    }
+
+    function sendDirectWhatsappSubmit() {
+        if (!currentDirectWaCustomer) return;
+        const cleanPhone = normalizeWaPhone(currentDirectWaCustomer.phone);
+        if (!cleanPhone) {
+            alert('شماره همراه مشتری نامعتبر است.');
+            return;
+        }
+
+        const msgBox = document.getElementById('directWaMessageText');
+        const text = msgBox ? msgBox.value : '';
+        const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+
+        window.open(waLink, '_blank');
+        closeDirectWhatsappModal();
     }
 </script>
 
