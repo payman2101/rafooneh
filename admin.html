@@ -1624,8 +1624,11 @@
                         </div>
                         <div class="filters" style="flex-wrap:wrap; gap:10px; align-items:center;">
                             <input type="text" id="customerSearch" placeholder="جستجو نام / تلفن / آدرس..." oninput="debounceCustomers()" style="min-width:220px;">
-                            <button class="btn btn-secondary" onclick="showSection('whatsapp-campaigns')" style="background:#16a34a; color:#fff; font-weight:bold; border-color:#16a34a;">
-                                <i class="fa-brands fa-whatsapp"></i> کمپین و ارسال پیام انبوه
+                            <button class="btn btn-primary" onclick="openBatchWhatsappModalForCustomers()" style="background:#16a34a; border-color:#16a34a; font-weight:bold;">
+                                <i class="fa-brands fa-whatsapp"></i> ارسال پیام واتساپ به انتخاب‌شده‌ها (<span id="custSectionSelectedCountBadge">0</span>)
+                            </button>
+                            <button class="btn btn-secondary" onclick="showSection('whatsapp-campaigns')" style="font-weight:bold;">
+                                <i class="fa-solid fa-bullhorn"></i> پنل جامع کمپین‌ها
                             </button>
                         </div>
                     </div>
@@ -1633,6 +1636,9 @@
                         <table>
                             <thead>
                                 <tr>
+                                    <th style="width:40px; text-align:center;">
+                                        <input type="checkbox" id="custSelectAllCheckbox" onchange="toggleAllCustomersPageSelection(this.checked)" title="انتخاب کل مشتریان" style="width:16px; height:16px; cursor:pointer;">
+                                    </th>
                                     <th onclick="sortCustomersTable('name')" style="cursor:pointer; user-select:none;" title="مرتب‌سازی براساس نام">
                                         نام مشتری <i id="sortIcon-cust-name" class="fa-solid fa-sort" style="font-size:0.8rem; margin-right:4px; opacity:0.35;"></i>
                                     </th>
@@ -2593,6 +2599,82 @@
                 <i class="fa-solid fa-trash"></i> حذف مشتری
             </button>
             <button class="btn btn-secondary" onclick="closeCustomerModal()">بستن</button>
+        </div>
+    </div>
+</div>
+
+<!-- Batch WhatsApp Send Modal with Checklist -->
+<div class="modal-overlay" id="batchWhatsappModal" style="display:none;" onclick="if(event.target.id==='batchWhatsappModal') closeBatchWhatsappModal();">
+    <div class="modal" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:16px;">
+            <h3 style="margin:0; color:#16a34a; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+                <i class="fa-brands fa-whatsapp"></i> ارسال پیام گروهی به مشتریان انتخاب‌شده
+            </h3>
+            <button onclick="closeBatchWhatsappModal()" style="border:none; background:transparent; font-size:1.2rem; cursor:pointer; color:var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+                <span style="font-size:0.85rem; color:#166534; font-weight:bold;">
+                    <i class="fa-solid fa-users-check"></i> مخاطبان انتخاب‌شده:
+                </span>
+                <span id="batchWaModalSelectedCount" style="font-size:0.88rem; color:#15803d; font-weight:bold; margin-right:4px;">0 مشتری</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button type="button" class="btn btn-secondary" onclick="selectAllBatchModalRecipients(true)" style="font-size:0.78rem; padding:4px 10px; background:#fff;">
+                    <i class="fa-solid fa-check-double"></i> انتخاب کل اعضا
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="selectAllBatchModalRecipients(false)" style="font-size:0.78rem; padding:4px 10px; background:#fff;">
+                    <i class="fa-solid fa-xmark"></i> لغو انتخاب همه
+                </button>
+            </div>
+        </div>
+
+        <!-- Checklist of recipients with scroll -->
+        <div style="margin-bottom:16px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+            <div style="background:#f8fafc; padding:8px 12px; border-bottom:1px solid #e2e8f0; font-size:0.8rem; font-weight:bold; color:#475569; display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fa-solid fa-list-check"></i> چک‌لیست و نام مشتریان (تیک بزنید):</span>
+                <input type="text" id="batchWaRecipientsFilterInput" placeholder="جستجو نام یا تلفن..." oninput="renderBatchModalRecipientsList(this.value)" style="padding:3px 8px; font-size:0.75rem; border-radius:4px; border:1px solid #cbd5e1; max-width:180px;">
+            </div>
+            <div id="batchWaRecipientsListContainer" style="max-height:160px; overflow-y:auto; padding:10px; display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px; background:#fff;">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Template and message content -->
+        <div class="form-group" style="margin-bottom:12px;">
+            <label style="font-size:0.82rem; font-weight:bold; margin-bottom:4px; display:block;">انتخاب قالب پیام:</label>
+            <select id="batchWaTemplateSelect" class="form-control" onchange="applyBatchWaModalTemplate(this.value)">
+                <option value="inactive60">💡 یادآوری و بازگشت مشتریان راکد (تخفیف ویژه)</option>
+                <option value="newProducts">✨ معرفی کاتالوگ جدید و تخفیف‌های پخش</option>
+                <option value="refill">🧴 پیشنهاد شارژ مجدد شوینده و مواد مصرفی</option>
+                <option value="vipThanks">⭐ قدردانی از خرید و آفر ویژه مشتریان وفادار</option>
+                <option value="custom">✍️ متن آزاد و دلخواه</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+            <label style="font-size:0.82rem; font-weight:bold; margin-bottom:4px; display:flex; justify-content:space-between;">
+                <span>متن پیام ارسالی:</span>
+                <span style="font-size:0.75rem; color:#0284c7; font-weight:normal;">متغیرها: {name} (نام مشتری) | {storeUrl} (لینک سایت)</span>
+            </label>
+            <textarea id="batchWaMessageText" class="form-control" rows="5" style="font-size:0.88rem; line-height:1.5;" oninput="onBatchWaMessageEdited()"></textarea>
+        </div>
+
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; align-items:center;">
+            <button type="button" class="btn btn-secondary" onclick="insertBatchWaVariable('{name}')" style="padding:4px 8px; font-size:0.75rem;">+ نام مشتری {name}</button>
+            <button type="button" class="btn btn-secondary" onclick="insertBatchWaVariable('{storeUrl}')" style="padding:4px 8px; font-size:0.75rem;">+ لینک فروشگاه {storeUrl}</button>
+            <button type="button" class="btn btn-primary" onclick="saveBatchWaTemplateToDb()" style="background:#0f766e; border-color:#0f766e; padding:4px 10px; font-size:0.75rem; font-weight:bold;">
+                <i class="fa-solid fa-floppy-disk"></i> ذخیره در دیتابیس
+            </button>
+            <span id="batchWaSaveIndicator" style="font-size:0.75rem; color:#059669; display:none;"><i class="fa-solid fa-check"></i> ذخیره شد</span>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:14px;">
+            <button type="button" class="btn btn-secondary" onclick="closeBatchWhatsappModal()">انصراف و بستن</button>
+            <button type="button" class="btn btn-primary" onclick="startBatchWhatsappSendingFromModal()" style="background:#16a34a; border-color:#16a34a; font-weight:bold; font-size:0.92rem; padding:8px 18px;">
+                <i class="fa-brands fa-whatsapp" style="font-size:1.1rem;"></i> ارسال پیام به مشتریان تیک‌خورده
+            </button>
         </div>
     </div>
 </div>
@@ -3890,6 +3972,7 @@
             `).join('');
         }
 
+        updateCustomersSelectionBadge();
         renderPaginationUI({
             containerId: 'ordersPaginationContainer',
             currentPage,
@@ -4088,8 +4171,13 @@
         if (!paginatedList.length) {
             tbody.innerHTML = '<tr><td colspan="7" class="empty-state">مشتری با این مشخصات یافت نشد</td></tr>';
         } else {
-            tbody.innerHTML = paginatedList.map(c => `
+            tbody.innerHTML = paginatedList.map(c => {
+                const isChecked = custSelectedCustomerIds.has(String(c.id));
+                return `
                 <tr>
+                    <td style="text-align:center;">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSingleCustomerSelection('${c.id}', this.checked)" style="width:16px; height:16px; cursor:pointer;">
+                    </td>
                     <td><strong>${escapeHtml(c.name || 'مشتری')}</strong></td>
                     <td dir="ltr"><span style="font-family:monospace; font-weight:bold;">${escapeHtml(c.phone || '-')}</span></td>
                     <td>${(c.totalOrders || 0).toLocaleString('fa-IR')} سفارش</td>
@@ -4113,7 +4201,7 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         renderPaginationUI({
@@ -9435,6 +9523,241 @@
             console.error('Error opening invoice for order:', e);
         }
     }
+
+    
+    /* ==========================================================================
+       CUSTOMERS SECTION CHECKLIST & BATCH WHATSAPP MODAL
+       ========================================================================== */
+    var custSelectedCustomerIds = new Set();
+
+    function updateCustomersSelectionBadge() {
+        const count = custSelectedCustomerIds.size;
+        const badge = document.getElementById('custSectionSelectedCountBadge');
+        if (badge) badge.textContent = count.toLocaleString('fa-IR');
+
+        const selectAllCb = document.getElementById('custSelectAllCheckbox');
+        if (selectAllCb) {
+            const list = cachedCustomersList || [];
+            if (list.length === 0) {
+                selectAllCb.checked = false;
+            } else {
+                selectAllCb.checked = (count > 0 && count === list.length);
+            }
+        }
+    }
+
+    function toggleSingleCustomerSelection(custId, checked) {
+        if (checked) {
+            custSelectedCustomerIds.add(String(custId));
+        } else {
+            custSelectedCustomerIds.delete(String(custId));
+        }
+        updateCustomersSelectionBadge();
+    }
+
+    function toggleAllCustomersPageSelection(checked) {
+        const list = cachedCustomersList || [];
+        if (checked) {
+            list.forEach(c => custSelectedCustomerIds.add(String(c.id)));
+        } else {
+            list.forEach(c => custSelectedCustomerIds.delete(String(c.id)));
+        }
+        updateCustomersSelectionBadge();
+        renderCustomersTable(document.getElementById('customerSearch')?.value || '');
+    }
+
+    function openBatchWhatsappModalForCustomers() {
+        const modal = document.getElementById('batchWhatsappModal');
+        if (!modal) return;
+
+        // If no customer is currently selected, select all by default so user can quickly filter/uncheck
+        if (custSelectedCustomerIds.size === 0 && cachedCustomersList && cachedCustomersList.length > 0) {
+            cachedCustomersList.forEach(c => custSelectedCustomerIds.add(String(c.id)));
+            updateCustomersSelectionBadge();
+            renderCustomersTable();
+        }
+
+        const templateSelect = document.getElementById('batchWaTemplateSelect');
+        const selectedTplKey = templateSelect ? templateSelect.value : 'inactive60';
+        applyBatchWaModalTemplate(selectedTplKey);
+
+        renderBatchModalRecipientsList();
+        modal.style.display = 'flex';
+    }
+
+    function closeBatchWhatsappModal() {
+        const modal = document.getElementById('batchWhatsappModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function renderBatchModalRecipientsList(searchFilter = '') {
+        const container = document.getElementById('batchWaRecipientsListContainer');
+        const countEl = document.getElementById('batchWaModalSelectedCount');
+        if (!container) return;
+
+        const allCustomers = cachedCustomersList || [];
+        let displayList = allCustomers;
+        if (searchFilter && searchFilter.trim()) {
+            const q = searchFilter.trim().toLowerCase();
+            displayList = allCustomers.filter(c => 
+                (c.name && String(c.name).toLowerCase().includes(q)) || 
+                (c.phone && String(c.phone).includes(q))
+            );
+        }
+
+        const selectedCount = custSelectedCustomerIds.size;
+        if (countEl) {
+            countEl.textContent = `${selectedCount.toLocaleString('fa-IR')} مشتری انتخاب شده از ${allCustomers.length.toLocaleString('fa-IR')} کل اعضا`;
+        }
+
+        if (displayList.length === 0) {
+            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--muted); font-size:0.8rem; padding:12px;">مشتری یافت نشد.</div>';
+            return;
+        }
+
+        container.innerHTML = displayList.map(c => {
+            const isChecked = custSelectedCustomerIds.has(String(c.id));
+            return `
+                <label style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:${isChecked ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isChecked ? '#86efac' : '#e2e8f0'}; border-radius:6px; font-size:0.82rem; cursor:pointer; user-select:none; transition:all 0.15s;">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleBatchModalCustomerCheckbox('${c.id}', this.checked)" style="width:16px; height:16px; cursor:pointer; accent-color:#16a34a;">
+                    <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+                        <strong style="color:${isChecked ? '#166534' : 'var(--text)'};">${escapeHtml(c.name || 'مشتری')}</strong>
+                        <div dir="ltr" style="font-size:0.72rem; color:#64748b; font-family:monospace;">${escapeHtml(c.phone || '-')}</div>
+                    </div>
+                </label>
+            `;
+        }).join('');
+    }
+
+    function toggleBatchModalCustomerCheckbox(custId, checked) {
+        if (checked) {
+            custSelectedCustomerIds.add(String(custId));
+        } else {
+            custSelectedCustomerIds.delete(String(custId));
+        }
+        updateCustomersSelectionBadge();
+        renderBatchModalRecipientsList(document.getElementById('batchWaRecipientsFilterInput')?.value || '');
+        renderCustomersTable(document.getElementById('customerSearch')?.value || '');
+    }
+
+    function selectAllBatchModalRecipients(selectAll) {
+        const allCustomers = cachedCustomersList || [];
+        if (selectAll) {
+            allCustomers.forEach(c => custSelectedCustomerIds.add(String(c.id)));
+        } else {
+            custSelectedCustomerIds.clear();
+        }
+        updateCustomersSelectionBadge();
+        renderBatchModalRecipientsList(document.getElementById('batchWaRecipientsFilterInput')?.value || '');
+        renderCustomersTable(document.getElementById('customerSearch')?.value || '');
+    }
+
+    function applyBatchWaModalTemplate(templateKey) {
+        const tpl = WA_TEMPLATES[templateKey] || DEFAULT_WA_TEMPLATES[templateKey] || WA_TEMPLATES.custom;
+        const msgBox = document.getElementById('batchWaMessageText');
+        if (msgBox) {
+            msgBox.value = tpl ? tpl.text : '';
+        }
+    }
+
+    function insertBatchWaVariable(varName) {
+        const msgBox = document.getElementById('batchWaMessageText');
+        if (!msgBox) return;
+        const start = msgBox.selectionStart || msgBox.value.length;
+        const end = msgBox.selectionEnd || msgBox.value.length;
+        const text = msgBox.value;
+        msgBox.value = text.substring(0, start) + varName + text.substring(end);
+        msgBox.focus();
+    }
+
+    function onBatchWaMessageEdited() {
+        const templateDropdown = document.getElementById('batchWaTemplateSelect');
+        const templateKey = templateDropdown ? templateDropdown.value : 'custom';
+        const msgBox = document.getElementById('batchWaMessageText');
+        if (!msgBox) return;
+
+        if (!WA_TEMPLATES[templateKey]) {
+            WA_TEMPLATES[templateKey] = { title: 'قالب پیام', text: '' };
+        }
+        WA_TEMPLATES[templateKey].text = msgBox.value;
+    }
+
+    async function saveBatchWaTemplateToDb() {
+        onBatchWaMessageEdited();
+        try {
+            localStorage.setItem('rafooneh_whatsapp_templates', JSON.stringify(WA_TEMPLATES));
+        } catch (e) {}
+
+        try {
+            await api('/api/admin/whatsapp/settings', {
+                method: 'POST',
+                body: JSON.stringify({ templates: WA_TEMPLATES })
+            });
+        } catch (err) {
+            console.warn('Error saving whatsapp templates:', err);
+        }
+
+        const indicator = document.getElementById('batchWaSaveIndicator');
+        if (indicator) {
+            indicator.style.display = 'inline-block';
+            setTimeout(() => { indicator.style.display = 'none'; }, 3000);
+        }
+    }
+
+    function startBatchWhatsappSendingFromModal() {
+        const selected = (cachedCustomersList || []).filter(c => custSelectedCustomerIds.has(String(c.id)));
+        if (selected.length === 0) {
+            alert('لطفاً حداقل یک مشتری را از چک‌لیست تیک بزنید.');
+            return;
+        }
+
+        const validRecipients = selected.filter(c => normalizeWaPhone(c.phone));
+        if (validRecipients.length === 0) {
+            alert('هیچ شماره همراه معتبری برای مشتریان تیک‌خورده یافت نشد.');
+            return;
+        }
+
+        const msgBox = document.getElementById('batchWaMessageText');
+        const templateText = msgBox ? msgBox.value : '';
+
+        // Save latest text before sending
+        saveBatchWaTemplateToDb();
+        closeBatchWhatsappModal();
+
+        // Launch sequential WhatsApp sender with customized text
+        launchDirectSequentialSender(validRecipients, templateText);
+    }
+
+    function launchDirectSequentialSender(recipients, templateText) {
+        let index = 0;
+        function sendNext() {
+            if (index >= recipients.length) {
+                alert('ارسال پیام واتساپ به تمامی مشتریان انتخاب‌شده به پایان رسید.');
+                return;
+            }
+
+            const cust = recipients[index];
+            const cleanPhone = normalizeWaPhone(cust.phone);
+            const name = (cust && cust.name) ? cust.name.trim() : 'مشتری گرامی';
+            const compiled = templateText
+                .replace(/\{name\}/g, name)
+                .replace(/\{storeUrl\}/g, getStoreUrl());
+
+            const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(compiled)}`;
+
+            const confirmSend = confirm(`[پیام ${index + 1} از ${recipients.length}]
+آیا چت واتساپ برای «${name}» (${cust.phone}) باز شود؟`);
+            if (confirmSend) {
+                window.open(waLink, '_blank');
+                index++;
+                if (index < recipients.length) {
+                    setTimeout(sendNext, 800);
+                }
+            }
+        }
+        sendNext();
+    }
+
 
     /* ==========================================================================
        WHATSAPP CAMPAIGNS & CUSTOMER ENGAGEMENT ENGINE
