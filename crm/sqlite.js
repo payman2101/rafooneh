@@ -22,29 +22,23 @@ function ensureDataDir() {
   }
 }
 
-export function getDb() {
-  if (dbInstance) return dbInstance;
-  if (!DatabaseSync) return null;
-
+function ensureCleanDbFile(filePath) {
   try {
-    ensureDataDir();
-    dbInstance = new DatabaseSync(DB_PATH);
-  } catch (e) {
-    console.warn('[SQLite] Primary DB open warning:', e.message);
-    try {
-      const tmpPath = path.join('/tmp', 'rafooneh.db');
-      dbInstance = new DatabaseSync(tmpPath);
-    } catch (err) {
-      console.error('[SQLite] Could not open database:', err.message);
-      return null;
+    if (fs.existsSync(filePath)) {
+      const stats = fs.statSync(filePath);
+      // Valid SQLite header is at least 100 bytes starting with 'SQLite format 3'
+      if (stats.size < 100) {
+        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath + '-shm')) try { fs.unlinkSync(filePath + '-shm'); } catch (e) {}
+        if (fs.existsSync(filePath + '-wal')) try { fs.unlinkSync(filePath + '-wal'); } catch (e) {}
+      }
     }
-  }
+  } catch (e) {}
+}
 
-  if (!dbInstance) return null;
-
-  function initDbSchema(db) {
-    db.exec('PRAGMA journal_mode = WAL;');
-    db.exec(`
+function initDbSchema(db) {
+  db.exec('PRAGMA journal_mode = WAL;');
+  db.exec(`
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY,
       code TEXT,
@@ -134,30 +128,47 @@ export function getDb() {
       updatedAt TEXT
     );
   `);
-  }
+}
+
+function runSchemaMigrations(db) {
+  try { db.exec('ALTER TABLE customers ADD COLUMN walletBalance REAL DEFAULT 0;'); } catch (e) {}
+  try { db.exec('ALTER TABLE customers ADD COLUMN giftCredit REAL DEFAULT 0;'); } catch (e) {}
+  try { db.exec('ALTER TABLE customers ADD COLUMN passwordHash TEXT;'); } catch (e) {}
+  try { db.exec('ALTER TABLE customers ADD COLUMN walletHistory TEXT;'); } catch (e) {}
+}
+
+export function getDb() {
+  if (dbInstance) return dbInstance;
+  if (!DatabaseSync) return null;
+
+  ensureDataDir();
+  ensureCleanDbFile(DB_PATH);
 
   try {
+    dbInstance = new DatabaseSync(DB_PATH);
     initDbSchema(dbInstance);
-    // Lightweight schema migrations
-    try { dbInstance.exec('ALTER TABLE customers ADD COLUMN walletBalance REAL DEFAULT 0;'); } catch (e) {}
-    try { dbInstance.exec('ALTER TABLE customers ADD COLUMN giftCredit REAL DEFAULT 0;'); } catch (e) {}
-    try { dbInstance.exec('ALTER TABLE customers ADD COLUMN passwordHash TEXT;'); } catch (e) {}
-    try { dbInstance.exec('ALTER TABLE customers ADD COLUMN walletHistory TEXT;'); } catch (e) {}
   } catch (e) {
-    console.warn('[SQLite] Schema init warning:', e.message);
-    if (e.message && e.message.includes('malformed')) {
+    try {
+      if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH);
+      if (fs.existsSync(DB_PATH + '-shm')) try { fs.unlinkSync(DB_PATH + '-shm'); } catch (err) {}
+      if (fs.existsSync(DB_PATH + '-wal')) try { fs.unlinkSync(DB_PATH + '-wal'); } catch (err) {}
+      dbInstance = new DatabaseSync(DB_PATH);
+      initDbSchema(dbInstance);
+    } catch (err) {
       try {
-        dbInstance = null;
-        if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH);
-        if (fs.existsSync(DB_PATH + '-shm')) fs.unlinkSync(DB_PATH + '-shm');
-        if (fs.existsSync(DB_PATH + '-wal')) fs.unlinkSync(DB_PATH + '-wal');
-        dbInstance = new DatabaseSync(DB_PATH);
+        const tmpPath = path.join('/tmp', 'rafooneh.db');
+        ensureCleanDbFile(tmpPath);
+        dbInstance = new DatabaseSync(tmpPath);
         initDbSchema(dbInstance);
-        console.log('[SQLite] Successfully recreated database after malformed error.');
-      } catch (err) {
-        console.error('[SQLite] Could not recreate malformed database:', err.message);
+      } catch (finalErr) {
+        console.error('[SQLite] Could not initialize database:', finalErr.message);
+        return null;
       }
     }
+  }
+
+  if (dbInstance) {
+    runSchemaMigrations(dbInstance);
   }
 
   return dbInstance;

@@ -1,5 +1,8 @@
 node_modules
 *.log
 .env
+*.db
 *.db-shm
 *.db-wal
+*.sqlite
+data/*.db
