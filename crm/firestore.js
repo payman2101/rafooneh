@@ -343,3 +343,75 @@ export async function saveDeliverySettingsToFirestore(settingObj) {
     return false;
   }
 }
+
+// --- GIFT SETTINGS ---
+export async function getGiftSettingsFromFirestore() {
+  const database = getFirestoreDb();
+  if (!database) return null;
+  try {
+    const docRef = doc(database, 'config', 'gifts');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data();
+    }
+    return null;
+  } catch (err) {
+    handleFirestoreError('getting gift settings', err);
+    return null;
+  }
+}
+
+export async function saveGiftSettingsToFirestore(settingObj) {
+  const database = getFirestoreDb();
+  if (!database || !settingObj) return false;
+  try {
+    const docRef = doc(database, 'config', 'gifts');
+    await setDoc(docRef, settingObj, { merge: true });
+    return true;
+  } catch (err) {
+    handleFirestoreError('saving gift settings', err);
+    return false;
+  }
+}
+
+// --- PACKAGES ---
+export async function getPackagesFromFirestore() {
+  const database = getFirestoreDb();
+  if (!database) return null;
+  try {
+    const snap = await getDocs(collection(database, 'packages'));
+    if (snap.empty) return null;
+    const packages = [];
+    snap.forEach(d => packages.push(docToData(d)));
+    return packages;
+  } catch (err) {
+    handleFirestoreError('getting packages', err);
+    return null;
+  }
+}
+
+export async function savePackageToFirestore(pkgObj) {
+  const database = getFirestoreDb();
+  if (!database || !pkgObj || !pkgObj.id) return false;
+  try {
+    const docRef = doc(database, 'packages', String(pkgObj.id));
+    await setDoc(docRef, pkgObj, { merge: true });
+    return true;
+  } catch (err) {
+    handleFirestoreError('saving package', err);
+    return false;
+  }
+}
+
+export async function deletePackageFromFirestore(id) {
+  const database = getFirestoreDb();
+  if (!database || !id) return false;
+  try {
+    await deleteDoc(doc(database, 'packages', String(id)));
+    return true;
+  } catch (err) {
+    handleFirestoreError('deleting package', err);
+    return false;
+  }
+}
+

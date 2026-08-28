@@ -741,6 +741,72 @@ async function saveDeliverySettingsToPg(env, settings) {
   }
 }
 
+// Gift Settings DB Helpers
+async function getGiftSettingsFromPg(env) {
+  try {
+    const supabase = getSupabaseClient(env);
+    if (!supabase) return null;
+    const { data: sData, error: sErr } = await supabase.from('settings').select('*').eq('key', 'gift_settings').limit(1);
+    if (!sErr && sData && sData.length > 0) {
+      const val = typeof sData[0].value === 'string' ? JSON.parse(sData[0].value) : sData[0].value;
+      if (val && typeof val === 'object') return val;
+    }
+  } catch (err) {
+    console.error('[Supabase Get Gift Settings Error]:', err);
+  }
+  return null;
+}
+
+async function saveGiftSettingsToPg(env, settings) {
+  try {
+    const supabase = getSupabaseClient(env);
+    if (!supabase) return false;
+    const sPayload = {
+      key: 'gift_settings',
+      value: JSON.stringify(settings),
+      updated_at: settings.updatedAt || new Date().toISOString()
+    };
+    await supabase.from('settings').upsert(sPayload, { onConflict: 'key' });
+    return true;
+  } catch (err) {
+    console.error('[Supabase Save Gift Settings Exception]:', err);
+    return false;
+  }
+}
+
+// Packages DB Helpers
+async function getPackagesFromPg(env) {
+  try {
+    const supabase = getSupabaseClient(env);
+    if (!supabase) return null;
+    const { data: sData, error: sErr } = await supabase.from('settings').select('*').eq('key', 'packages_list').limit(1);
+    if (!sErr && sData && sData.length > 0) {
+      const val = typeof sData[0].value === 'string' ? JSON.parse(sData[0].value) : sData[0].value;
+      if (Array.isArray(val)) return val;
+    }
+  } catch (err) {
+    console.error('[Supabase Get Packages Error]:', err);
+  }
+  return null;
+}
+
+async function savePackagesToPg(env, list) {
+  try {
+    const supabase = getSupabaseClient(env);
+    if (!supabase) return false;
+    const sPayload = {
+      key: 'packages_list',
+      value: JSON.stringify(list),
+      updated_at: new Date().toISOString()
+    };
+    await supabase.from('settings').upsert(sPayload, { onConflict: 'key' });
+    return true;
+  } catch (err) {
+    console.error('[Supabase Save Packages Exception]:', err);
+    return false;
+  }
+}
+
 // --- MAIN REQUEST HANDLER ---
 export default {
   async fetch(request, env, ctx) {
@@ -2093,7 +2159,12 @@ export async function onRequest(context) {
   if (path === '/api/settings/gifts' || path === '/api/admin/settings/gifts') {
     if (method === 'POST') {
       memoryGiftSettings = { ...memoryGiftSettings, ...body, updatedAt: new Date().toISOString() };
+      await saveGiftSettingsToPg(env, memoryGiftSettings);
       return jsonRes({ success: true, settings: memoryGiftSettings, message: 'تنظیمات هدایا ذخیره شد' });
+    }
+    const pgGifts = await getGiftSettingsFromPg(env);
+    if (pgGifts && typeof pgGifts === 'object' && typeof pgGifts.defaultGiftPercent !== 'undefined') {
+      memoryGiftSettings = { ...memoryGiftSettings, ...pgGifts };
     }
     return jsonRes({ success: true, settings: memoryGiftSettings });
   }
@@ -2124,8 +2195,15 @@ export async function onRequest(context) {
       };
       if (existingIdx !== -1) memoryPackages[existingIdx] = pkgObj;
       else memoryPackages.unshift(pkgObj);
+      await savePackagesToPg(env, memoryPackages);
       return jsonRes({ success: true, package: pkgObj, message: 'پکیج با موفقیت ذخیره شد' });
     }
+
+    const pgPkgs = await getPackagesFromPg(env);
+    if (Array.isArray(pgPkgs) && pgPkgs.length > 0) {
+      memoryPackages = pgPkgs;
+    }
+
     const onlyActive = path === '/api/packages';
     return jsonRes({ success: true, packages: onlyActive ? memoryPackages.filter(p => p.isActive !== false) : memoryPackages });
   }
@@ -2134,6 +2212,7 @@ export async function onRequest(context) {
     const pkgId = path.replace('/api/admin/packages/', '');
     if (method === 'DELETE') {
       memoryPackages = memoryPackages.filter(p => String(p.id) !== String(pkgId));
+      await savePackagesToPg(env, memoryPackages);
       return jsonRes({ success: true, message: 'پکیج حذف گردید' });
     }
   }

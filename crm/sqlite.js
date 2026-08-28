@@ -127,6 +127,26 @@ function initDbSchema(db) {
       value TEXT NOT NULL,
       updatedAt TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS packages (
+      id TEXT PRIMARY KEY,
+      title TEXT,
+      subtitle TEXT,
+      badge TEXT,
+      badgeColor TEXT,
+      image TEXT,
+      isActive INTEGER DEFAULT 1,
+      items TEXT,
+      originalPrice REAL DEFAULT 0,
+      packagePrice REAL DEFAULT 0,
+      discountPercent REAL DEFAULT 0,
+      giftCredit REAL DEFAULT 0,
+      bonusItem TEXT,
+      stock INTEGER DEFAULT 50,
+      description TEXT,
+      createdAt TEXT,
+      updatedAt TEXT
+    );
   `);
 }
 
@@ -651,3 +671,100 @@ export function saveDeliverySettingsSqlite(settings, dbConn = null) {
 export function getDeliverySettingsSqlite() {
   return getSettingSqlite('delivery_settings');
 }
+
+export function saveGiftSettingsSqlite(settings, dbConn = null) {
+  saveSettingSqlite('gift_settings', settings, dbConn);
+}
+
+export function getGiftSettingsSqlite() {
+  return getSettingSqlite('gift_settings');
+}
+
+export function savePackageSqlite(pkg, dbConn = null) {
+  const db = dbConn || getDb();
+  if (!db || !pkg || !pkg.id) return;
+  const itemsJson = typeof pkg.items === 'string' ? pkg.items : JSON.stringify(pkg.items || []);
+  const stmt = db.prepare(`
+    INSERT INTO packages (
+      id, title, subtitle, badge, badgeColor, image, isActive, items,
+      originalPrice, packagePrice, discountPercent, giftCredit, bonusItem, stock, description, createdAt, updatedAt
+    ) VALUES (
+      ?, ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?, ?, ?
+    )
+    ON CONFLICT(id) DO UPDATE SET
+      title = excluded.title,
+      subtitle = excluded.subtitle,
+      badge = excluded.badge,
+      badgeColor = excluded.badgeColor,
+      image = excluded.image,
+      isActive = excluded.isActive,
+      items = excluded.items,
+      originalPrice = excluded.originalPrice,
+      packagePrice = excluded.packagePrice,
+      discountPercent = excluded.discountPercent,
+      giftCredit = excluded.giftCredit,
+      bonusItem = excluded.bonusItem,
+      stock = excluded.stock,
+      description = excluded.description,
+      createdAt = excluded.createdAt,
+      updatedAt = excluded.updatedAt
+  `);
+  stmt.run(
+    String(pkg.id),
+    String(pkg.title || ''),
+    String(pkg.subtitle || ''),
+    String(pkg.badge || 'ویژه'),
+    String(pkg.badgeColor || '#059669'),
+    String(pkg.image || ''),
+    pkg.isActive !== false ? 1 : 0,
+    itemsJson,
+    Number(pkg.originalPrice) || 0,
+    Number(pkg.packagePrice) || 0,
+    Number(pkg.discountPercent) || 0,
+    Number(pkg.giftCredit) || 0,
+    String(pkg.bonusItem || ''),
+    Number(pkg.stock) >= 0 ? Number(pkg.stock) : 50,
+    String(pkg.description || ''),
+    pkg.createdAt || new Date().toISOString(),
+    pkg.updatedAt || new Date().toISOString()
+  );
+}
+
+export function saveAllPackagesSqlite(packagesList) {
+  const db = getDb();
+  if (!db || !Array.isArray(packagesList)) return;
+  const runTx = db.transaction((list) => {
+    for (const pkg of list) {
+      savePackageSqlite(pkg, db);
+    }
+  });
+  runTx(packagesList);
+}
+
+export function getAllPackagesSqlite() {
+  const db = getDb();
+  if (!db) return [];
+  try {
+    const rows = db.prepare('SELECT * FROM packages').all();
+    return rows.map(r => ({
+      ...r,
+      isActive: r.isActive === 1,
+      items: typeof r.items === 'string' ? JSON.parse(r.items || '[]') : (r.items || [])
+    }));
+  } catch (e) {
+    console.error('[SQLite] Error reading packages:', e.message);
+    return [];
+  }
+}
+
+export function deletePackageSqlite(id) {
+  const db = getDb();
+  if (!db || !id) return;
+  try {
+    db.prepare('DELETE FROM packages WHERE id = ?').run(String(id));
+  } catch (e) {
+    console.error('[SQLite] Error deleting package:', e.message);
+  }
+}
+

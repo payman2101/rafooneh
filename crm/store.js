@@ -19,7 +19,12 @@ import {
   savePurchaseToFirestore,
   deletePurchaseFromFirestore,
   getDeliverySettingsFromFirestore,
-  saveDeliverySettingsToFirestore
+  saveDeliverySettingsToFirestore,
+  getGiftSettingsFromFirestore,
+  saveGiftSettingsToFirestore,
+  getPackagesFromFirestore,
+  savePackageToFirestore,
+  deletePackageFromFirestore
 } from './firestore.js';
 import {
   initCloudSql,
@@ -60,6 +65,12 @@ import {
   deletePurchaseSqlite,
   saveDeliverySettingsSqlite,
   getDeliverySettingsSqlite,
+  saveGiftSettingsSqlite,
+  getGiftSettingsSqlite,
+  savePackageSqlite,
+  saveAllPackagesSqlite,
+  getAllPackagesSqlite,
+  deletePackageSqlite,
   getDb
 } from './sqlite.js';
 
@@ -163,6 +174,26 @@ export async function ensureFirestoreLoaded() {
           writeJson(DELIVERY_SETTINGS_FILE, deliverySettingsCache);
           writeJson(ROOT_DELIVERY_SETTINGS_FILE, deliverySettingsCache);
           try { saveDeliverySettingsSqlite(deliverySettingsCache); } catch (e) {}
+        }
+      }
+
+      if (!giftSettingsCache) {
+        const fsGifts = await getGiftSettingsFromFirestore();
+        if (fsGifts && typeof fsGifts === 'object' && typeof fsGifts.defaultGiftPercent !== 'undefined') {
+          giftSettingsCache = { ...DEFAULT_GIFT_SETTINGS, ...fsGifts };
+          writeJson(GIFT_SETTINGS_FILE, giftSettingsCache);
+          writeJson(ROOT_GIFT_SETTINGS_FILE, giftSettingsCache);
+          try { saveGiftSettingsSqlite(giftSettingsCache); } catch (e) {}
+        }
+      }
+
+      if (!packagesListCache) {
+        const fsPkgs = await getPackagesFromFirestore();
+        if (Array.isArray(fsPkgs) && fsPkgs.length > 0) {
+          packagesListCache = fsPkgs;
+          writeJson(PACKAGES_FILE, packagesListCache);
+          writeJson(ROOT_PACKAGES_FILE, packagesListCache);
+          try { saveAllPackagesSqlite(packagesListCache); } catch (e) {}
         }
       }
     } catch (err) {
@@ -2312,14 +2343,24 @@ export const DEFAULT_GIFT_SETTINGS = {
 export function getGiftSettings() {
   if (giftSettingsCache) return giftSettingsCache;
   try {
+    const sqlLoaded = getGiftSettingsSqlite();
+    if (sqlLoaded && typeof sqlLoaded === 'object' && typeof sqlLoaded.defaultGiftPercent !== 'undefined') {
+      giftSettingsCache = { ...DEFAULT_GIFT_SETTINGS, ...sqlLoaded };
+      return giftSettingsCache;
+    }
+  } catch (e) {}
+
+  try {
     const loaded = readJson(GIFT_SETTINGS_FILE, null);
     if (loaded && typeof loaded === 'object' && typeof loaded.defaultGiftPercent !== 'undefined') {
       giftSettingsCache = { ...DEFAULT_GIFT_SETTINGS, ...loaded };
+      try { saveGiftSettingsSqlite(giftSettingsCache); } catch (e) {}
       return giftSettingsCache;
     }
     const rootLoaded = readJson(ROOT_GIFT_SETTINGS_FILE, null);
     if (rootLoaded && typeof rootLoaded === 'object' && typeof rootLoaded.defaultGiftPercent !== 'undefined') {
       giftSettingsCache = { ...DEFAULT_GIFT_SETTINGS, ...rootLoaded };
+      try { saveGiftSettingsSqlite(giftSettingsCache); } catch (e) {}
       return giftSettingsCache;
     }
   } catch (e) {
@@ -2343,6 +2384,18 @@ export function saveGiftSettings(settings) {
     updatedAt: new Date().toISOString()
   };
   giftSettingsCache = updated;
+
+  // 1. Save to Firestore asynchronously
+  saveGiftSettingsToFirestore(updated).catch(err => console.error('[Firestore save gift error]:', err));
+
+  // 2. Save to SQLite
+  try {
+    saveGiftSettingsSqlite(updated);
+  } catch (e) {
+    console.error('[SQLite save gift error]:', e);
+  }
+
+  // 3. Save to local JSON files
   try {
     ensureDataDir();
     writeJson(GIFT_SETTINGS_FILE, updated);
@@ -2379,8 +2432,20 @@ export function calculateGiftQuotaForOrder(itemsSubtotal, isFirstOrder = false) 
 
 export function getPackagesList(onlyActive = false) {
   if (!packagesListCache) {
-    packagesListCache = readJson(PACKAGES_FILE, readJson(ROOT_PACKAGES_FILE, []));
-    if (!Array.isArray(packagesListCache)) packagesListCache = [];
+    try {
+      const sqlPkgs = getAllPackagesSqlite();
+      if (Array.isArray(sqlPkgs) && sqlPkgs.length > 0) {
+        packagesListCache = sqlPkgs;
+      }
+    } catch (e) {}
+    
+    if (!packagesListCache) {
+      packagesListCache = readJson(PACKAGES_FILE, readJson(ROOT_PACKAGES_FILE, []));
+      if (!Array.isArray(packagesListCache)) packagesListCache = [];
+      if (packagesListCache.length > 0) {
+        try { saveAllPackagesSqlite(packagesListCache); } catch (e) {}
+      }
+    }
   }
   if (onlyActive) {
     return packagesListCache.filter(p => p.isActive !== false);
@@ -2426,6 +2491,18 @@ export function savePackage(packageData) {
   }
   
   packagesListCache = list;
+
+  // 1. Save to Firestore
+  savePackageToFirestore(pkgObj).catch(err => console.error('[Firestore save package error]:', err));
+
+  // 2. Save to SQLite
+  try {
+    savePackageSqlite(pkgObj);
+  } catch (e) {
+    console.error('[SQLite save package error]:', e);
+  }
+
+  // 3. Save to JSON files
   writeJson(PACKAGES_FILE, list);
   try { writeJson(ROOT_PACKAGES_FILE, list); } catch (e) {}
   return pkgObj;
@@ -2435,6 +2512,18 @@ export function deletePackage(id) {
   let list = getPackagesList();
   list = list.filter(p => String(p.id) !== String(id));
   packagesListCache = list;
+
+  // 1. Delete from Firestore
+  deletePackageFromFirestore(id).catch(err => console.error('[Firestore delete package error]:', err));
+
+  // 2. Delete from SQLite
+  try {
+    deletePackageSqlite(id);
+  } catch (e) {
+    console.error('[SQLite delete package error]:', e);
+  }
+
+  // 3. Save to JSON files
   writeJson(PACKAGES_FILE, list);
   try { writeJson(ROOT_PACKAGES_FILE, list); } catch (e) {}
   return { success: true };
@@ -2447,6 +2536,10 @@ export function togglePackageStatus(id) {
   pkg.isActive = !pkg.isActive;
   pkg.updatedAt = new Date().toISOString();
   packagesListCache = list;
+
+  savePackageToFirestore(pkg).catch(err => console.error('[Firestore toggle package error]:', err));
+  try { savePackageSqlite(pkg); } catch (e) {}
+
   writeJson(PACKAGES_FILE, list);
   try { writeJson(ROOT_PACKAGES_FILE, list); } catch (e) {}
   return pkg;

@@ -18,7 +18,773 @@
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- html2canvas and jsPDF for Invoice Image & PDF Generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    // ==========================================
+    // GIFTS & PACKAGES MANAGEMENT JAVASCRIPT
+    // ==========================================
+    let currentGiftSettings = {
+        isEnabled: true,
+        defaultGiftPercent: 5,
+        minOrderForGift: 500000,
+        isFirstOrderBonusEnabled: true,
+        firstOrderBonusPercent: 10,
+        tieredGiftsEnabled: true,
+        tieredGifts: [
+            { id: 'tier-1', minAmount: 500000, maxAmount: 1500000, giftPercent: 5, title: 'پله نقره‌ای (۵٪ هدیه)', bonusDescription: '۵٪ ارزش فاکتور هدیه کالا' },
+            { id: 'tier-2', minAmount: 1500000, maxAmount: 3000000, giftPercent: 7, title: 'پله طلایی (۷٪ هدیه)', bonusDescription: '۷٪ هدیه + ارسال رایگان' },
+            { id: 'tier-3', minAmount: 3000000, maxAmount: 0, giftPercent: 10, title: 'پله الماس VIP (۱۰٪ هدیه)', bonusDescription: '۱۰٪ هدیه + محصول اشانتیون ویژه' }
+        ],
+        customGiftNotice: 'با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ فاکتور را کالای هدیه رایگان انتخاب فرمایید!',
+        updatedAt: new Date().toISOString()
+    };
+
+    let adminPackagesList = [];
+    let currentEditingPkgItems = [];
+
+    function switchGiftSectionTab(tab) {
+        const btnSettings = document.getElementById('tabBtnGiftSettings');
+        const btnPackages = document.getElementById('tabBtnPackages');
+        const tabSettings = document.getElementById('subTabGiftSettings');
+        const tabPackages = document.getElementById('subTabPackages');
+
+        if (tab === 'settings') {
+            if (btnSettings) { btnSettings.className = 'btn btn-primary'; }
+            if (btnPackages) { btnPackages.className = 'btn btn-secondary'; }
+            if (tabSettings) tabSettings.style.display = 'block';
+            if (tabPackages) tabPackages.style.display = 'none';
+            loadGiftSettings();
+        } else {
+            if (btnSettings) { btnSettings.className = 'btn btn-secondary'; }
+            if (btnPackages) { btnPackages.className = 'btn btn-primary'; }
+            if (tabSettings) tabSettings.style.display = 'none';
+            if (tabPackages) tabPackages.style.display = 'block';
+            loadAdminPackages();
+            ensureProductsCatalogLoaded();
+        }
+    }
+
+    async function loadGiftSettings(force = false) {
+        try {
+            const localSaved = localStorage.getItem('rafooneh_gift_settings');
+            if (localSaved) {
+                const parsed = JSON.parse(localSaved);
+                if (parsed && typeof parsed.defaultGiftPercent !== 'undefined') {
+                    currentGiftSettings = { ...currentGiftSettings, ...parsed };
+                }
+            }
+        } catch (e) {}
+
+        const formEl = document.getElementById('giftSettingsForm');
+        const isEditing = formEl && formEl.contains(document.activeElement);
+
+        try {
+            const res = await api('/api/settings/gifts?_=' + Date.now());
+            if (res && res.ok) {
+                const data = await res.json();
+                if (data && data.settings) {
+                    currentGiftSettings = { ...currentGiftSettings, ...data.settings };
+                    try {
+                        localStorage.setItem('rafooneh_gift_settings', JSON.stringify(currentGiftSettings));
+                    } catch (e) {}
+                }
+            }
+        } catch (e) {
+            console.log('Load gift settings notice:', e);
+        }
+
+        if (force || !isEditing) {
+            updateGiftSettingsUI();
+        }
+    }
+
+    function updateGiftSettingsUI() {
+        const isEnabled = currentGiftSettings.isEnabled !== false;
+        const switchEl = document.getElementById('isGiftEnabledSwitch');
+        if (switchEl) switchEl.checked = isEnabled;
+
+        const iconBox = document.getElementById('giftMasterIconBox');
+        const cardBox = document.getElementById('giftMasterStatusCard');
+        const descBox = document.getElementById('giftMasterStatusDescription');
+
+        if (isEnabled) {
+            if (iconBox) { iconBox.style.background = '#fef3c7'; iconBox.style.color = '#d97706'; }
+            if (cardBox) { cardBox.style.borderColor = '#f59e0b'; cardBox.style.background = '#fffbeb'; }
+            if (descBox) { descBox.innerHTML = '<span style="color:#059669; font-weight:bold;">فعال</span> - مشتریان در سبد خرید متناسب با درصد، هدیه رایگان انتخاب می‌کنند'; }
+        } else {
+            if (iconBox) { iconBox.style.background = '#f1f5f9'; iconBox.style.color = '#94a3b8'; }
+            if (cardBox) { cardBox.style.borderColor = '#cbd5e1'; cardBox.style.background = '#f8fafc'; }
+            if (descBox) { descBox.innerHTML = '<span style="color:#ef4444; font-weight:bold;">غیرفعال</span> - قابلیت انتخاب هدیه موقتاً در سایت متوقف است'; }
+        }
+
+        if (document.getElementById('defaultGiftPercentInput')) {
+            document.getElementById('defaultGiftPercentInput').value = currentGiftSettings.defaultGiftPercent || 5;
+        }
+        if (document.getElementById('minOrderForGiftInput')) {
+            document.getElementById('minOrderForGiftInput').value = currentGiftSettings.minOrderForGift || 500000;
+        }
+        if (document.getElementById('isFirstOrderBonusSwitch')) {
+            document.getElementById('isFirstOrderBonusSwitch').checked = currentGiftSettings.isFirstOrderBonusEnabled === true;
+        }
+        if (document.getElementById('firstOrderBonusPercentInput')) {
+            document.getElementById('firstOrderBonusPercentInput').value = currentGiftSettings.firstOrderBonusPercent || 10;
+        }
+        if (document.getElementById('customGiftNoticeInput')) {
+            document.getElementById('customGiftNoticeInput').value = currentGiftSettings.customGiftNotice || '';
+        }
+
+        renderTieredGiftsTable();
+        simulateGiftTier();
+    }
+
+    function onGiftMasterSwitchToggle(el) {
+        currentGiftSettings.isEnabled = el.checked;
+        updateGiftSettingsUI();
+    }
+
+    function renderTieredGiftsTable() {
+        const container = document.getElementById('tieredGiftsContainer');
+        if (!container) return;
+
+        const tiers = Array.isArray(currentGiftSettings.tieredGifts) ? currentGiftSettings.tieredGifts : [];
+        if (tiers.length === 0) {
+            container.innerHTML = '<div style="padding:12px; background:#f8fafc; border-radius:8px; text-align:center; color:#94a3b8; font-size:0.85rem;">سطح پلکانی تعریف نشده است. (درصد پایه برای همه مبالغ اعمال می‌شود)</div>';
+            return;
+        }
+
+        let html = '';
+        tiers.forEach((t, idx) => {
+            const minFormatted = Number(t.minAmount || 0).toLocaleString('fa-IR');
+            const maxFormatted = Number(t.maxAmount || 0) > 0 ? Number(t.maxAmount).toLocaleString('fa-IR') + ' ت' : 'بدون سقف';
+            html += `
+                <div style="display:grid; grid-template-columns: 1fr 1fr 80px 1.5fr auto; gap:8px; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; font-size:0.85rem;">
+                    <div>
+                        <span style="font-size:0.75rem; color:#64748b; display:block;">از مبلغ:</span>
+                        <input type="number" class="form-control tier-min-input" data-idx="${idx}" value="${t.minAmount || 0}" step="100000" style="height:32px; font-size:0.85rem; padding:4px 8px;" oninput="updateTierField(${idx}, 'minAmount', this.value)">
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:#64748b; display:block;">تا مبلغ (۰ = بی‌نهایت):</span>
+                        <input type="number" class="form-control tier-max-input" data-idx="${idx}" value="${t.maxAmount || 0}" step="100000" style="height:32px; font-size:0.85rem; padding:4px 8px;" oninput="updateTierField(${idx}, 'maxAmount', this.value)">
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:#64748b; display:block;">درصد:</span>
+                        <input type="number" class="form-control tier-pct-input" data-idx="${idx}" value="${t.giftPercent || 5}" min="1" max="50" style="height:32px; font-size:0.85rem; font-weight:bold; color:#059669; padding:4px 8px;" oninput="updateTierField(${idx}, 'giftPercent', this.value)">
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:#64748b; display:block;">عنوان پله / مزایا:</span>
+                        <input type="text" class="form-control tier-title-input" data-idx="${idx}" value="${t.title || ''}" placeholder="عنوان پله" style="height:32px; font-size:0.83rem; padding:4px 8px;" oninput="updateTierField(${idx}, 'title', this.value)">
+                    </div>
+                    <div style="padding-top:16px;">
+                        <button type="button" onclick="removeTierRow(${idx})" style="background:none; border:none; color:#ef4444; font-size:1.1rem; cursor:pointer;" title="حذف پله">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function updateTierField(idx, field, val) {
+        if (!currentGiftSettings.tieredGifts || !currentGiftSettings.tieredGifts[idx]) return;
+        if (field === 'minAmount' || field === 'maxAmount' || field === 'giftPercent') {
+            currentGiftSettings.tieredGifts[idx][field] = Number(val) || 0;
+        } else {
+            currentGiftSettings.tieredGifts[idx][field] = val;
+        }
+        simulateGiftTier();
+    }
+
+    function addTierRow() {
+        if (!Array.isArray(currentGiftSettings.tieredGifts)) currentGiftSettings.tieredGifts = [];
+        const count = currentGiftSettings.tieredGifts.length + 1;
+        currentGiftSettings.tieredGifts.push({
+            id: 'tier-' + Date.now(),
+            minAmount: 1000000 * count,
+            maxAmount: 0,
+            giftPercent: 5 + count * 2,
+            title: 'پله ویژه ' + count,
+            bonusDescription: ''
+        });
+        renderTieredGiftsTable();
+        simulateGiftTier();
+    }
+
+    function removeTierRow(idx) {
+        if (!Array.isArray(currentGiftSettings.tieredGifts)) return;
+        currentGiftSettings.tieredGifts.splice(idx, 1);
+        renderTieredGiftsTable();
+        simulateGiftTier();
+    }
+
+    function simulateGiftTier() {
+        const resBox = document.getElementById('simResultBox');
+        if (!resBox) return;
+
+        const isEnabled = document.getElementById('isGiftEnabledSwitch')?.checked !== false;
+        if (!isEnabled) {
+            resBox.innerHTML = '<span style="color:#ef4444; font-weight:bold;">سیستم هدیه غیرفعال است.</span> مبلغ هدیه صفر خواهد بود.';
+            return;
+        }
+
+        const simAmount = Number(document.getElementById('simOrderAmountInput')?.value || 0);
+        const simType = document.getElementById('simCustomerTypeSelect')?.value || 'regular';
+        const minOrder = Number(document.getElementById('minOrderForGiftInput')?.value || 0);
+        const defPct = Number(document.getElementById('defaultGiftPercentInput')?.value || 5);
+        const isFirstOrderBonus = document.getElementById('isFirstOrderBonusSwitch')?.checked === true;
+        const firstOrderPct = Number(document.getElementById('firstOrderBonusPercentInput')?.value || 10);
+
+        if (simAmount < minOrder) {
+            resBox.innerHTML = `
+                <div style="color:#d97706; font-weight:bold;">
+                    <i class="fa-solid fa-circle-exclamation"></i> سفارش کمتر از حداقل سقف دریافت هدیه (${minOrder.toLocaleString('fa-IR')} تومان) است.
+                </div>
+                <div style="font-size:0.8rem; color:#64748b;">سقف هدیه این سفارش: <strong>۰ تومان</strong></div>
+            `;
+            return;
+        }
+
+        let appliedPct = defPct;
+        let appliedTierName = 'درصد پایه عادی';
+
+        if (simType === 'first_order' && isFirstOrderBonus) {
+            appliedPct = firstOrderPct;
+            appliedTierName = 'بونوس هدیه خرید اول';
+        } else if (Array.isArray(currentGiftSettings.tieredGifts) && currentGiftSettings.tieredGifts.length > 0) {
+            const sorted = [...currentGiftSettings.tieredGifts].sort((a, b) => Number(b.minAmount) - Number(a.minAmount));
+            for (const tier of sorted) {
+                const min = Number(tier.minAmount) || 0;
+                const max = Number(tier.maxAmount) || 0;
+                if (simAmount >= min && (max === 0 || simAmount <= max)) {
+                    appliedPct = Number(tier.giftPercent) || defPct;
+                    appliedTierName = tier.title || ('پله ' + appliedPct + '٪');
+                    break;
+                }
+            }
+        }
+
+        const giftQuota = Math.round(simAmount * (appliedPct / 100));
+
+        resBox.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="color:#0f766e; font-weight:bold;"><i class="fa-solid fa-gift"></i> سقف هدیه محاسبه شده:</span>
+                <span style="font-size:1.05rem; font-weight:bold; color:#059669;">${giftQuota.toLocaleString('fa-IR')} تومان</span>
+            </div>
+            <div style="font-size:0.82rem; color:#475569;">
+                پله اعمال شده: <strong>${appliedTierName}</strong> | درصد تعلق گرفته: <strong>${appliedPct}٪</strong>
+            </div>
+            <div style="font-size:0.78rem; color:#64748b; margin-top:4px;">
+                خریدار با این مبلغ می‌تواند تا سقف فوق کالای ۱۰۰٪ رایگان در سبد انتخاب کرده یا اعتبار به کیف پول اضافه کند.
+            </div>
+        `;
+    }
+
+    async function saveGiftSettingsForm(event) {
+        if (event) event.preventDefault();
+        const btn = document.getElementById('saveGiftSettingsBtn');
+        const notice = document.getElementById('giftSaveStatusNotice');
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره و همگام‌سازی...';
+        }
+
+        const payload = {
+            isEnabled: document.getElementById('isGiftEnabledSwitch')?.checked !== false,
+            defaultGiftPercent: Number(document.getElementById('defaultGiftPercentInput')?.value || 5),
+            minOrderForGift: Number(document.getElementById('minOrderForGiftInput')?.value || 500000),
+            isFirstOrderBonusEnabled: document.getElementById('isFirstOrderBonusSwitch')?.checked === true,
+            firstOrderBonusPercent: Number(document.getElementById('firstOrderBonusPercentInput')?.value || 10),
+            customGiftNotice: (document.getElementById('customGiftNoticeInput')?.value || '').trim(),
+            tieredGifts: Array.isArray(currentGiftSettings.tieredGifts) ? currentGiftSettings.tieredGifts : [],
+            updatedAt: new Date().toISOString()
+        };
+
+        currentGiftSettings = { ...currentGiftSettings, ...payload };
+        try {
+            localStorage.setItem('rafooneh_gift_settings', JSON.stringify(currentGiftSettings));
+        } catch (e) {}
+
+        try {
+            const res = await api('/api/admin/settings/gifts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res && res.ok) {
+                const data = await res.json();
+                if (data && data.settings) {
+                    currentGiftSettings = { ...currentGiftSettings, ...data.settings };
+                    try { localStorage.setItem('rafooneh_gift_settings', JSON.stringify(currentGiftSettings)); } catch (e) {}
+                }
+                if (notice) {
+                    notice.style.display = 'block';
+                    notice.style.background = '#dcfce7';
+                    notice.style.color = '#15803d';
+                    notice.style.border = '1px solid #86efac';
+                    notice.innerHTML = '<i class="fa-solid fa-check-circle"></i> تنظیمات هدایا با موفقیت ذخیره و در دیتابیس و سرور ثبت گردید.';
+                    setTimeout(() => { if (notice) notice.style.display = 'none'; }, 4000);
+                }
+            } else {
+                throw new Error('خطا در پاسخ سرور');
+            }
+        } catch (err) {
+            console.error('Error saving gifts:', err);
+            if (notice) {
+                notice.style.display = 'block';
+                notice.style.background = '#fef2f2';
+                notice.style.color = '#b91c1c';
+                notice.style.border = '1px solid #fca5a5';
+                notice.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> خطا در ارتباط با سرور، اما تنظیمات در حافظه محلی ذخیره شد.';
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> ذخیره تنظیمات هدایا';
+            }
+            updateGiftSettingsUI();
+        }
+    }
+
+    // ==========================================
+    // PACKAGES BUILDER & MANAGEMENT JAVASCRIPT
+    // ==========================================
+    async function loadAdminPackages(force = false) {
+        try {
+            const localSaved = localStorage.getItem('rafooneh_packages_list');
+            if (localSaved) {
+                const parsed = JSON.parse(localSaved);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    adminPackagesList = parsed;
+                }
+            }
+        } catch (e) {}
+
+        try {
+            const res = await api('/api/admin/packages?_=' + Date.now());
+            if (res && res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.packages)) {
+                    adminPackagesList = data.packages;
+                    try {
+                        localStorage.setItem('rafooneh_packages_list', JSON.stringify(adminPackagesList));
+                    } catch (e) {}
+                }
+            }
+        } catch (e) {
+            console.log('Load admin packages notice:', e);
+        }
+
+        renderAdminPackages();
+    }
+
+    function renderAdminPackages() {
+        const grid = document.getElementById('adminPackagesListGrid');
+        const badge = document.getElementById('adminPackagesCountBadge');
+        if (badge) badge.innerText = (adminPackagesList.length || 0).toLocaleString('fa-IR');
+        if (!grid) return;
+
+        if (adminPackagesList.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column: 1 / -1; padding:40px 20px; text-align:center; background:#ffffff; border:2px dashed #cbd5e1; border-radius:16px;">
+                    <i class="fa-solid fa-box-open" style="font-size:2.5rem; color:#94a3b8; margin-bottom:12px; display:block;"></i>
+                    <h4 style="margin:0 0 6px 0; color:#334155; font-size:1.1rem;">هنوز هیچ پکیجی تعریف نشده است</h4>
+                    <p style="margin:0 0 16px 0; color:#64748b; font-size:0.88rem;">با ایجاد پکیج‌های بهداشتی، مشتریان می‌توانند چندین کالا را با تخفیف ویژه به صورت یکجا خریداری نمایند.</p>
+                    <button type="button" class="btn btn-primary" onclick="openPackageModal()" style="background:#059669; border-color:#059669; padding:8px 18px;">
+                        <i class="fa-solid fa-plus"></i> ایجاد اولین پکیج
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        adminPackagesList.forEach(pkg => {
+            const isAct = pkg.isActive !== false;
+            const items = Array.isArray(pkg.items) ? pkg.items : [];
+            const originalPrice = Number(pkg.originalPrice) || 0;
+            const packagePrice = Number(pkg.packagePrice) || 0;
+            const discountPct = Number(pkg.discountPercent) || (originalPrice > packagePrice ? Math.round(((originalPrice - packagePrice) / originalPrice) * 100) : 0);
+            const savings = Math.max(0, originalPrice - packagePrice);
+
+            let itemsSummaryHtml = '';
+            items.forEach(it => {
+                itemsSummaryHtml += `
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#334155; border-bottom:1px dashed #f1f5f9; padding:4px 0;">
+                        <span>• ${escapeHtml(it.name || 'کالا')} <strong style="color:#0f766e;">(×${Number(it.qty||1).toLocaleString('fa-IR')})</strong></span>
+                        <span style="color:#64748b;">${(Number(it.price || it.consumerPrice || 0) * Number(it.qty||1)).toLocaleString('fa-IR')} ت</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="card" style="border-radius:16px; border:1.5px solid ${isAct ? '#cbd5e1' : '#e2e8f0'}; background:${isAct ? '#ffffff' : '#f8fafc'}; padding:18px; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:8px;">
+                            <div>
+                                <span style="background:${pkg.badgeColor || '#059669'}; color:#ffffff; font-size:0.72rem; font-weight:bold; padding:2px 8px; border-radius:6px;">
+                                    ${escapeHtml(pkg.badge || 'ویژه')}
+                                </span>
+                                <h4 style="margin:6px 0 2px 0; font-size:1.05rem; color:#0f172a; font-weight:800;">
+                                    ${escapeHtml(pkg.title || 'پکیج')}
+                                </h4>
+                                <div style="font-size:0.8rem; color:#64748b;">${escapeHtml(pkg.subtitle || '')}</div>
+                            </div>
+                            <div>
+                                <label class="switch-toggle" style="position:relative; display:inline-block; width:44px; height:24px; margin:0;" title="فعال/غیرفعال">
+                                    <input type="checkbox" ${isAct ? 'checked' : ''} onchange="toggleAdminPackage('${pkg.id}')">
+                                    <span class="slider-round"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Items List -->
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px; margin-bottom:12px; max-height:140px; overflow-y:auto;">
+                            <div style="font-size:0.75rem; font-weight:bold; color:#64748b; margin-bottom:6px;">محتوای پکیج (${items.length} قلم):</div>
+                            ${itemsSummaryHtml || '<div style="color:#94a3b8; font-size:0.78rem;">بدون کالا</div>'}
+                        </div>
+
+                        <!-- Pricing & Discount Box -->
+                        <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:10px; margin-bottom:12px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#475569; margin-bottom:4px;">
+                                <span>قیمت اصلی کل:</span>
+                                <span style="text-decoration:line-through;">${originalPrice.toLocaleString('fa-IR')} تومان</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:bold; color:#065f46; font-size:0.9rem;">قیمت پکیج:</span>
+                                <span style="font-size:1.15rem; font-weight:800; color:#059669;">${packagePrice.toLocaleString('fa-IR')} تومان</span>
+                            </div>
+                            ${discountPct > 0 ? `
+                                <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#dc2626; margin-top:4px; font-weight:bold;">
+                                    <span>سود خریدار: ${savings.toLocaleString('fa-IR')} ت</span>
+                                    <span>${discountPct}٪ تخفیف</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Gifts / Bonus Info -->
+                        ${(Number(pkg.giftCredit) > 0 || pkg.bonusItem) ? `
+                            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; font-size:0.78rem;">
+                                ${Number(pkg.giftCredit) > 0 ? `
+                                    <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:6px; font-weight:bold;">
+                                        <i class="fa-solid fa-wallet"></i> ${Number(pkg.giftCredit).toLocaleString('fa-IR')} ت اعتبار هدیه
+                                    </span>
+                                ` : ''}
+                                ${pkg.bonusItem ? `
+                                    <span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:6px; font-weight:bold;">
+                                        <i class="fa-solid fa-gift"></i> ${escapeHtml(pkg.bonusItem)}
+                                    </span>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Actions -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:10px; margin-top:6px;">
+                        <span style="font-size:0.75rem; color:#64748b;">
+                            موجودی: <strong>${Number(pkg.stock || 50).toLocaleString('fa-IR')} عدد</strong>
+                        </span>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="openPackageModal('${pkg.id}')" style="padding:4px 10px; font-size:0.8rem;">
+                                <i class="fa-solid fa-pen-to-square"></i> ویرایش
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteAdminPackage('${pkg.id}')" style="padding:4px 10px; font-size:0.8rem; background:#fee2e2; color:#ef4444; border-color:#fca5a5;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        grid.innerHTML = html;
+    }
+
+    function populatePackageProductSelect() {
+        const select = document.getElementById('pkgItemProductSelect');
+        if (!select) return;
+
+        const prods = (typeof productsCatalog !== 'undefined' && Array.isArray(productsCatalog) && productsCatalog.length > 0)
+            ? productsCatalog
+            : (typeof adminProductsList !== 'undefined' && Array.isArray(adminProductsList) ? adminProductsList : []);
+
+        let html = '<option value="">-- انتخاب محصول از لیست کالاهای انبار --</option>';
+        prods.forEach(p => {
+            const price = Number(p.consumerPrice || p.price || 0);
+            html += `<option value="${p.id || p.code}" data-name="${escapeHtml(p.name)}" data-price="${price}">${escapeHtml(p.name)} (${price.toLocaleString('fa-IR')} ت)</option>`;
+        });
+        select.innerHTML = html;
+    }
+
+    function openPackageModal(pkgId = null) {
+        populatePackageProductSelect();
+        const modal = document.getElementById('packageModal');
+        const titleText = document.getElementById('packageModalTitleText');
+
+        currentEditingPkgItems = [];
+
+        if (pkgId) {
+            const pkg = adminPackagesList.find(p => String(p.id) === String(pkgId));
+            if (pkg) {
+                if (titleText) titleText.innerText = 'ویرایش پکیج: ' + (pkg.title || '');
+                document.getElementById('pkgEditId').value = pkg.id;
+                document.getElementById('pkgTitleInput').value = pkg.title || '';
+                document.getElementById('pkgBadgeInput').value = pkg.badge || 'ویژه';
+                document.getElementById('pkgSubtitleInput').value = pkg.subtitle || '';
+                document.getElementById('pkgImageInput').value = pkg.image || '';
+                document.getElementById('pkgPriceInput').value = pkg.packagePrice || 0;
+                document.getElementById('pkgGiftCreditInput').value = pkg.giftCredit || 0;
+                document.getElementById('pkgBonusItemInput').value = pkg.bonusItem || '';
+                document.getElementById('pkgStockInput').value = pkg.stock !== undefined ? pkg.stock : 50;
+                document.getElementById('pkgDescriptionInput').value = pkg.description || '';
+
+                if (Array.isArray(pkg.items)) {
+                    currentEditingPkgItems = JSON.parse(JSON.stringify(pkg.items));
+                }
+            }
+        } else {
+            if (titleText) titleText.innerText = 'ایجاد پکیج بهداشتی جدید';
+            document.getElementById('pkgEditId').value = '';
+            document.getElementById('pkgTitleInput').value = '';
+            document.getElementById('pkgBadgeInput').value = 'ویژه';
+            document.getElementById('pkgSubtitleInput').value = '';
+            document.getElementById('pkgImageInput').value = '';
+            document.getElementById('pkgPriceInput').value = '';
+            document.getElementById('pkgGiftCreditInput').value = '0';
+            document.getElementById('pkgBonusItemInput').value = '';
+            document.getElementById('pkgStockInput').value = '50';
+            document.getElementById('pkgDescriptionInput').value = '';
+        }
+
+        renderPackageItemsTable();
+        recalcPackagePricing();
+
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closePackageModal() {
+        const modal = document.getElementById('packageModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function addPackageItemFromSelector() {
+        const select = document.getElementById('pkgItemProductSelect');
+        const qtyInput = document.getElementById('pkgItemQtyInput');
+        if (!select || !select.value) {
+            alert('لطفاً یک محصول را انتخاب فرمایید.');
+            return;
+        }
+
+        const opt = select.selectedOptions[0];
+        const prodId = select.value;
+        const name = opt.getAttribute('data-name') || select.options[select.selectedIndex].text;
+        const price = Number(opt.getAttribute('data-price')) || 0;
+        const qty = Math.max(1, Number(qtyInput?.value || 1));
+
+        const existing = currentEditingPkgItems.find(i => String(i.productId || i.id) === String(prodId));
+        if (existing) {
+            existing.qty = (Number(existing.qty) || 0) + qty;
+        } else {
+            currentEditingPkgItems.push({
+                productId: prodId,
+                id: prodId,
+                name: name,
+                qty: qty,
+                price: price,
+                consumerPrice: price
+            });
+        }
+
+        renderPackageItemsTable();
+        recalcPackagePricing();
+        if (qtyInput) qtyInput.value = 1;
+    }
+
+    function removePackageItem(idx) {
+        currentEditingPkgItems.splice(idx, 1);
+        renderPackageItemsTable();
+        recalcPackagePricing();
+    }
+
+    function renderPackageItemsTable() {
+        const tbody = document.getElementById('pkgItemsTableBody');
+        if (!tbody) return;
+
+        if (currentEditingPkgItems.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:#94a3b8;">هنوز کالایی به پکیج اضافه نشده است.</td></tr>';
+            return;
+        }
+
+        let html = '';
+        currentEditingPkgItems.forEach((it, idx) => {
+            const pPrice = Number(it.price || it.consumerPrice || 0);
+            const qty = Number(it.qty || 1);
+            const subtotal = pPrice * qty;
+
+            html += `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:8px 10px;">${idx + 1}</td>
+                    <td style="padding:8px 10px; font-weight:bold; color:#0f172a;">${escapeHtml(it.name || 'کالا')}</td>
+                    <td style="padding:8px 10px; text-align:center;">
+                        <input type="number" min="1" value="${qty}" style="width:60px; text-align:center; height:28px; font-size:0.85rem;" onchange="currentEditingPkgItems[${idx}].qty = Math.max(1, Number(this.value)); renderPackageItemsTable(); recalcPackagePricing();">
+                    </td>
+                    <td style="padding:8px 10px; text-align:left;">${pPrice.toLocaleString('fa-IR')} ت</td>
+                    <td style="padding:8px 10px; text-align:left; font-weight:bold; color:#059669;">${subtotal.toLocaleString('fa-IR')} ت</td>
+                    <td style="padding:8px 10px; text-align:center;">
+                        <button type="button" onclick="removePackageItem(${idx})" style="background:none; border:none; color:#ef4444; cursor:pointer;" title="حذف">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function recalcPackagePricing() {
+        let totalOriginal = 0;
+        currentEditingPkgItems.forEach(it => {
+            const pPrice = Number(it.price || it.consumerPrice || 0);
+            const qty = Number(it.qty || 1);
+            totalOriginal += pPrice * qty;
+        });
+
+        const origDisplay = document.getElementById('pkgOriginalPriceDisplay');
+        if (origDisplay) {
+            origDisplay.value = totalOriginal.toLocaleString('fa-IR');
+        }
+
+        const priceInput = document.getElementById('pkgPriceInput');
+        if (priceInput && (!priceInput.value || priceInput.value === '0')) {
+            // suggest 10% discount default
+            const suggested = Math.round((totalOriginal * 0.9) / 1000) * 1000;
+            priceInput.value = suggested;
+        }
+
+        recalcPackageDiscount();
+    }
+
+    function recalcPackageDiscount() {
+        let totalOriginal = 0;
+        currentEditingPkgItems.forEach(it => {
+            const pPrice = Number(it.price || it.consumerPrice || 0);
+            const qty = Number(it.qty || 1);
+            totalOriginal += pPrice * qty;
+        });
+
+        const pkgPrice = Number(document.getElementById('pkgPriceInput')?.value || 0);
+        const discDisplay = document.getElementById('pkgDiscountDisplay');
+
+        if (totalOriginal > 0 && pkgPrice > 0 && totalOriginal > pkgPrice) {
+            const pct = Math.round(((totalOriginal - pkgPrice) / totalOriginal) * 100);
+            if (discDisplay) discDisplay.value = pct + ' ٪ تخفیف';
+        } else {
+            if (discDisplay) discDisplay.value = '۰ ٪';
+        }
+    }
+
+    async function savePackageForm(event) {
+        if (event) event.preventDefault();
+        const btn = document.getElementById('savePkgSubmitBtn');
+
+        if (currentEditingPkgItems.length === 0) {
+            alert('لطفاً حداقل یک قلم کالا به پکیج اضافه فرمایید.');
+            return;
+        }
+
+        let totalOriginal = 0;
+        currentEditingPkgItems.forEach(it => {
+            const pPrice = Number(it.price || it.consumerPrice || 0);
+            const qty = Number(it.qty || 1);
+            totalOriginal += pPrice * qty;
+        });
+
+        const pkgPrice = Number(document.getElementById('pkgPriceInput')?.value || 0);
+        const discountPct = totalOriginal > pkgPrice ? Math.round(((totalOriginal - pkgPrice) / totalOriginal) * 100) : 0;
+
+        const pkgPayload = {
+            id: document.getElementById('pkgEditId')?.value || ('pkg_' + Date.now()),
+            title: (document.getElementById('pkgTitleInput')?.value || 'پکیج بهداشتی').trim(),
+            subtitle: (document.getElementById('pkgSubtitleInput')?.value || '').trim(),
+            badge: (document.getElementById('pkgBadgeInput')?.value || 'ویژه').trim(),
+            badgeColor: '#059669',
+            image: (document.getElementById('pkgImageInput')?.value || '').trim(),
+            isActive: true,
+            items: currentEditingPkgItems,
+            originalPrice: totalOriginal,
+            packagePrice: pkgPrice,
+            discountPercent: discountPct,
+            giftCredit: Number(document.getElementById('pkgGiftCreditInput')?.value || 0),
+            bonusItem: (document.getElementById('pkgBonusItemInput')?.value || '').trim(),
+            stock: Number(document.getElementById('pkgStockInput')?.value || 50),
+            description: (document.getElementById('pkgDescriptionInput')?.value || '').trim(),
+            updatedAt: new Date().toISOString()
+        };
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...';
+        }
+
+        // 1. Optimistic update
+        const existingIdx = adminPackagesList.findIndex(p => String(p.id) === String(pkgPayload.id));
+        if (existingIdx !== -1) adminPackagesList[existingIdx] = pkgPayload;
+        else adminPackagesList.unshift(pkgPayload);
+        try { localStorage.setItem('rafooneh_packages_list', JSON.stringify(adminPackagesList)); } catch (e) {}
+        renderAdminPackages();
+
+        try {
+            const res = await api('/api/admin/packages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pkgPayload)
+            });
+            if (res && res.ok) {
+                closePackageModal();
+                alert('پکیج با موفقیت ذخیره و در سایت منتشر گردید.');
+            } else {
+                throw new Error('خطا در پاسخ سرور');
+            }
+        } catch (e) {
+            console.error('Error saving package:', e);
+            alert('پکیج در حافظه ثبت شد اما با سرور همگام نشد: ' + e.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> ذخیره و انتشار پکیج';
+            }
+            loadAdminPackages(true);
+        }
+    }
+
+    async function toggleAdminPackage(pkgId) {
+        const pkg = adminPackagesList.find(p => String(p.id) === String(pkgId));
+        if (!pkg) return;
+        pkg.isActive = !pkg.isActive;
+        try { localStorage.setItem('rafooneh_packages_list', JSON.stringify(adminPackagesList)); } catch (e) {}
+        renderAdminPackages();
+
+        try {
+            await api(`/api/admin/packages/${pkgId}/toggle`, { method: 'PUT' });
+        } catch (e) {
+            console.error('Toggle package error:', e);
+        }
+    }
+
+    async function deleteAdminPackage(pkgId) {
+        if (!confirm('آیا از حذف این پکیج اطمینان دارید؟')) return;
+        adminPackagesList = adminPackagesList.filter(p => String(p.id) !== String(pkgId));
+        try { localStorage.setItem('rafooneh_packages_list', JSON.stringify(adminPackagesList)); } catch (e) {}
+        renderAdminPackages();
+
+        try {
+            await api(`/api/admin/packages/${pkgId}`, { method: 'DELETE' });
+        } catch (e) {
+            console.error('Delete package error:', e);
+        }
+    }
+
+</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
@@ -1071,6 +1837,7 @@
         <button onclick="toggleAdminNotificationsModal()" style="color:#0f766e; font-weight:bold;">اعلان‌ها <span class="badge badge-danger" id="adminNotifBadgeMobile" style="display:none; padding:2px 6px; font-size:0.7rem; background:#ef4444; color:#fff;">0</span></button>
         <button onclick="showSection('products', this)">انبار و برندها</button>
         <button onclick="showSection('delivery-settings', this)">تحویل فوری</button>
+        <button onclick="showSection('gifts-packages', this)" style="color:#d97706; font-weight:bold;">🎁 هدایا و پکیج‌ها</button>
         <button onclick="showSection('bank-settings', this)">کارت و حساب</button>
         <button onclick="showSection('profit', this)">تحلیل سود</button>
         <button onclick="showSection('company-payments', this)">پرداختی شرکت</button>
@@ -1090,6 +1857,9 @@
             </button>
             <button class="nav-item" data-section="products" onclick="showSection('products', this)">
                 <i class="fa-solid fa-boxes-stacked"></i> مدیریت انبار و برندها
+            </button>
+            <button class="nav-item" data-section="gifts-packages" onclick="showSection('gifts-packages', this)">
+                <i class="fa-solid fa-gift" style="color:#f59e0b;"></i> مدیریت هدایا و پکیج‌ها
             </button>
             <button class="nav-item" data-section="delivery-settings" onclick="showSection('delivery-settings', this)">
                 <i class="fa-solid fa-truck-fast"></i> تنظیمات تحویل فوری
@@ -1112,9 +1882,6 @@
             </button>
             <button class="nav-item" data-section="customers" onclick="showSection('customers', this)">
                 <i class="fa-solid fa-users"></i> مشتریان
-            </button>
-            <button class="nav-item" data-section="gifts-packages" onclick="showSection('gifts-packages', this)" style="border-right: 3px solid #ec4899;">
-                <i class="fa-solid fa-gift" style="color:#ec4899;"></i> مدیریت هدایا و ساخت پکیج
             </button>
             <button class="nav-item" data-section="whatsapp-campaigns" onclick="showSection('whatsapp-campaigns', this)" style="border-right: 3px solid #22c55e;">
                 <i class="fa-brands fa-whatsapp" style="color:#22c55e;"></i> کمپین و اطلاع‌رسانی واتساپ
@@ -2362,306 +3129,180 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
                     <div>
                         <h2 style="margin:0; font-size:1.35rem; color:#0f172a; display:flex; align-items:center; gap:10px;">
-                            <i class="fa-solid fa-gift" style="color:#ec4899;"></i> مدیریت هدایا، پله‌های کش‌بک و ساخت پکیج
+                            <i class="fa-solid fa-gift" style="color:#d97706;"></i> مدیریت هدایا، درصد هدیه و ساخت پکیج‌ها
                         </h2>
                         <p style="margin:4px 0 0; font-size:0.85rem; color:#64748b;">
-                            تنظیم درصد هدیه سفارشات، پله‌های تشویقی سبد خرید، پاداش ثبت‌نام و ساخت پکیج‌های اقتصادی و بهداشتی با تخفیف ویژه.
+                            تعیین درصد هدیه و کش‌بک خرید، تعریف سطوح پاداش پلکانی مشتریان، و ساخت پکیج‌های بهداشتی تخفیف‌دار
                         </p>
                     </div>
                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button type="button" class="btn btn-primary" onclick="openPackageModal()" style="background:#db2777; border-color:#db2777;">
-                            <i class="fa-solid fa-plus"></i> ایجاد پکیج جدید
+                        <button type="button" class="btn btn-secondary" onclick="loadGiftSettings(true); loadAdminPackages(true);" style="padding:8px 14px; font-size:0.85rem;" title="بازخوانی از سرور">
+                            <i class="fa-solid fa-rotate"></i> بازخوانی داده‌ها
                         </button>
-                        <button type="button" class="btn btn-secondary" onclick="loadGiftSettings(true); loadAdminPackages(true);" title="بازخوانی اطلاعات">
-                            <i class="fa-solid fa-rotate"></i> بروزرسانی
+                        <button type="button" class="btn btn-primary" onclick="openPackageModal()" style="padding:8px 16px; font-size:0.85rem; background:#059669; border-color:#059669;">
+                            <i class="fa-solid fa-plus"></i> ساخت پکیج جدید
                         </button>
                     </div>
                 </div>
 
-                <!-- Top KPI Cards -->
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
-                    <div class="card" style="padding:16px; border-radius:14px; border:1px solid #fbcfe8; background:#fdf2f8; display:flex; align-items:center; gap:14px;">
-                        <div style="width:46px; height:46px; border-radius:12px; background:#f472b6; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
-                            <i class="fa-solid fa-percent"></i>
-                        </div>
-                        <div>
-                            <div style="font-size:0.78rem; color:#831843;">درصد هدیه پایه سفارشات</div>
-                            <div id="statDefaultGiftPercent" style="font-size:1.3rem; font-weight:900; color:#9d174d;">۵٪ هدیه</div>
-                        </div>
-                    </div>
-                    <div class="card" style="padding:16px; border-radius:14px; border:1px solid #bbf7d0; background:#f0fdf4; display:flex; align-items:center; gap:14px;">
-                        <div style="width:46px; height:46px; border-radius:12px; background:#4ade80; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
-                            <i class="fa-solid fa-boxes-packing"></i>
-                        </div>
-                        <div>
-                            <div style="font-size:0.78rem; color:#14532d;">پکیج‌های اقتصادی فعال</div>
-                            <div id="statActivePackagesCount" style="font-size:1.3rem; font-weight:900; color:#166534;">۰ پکیج</div>
-                        </div>
-                    </div>
-                    <div class="card" style="padding:16px; border-radius:14px; border:1px solid #fed7aa; background:#fff7ed; display:flex; align-items:center; gap:14px;">
-                        <div style="width:46px; height:46px; border-radius:12px; background:#fb923c; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
-                            <i class="fa-solid fa-stairs"></i>
-                        </div>
-                        <div>
-                            <div style="font-size:0.78rem; color:#7c2d12;">سطوح پله‌های VIP</div>
-                            <div id="statTierLevelsCount" style="font-size:1.3rem; font-weight:900; color:#9a3412;">۳ پله پاداش</div>
-                        </div>
-                    </div>
-                    <div class="card" style="padding:16px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; display:flex; align-items:center; gap:14px;">
-                        <div style="width:46px; height:46px; border-radius:12px; background:#0284c7; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
-                            <i class="fa-solid fa-wallet"></i>
-                        </div>
-                        <div>
-                            <div style="font-size:0.78rem; color:#475569;">پاداش اولین خرید مشتری</div>
-                            <div id="statFirstOrderBonus" style="font-size:1.3rem; font-weight:900; color:#0369a1;">۱۰٪ هدیه</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Inner Sub-Tabs -->
-                <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:2px; overflow-x:auto;">
-                    <button type="button" id="tabBtnGifts" onclick="switchGiftPackageTab('gifts')" style="padding:10px 18px; border:none; background:transparent; font-weight:bold; font-size:0.92rem; color:#db2777; border-bottom:3px solid #db2777; cursor:pointer; display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-sliders"></i> تنظیمات درصد هدیه و پله‌ها
+                <!-- Sub Navigation Tabs -->
+                <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">
+                    <button type="button" id="tabBtnGiftSettings" class="btn btn-primary" onclick="switchGiftSectionTab('settings')" style="font-size:0.9rem; padding:8px 18px; border-radius:10px;">
+                        <i class="fa-solid fa-sliders"></i> تنظیمات و درصد هدایا
                     </button>
-                    <button type="button" id="tabBtnPackages" onclick="switchGiftPackageTab('packages')" style="padding:10px 18px; border:none; background:transparent; font-weight:bold; font-size:0.92rem; color:#64748b; border-bottom:3px solid transparent; cursor:pointer; display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-boxes-stacked"></i> لیست و ساخت پکیج‌ها (<span id="tabPackagesBadge">0</span>)
-                    </button>
-                    <button type="button" id="tabBtnSuggestions" onclick="switchGiftPackageTab('suggestions')" style="padding:10px 18px; border:none; background:transparent; font-weight:bold; font-size:0.92rem; color:#64748b; border-bottom:3px solid transparent; cursor:pointer; display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-wand-magic-sparkles" style="color:#d97706;"></i> پیشنهادات هوشمند پکیج
+                    <button type="button" id="tabBtnPackages" class="btn btn-secondary" onclick="switchGiftSectionTab('packages')" style="font-size:0.9rem; padding:8px 18px; border-radius:10px;">
+                        <i class="fa-solid fa-boxes-packing"></i> لیست و ساخت پکیج‌ها (<span id="adminPackagesCountBadge">0</span>)
                     </button>
                 </div>
 
-                <!-- TAB 1: GIFT SETTINGS & TIERED RULES -->
-                <div id="subTabGifts" style="display:block;">
+                <!-- TAB 1: GIFT SETTINGS -->
+                <div id="subTabGiftSettings">
                     <form onsubmit="saveGiftSettingsForm(event)" id="giftSettingsForm">
-                        <div style="display:grid; grid-template-columns:1.1fr 0.9fr; gap:24px; align-items:start;">
-                            <!-- Left Column: Primary Settings -->
-                            <div class="card" style="padding:22px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;">
+                            
+                            <!-- Left Box: Global & Tiered Controls -->
+                            <div class="card" style="padding:24px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
                                 <h3 style="margin:0 0 16px 0; font-size:1.05rem; color:#1e293b; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
-                                    <i class="fa-solid fa-toggle-on" style="color:#db2777;"></i> پیکربندی اصلی درصد هدیه و کش‌بک
+                                    <i class="fa-solid fa-award" style="color:#d97706;"></i> تنظیمات اصلی پاداش و هدیه
                                 </h3>
 
-                                <!-- Master Switch Box -->
-                                <div style="background:#fdf2f8; border:2px solid #fbcfe8; border-radius:14px; padding:16px; margin-bottom:20px; transition:all 0.2s ease;" id="giftMasterStatusCard">
+                                <!-- Master Toggle -->
+                                <div style="background:#f8fafc; border:2px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:20px; transition:all 0.2s ease;" id="giftMasterStatusCard">
                                     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
                                         <div style="display:flex; align-items:center; gap:12px;">
-                                            <div id="giftStatusIconBox" style="width:44px; height:44px; border-radius:12px; background:#db2777; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                                            <div id="giftMasterIconBox" style="width:44px; height:44px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
                                                 <i class="fa-solid fa-gift"></i>
                                             </div>
                                             <div>
-                                                <div style="font-weight:bold; font-size:0.95rem; color:#831843;" id="giftStatusTitle">سیستم هدیه و کش‌بک فعال است</div>
-                                                <div style="font-size:0.8rem; color:#9d174d; margin-top:2px;" id="giftStatusSubtitle">خریداران در هنگام سفارش مشمول درصد هدیه و انتخاب اشانتیون می‌شوند.</div>
+                                                <label for="isGiftEnabledSwitch" style="margin:0; font-weight:800; font-size:1rem; color:#0f172a; cursor:pointer;">
+                                                    سیستم هدیه و کش‌بک خرید
+                                                </label>
+                                                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;" id="giftMasterStatusDescription">
+                                                    فعال - مشتریان می‌توانند متناسب با مبلغ خرید هدیه رایگان انتخاب کنند
+                                                </div>
                                             </div>
                                         </div>
-                                        <label class="switch" style="position:relative; display:inline-block; width:52px; height:28px; flex-shrink:0;">
-                                            <input type="checkbox" id="giftIsEnabled" onchange="updateGiftMasterStatusUI()" checked>
-                                            <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#cbd5e1; transition:.3s; border-radius:28px;"></span>
+                                        <label class="switch-toggle" style="position:relative; display:inline-block; width:52px; height:28px; margin:0; flex-shrink:0;">
+                                            <input type="checkbox" id="isGiftEnabledSwitch" onchange="onGiftMasterSwitchToggle(this)">
+                                            <span class="slider-round"></span>
                                         </label>
                                     </div>
                                 </div>
 
+                                <!-- Base Percent & Min Order -->
                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
                                     <div class="form-group">
-                                        <label for="giftDefaultPercent" style="font-weight:bold; font-size:0.85rem; color:#334155;">
-                                            <i class="fa-solid fa-percent" style="color:#db2777;"></i> درصد هدیه پایه سفارشات
+                                        <label for="defaultGiftPercentInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                            <i class="fa-solid fa-percent" style="color:var(--primary); margin-left:4px;"></i> درصد هدیه پایه (پیش‌فرض):
                                         </label>
                                         <div style="position:relative;">
-                                            <input type="number" id="giftDefaultPercent" class="form-control" min="0" max="50" step="0.5" value="5" required style="padding-left:35px; font-weight:bold; font-size:1rem; color:#0f172a;">
-                                            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:bold; color:#64748b;">٪</span>
+                                            <input type="number" id="defaultGiftPercentInput" class="form-control" min="0" max="50" step="0.5" value="5" style="font-size:0.95rem; font-weight:bold; padding-left:35px;" oninput="simulateGiftTier()">
+                                            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#64748b; font-size:0.85rem;">٪</span>
                                         </div>
-                                        <small style="color:#64748b; font-size:0.75rem;">پیش‌فرض معمول: ۵ الی ۷ درصد</small>
+                                        <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">درصد محاسبه کالای هدیه از کل سبد</div>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="giftMinOrderAmount" style="font-weight:bold; font-size:0.85rem; color:#334155;">
-                                            <i class="fa-solid fa-coins" style="color:#059669;"></i> حداقل مبلغ سفارش مشمول هدیه (تومان)
+                                        <label for="minOrderForGiftInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                            <i class="fa-solid fa-coins" style="color:var(--primary); margin-left:4px;"></i> حداقل خرید برای هدیه (تومان):
                                         </label>
-                                        <input type="number" id="giftMinOrderAmount" class="form-control" min="0" step="50000" value="0" placeholder="0 = برای تمام سفارشات" style="font-weight:bold;">
-                                        <small style="color:#64748b; font-size:0.75rem;">صفر یعنی تمام مبالغ مشمول هدیه شوند</small>
+                                        <input type="number" id="minOrderForGiftInput" class="form-control" min="0" step="50000" value="500000" style="font-size:0.95rem;" oninput="simulateGiftTier()">
+                                        <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">سفارشات کمتر از این مبلغ هدیه ندارند</div>
                                     </div>
                                 </div>
 
-                                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:16px;">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                        <div>
-                                            <strong style="font-size:0.88rem; color:#0f172a;"><i class="fa-solid fa-sparkles" style="color:#f59e0b;"></i> پاداش ویژه اولین خرید مشتری</strong>
-                                            <div style="font-size:0.75rem; color:#64748b;">تخصیص درصد هدیه بیشتر به خریداران جدید برای افزایش وفاداری</div>
-                                        </div>
-                                        <label class="switch" style="position:relative; display:inline-block; width:44px; height:24px;">
-                                            <input type="checkbox" id="giftFirstOrderBonusEnabled" checked>
-                                            <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#cbd5e1; transition:.3s; border-radius:24px;"></span>
+                                <!-- First Order Bonus -->
+                                <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:16px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <label for="isFirstOrderBonusSwitch" style="margin:0; font-weight:700; font-size:0.88rem; color:#065f46; cursor:pointer;">
+                                            <i class="fa-solid fa-user-plus" style="margin-left:4px;"></i> بونوس هدیه اولین خرید مشتری
                                         </label>
+                                        <input type="checkbox" id="isFirstOrderBonusSwitch" onchange="simulateGiftTier()" style="width:18px; height:18px; cursor:pointer;">
                                     </div>
-                                    <div style="display:flex; align-items:center; gap:10px;">
-                                        <span style="font-size:0.82rem; color:#334155;">درصد هدیه سفارش اول:</span>
-                                        <div style="position:relative; width:110px;">
-                                            <input type="number" id="giftFirstOrderPercent" class="form-control" min="1" max="50" value="10" style="padding-left:30px; font-weight:bold; font-size:0.9rem; text-align:center;">
-                                            <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-weight:bold; color:#64748b;">٪</span>
+                                    <div style="display:grid; grid-template-columns: 1fr; gap:8px;">
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <span style="font-size:0.82rem; color:#047857;">درصد هدیه سفارش اول:</span>
+                                            <input type="number" id="firstOrderBonusPercentInput" class="form-control" min="1" max="50" value="10" style="width:90px; height:32px; font-size:0.85rem; font-weight:bold;" oninput="simulateGiftTier()">
+                                            <span style="font-size:0.82rem; color:#047857;">درصد</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div style="display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px 16px; margin-bottom:16px;">
-                                    <div>
-                                        <strong style="font-size:0.85rem; color:#14532d;"><i class="fa-solid fa-wallet" style="color:#16a34a;"></i> انتقال خودکار باقیمانده هدیه به کیف پول</strong>
-                                        <div style="font-size:0.75rem; color:#15803d;">اگر مشتری کمتر از سقف هدیه کالا انتخاب کند، مابقی شارژ کیف پول می‌شود.</div>
-                                    </div>
-                                    <label class="switch" style="position:relative; display:inline-block; width:44px; height:24px;">
-                                        <input type="checkbox" id="giftAutoRollToWallet" checked>
-                                        <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#cbd5e1; transition:.3s; border-radius:24px;"></span>
+                                <!-- Custom Banner Notice Text -->
+                                <div class="form-group" style="margin-bottom:20px;">
+                                    <label for="customGiftNoticeInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
+                                        <i class="fa-solid fa-bullhorn" style="color:#2563eb; margin-left:4px;"></i> متن پیام اطلاع‌رسانی هدیه در سایت:
                                     </label>
+                                    <textarea id="customGiftNoticeInput" class="form-control" rows="2" style="font-size:0.85rem; line-height:1.6;" placeholder="با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ فاکتور را کالای هدیه رایگان انتخاب کنید!"></textarea>
                                 </div>
 
-                                <div class="form-group" style="margin-bottom:0;">
-                                    <label for="giftCustomNotice" style="font-weight:bold; font-size:0.85rem; color:#334155;">
-                                        <i class="fa-solid fa-bullhorn" style="color:#6366f1;"></i> متن پیام اطلاعیه هدیه در ویترین فروشگاه
-                                    </label>
-                                    <textarea id="giftCustomNotice" class="form-control" rows="2" placeholder="پیام تشویقی هدیه که به خریداران در فروشگاه نمایش داده می‌شود..." style="font-size:0.85rem; line-height:1.6;"></textarea>
-                                </div>
+                                <!-- Save Button -->
+                                <button type="submit" id="saveGiftSettingsBtn" class="btn btn-primary" style="width:100%; padding:12px; font-size:1rem; font-weight:bold; display:flex; justify-content:center; align-items:center; gap:8px; background:#d97706; border-color:#d97706;">
+                                    <i class="fa-solid fa-floppy-disk"></i> ذخیره تنظیمات هدایا
+                                </button>
+                                <div id="giftSaveStatusNotice" style="display:none; margin-top:10px; padding:10px; border-radius:8px; text-align:center; font-size:0.85rem; font-weight:bold;"></div>
                             </div>
 
-                            <!-- Right Column: Tiered Rewards Ladder -->
-                            <div class="card" style="padding:22px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
-                                    <div>
-                                        <h3 style="margin:0; font-size:1.05rem; color:#1e293b; display:flex; align-items:center; gap:8px;">
-                                            <i class="fa-solid fa-stairs" style="color:#d97706;"></i> پله‌های پاداش و کش‌بک پلکانی (VIP)
-                                        </h3>
-                                        <div style="font-size:0.78rem; color:#64748b; margin-top:2px;">تشویق خریداران به افزایش مبلغ سفارش برای دریافت درصد هدیه بالاتر</div>
-                                    </div>
-                                    <label class="switch" style="position:relative; display:inline-block; width:44px; height:24px;">
-                                        <input type="checkbox" id="giftTieredEnabled" onchange="toggleTieredGiftsContainer()" checked>
-                                        <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#cbd5e1; transition:.3s; border-radius:24px;"></span>
-                                    </label>
-                                </div>
-
-                                <div id="tieredGiftsContainer">
-                                    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-                                        <button type="button" class="btn btn-secondary" onclick="addNewTierRow()" style="padding:6px 12px; font-size:0.8rem; background:#f8fafc; border-color:#cbd5e1;">
-                                            <i class="fa-solid fa-plus"></i> افزودن پله پاداش جدید
-                                        </button>
-                                    </div>
-
-                                    <div id="tieredRowsList" style="display:flex; flex-direction:column; gap:10px; max-height:420px; overflow-y:auto; padding-left:4px;">
-                                        <!-- Dynamically generated tier rows -->
-                                    </div>
-                                </div>
-
-                                <div style="margin-top:20px; padding-top:14px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
-                                    <button type="submit" class="btn btn-primary" id="btnSaveGiftSettings" style="background:#db2777; border-color:#db2777; padding:10px 24px; font-size:0.92rem; font-weight:bold;">
-                                        <i class="fa-solid fa-floppy-disk"></i> ذخیره کلیه تنظیمات هدایا
+                            <!-- Right Box: Tiered Gifts System & Live Simulator -->
+                            <div class="card" style="padding:24px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+                                    <h3 style="margin:0; font-size:1.05rem; color:#1e293b; display:flex; align-items:center; gap:8px;">
+                                        <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> سطوح پلکانی پاداش و هدیه (Tiered System)
+                                    </h3>
+                                    <button type="button" class="btn btn-secondary" onclick="addTierRow()" style="padding:4px 10px; font-size:0.8rem; background:#f1f5f9; border-color:#cbd5e1;">
+                                        <i class="fa-solid fa-plus"></i> افزودن پله
                                     </button>
                                 </div>
+
+                                <p style="font-size:0.82rem; color:#64748b; margin-top:0; margin-bottom:12px;">
+                                    می‌توانید برای مبالغ بالاتر، درصد هدیه بیشتری به عنوان تشویق خرید عمده تعیین فرمایید:
+                                </p>
+
+                                <div id="tieredGiftsContainer" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+                                    <!-- Dynamic Tier Rows Rendered Here -->
+                                </div>
+
+                                <!-- Live Simulator Tool -->
+                                <div style="background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:14px; padding:16px;">
+                                    <h4 style="margin:0 0 10px 0; font-size:0.92rem; color:#1e40af; display:flex; align-items:center; gap:6px;">
+                                        <i class="fa-solid fa-calculator"></i> ماشین حساب و شبیه‌ساز زنده هدیه
+                                    </h4>
+                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:10px;">
+                                        <div>
+                                            <label style="font-size:0.78rem; color:#475569; display:block; margin-bottom:4px;">مبلغ فرضی سبد خرید (تومان):</label>
+                                            <input type="number" id="simOrderAmountInput" class="form-control" value="2000000" step="100000" style="font-size:0.9rem; font-weight:bold;" oninput="simulateGiftTier()">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.78rem; color:#475569; display:block; margin-bottom:4px;">نوع مشتری:</label>
+                                            <select id="simCustomerTypeSelect" class="form-control" style="font-size:0.85rem;" onchange="simulateGiftTier()">
+                                                <option value="regular">مشتری عادی / دائمی</option>
+                                                <option value="first_order">اولین خرید (شامل بونوس)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="simResultBox" style="background:#ffffff; border-radius:10px; padding:12px; border:1px solid #dbeafe; font-size:0.85rem; line-height:1.7; color:#1e3a8a;">
+                                        در حال محاسبه...
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </form>
                 </div>
 
-                <!-- TAB 2: PACKAGES & BUNDLES BUILDER -->
+                <!-- TAB 2: PACKAGES & BUNDLES -->
                 <div id="subTabPackages" style="display:none;">
-                    <div class="card" style="padding:20px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff; margin-bottom:20px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                                <div style="position:relative; width:260px;">
-                                    <i class="fa-solid fa-magnifying-glass" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
-                                    <input type="text" id="adminPackageSearch" class="form-control" placeholder="جستجو در پکیج‌ها..." oninput="renderAdminPackagesGrid()" style="padding-right:34px; font-size:0.85rem; height:38px;">
-                                </div>
-                                <div style="display:flex; gap:6px;">
-                                    <button type="button" class="btn btn-secondary active" id="filterPkgAll" onclick="filterAdminPackages('all', this)" style="padding:6px 12px; font-size:0.8rem;">همه پکیج‌ها</button>
-                                    <button type="button" class="btn btn-secondary" id="filterPkgActive" onclick="filterAdminPackages('active', this)" style="padding:6px 12px; font-size:0.8rem;">فقط فعال</button>
-                                    <button type="button" class="btn btn-secondary" id="filterPkgInactive" onclick="filterAdminPackages('inactive', this)" style="padding:6px 12px; font-size:0.8rem;">غیرفعال</button>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-primary" onclick="openPackageModal()" style="background:#db2777; border-color:#db2777; font-size:0.88rem;">
-                                <i class="fa-solid fa-plus"></i> ساخت پکیج جدید
-                            </button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                        <div style="font-size:0.9rem; color:#475569;">
+                            پکیج‌های تعریف شده در سایت برای فروشگاه‌ها، هایپرمارکت‌ها، خانواده‌ها و مصارف بهداشتی:
                         </div>
-                    </div>
-
-                    <div id="adminPackagesGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
-                        <!-- Dynamic package cards -->
-                    </div>
-                    <div id="adminPackagesEmpty" style="display:none; text-align:center; padding:50px 20px; background:#fff; border-radius:16px; border:1px dashed #cbd5e1;">
-                        <i class="fa-solid fa-box-open" style="font-size:3rem; color:#cbd5e1; margin-bottom:14px;"></i>
-                        <h4 style="color:#64748b; margin:0 0 6px 0;">هیچ پکیجی یافت نشد</h4>
-                        <p style="color:#94a3b8; font-size:0.85rem; margin:0 0 16px 0;">با کلیک روی دکمه زیر می‌توانید اولین پکیج تخفیف‌دار فروشگاه را ایجاد کنید.</p>
-                        <button type="button" class="btn btn-primary" onclick="openPackageModal()" style="background:#db2777; border-color:#db2777;">
-                            <i class="fa-solid fa-plus"></i> ساخت پکیج اول
+                        <button type="button" class="btn btn-primary" onclick="openPackageModal()" style="padding:8px 16px; font-size:0.85rem; background:#059669; border-color:#059669;">
+                            <i class="fa-solid fa-plus"></i> ایجاد پکیج جدید
                         </button>
                     </div>
-                </div>
 
-                <!-- TAB 3: SMART SUGGESTIONS & PRESETS -->
-                <div id="subTabSuggestions" style="display:none;">
-                    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:14px; padding:16px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
-                        <i class="fa-solid fa-lightbulb" style="font-size:1.5rem; color:#d97706;"></i>
-                        <div>
-                            <strong style="color:#92400e; font-size:0.92rem;">پیشنهادات سودآور و مکمل جهت افزایش میانگین سبد خرید (AOV)</strong>
-                            <p style="margin:2px 0 0 0; color:#b45309; font-size:0.82rem;">این پکیج‌ها بر اساس بیشترین کالاهای خریداری‌شده همزمان در سفارشات طراحی شده‌اند. با زدن دکمه «ایجاد فوری»، اقلام مستقیماً در فرم پکیج‌ساز درج می‌شوند.</p>
-                        </div>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:20px;">
-                        <!-- Preset 1 -->
-                        <div class="card" style="padding:20px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; display:flex; flex-direction:column; justify-content:space-between;">
-                            <div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                    <span style="background:#dbeafe; color:#1d4ed8; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:bold;">نظافت و شستشو</span>
-                                    <span style="color:#059669; font-weight:bold; font-size:0.82rem;">۱۵٪ تخفیف پیشنهادی</span>
-                                </div>
-                                <h4 style="margin:0 0 6px 0; font-size:1rem; color:#0f172a;">پکیج کامل درخشش و نظافت منزل</h4>
-                                <p style="font-size:0.8rem; color:#64748b; margin:0 0 12px 0;">مایع ظرفشویی + مایع دستشویی + چندمنظوره آنتی‌باکتریال + شیشه‌پاک‌کن</p>
-                                <div style="background:#f8fafc; border-radius:10px; padding:10px; font-size:0.78rem; color:#334155; margin-bottom:14px;">
-                                    <div>• ۲ عدد مایع ظرفشویی ۷۵۰ گرمی</div>
-                                    <div>• ۲ عدد مایع دستشویی ۵۰۰ گرمی</div>
-                                    <div>• ۲ عدد پاک‌کننده چندمنظوره سطوح</div>
-                                    <div style="color:#059669; font-weight:bold; margin-top:4px;">🎁 اشانتیون: یک عدد اسکاچ نانو رایگان</div>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-primary" onclick="applySmartPackageTemplate(0)" style="background:#0284c7; border-color:#0284c7; width:100%; font-size:0.85rem;">
-                                <i class="fa-solid fa-magic"></i> ایجاد فوری این پکیج
-                            </button>
-                        </div>
-
-                        <!-- Preset 2 -->
-                        <div class="card" style="padding:20px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; display:flex; flex-direction:column; justify-content:space-between;">
-                            <div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                    <span style="background:#fef3c7; color:#b45309; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:bold;">سازمانی و پرمصرف</span>
-                                    <span style="color:#059669; font-weight:bold; font-size:0.82rem;">۱۲٪ تخفیف ویژه</span>
-                                </div>
-                                <h4 style="margin:0 0 6px 0; font-size:1rem; color:#0f172a;">پکیج سوپر گالن ۱۰ لیتری به صرفه</h4>
-                                <p style="font-size:0.8rem; color:#64748b; margin:0 0 12px 0;">مایع دستشویی گالن ۱۰ لیتری + ۴ عدد مایع ظرفشویی ۷۵۰ گرمی</p>
-                                <div style="background:#f8fafc; border-radius:10px; padding:10px; font-size:0.78rem; color:#334155; margin-bottom:14px;">
-                                    <div>• ۱ عدد گالن ۱۰ لیتری مایع دستشویی</div>
-                                    <div>• ۴ عدد مایع ظرفشویی ۷۵۰ گرمی</div>
-                                    <div style="color:#059669; font-weight:bold; margin-top:4px;">🎁 اشانتیون: ارسال کاملاً رایگان + هدیه</div>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-primary" onclick="applySmartPackageTemplate(1)" style="background:#d97706; border-color:#d97706; width:100%; font-size:0.85rem;">
-                                <i class="fa-solid fa-magic"></i> ایجاد فوری این پکیج
-                            </button>
-                        </div>
-
-                        <!-- Preset 3 -->
-                        <div class="card" style="padding:20px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; display:flex; flex-direction:column; justify-content:space-between;">
-                            <div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                    <span style="background:#fce7f3; color:#be185d; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:bold;">بهداشت و مراقبت</span>
-                                    <span style="color:#059669; font-weight:bold; font-size:0.82rem;">۱۰٪ تخفیف + هدیه</span>
-                                </div>
-                                <h4 style="margin:0 0 6px 0; font-size:1rem; color:#0f172a;">پکیج مراقبت پوست و مایعات کرمی</h4>
-                                <p style="font-size:0.8rem; color:#64748b; margin:0 0 12px 0;">مایع دست کرمی ۱ لیتری + مایعات عطری دست و ظروف</p>
-                                <div style="background:#f8fafc; border-radius:10px; padding:10px; font-size:0.78rem; color:#334155; margin-bottom:14px;">
-                                    <div>• ۲ عدد مایع دست کرمی ۱ لیتری</div>
-                                    <div>• ۳ عدد مایع دست ۵۰۰ گرمی معطر</div>
-                                    <div style="color:#059669; font-weight:bold; margin-top:4px;">🎁 اشانتیون: صابون گلیسیرینه بهداشتی</div>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-primary" onclick="applySmartPackageTemplate(2)" style="background:#db2777; border-color:#db2777; width:100%; font-size:0.85rem;">
-                                <i class="fa-solid fa-magic"></i> ایجاد فوری این پکیج
-                            </button>
-                        </div>
+                    <div id="adminPackagesListGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:20px;">
+                        <!-- Packages Cards Rendered Here -->
                     </div>
                 </div>
             </section>
@@ -3563,9 +4204,9 @@
         if (name === 'new-purchase' || name === 'new-order') ensureProductsCatalogLoaded();
         if (name === 'bank-settings') loadBankSettings();
         if (name === 'delivery-settings') loadDeliverySettings();
+        if (name === 'gifts-packages') { loadGiftSettings(); loadAdminPackages(); ensureProductsCatalogLoaded(); }
         if (name === 'alerts') loadAlerts();
         if (name === 'whatsapp-campaigns') initWhatsappCampaignSection();
-        if (name === 'gifts-packages') { loadGiftSettings(); loadAdminPackages(); ensureProductsCatalogLoaded(); }
         if (name === 'dashboard') { loadStats(); loadDeliverySettings(); }
     }
 
@@ -3583,7 +4224,7 @@
                 tasks.push(loadOrders());
             } else if (activeSec === 'customers') {
                 tasks.push(loadCustomers());
-            } else if (activeSec === 'gifts-packages') { tasks.push(loadGiftSettings(), loadAdminPackages()); } else if (activeSec === 'whatsapp-campaigns') {
+            } else if (activeSec === 'whatsapp-campaigns') {
                 tasks.push(initWhatsappCampaignSection());
             } else if (activeSec === 'purchases') {
                 tasks.push(loadPurchases());
@@ -3593,6 +4234,8 @@
                 tasks.push(loadProfitStats());
             } else if (activeSec === 'company-payments') {
                 tasks.push(loadCompanyPaymentHistory());
+            } else if (activeSec === 'gifts-packages') {
+                tasks.push(loadGiftSettings(true), loadAdminPackages(true));
             } else if (activeSec === 'delivery-settings') {
                 tasks.push(loadDeliverySettings(true));
             } else if (activeSec === 'bank-settings') {
@@ -10557,816 +11200,6 @@
         window.open(waLink, '_blank');
         closeDirectWhatsappModal();
     }
-
-    // -------------------------------------------------------------
-    // GIFTS & PACKAGES MANAGEMENT MODULE
-    // -------------------------------------------------------------
-    let adminGiftSettings = {
-        isEnabled: true,
-        defaultGiftPercent: 5,
-        minOrderForGift: 0,
-        firstOrderBonusPercent: 10,
-        isFirstOrderBonusEnabled: true,
-        allowCustomerGiftSelection: true,
-        autoRollRemainingToWallet: true,
-        tieredGiftsEnabled: true,
-        tieredGifts: [
-            { id: 'tier-1', minAmount: 500000, maxAmount: 1500000, giftPercent: 5, title: 'پله نقره‌ای (۵٪ هدیه)', bonusDescription: '۵٪ اعتبار هدیه روی کل سبد خرید' },
-            { id: 'tier-2', minAmount: 1500000, maxAmount: 3000000, giftPercent: 7, title: 'پله طلایی (۷٪ هدیه)', bonusDescription: '۷٪ هدیه + ارسال رایگان' },
-            { id: 'tier-3', minAmount: 3000000, maxAmount: 0, giftPercent: 10, title: 'پله الماس VIP (۱۰٪ هدیه)', bonusDescription: '۱۰٪ هدیه + محصول اشانتیون ویژه' }
-        ],
-        customGiftNotice: 'با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد ارزش خرید خود را هدیه یا اعتبار کیف پول دریافت کنید!'
-    };
-    let adminPackagesList = [];
-    let adminPackageFilter = 'all';
-    let currentPackageItems = [];
-    let adminProductsCatalog = [];
-
-    async function ensureProductsCatalogLoaded() {
-        if (adminProductsCatalog && adminProductsCatalog.length > 0) return adminProductsCatalog;
-        try {
-            const res = await api('/api/products?_=' + Date.now());
-            if (res.ok) {
-                const data = await res.json();
-                if (data && Array.isArray(data.products)) {
-                    adminProductsCatalog = data.products;
-                }
-            }
-        } catch (e) {
-            console.error('Error loading products catalog:', e);
-        }
-        return adminProductsCatalog;
-    }
-
-    function switchGiftPackageTab(tabName) {
-        const tabs = ['gifts', 'packages', 'suggestions'];
-        tabs.forEach(t => {
-            const el = document.getElementById('subTab' + t.charAt(0).toUpperCase() + t.slice(1));
-            const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
-            if (el) el.style.display = (t === tabName) ? 'block' : 'none';
-            if (btn) {
-                if (t === tabName) {
-                    btn.style.color = '#db2777';
-                    btn.style.borderBottom = '3px solid #db2777';
-                } else {
-                    btn.style.color = '#64748b';
-                    btn.style.borderBottom = '3px solid transparent';
-                }
-            }
-        });
-    }
-
-    async function loadGiftSettings(force = false) {
-        try {
-            const res = await api('/api/admin/settings/gifts?_=' + Date.now());
-            if (res.ok) {
-                const data = await res.json();
-                if (data && data.settings) {
-                    adminGiftSettings = { ...adminGiftSettings, ...data.settings };
-                }
-            }
-        } catch (e) {
-            console.log('Notice loading gift settings:', e);
-        }
-        populateGiftSettingsForm();
-    }
-
-    function populateGiftSettingsForm() {
-        const s = adminGiftSettings;
-        const masterCb = document.getElementById('giftIsEnabled');
-        if (masterCb) masterCb.checked = s.isEnabled !== false;
-        updateGiftMasterStatusUI();
-
-        const defPct = document.getElementById('giftDefaultPercent');
-        if (defPct) defPct.value = s.defaultGiftPercent !== undefined ? s.defaultGiftPercent : 5;
-
-        const minOrd = document.getElementById('giftMinOrderAmount');
-        if (minOrd) minOrd.value = s.minOrderForGift || 0;
-
-        const firstBonusCb = document.getElementById('giftFirstOrderBonusEnabled');
-        if (firstBonusCb) firstBonusCb.checked = s.isFirstOrderBonusEnabled !== false;
-
-        const firstPct = document.getElementById('giftFirstOrderPercent');
-        if (firstPct) firstPct.value = s.firstOrderBonusPercent || 10;
-
-        const autoRollCb = document.getElementById('giftAutoRollToWallet');
-        if (autoRollCb) autoRollCb.checked = s.autoRollRemainingToWallet !== false;
-
-        const noticeTxt = document.getElementById('giftCustomNotice');
-        if (noticeTxt) noticeTxt.value = s.customGiftNotice || '';
-
-        const tieredCb = document.getElementById('giftTieredEnabled');
-        if (tieredCb) tieredCb.checked = s.tieredGiftsEnabled !== false;
-        toggleTieredGiftsContainer();
-
-        renderTieredGiftsRows();
-        updateGiftKPIStats();
-    }
-
-    function updateGiftKPIStats() {
-        const s = adminGiftSettings;
-        const statPct = document.getElementById('statDefaultGiftPercent');
-        if (statPct) {
-            statPct.innerText = (s.isEnabled !== false) ? (s.defaultGiftPercent + '٪ هدیه') : 'غیرفعال';
-            statPct.style.color = (s.isEnabled !== false) ? '#9d174d' : '#94a3b8';
-        }
-        const statTiers = document.getElementById('statTierLevelsCount');
-        if (statTiers) {
-            const count = (s.tieredGifts && Array.isArray(s.tieredGifts)) ? s.tieredGifts.length : 0;
-            statTiers.innerText = (s.tieredGiftsEnabled !== false) ? (count + ' پله فعال') : 'غیرفعال';
-        }
-        const statFirst = document.getElementById('statFirstOrderBonus');
-        if (statFirst) {
-            statFirst.innerText = (s.isFirstOrderBonusEnabled !== false) ? (s.firstOrderBonusPercent + '٪ هدیه') : 'غیرفعال';
-        }
-    }
-
-    function updateGiftMasterStatusUI() {
-        const cb = document.getElementById('giftIsEnabled');
-        const isChecked = cb ? cb.checked : true;
-        const card = document.getElementById('giftMasterStatusCard');
-        const title = document.getElementById('giftStatusTitle');
-        const sub = document.getElementById('giftStatusSubtitle');
-        const iconBox = document.getElementById('giftStatusIconBox');
-
-        if (isChecked) {
-            if (card) { card.style.background = '#fdf2f8'; card.style.borderColor = '#fbcfe8'; }
-            if (title) { title.innerText = 'سیستم هدیه و کش‌بک فعال است'; title.style.color = '#831843'; }
-            if (sub) { sub.innerText = 'خریداران در هنگام سفارش مشمول درصد هدیه و انتخاب اشانتیون می‌شوند.'; sub.style.color = '#9d174d'; }
-            if (iconBox) { iconBox.style.background = '#db2777'; }
-        } else {
-            if (card) { card.style.background = '#f8fafc'; card.style.borderColor = '#e2e8f0'; }
-            if (title) { title.innerText = 'سیستم هدیه موقتاً غیرفعال است'; title.style.color = '#475569'; }
-            if (sub) { sub.innerText = 'درصد هدیه سفارشات و تخصیص اشانتیون در فروشگاه به حالت تعلیق درآمده است.'; sub.style.color = '#64748b'; }
-            if (iconBox) { iconBox.style.background = '#94a3b8'; }
-        }
-    }
-
-    function toggleTieredGiftsContainer() {
-        const cb = document.getElementById('giftTieredEnabled');
-        const cont = document.getElementById('tieredGiftsContainer');
-        if (cont && cb) {
-            cont.style.opacity = cb.checked ? '1' : '0.45';
-            cont.style.pointerEvents = cb.checked ? 'auto' : 'none';
-        }
-    }
-
-    function renderTieredGiftsRows() {
-        const listEl = document.getElementById('tieredRowsList');
-        if (!listEl) return;
-        const tiers = adminGiftSettings.tieredGifts || [];
-        if (tiers.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:0.8rem; padding:16px;">هیچ پله‌ای تعریف نشده است.</div>';
-            return;
-        }
-
-        listEl.innerHTML = tiers.map((t, idx) => `
-            <div class="tier-row-card" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="width:24px; height:24px; border-radius:50%; background:#e0e7ff; color:#4338ca; font-weight:bold; font-size:0.75rem; display:flex; align-items:center; justify-content:center;">${idx + 1}</span>
-                        <input type="text" class="form-control tier-title" value="${t.title || ''}" placeholder="عنوان پله (مثلاً پله طلایی)" style="font-size:0.85rem; font-weight:bold; padding:4px 8px; height:32px; width:180px;">
-                    </div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:0.8rem; color:#64748b;">درصد هدیه:</span>
-                        <input type="number" class="form-control tier-pct" value="${t.giftPercent || 5}" min="1" max="50" style="width:60px; font-weight:bold; text-align:center; padding:4px; height:32px; color:#db2777;">
-                        <span style="font-weight:bold; color:#64748b;">٪</span>
-                        <button type="button" onclick="removeTierRow(${idx})" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:4px 6px; font-size:0.95rem;" title="حذف پله">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <div>
-                        <label style="font-size:0.72rem; color:#64748b;">از مبلغ سفارش (تومان):</label>
-                        <input type="number" class="form-control tier-min" value="${t.minAmount || 0}" step="100000" style="font-size:0.8rem; padding:4px 8px; height:30px;">
-                    </div>
-                    <div>
-                        <label style="font-size:0.72rem; color:#64748b;">تا مبلغ (0 = بدون سقف):</label>
-                        <input type="number" class="form-control tier-max" value="${t.maxAmount || 0}" step="100000" style="font-size:0.8rem; padding:4px 8px; height:30px;">
-                    </div>
-                </div>
-                <div>
-                    <label style="font-size:0.72rem; color:#64748b;">پاداش یا امتیاز اضافی این پله:</label>
-                    <input type="text" class="form-control tier-desc" value="${t.bonusDescription || ''}" placeholder="مثال: ۷٪ هدیه + ارسال رایگان" style="font-size:0.8rem; padding:4px 8px; height:30px;">
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function addNewTierRow() {
-        if (!adminGiftSettings.tieredGifts) adminGiftSettings.tieredGifts = [];
-        const last = adminGiftSettings.tieredGifts[adminGiftSettings.tieredGifts.length - 1];
-        const nextMin = last ? (Number(last.maxAmount) || (Number(last.minAmount) + 1500000)) : 1000000;
-        const nextPct = last ? (Number(last.giftPercent) + 2) : 7;
-        
-        adminGiftSettings.tieredGifts.push({
-            id: 'tier-' + Date.now(),
-            title: `پله پاداش سطح ${adminGiftSettings.tieredGifts.length + 1}`,
-            minAmount: nextMin,
-            maxAmount: 0,
-            giftPercent: nextPct,
-            bonusDescription: `${nextPct}٪ هدیه ویژه روی کل سفارش`
-        });
-        renderTieredGiftsRows();
-    }
-
-    function removeTierRow(idx) {
-        if (!adminGiftSettings.tieredGifts) return;
-        adminGiftSettings.tieredGifts.splice(idx, 1);
-        renderTieredGiftsRows();
-    }
-
-    async function saveGiftSettingsForm(e) {
-        if (e) e.preventDefault();
-        const btn = document.getElementById('btnSaveGiftSettings');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...'; }
-
-        // Collect tiers from UI inputs
-        const tierCards = document.querySelectorAll('.tier-row-card');
-        const compiledTiers = [];
-        tierCards.forEach((card, idx) => {
-            const title = card.querySelector('.tier-title')?.value || `پله ${idx + 1}`;
-            const pct = Number(card.querySelector('.tier-pct')?.value) || 5;
-            const minAmount = Number(card.querySelector('.tier-min')?.value) || 0;
-            const maxAmount = Number(card.querySelector('.tier-max')?.value) || 0;
-            const bonusDescription = card.querySelector('.tier-desc')?.value || '';
-            compiledTiers.push({
-                id: (adminGiftSettings.tieredGifts && adminGiftSettings.tieredGifts[idx]) ? adminGiftSettings.tieredGifts[idx].id : ('tier-' + Date.now() + '_' + idx),
-                title,
-                giftPercent: pct,
-                minAmount,
-                maxAmount,
-                bonusDescription
-            });
-        });
-
-        const payload = {
-            isEnabled: document.getElementById('giftIsEnabled')?.checked !== false,
-            defaultGiftPercent: Number(document.getElementById('giftDefaultPercent')?.value) || 5,
-            minOrderForGift: Number(document.getElementById('giftMinOrderAmount')?.value) || 0,
-            isFirstOrderBonusEnabled: document.getElementById('giftFirstOrderBonusEnabled')?.checked !== false,
-            firstOrderBonusPercent: Number(document.getElementById('giftFirstOrderPercent')?.value) || 10,
-            autoRollRemainingToWallet: document.getElementById('giftAutoRollToWallet')?.checked !== false,
-            customGiftNotice: document.getElementById('giftCustomNotice')?.value || '',
-            tieredGiftsEnabled: document.getElementById('giftTieredEnabled')?.checked !== false,
-            tieredGifts: compiledTiers
-        };
-
-        try {
-            const res = await api('/api/admin/settings/gifts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if (data.success) {
-                adminGiftSettings = { ...adminGiftSettings, ...payload };
-                updateGiftKPIStats();
-                alert('✅ تنظیمات هدایا و پله‌های تشویقی با موفقیت ذخیره شد.');
-            } else {
-                alert('خطا در ذخیره تنظیمات: ' + (data.message || 'نامشخص'));
-            }
-        } catch (err) {
-            alert('خطای ارتباط با سرور: ' + err.message);
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> ذخیره کلیه تنظیمات هدایا'; }
-        }
-    }
-
-    // --- PACKAGES & BUNDLES MANAGEMENT ---
-    async function loadAdminPackages(force = false) {
-        try {
-            const res = await api('/api/admin/packages?_=' + Date.now());
-            if (res.ok) {
-                const data = await res.json();
-                if (data && Array.isArray(data.packages)) {
-                    adminPackagesList = data.packages;
-                }
-            }
-        } catch (e) {
-            console.error('Error loading admin packages:', e);
-        }
-        renderAdminPackagesGrid();
-        updatePackagesKPIStats();
-    }
-
-    function updatePackagesKPIStats() {
-        const activeCount = adminPackagesList.filter(p => p.isActive !== false).length;
-        const statActive = document.getElementById('statActivePackagesCount');
-        if (statActive) statActive.innerText = activeCount + ' پکیج فعال';
-
-        const badgeEl = document.getElementById('tabPackagesBadge');
-        if (badgeEl) badgeEl.innerText = adminPackagesList.length;
-    }
-
-    function filterAdminPackages(filter, btn) {
-        adminPackageFilter = filter;
-        ['filterPkgAll', 'filterPkgActive', 'filterPkgInactive'].forEach(id => {
-            const b = document.getElementById(id);
-            if (b) b.classList.remove('active');
-        });
-        if (btn) btn.classList.add('active');
-        renderAdminPackagesGrid();
-    }
-
-    function renderAdminPackagesGrid() {
-        const grid = document.getElementById('adminPackagesGrid');
-        const emptyEl = document.getElementById('adminPackagesEmpty');
-        if (!grid) return;
-
-        const search = (document.getElementById('adminPackageSearch')?.value || '').trim().toLowerCase();
-        let filtered = [...adminPackagesList];
-
-        if (adminPackageFilter === 'active') {
-            filtered = filtered.filter(p => p.isActive !== false);
-        } else if (adminPackageFilter === 'inactive') {
-            filtered = filtered.filter(p => p.isActive === false);
-        }
-
-        if (search) {
-            filtered = filtered.filter(p => 
-                (p.title && p.title.toLowerCase().includes(search)) ||
-                (p.subtitle && p.subtitle.toLowerCase().includes(search)) ||
-                (p.badge && p.badge.toLowerCase().includes(search)) ||
-                (p.items && p.items.some(i => i.name && i.name.toLowerCase().includes(search)))
-            );
-        }
-
-        if (filtered.length === 0) {
-            grid.innerHTML = '';
-            if (emptyEl) emptyEl.style.display = 'block';
-            return;
-        }
-
-        if (emptyEl) emptyEl.style.display = 'none';
-
-        grid.innerHTML = filtered.map(pkg => {
-            const isActive = pkg.isActive !== false;
-            const originalPrice = Number(pkg.originalPrice) || 0;
-            const pkgPrice = Number(pkg.packagePrice) || 0;
-            const discountAmount = Math.max(0, originalPrice - pkgPrice);
-            const discountPct = originalPrice > 0 ? Math.round((discountAmount / originalPrice) * 100) : 0;
-            const items = Array.isArray(pkg.items) ? pkg.items : [];
-            const totalItemCount = items.reduce((sum, i) => sum + (Number(i.qty) || 1), 0);
-
-            return `
-                <div class="card" style="padding:20px; border-radius:18px; border:1px solid ${isActive ? '#cbd5e1' : '#e2e8f0'}; background:#ffffff; box-shadow:0 4px 15px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between; position:relative; opacity:${isActive ? '1' : '0.75'};">
-                    <div>
-                        <!-- Header badge and toggle -->
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                            <span style="background:${pkg.badgeColor || '#059669'}; color:#fff; padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:bold; display:flex; align-items:center; gap:5px;">
-                                <i class="fa-solid fa-tag"></i> ${pkg.badge || 'ویژه'}
-                            </span>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-size:0.75rem; color:${isActive ? '#16a34a' : '#94a3b8'}; font-weight:bold;">${isActive ? 'فعال در فروشگاه' : 'غیرفعال'}</span>
-                                <label class="switch" style="position:relative; display:inline-block; width:38px; height:20px;">
-                                    <input type="checkbox" ${isActive ? 'checked' : ''} onchange="togglePackageStatusDirect('${pkg.id}')">
-                                    <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#cbd5e1; transition:.3s; border-radius:20px;"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <h3 style="margin:0 0 6px 0; font-size:1.05rem; color:#0f172a; line-height:1.4;">${pkg.title}</h3>
-                        ${pkg.subtitle ? `<p style="margin:0 0 12px 0; font-size:0.8rem; color:#64748b; line-height:1.5;">${pkg.subtitle}</p>` : ''}
-
-                        <!-- Items breakdown list -->
-                        <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:12px; padding:12px; margin-bottom:14px;">
-                            <div style="font-size:0.78rem; font-weight:bold; color:#475569; margin-bottom:8px; display:flex; justify-content:space-between;">
-                                <span><i class="fa-solid fa-cubes"></i> اقلام پکیج (${items.length} کالا - ${totalItemCount} عدد):</span>
-                            </div>
-                            <div style="display:flex; flex-direction:column; gap:6px; max-height:120px; overflow-y:auto; font-size:0.78rem;">
-                                ${items.map(it => `
-                                    <div style="display:flex; justify-content:space-between; align-items:center; color:#334155;">
-                                        <span style="display:flex; align-items:center; gap:6px;">
-                                            <span style="color:#0284c7; font-weight:bold;">${it.qty}×</span>
-                                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${it.name}</span>
-                                        </span>
-                                        <span style="color:#64748b; font-size:0.72rem;">${Number(it.price || 0).toLocaleString('fa-IR')} ت</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <!-- Bonus perk tag if any -->
-                        ${pkg.bonusItem ? `
-                            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:6px 10px; font-size:0.75rem; color:#991b1b; font-weight:bold; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
-                                <i class="fa-solid fa-gift"></i> اشانتیون: ${pkg.bonusItem}
-                            </div>
-                        ` : ''}
-                    </div>
-
-                    <div>
-                        <!-- Pricing box -->
-                        <div style="border-top:1px solid #e2e8f0; padding-top:12px; margin-bottom:14px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span style="font-size:0.78rem; color:#94a3b8;">جمع قیمت واقعی:</span>
-                                <span style="font-size:0.85rem; color:#94a3b8; text-decoration:line-through;">${originalPrice.toLocaleString('fa-IR')} تومان</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-size:0.85rem; font-weight:bold; color:#0f172a;">قیمت ویژه پکیج:</span>
-                                <div style="text-align:left;">
-                                    <span style="font-size:1.15rem; font-weight:900; color:#db2777;">${pkgPrice.toLocaleString('fa-IR')}</span>
-                                    <span style="font-size:0.75rem; color:#64748b;"> تومان</span>
-                                </div>
-                            </div>
-                            ${discountAmount > 0 ? `
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-                                    <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:bold;">
-                                        ${discountPct}٪ تخفیف
-                                    </span>
-                                    <span style="font-size:0.75rem; color:#16a34a; font-weight:bold;">
-                                        سود خریدار: ${discountAmount.toLocaleString('fa-IR')} تومان
-                                    </span>
-                                </div>
-                            ` : ''}
-                        </div>
-
-                        <!-- Action buttons -->
-                        <div style="display:flex; gap:8px; border-top:1px solid #f1f5f9; padding-top:12px;">
-                            <button type="button" class="btn btn-secondary" onclick="openPackageModal('${pkg.id}')" style="flex:1; padding:7px; font-size:0.8rem;">
-                                <i class="fa-solid fa-pen-to-square"></i> ویرایش
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="copyPackageLink('${pkg.id}')" title="کپی لینک فروشگاه" style="padding:7px 10px; font-size:0.8rem;">
-                                <i class="fa-solid fa-link"></i>
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="deletePackageDirect('${pkg.id}')" title="حذف پکیج" style="padding:7px 10px; font-size:0.8rem; color:#ef4444;">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    async function togglePackageStatusDirect(id) {
-        try {
-            const res = await api(`/api/admin/packages/${id}/toggle`, { method: 'PUT' });
-            if (res.ok) {
-                const data = await res.json();
-                const idx = adminPackagesList.findIndex(p => String(p.id) === String(id));
-                if (idx !== -1 && data.package) {
-                    adminPackagesList[idx] = data.package;
-                }
-                renderAdminPackagesGrid();
-                updatePackagesKPIStats();
-            }
-        } catch (e) {
-            console.error('Error toggling package status:', e);
-        }
-    }
-
-    async function deletePackageDirect(id) {
-        if (!confirm('آیا از حذف این پکیج اطمینان دارید؟')) return;
-        try {
-            const res = await api(`/api/admin/packages/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                adminPackagesList = adminPackagesList.filter(p => String(p.id) !== String(id));
-                renderAdminPackagesGrid();
-                updatePackagesKPIStats();
-                alert('پکیج با موفقیت حذف گردید.');
-            }
-        } catch (e) {
-            alert('خطا در حذف پکیج: ' + e.message);
-        }
-    }
-
-    function copyPackageLink(id) {
-        const url = window.location.origin + '/?package=' + id;
-        navigator.clipboard.writeText(url).then(() => {
-            alert('لینک مستقیم پکیج در حافظه کپی شد:\n' + url);
-        }).catch(() => {
-            prompt('لینک پکیج:', url);
-        });
-    }
-
-    // --- PACKAGE BUILDER MODAL FUNCTIONS ---
-    async function openPackageModal(packageId = null) {
-        await ensureProductsCatalogLoaded();
-        currentPackageItems = [];
-        
-        const modal = document.getElementById('packageModal');
-        const modalTitle = document.getElementById('packageModalTitle');
-        const editIdInput = document.getElementById('pkgEditId');
-        
-        populatePackageProductDropdown();
-
-        if (packageId) {
-            const pkg = adminPackagesList.find(p => String(p.id) === String(packageId));
-            if (pkg) {
-                if (modalTitle) modalTitle.innerText = 'ویرایش پکیج: ' + pkg.title;
-                if (editIdInput) editIdInput.value = pkg.id;
-                document.getElementById('pkgTitle').value = pkg.title || '';
-                document.getElementById('pkgSubtitle').value = pkg.subtitle || '';
-                document.getElementById('pkgBadge').value = pkg.badge || 'ویژه';
-                document.getElementById('pkgBadgeColor').value = pkg.badgeColor || '#ef4444';
-                document.getElementById('pkgPackagePrice').value = pkg.packagePrice || 0;
-                document.getElementById('pkgBonusItem').value = pkg.bonusItem || '';
-                document.getElementById('pkgStock').value = (pkg.stock !== undefined) ? pkg.stock : 50;
-                document.getElementById('pkgDescription').value = pkg.description || '';
-                document.getElementById('pkgIsActive').checked = pkg.isActive !== false;
-                
-                currentPackageItems = Array.isArray(pkg.items) ? JSON.parse(JSON.stringify(pkg.items)) : [];
-            }
-        } else {
-            if (modalTitle) modalTitle.innerText = 'ایجاد پکیج اقتصادی جدید';
-            if (editIdInput) editIdInput.value = '';
-            document.getElementById('pkgTitle').value = '';
-            document.getElementById('pkgSubtitle').value = '';
-            document.getElementById('pkgBadge').value = 'تخفیف ویژه';
-            document.getElementById('pkgBadgeColor').value = '#ef4444';
-            document.getElementById('pkgPackagePrice').value = '';
-            document.getElementById('pkgBonusItem').value = '';
-            document.getElementById('pkgStock').value = '50';
-            document.getElementById('pkgDescription').value = '';
-            document.getElementById('pkgIsActive').checked = true;
-        }
-
-        renderPackageSelectedItems();
-        calculatePackageDiscountLive();
-
-        if (modal) modal.style.display = 'flex';
-    }
-
-    function closePackageModal() {
-        const modal = document.getElementById('packageModal');
-        if (modal) modal.style.display = 'none';
-        currentPackageItems = [];
-    }
-
-    function populatePackageProductDropdown() {
-        const select = document.getElementById('pkgProductSelect');
-        if (!select) return;
-        select.innerHTML = '<option value="">-- انتخاب محصول از انبار --</option>' + 
-            adminProductsCatalog.map(p => `
-                <option value="${p.id}">${p.name} (قیمت: ${Number(p.price || 0).toLocaleString('fa-IR')} ت)</option>
-            `).join('');
-    }
-
-    function addSelectedItemToPackage() {
-        const select = document.getElementById('pkgProductSelect');
-        const qtyInput = document.getElementById('pkgProductQty');
-        if (!select || !select.value) {
-            alert('لطفاً یک محصول را انتخاب کنید.');
-            return;
-        }
-        const pid = select.value;
-        const qty = Math.max(1, Number(qtyInput?.value) || 1);
-        const prod = adminProductsCatalog.find(p => String(p.id) === String(pid));
-        if (!prod) return;
-
-        const existing = currentPackageItems.find(i => String(i.productId) === String(pid));
-        if (existing) {
-            existing.qty += qty;
-            existing.total = existing.qty * (Number(prod.price) || 0);
-        } else {
-            currentPackageItems.push({
-                productId: String(prod.id),
-                name: prod.name,
-                price: Number(prod.price) || 0,
-                qty: qty,
-                total: qty * (Number(prod.price) || 0)
-            });
-        }
-
-        renderPackageSelectedItems();
-        calculatePackageDiscountLive();
-        if (qtyInput) qtyInput.value = '1';
-        select.value = '';
-    }
-
-    function changePackageItemQty(idx, delta) {
-        if (!currentPackageItems[idx]) return;
-        currentPackageItems[idx].qty += delta;
-        if (currentPackageItems[idx].qty <= 0) {
-            currentPackageItems.splice(idx, 1);
-        } else {
-            currentPackageItems[idx].total = currentPackageItems[idx].qty * (Number(currentPackageItems[idx].price) || 0);
-        }
-        renderPackageSelectedItems();
-        calculatePackageDiscountLive();
-    }
-
-    function removePackageItem(idx) {
-        currentPackageItems.splice(idx, 1);
-        renderPackageSelectedItems();
-        calculatePackageDiscountLive();
-    }
-
-    function renderPackageSelectedItems() {
-        const tbody = document.getElementById('pkgItemsTableBody');
-        if (!tbody) return;
-
-        if (currentPackageItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:18px; color:#94a3b8;">هنوز کالایی به این پکیج اضافه نشده است.</td></tr>';
-            const origInput = document.getElementById('pkgOriginalPrice');
-            if (origInput) origInput.value = '0';
-            return;
-        }
-
-        let sumOriginal = 0;
-        tbody.innerHTML = currentPackageItems.map((item, idx) => {
-            const itemTotal = (Number(item.price) || 0) * (Number(item.qty) || 1);
-            sumOriginal += itemTotal;
-            return `
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:8px 10px; color:#64748b;">${idx + 1}</td>
-                    <td style="padding:8px 10px; font-weight:bold; color:#1e293b;">${item.name}</td>
-                    <td style="padding:8px 10px; color:#475569;">${Number(item.price || 0).toLocaleString('fa-IR')} ت</td>
-                    <td style="padding:8px 10px; text-align:center;">
-                        <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
-                            <button type="button" onclick="changePackageItemQty(${idx}, -1)" style="width:24px; height:24px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:bold; cursor:pointer;">-</button>
-                            <span style="font-weight:bold; width:20px; text-align:center;">${item.qty}</span>
-                            <button type="button" onclick="changePackageItemQty(${idx}, 1)" style="width:24px; height:24px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:bold; cursor:pointer;">+</button>
-                        </div>
-                    </td>
-                    <td style="padding:8px 10px; font-weight:bold; color:#0f172a;">${itemTotal.toLocaleString('fa-IR')} ت</td>
-                    <td style="padding:8px 10px; text-align:center;">
-                        <button type="button" onclick="removePackageItem(${idx})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.9rem;">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        const origInput = document.getElementById('pkgOriginalPrice');
-        if (origInput) origInput.value = sumOriginal;
-    }
-
-    function calculatePackageDiscountLive() {
-        const origInput = document.getElementById('pkgOriginalPrice');
-        const pkgPriceInput = document.getElementById('pkgPackagePrice');
-        const summaryBox = document.getElementById('pkgDiscountSummaryBox');
-
-        const original = Number(origInput?.value) || 0;
-        const pkgPrice = Number(pkgPriceInput?.value) || 0;
-
-        if (original > 0 && pkgPrice > 0) {
-            const diff = original - pkgPrice;
-            const pct = Math.round((diff / original) * 100);
-            if (diff > 0) {
-                if (summaryBox) {
-                    summaryBox.style.background = '#dcfce7';
-                    summaryBox.style.color = '#166534';
-                    summaryBox.innerText = diff.toLocaleString('fa-IR') + ' تومان تخفیف (' + pct + '٪)';
-                }
-            } else if (diff === 0) {
-                if (summaryBox) {
-                    summaryBox.style.background = '#f1f5f9';
-                    summaryBox.style.color = '#475569';
-                    summaryBox.innerText = 'بدون تخفیف (قیمت برابر)';
-                }
-            } else {
-                if (summaryBox) {
-                    summaryBox.style.background = '#fee2e2';
-                    summaryBox.style.color = '#991b1b';
-                    summaryBox.innerText = 'قیمت پکیج بیشتر از اقلام است!';
-                }
-            }
-        } else {
-            if (summaryBox) {
-                summaryBox.style.background = '#f1f5f9';
-                summaryBox.style.color = '#475569';
-                summaryBox.innerText = '۰ تومان تخفیف (۰٪)';
-            }
-        }
-    }
-
-    async function savePackageSubmitForm(e) {
-        if (e) e.preventDefault();
-        const editId = document.getElementById('pkgEditId')?.value || '';
-        const title = (document.getElementById('pkgTitle')?.value || '').trim();
-        const subtitle = (document.getElementById('pkgSubtitle')?.value || '').trim();
-        const badge = (document.getElementById('pkgBadge')?.value || '').trim();
-        const badgeColor = document.getElementById('pkgBadgeColor')?.value || '#ef4444';
-        const originalPrice = Number(document.getElementById('pkgOriginalPrice')?.value) || 0;
-        const packagePrice = Number(document.getElementById('pkgPackagePrice')?.value) || 0;
-        const bonusItem = (document.getElementById('pkgBonusItem')?.value || '').trim();
-        const stock = Number(document.getElementById('pkgStock')?.value) || 50;
-        const description = (document.getElementById('pkgDescription')?.value || '').trim();
-        const isActive = document.getElementById('pkgIsActive')?.checked !== false;
-
-        if (!title) {
-            alert('لطفاً عنوان پکیج را وارد کنید.');
-            return;
-        }
-        if (currentPackageItems.length === 0) {
-            alert('حداقل ۱ محصول باید در پکیج قرار گیرد.');
-            return;
-        }
-        if (!packagePrice || packagePrice <= 0) {
-            alert('لطفاً قیمت ویژه پکیج را مشخص کنید.');
-            return;
-        }
-
-        const discountAmount = Math.max(0, originalPrice - packagePrice);
-        const discountPercent = originalPrice > 0 ? Math.round((discountAmount / originalPrice) * 100) : 0;
-
-        const payload = {
-            id: editId || undefined,
-            title,
-            subtitle,
-            badge,
-            badgeColor,
-            originalPrice,
-            packagePrice,
-            discountPercent,
-            bonusItem,
-            stock,
-            description,
-            isActive,
-            items: currentPackageItems
-        };
-
-        const btn = document.getElementById('btnSavePackageSubmit');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...'; }
-
-        try {
-            const res = await api('/api/admin/packages', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if (data.success) {
-                closePackageModal();
-                await loadAdminPackages(true);
-                alert('✅ پکیج با موفقیت ذخیره و در فروشگاه اعمال گردید.');
-            } else {
-                alert('خطا در ذخیره پکیج: ' + (data.message || 'نامشخص'));
-            }
-        } catch (err) {
-            alert('خطای ارتباط با سرور: ' + err.message);
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> ذخیره و انتشار پکیج'; }
-        }
-    }
-
-    async function applySmartPackageTemplate(templateIdx) {
-        await ensureProductsCatalogLoaded();
-        openPackageModal();
-
-        if (templateIdx === 0) {
-            // Home Cleaning
-            document.getElementById('pkgTitle').value = 'پکیج کامل درخشش و نظافت منزل';
-            document.getElementById('pkgSubtitle').value = 'مجموعه پرمصرف مایعات ظرف، دست و سطوح با کیفیت صادراتی';
-            document.getElementById('pkgBadge').value = 'پرفروش‌ترین';
-            document.getElementById('pkgBadgeColor').value = '#0284c7';
-            document.getElementById('pkgBonusItem').value = 'یک عدد اسکاچ نانو رایگان';
-            document.getElementById('pkgDescription').value = 'پکیج عالی برای مصرف روزمره خانگی با ۱۵ درصد تخفیف ویژه نسبت به خرید تکی اقلام.';
-
-            currentPackageItems = [];
-            const p1 = adminProductsCatalog.find(p => p.name && p.name.includes('مایع ظرف'));
-            const p2 = adminProductsCatalog.find(p => p.name && p.name.includes('مایع دست') && !p.name.includes('10'));
-            const p3 = adminProductsCatalog.find(p => p.name && p.name.includes('چندمنظوره'));
-            
-            if (p1) currentPackageItems.push({ productId: String(p1.id), name: p1.name, price: Number(p1.price) || 0, qty: 2, total: (Number(p1.price) || 0) * 2 });
-            if (p2) currentPackageItems.push({ productId: String(p2.id), name: p2.name, price: Number(p2.price) || 0, qty: 2, total: (Number(p2.price) || 0) * 2 });
-            if (p3) currentPackageItems.push({ productId: String(p3.id), name: p3.name, price: Number(p3.price) || 0, qty: 2, total: (Number(p3.price) || 0) * 2 });
-
-        } else if (templateIdx === 1) {
-            // Bulk 10L Commercial
-            document.getElementById('pkgTitle').value = 'پکیج سوپر گالن ۱۰ لیتری به صرفه (سازمانی و خانگی)';
-            document.getElementById('pkgSubtitle').value = 'گالن ۱۰ لیتری مایع دستشویی به همراه ۴ عدد مایع ظرف ۷۵۰ گرمی';
-            document.getElementById('pkgBadge').value = 'حداکثر تخفیف';
-            document.getElementById('pkgBadgeColor').value = '#059669';
-            document.getElementById('pkgBonusItem').value = 'ارسال کاملاً رایگان + هدیه ویژه';
-            document.getElementById('pkgDescription').value = 'حداکثر صرفه‌جویی اقتصادی برای شرکت‌ها، تالارها، رستوران‌ها و مصارف بالای خانگی.';
-
-            currentPackageItems = [];
-            const p10 = adminProductsCatalog.find(p => p.name && p.name.includes('10 لیتری'));
-            const pDish = adminProductsCatalog.find(p => p.name && p.name.includes('مایع ظرف'));
-            
-            if (p10) currentPackageItems.push({ productId: String(p10.id), name: p10.name, price: Number(p10.price) || 0, qty: 1, total: (Number(p10.price) || 0) * 1 });
-            if (pDish) currentPackageItems.push({ productId: String(pDish.id), name: pDish.name, price: Number(pDish.price) || 0, qty: 4, total: (Number(pDish.price) || 0) * 4 });
-
-        } else if (templateIdx === 2) {
-            // Hand Care & Creamy
-            document.getElementById('pkgTitle').value = 'پکیج مراقبت پوست و مایعات بهداشتی معطر';
-            document.getElementById('pkgSubtitle').value = 'مایع دست کرمی نرم‌کننده ۱ لیتری + مایعات معطر بهداشتی';
-            document.getElementById('pkgBadge').value = 'محبوب خانواده‌ها';
-            document.getElementById('pkgBadgeColor').value = '#db2777';
-            document.getElementById('pkgBonusItem').value = 'صابون گلیسیرینه بهداشتی';
-            document.getElementById('pkgDescription').value = 'فرمولاسیون لطیف حاوی نرم‌کننده جهت حفظ رطوبت پوست دست.';
-
-            currentPackageItems = [];
-            const pCream = adminProductsCatalog.find(p => p.name && p.name.includes('کرمی'));
-            const pHand = adminProductsCatalog.find(p => p.name && p.name.includes('مایع دست') && !p.name.includes('10') && !p.name.includes('کرمی'));
-            
-            if (pCream) currentPackageItems.push({ productId: String(pCream.id), name: pCream.name, price: Number(pCream.price) || 0, qty: 2, total: (Number(pCream.price) || 0) * 2 });
-            if (pHand) currentPackageItems.push({ productId: String(pHand.id), name: pHand.name, price: Number(pHand.price) || 0, qty: 3, total: (Number(pHand.price) || 0) * 3 });
-        }
-
-        renderPackageSelectedItems();
-        const orig = Number(document.getElementById('pkgOriginalPrice')?.value) || 0;
-        if (orig > 0) {
-            document.getElementById('pkgPackagePrice').value = Math.round((orig * 0.86) / 1000) * 1000;
-        }
-        calculatePackageDiscountLive();
-    }
-
 </script>
 
     <!-- Purchase Invoice Printable Modal -->
@@ -11392,136 +11225,159 @@
     </div>
 
 
-    <!-- Package Builder & Editor Modal -->
-    <div class="modal-overlay" id="packageModal" style="display:none;" onclick="if(event.target.id==='packageModal') closePackageModal();">
-        <div class="modal-card" style="background:#ffffff; border-radius:20px; max-width:820px; width:100%; max-height:92vh; overflow-y:auto; padding:24px; box-shadow:0 25px 60px rgba(0,0,0,0.25); position:relative;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid var(--border); padding-bottom:12px;">
-                <h3 style="margin:0; font-size:1.15rem; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-boxes-packing" style="color:#db2777;"></i> <span id="packageModalTitle">ایجاد پکیج اقتصادی جدید</span>
-                </h3>
-                <button type="button" onclick="closePackageModal()" style="background:none; border:none; font-size:1.2rem; color:#94a3b8; cursor:pointer;">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+<!-- Package Builder & Editor Modal -->
+<div id="packageModal" class="modal-overlay" style="display:none;" onclick="if(event.target.id==='packageModal') closePackageModal();">
+    <div class="modal-card" style="background:white; border-radius:16px; max-width:850px; width:100%; max-height:92vh; overflow-y:auto; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.25);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+            <h3 style="font-size:1.15rem; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-box-open" style="color:#059669;"></i> <span id="packageModalTitleText">ایجاد پکیج جدید</span>
+            </h3>
+            <button onclick="closePackageModal()" style="background:none; border:none; font-size:1.3rem; cursor:pointer; color:#64748b;">&times;</button>
+        </div>
+
+        <form onsubmit="savePackageForm(event)" id="packageForm">
+            <input type="hidden" id="pkgEditId" value="">
+
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-bottom:16px;">
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                        عنوان پکیج: <span style="color:#ef4444;">*</span>
+                    </label>
+                    <input type="text" id="pkgTitleInput" class="form-control" placeholder="مثال: پکیج طلایی شستشو و نظافت رافونه" required style="font-size:0.92rem;">
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                        برچسب (Badge):
+                    </label>
+                    <input type="text" id="pkgBadgeInput" class="form-control" placeholder="مثال: اقتصادی، پرفروش، ویژه عید" value="ویژه" style="font-size:0.88rem;">
+                </div>
             </div>
 
-            <form onsubmit="savePackageSubmitForm(event)" id="packageForm">
-                <input type="hidden" id="pkgEditId" value="">
-                
-                <div style="display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:14px;">
-                    <div class="form-group">
-                        <label for="pkgTitle" style="font-weight:bold; font-size:0.85rem;">عنوان پکیج *</label>
-                        <input type="text" id="pkgTitle" class="form-control" placeholder="مثال: پکیج اقتصادی نظافت منزل ۴ عددی" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="pkgBadge" style="font-weight:bold; font-size:0.85rem;">نشان ویژه (Badge)</label>
-                        <div style="display:flex; gap:6px;">
-                            <input type="text" id="pkgBadge" class="form-control" placeholder="مثال: پرفروش‌ترین" value="تخفیف ویژه" style="flex:1;">
-                            <input type="color" id="pkgBadgeColor" value="#ef4444" style="width:38px; height:38px; padding:2px; border:1px solid #cbd5e1; border-radius:8px; cursor:pointer;">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-bottom:14px;">
-                    <label for="pkgSubtitle" style="font-weight:bold; font-size:0.85rem;">زیرعنوان یا توضیح کوتاه</label>
-                    <input type="text" id="pkgSubtitle" class="form-control" placeholder="شامل اقلام پرمصرف شوینده با کیفیت تضمینی...">
-                </div>
-
-                <!-- Product Selection Box -->
-                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:18px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                        <strong style="font-size:0.9rem; color:#1e293b;"><i class="fa-solid fa-cart-plus" style="color:#0284c7;"></i> انتخاب اقلام تشکیل‌دهنده پکیج</strong>
-                        <span style="font-size:0.75rem; color:#64748b;">حداقل ۱ کالا انتخاب کنید</span>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:10px; margin-bottom:12px; align-items:center;">
-                        <div style="position:relative;">
-                            <select id="pkgProductSelect" class="form-control" style="font-size:0.85rem;">
-                                <option value="">-- انتخاب محصول از انبار --</option>
-                            </select>
-                        </div>
-                        <div>
-                            <input type="number" id="pkgProductQty" class="form-control" min="1" value="1" placeholder="تعداد" style="font-size:0.85rem; text-align:center;">
-                        </div>
-                        <button type="button" class="btn btn-primary" onclick="addSelectedItemToPackage()" style="background:#0284c7; border-color:#0284c7; padding:8px 14px; font-size:0.85rem;">
-                            <i class="fa-solid fa-plus"></i> افزودن
-                        </button>
-                    </div>
-
-                    <!-- Selected items table inside package -->
-                    <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; overflow:hidden;">
-                        <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
-                            <thead>
-                                <tr style="background:#f1f5f9; border-bottom:1px solid #cbd5e1; text-align:right;">
-                                    <th style="padding:8px 10px; width:40px;">#</th>
-                                    <th style="padding:8px 10px;">شرح کالا</th>
-                                    <th style="padding:8px 10px; width:110px;">قیمت واحد</th>
-                                    <th style="padding:8px 10px; width:100px; text-align:center;">تعداد</th>
-                                    <th style="padding:8px 10px; width:120px;">مجموع</th>
-                                    <th style="padding:8px 10px; width:40px; text-align:center;">حذف</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pkgItemsTableBody">
-                                <!-- Dynamic selected package items -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Pricing & Savings Calculator -->
-                <div style="background:#fdf2f8; border:1px solid #fbcfe8; border-radius:14px; padding:16px; margin-bottom:18px;">
-                    <h4 style="margin:0 0 12px 0; font-size:0.9rem; color:#831843; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-calculator"></i> محاسبه قیمت، تخفیف و اعتبار هدیه پکیج
-                    </h4>
-                    
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:12px;">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:0.8rem; color:#475569;">جمع قیمت واقعی اقلام (تومان):</label>
-                            <input type="number" id="pkgOriginalPrice" class="form-control" readonly style="background:#f1f5f9; font-weight:bold; color:#334155; font-size:0.95rem;">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="pkgPackagePrice" style="font-size:0.8rem; color:#831843; font-weight:bold;">قیمت ویژه پکیج (تومان) *:</label>
-                            <input type="number" id="pkgPackagePrice" class="form-control" step="1000" min="0" oninput="calculatePackageDiscountLive()" required style="font-weight:900; color:#db2777; font-size:1rem; border-color:#f472b6;">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:0.8rem; color:#15803d; font-weight:bold;">سود خریدار و درصد تخفیف:</label>
-                            <div id="pkgDiscountSummaryBox" style="padding:8px 10px; background:#dcfce7; border-radius:8px; color:#166534; font-weight:bold; font-size:0.85rem; height:38px; display:flex; align-items:center; justify-content:center;">
-                                ۰ تومان تخفیف (۰٪)
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="pkgBonusItem" style="font-size:0.8rem; color:#475569;">اشانتیون یا هدیه فیزیکی همراه پکیج (اختیاری):</label>
-                            <input type="text" id="pkgBonusItem" class="form-control" placeholder="مثال: یک عدد اسکاچ نانو اشانتیون" style="font-size:0.85rem;">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="pkgStock" style="font-size:0.8rem; color:#475569;">موجودی قابل فروش پکیج:</label>
-                            <input type="number" id="pkgStock" class="form-control" min="0" value="50" style="font-size:0.85rem; font-weight:bold;">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-bottom:18px;">
-                    <label for="pkgDescription" style="font-size:0.82rem; color:#334155;">توضیحات و مزایای پکیج (نمایش به مشتری):</label>
-                    <textarea id="pkgDescription" class="form-control" rows="2" placeholder="توضیحات تکمیلی پیرامون کیفیت کالاها، صرفه اقتصادی و ارسال..." style="font-size:0.85rem;"></textarea>
-                </div>
-
-                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:16px; flex-wrap:wrap; gap:10px;">
-                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.88rem;">
-                        <input type="checkbox" id="pkgIsActive" checked>
-                        <span>پکیج بلافاصله در فروشگاه فعال و قابل خرید باشد</span>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                        زیرعنوان یا شعار پکیج:
                     </label>
-                    <div style="display:flex; gap:10px;">
-                        <button type="button" class="btn btn-secondary" onclick="closePackageModal()">انصراف</button>
-                        <button type="submit" class="btn btn-primary" id="btnSavePackageSubmit" style="background:#db2777; border-color:#db2777; padding:9px 20px;">
-                            <i class="fa-solid fa-floppy-disk"></i> ذخیره و انتشار پکیج
+                    <input type="text" id="pkgSubtitleInput" class="form-control" placeholder="مثال: شامل ۴ قلم مایع ظرفشویی + جرم‌گیر + شیشه‌پاک‌کن" style="font-size:0.85rem;">
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                        آدرس تصویر پکیج (اختیاری):
+                    </label>
+                    <input type="text" id="pkgImageInput" class="form-control" placeholder="https://..." style="font-size:0.85rem;" dir="ltr">
+                </div>
+            </div>
+
+            <!-- Items Builder Container -->
+            <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:20px;">
+                <h4 style="margin:0 0 12px 0; font-size:0.95rem; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-list-check" style="color:var(--primary);"></i> اقلام تشکیل‌دهنده پکیج
+                </h4>
+
+                <!-- Selector row -->
+                <div style="display:grid; grid-template-columns: 3fr 1fr auto; gap:10px; align-items:end; margin-bottom:14px;">
+                    <div>
+                        <label style="font-size:0.8rem; color:#475569; display:block; margin-bottom:4px;">انتخاب محصول از انبار:</label>
+                        <select id="pkgItemProductSelect" class="form-control" style="font-size:0.85rem;">
+                            <option value="">-- انتخاب محصول --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:#475569; display:block; margin-bottom:4px;">تعداد:</label>
+                        <input type="number" id="pkgItemQtyInput" class="form-control" min="1" value="1" style="font-size:0.88rem; font-weight:bold;">
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-secondary" onclick="addPackageItemFromSelector()" style="padding:8px 14px; font-size:0.85rem; background:#0f766e; color:#ffffff; border-color:#0f766e;">
+                            <i class="fa-solid fa-plus"></i> افزودن قلم
                         </button>
                     </div>
                 </div>
-            </form>
-        </div>
+
+                <!-- Table of added items -->
+                <div style="max-height:220px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:10px; background:#ffffff;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.83rem; text-align:right;">
+                        <thead>
+                            <tr style="background:#f1f5f9; border-bottom:1px solid #cbd5e1;">
+                                <th style="padding:8px 10px;">ردیف</th>
+                                <th style="padding:8px 10px;">نام محصول</th>
+                                <th style="padding:8px 10px; text-align:center;">تعداد</th>
+                                <th style="padding:8px 10px; text-align:left;">قیمت مصرف‌کننده (تومان)</th>
+                                <th style="padding:8px 10px; text-align:left;">جمع جزء (تومان)</th>
+                                <th style="padding:8px 10px; text-align:center;">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pkgItemsTableBody">
+                            <tr>
+                                <td colspan="6" style="padding:20px; text-align:center; color:#94a3b8;">هنوز کالایی به پکیج اضافه نشده است.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Financials & Discounts -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:14px; margin-bottom:16px;">
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                        جمع قیمت اصلی اقلام (تومان):
+                    </label>
+                    <input type="text" id="pkgOriginalPriceDisplay" class="form-control" readonly style="background:#f1f5f9; font-weight:bold; font-size:0.95rem; color:#1e293b;" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#059669; margin-bottom:4px; display:block;">
+                        قیمت فروش پکیج (تومان): <span style="color:#ef4444;">*</span>
+                    </label>
+                    <input type="number" id="pkgPriceInput" class="form-control" required min="0" step="5000" style="font-size:0.95rem; font-weight:bold; color:#047857;" placeholder="مبلغ تخفیف‌دار پکیج" oninput="recalcPackageDiscount()">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                        درصد تخفیف پکیج:
+                    </label>
+                    <input type="text" id="pkgDiscountDisplay" class="form-control" readonly style="background:#f1f5f9; font-weight:bold; font-size:0.95rem; color:#dc2626;" value="0 ٪">
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:14px; margin-bottom:16px;">
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                        <i class="fa-solid fa-wallet" style="color:#0284c7;"></i> اعتبار هدیه کیف پول (تومان):
+                    </label>
+                    <input type="number" id="pkgGiftCreditInput" class="form-control" min="0" step="5000" value="0" style="font-size:0.88rem;">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                        <i class="fa-solid fa-gift" style="color:#d97706;"></i> محصول اشانتیون همراه (اختیاری):
+                    </label>
+                    <input type="text" id="pkgBonusItemInput" class="form-control" placeholder="مثلاً: + یک عدد مایع دست رافونه رایگان" style="font-size:0.85rem;">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                        موجودی پکیج:
+                    </label>
+                    <input type="number" id="pkgStockInput" class="form-control" min="0" value="50" style="font-size:0.88rem;">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:20px;">
+                <label style="font-weight:700; font-size:0.85rem; color:#334155; margin-bottom:4px; display:block;">
+                    توضیحات و مزایای پکیج برای مشتری:
+                </label>
+                <textarea id="pkgDescriptionInput" class="form-control" rows="2" placeholder="توضیحات پکیج..." style="font-size:0.85rem;"></textarea>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:16px;">
+                <button type="button" class="btn btn-secondary" onclick="closePackageModal()">انصراف</button>
+                <button type="submit" id="savePkgSubmitBtn" class="btn btn-primary" style="background:#059669; border-color:#059669; padding:10px 24px; font-weight:bold;">
+                    <i class="fa-solid fa-check"></i> ذخیره و انتشار پکیج
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
 </body>
 </html>

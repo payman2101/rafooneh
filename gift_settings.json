@@ -1,7 +1,7 @@
 {
   "isEnabled": true,
-  "defaultGiftPercent": 5,
-  "minOrderForGift": 0,
+  "defaultGiftPercent": 7,
+  "minOrderForGift": 600000,
   "firstOrderBonusPercent": 10,
   "isFirstOrderBonusEnabled": true,
   "allowCustomerGiftSelection": true,
@@ -35,6 +35,6 @@
   ],
   "allowedGiftProductIds": [],
   "maxGiftItemPrice": 0,
-  "customGiftNotice": "با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ سفارش را هدیه یا اعتبار کیف پول دریافت کنید!",
-  "updatedAt": "2026-08-28T06:38:35.289Z"
+  "customGiftNotice": "تست هدیه رافونه",
+  "updatedAt": "2026-08-28T16:44:48.443Z"
 }
