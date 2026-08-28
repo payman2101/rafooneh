@@ -4188,7 +4188,7 @@
                 cartTotalPrice.innerText = totalPrice.toLocaleString('fa-IR') + ' تومان';
                 
                 // Update 5% Gift allowance in floating cart bar
-                const giftAllowance = Math.round(totalPrice * 0.05);
+                const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(totalPrice) : Math.round(totalPrice * 0.05);
                 const giftsCount = typeof getSelectedGiftsCount === 'function' ? getSelectedGiftsCount() : 0;
                 const giftsVal = typeof getSelectedGiftsTotalValue === 'function' ? getSelectedGiftsTotalValue() : 0;
 
@@ -4535,7 +4535,7 @@
 
         function getRemainingGiftAllowance() {
             const itemsSubtotal = calculateCartTotal();
-            const orderGiftQuota = Math.round(itemsSubtotal * 0.05);
+            const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
             const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
             const totalAllowance = orderGiftQuota + walletCredit;
             const used = getSelectedGiftsTotalValue();
@@ -4552,7 +4552,7 @@
         function updateGiftModalTracker() {
             try {
                 const itemsSubtotal = calculateCartTotal();
-                const orderGiftQuota = Math.round(itemsSubtotal * 0.05);
+                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
                 const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
                 const totalAllowance = orderGiftQuota + walletCredit;
                 const used = getSelectedGiftsTotalValue();
@@ -4685,7 +4685,7 @@
             if (e && e.stopPropagation) e.stopPropagation();
             try {
                 const itemsSubtotal = calculateCartTotal();
-                const orderGiftQuota = Math.round(itemsSubtotal * 0.05);
+                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
                 const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
                 const totalAllowance = orderGiftQuota + walletCredit;
                 
@@ -4802,7 +4802,7 @@
             if (!container) return;
 
             const itemsSubtotal = calculateCartTotal();
-            const giftAllowance = Math.round(itemsSubtotal * 0.05);
+            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
             const remainingAllowance = getRemainingGiftAllowance();
             const query = (document.getElementById('giftSearchInput')?.value || '').trim().toLowerCase();
 
@@ -4963,7 +4963,7 @@
             }
 
             // 5% Gift Offer Box
-            const giftAllowance = Math.round(itemsSubtotal * 0.05);
+            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
             if (giftAllowance > 0) {
                 // If total used gift value exceeds quota due to cart changes, trim excess
                 let usedGiftVal = getSelectedGiftsTotalValue();
@@ -7116,6 +7116,228 @@
         setInterval(loadStoreDeliverySettings, 5000);
         setInterval(syncPendingLocalOrders, 10000);
         setInterval(checkForAppUpdates, 30000);
-    </script>
+    
+    // -------------------------------------------------------------
+    // DYNAMIC GIFTS & PACKAGES ENGINE
+    // -------------------------------------------------------------
+    let dynamicGiftSettings = {
+        isEnabled: true,
+        defaultGiftPercent: 5,
+        minOrderForGift: 0,
+        firstOrderBonusPercent: 10,
+        isFirstOrderBonusEnabled: true,
+        allowCustomerGiftSelection: true,
+        autoRollRemainingToWallet: true,
+        tieredGiftsEnabled: true,
+        tieredGifts: [
+            { id: 'tier-1', minAmount: 500000, maxAmount: 1500000, giftPercent: 5, title: 'پله نقره‌ای (۵٪ هدیه)', bonusDescription: '۵٪ اعتبار هدیه روی کل سبد خرید' },
+            { id: 'tier-2', minAmount: 1500000, maxAmount: 3000000, giftPercent: 7, title: 'پله طلایی (۷٪ هدیه)', bonusDescription: '۷٪ هدیه + ارسال رایگان' },
+            { id: 'tier-3', minAmount: 3000000, maxAmount: 0, giftPercent: 10, title: 'پله الماس VIP (۱۰٪ هدیه)', bonusDescription: '۱۰٪ هدیه + محصول اشانتیون ویژه' }
+        ],
+        customGiftNotice: ''
+    };
+    let storefrontPackagesList = [];
+
+    async function fetchDynamicGiftSettings() {
+        try {
+            const res = await fetch(getApiUrl('/api/settings/gifts?_=' + Date.now()), { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.settings) {
+                    dynamicGiftSettings = { ...dynamicGiftSettings, ...data.settings };
+                    if (typeof updateCartBar === 'function') updateCartBar();
+                }
+            }
+        } catch (e) {
+            console.log('Using default gifts logic:', e);
+        }
+    }
+
+    async function fetchStorefrontPackages() {
+        try {
+            const res = await fetch(getApiUrl('/api/packages?_=' + Date.now()), { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.packages)) {
+                    storefrontPackagesList = data.packages.filter(p => p.isActive !== false);
+                    renderStorefrontPackagesBanner();
+                }
+            }
+        } catch (e) {
+            console.log('Error loading storefront packages:', e);
+        }
+    }
+
+    function calculateOrderGiftAllowance(orderAmount, isFirstOrder = false) {
+        if (!dynamicGiftSettings || dynamicGiftSettings.isEnabled === false) return 0;
+        if (orderAmount < (dynamicGiftSettings.minOrderForGift || 0)) return 0;
+
+        let pct = Number(dynamicGiftSettings.defaultGiftPercent) || 5;
+
+        if (dynamicGiftSettings.tieredGiftsEnabled && Array.isArray(dynamicGiftSettings.tieredGifts) && dynamicGiftSettings.tieredGifts.length > 0) {
+            const sortedTiers = [...dynamicGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+            let matchedTier = null;
+            for (const tier of sortedTiers) {
+                const min = Number(tier.minAmount) || 0;
+                const max = Number(tier.maxAmount) || 0;
+                if (orderAmount >= min && (max === 0 || orderAmount <= max)) {
+                    matchedTier = tier;
+                }
+            }
+            if (matchedTier && matchedTier.giftPercent !== undefined) {
+                pct = Number(matchedTier.giftPercent);
+            }
+        }
+
+        if (isFirstOrder && dynamicGiftSettings.isFirstOrderBonusEnabled && dynamicGiftSettings.firstOrderBonusPercent) {
+            pct = Math.max(pct, Number(dynamicGiftSettings.firstOrderBonusPercent));
+        }
+
+        return Math.round(orderAmount * (pct / 100));
+    }
+
+    function getActiveGiftPercent(orderAmount, isFirstOrder = false) {
+        if (!dynamicGiftSettings || dynamicGiftSettings.isEnabled === false) return 0;
+        if (orderAmount < (dynamicGiftSettings.minOrderForGift || 0)) return 0;
+
+        let pct = Number(dynamicGiftSettings.defaultGiftPercent) || 5;
+
+        if (dynamicGiftSettings.tieredGiftsEnabled && Array.isArray(dynamicGiftSettings.tieredGifts) && dynamicGiftSettings.tieredGifts.length > 0) {
+            const sortedTiers = [...dynamicGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+            let matchedTier = null;
+            for (const tier of sortedTiers) {
+                const min = Number(tier.minAmount) || 0;
+                const max = Number(tier.maxAmount) || 0;
+                if (orderAmount >= min && (max === 0 || orderAmount <= max)) {
+                    matchedTier = tier;
+                }
+            }
+            if (matchedTier && matchedTier.giftPercent !== undefined) {
+                pct = Number(matchedTier.giftPercent);
+            }
+        }
+
+        if (isFirstOrder && dynamicGiftSettings.isFirstOrderBonusEnabled && dynamicGiftSettings.firstOrderBonusPercent) {
+            pct = Math.max(pct, Number(dynamicGiftSettings.firstOrderBonusPercent));
+        }
+
+        return pct;
+    }
+
+    function renderStorefrontPackagesBanner() {
+        let container = document.getElementById('storefrontPackagesSection');
+        if (!container) {
+            const prodSec = document.getElementById('productsSection') || document.querySelector('.products-grid')?.parentElement;
+            if (prodSec) {
+                container = document.createElement('div');
+                container.id = 'storefrontPackagesSection';
+                container.style.marginBottom = '24px';
+                prodSec.insertBefore(container, prodSec.firstChild);
+            }
+        }
+        if (!container || storefrontPackagesList.length === 0) {
+            if (container) container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = `
+            <div style="background: linear-gradient(135deg, #fdf2f8 0%, #fff1f2 50%, #eff6ff 100%); border: 1px solid #fbcfe8; border-radius: 20px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(219, 39, 119, 0.06);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="width:36px; height:36px; border-radius:12px; background:linear-gradient(135deg, #db2777, #e11d48); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; box-shadow:0 3px 10px rgba(219,39,119,0.3);">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </span>
+                        <div>
+                            <h3 style="margin:0; font-size:1.05rem; font-weight:800; color:#831843;">پکیج‌های اقتصادی و به صرفه</h3>
+                            <p style="margin:0; font-size:0.75rem; color:#9d174d;">مجموعه‌های آماده با تخفیف‌های استثنایی و اشانتیون ویژه</p>
+                        </div>
+                    </div>
+                    <span style="background:#fff; border:1px solid #fbcfe8; color:#db2777; padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:bold;">
+                        ${storefrontPackagesList.length} پکیج فعال
+                    </span>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+                    ${storefrontPackagesList.map(pkg => {
+                        const original = Number(pkg.originalPrice) || 0;
+                        const price = Number(pkg.packagePrice) || 0;
+                        const discount = Math.max(0, original - price);
+                        const discountPct = original > 0 ? Math.round((discount / original) * 100) : 0;
+                        const items = Array.isArray(pkg.items) ? pkg.items : [];
+
+                        return `
+                            <div style="background:#ffffff; border:1px solid #fbcfe8; border-radius:16px; padding:14px 16px; display:flex; flex-direction:column; justify-content:space-between; transition:transform .2s; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <span style="background:${pkg.badgeColor || '#059669'}; color:#fff; padding:2px 10px; border-radius:12px; font-size:0.7rem; font-weight:bold;">
+                                            ${pkg.badge || 'ویژه'}
+                                        </span>
+                                        ${discountPct > 0 ? `<span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:8px; font-size:0.7rem; font-weight:800;">${discountPct}٪ تخفیف</span>` : ''}
+                                    </div>
+                                    <h4 style="margin:0 0 4px 0; font-size:0.95rem; font-weight:bold; color:#0f172a;">${pkg.title}</h4>
+                                    ${pkg.subtitle ? `<p style="margin:0 0 8px 0; font-size:0.75rem; color:#64748b; line-height:1.4;">${pkg.subtitle}</p>` : ''}
+
+                                    <div style="background:#f8fafc; border-radius:10px; padding:8px 10px; margin-bottom:10px; font-size:0.75rem;">
+                                        <div style="color:#475569; font-weight:bold; margin-bottom:4px;">محتوای پکیج:</div>
+                                        <ul style="margin:0; padding-right:16px; color:#334155; display:flex; flex-direction:column; gap:3px;">
+                                            ${items.map(it => `<li>${it.qty}× ${it.name}</li>`).join('')}
+                                        </ul>
+                                    </div>
+
+                                    ${pkg.bonusItem ? `
+                                        <div style="background:#fdf2f8; border:1px dashed #fbcfe8; border-radius:8px; padding:4px 8px; font-size:0.72rem; color:#be185d; font-weight:bold; margin-bottom:10px; display:flex; align-items:center; gap:5px;">
+                                            <i class="fa-solid fa-gift"></i> هدیه پکیج: ${pkg.bonusItem}
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px;">
+                                        <div>
+                                            ${original > price ? `<div style="font-size:0.75rem; color:#94a3b8; text-decoration:line-through;">${original.toLocaleString('fa-IR')} ت</div>` : ''}
+                                            <div style="font-size:1.1rem; font-weight:900; color:#db2777;">${price.toLocaleString('fa-IR')} <span style="font-size:0.75rem; color:#64748b; font-weight:normal;">تومان</span></div>
+                                        </div>
+                                    </div>
+
+                                    <button type="button" onclick="addStorefrontPackageToCart('${pkg.id}')" style="width:100%; background:linear-gradient(135deg, #db2777, #be185d); color:#ffffff; border:none; padding:9px 12px; border-radius:12px; font-size:0.85rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 3px 10px rgba(219,39,119,0.25);">
+                                        <i class="fa-solid fa-cart-plus"></i> افزودن کل پکیج به سبد
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    function addStorefrontPackageToCart(pkgId) {
+        const pkg = storefrontPackagesList.find(p => String(p.id) === String(pkgId));
+        if (!pkg || !Array.isArray(pkg.items)) {
+            alert('پکیج مورد نظر یافت نشد.');
+            return;
+        }
+
+        let addedCount = 0;
+        pkg.items.forEach(item => {
+            const pid = item.productId;
+            const qty = Number(item.qty) || 1;
+            if (pid) {
+                cart[pid] = (cart[pid] || 0) + qty;
+                addedCount += qty;
+            }
+        });
+
+        if (typeof updateCartBar === 'function') updateCartBar();
+        if (typeof renderProducts === 'function') renderProducts();
+
+        if (typeof showGiftToast === 'function') {
+            showGiftToast(`🎁 پکیج «${pkg.title}» (${addedCount} کالا) به سبد خرید اضافه شد.`, 'fa-box-open', '#db2777');
+        } else {
+            alert(`🎁 پکیج «${pkg.title}» با موفقیت به سبد خرید افزوده شد.`);
+        }
+    }
+
+</script>
 </body>
 </html>

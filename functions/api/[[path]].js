@@ -93,6 +93,26 @@ let memoryBankSettings = {
   description: 'لطفاً پس از واریز مبلغ فاکتور، تصویر فیش واریزی یا کد پیگیری را در واتساپ ارسال فرمایید.'
 };
 
+let memoryGiftSettings = {
+  isEnabled: true,
+  defaultGiftPercent: 5,
+  minOrderForGift: 0,
+  firstOrderBonusPercent: 10,
+  isFirstOrderBonusEnabled: true,
+  allowCustomerGiftSelection: true,
+  autoRollRemainingToWallet: true,
+  tieredGiftsEnabled: true,
+  tieredGifts: [
+    { id: 'tier-1', minAmount: 500000, maxAmount: 1500000, giftPercent: 5, title: 'پله نقره‌ای (۵٪ هدیه)', bonusDescription: '۵٪ اعتبار هدیه روی کل سفارش' },
+    { id: 'tier-2', minAmount: 1500000, maxAmount: 3000000, giftPercent: 7, title: 'پله طلایی (۷٪ هدیه)', bonusDescription: '۷٪ هدیه + ارسال رایگان' },
+    { id: 'tier-3', minAmount: 3000000, maxAmount: 0, giftPercent: 10, title: 'پله الماس VIP (۱۰٪ هدیه)', bonusDescription: '۱۰٪ هدیه + محصول اشانتیون ویژه' }
+  ],
+  allowedGiftProductIds: [],
+  maxGiftItemPrice: 0,
+  customGiftNotice: 'با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ سفارش را هدیه یا اعتبار کیف پول دریافت کنید!',
+  updatedAt: new Date().toISOString()
+};
+let memoryPackages = [];
 let memoryDeliverySettings = {
   isExpressDeliveryEnabled: false,
   disabledNoticeMessage: 'در حال حاضر تحویل فوری ۲۴ ساعته موقتاً غیرفعال می‌باشد و سفارشات به صورت ارسال عادی (تحویل رایگان درب منزل) ثبت و ارسال می‌گردند.',
@@ -2069,7 +2089,56 @@ export async function onRequest(context) {
     return jsonRes({ success: true, settings: memoryDeliverySettings });
   }
 
-  // --- UPLOAD IMAGE ENDPOINT ---
+  // --- GIFT SETTINGS & PACKAGES ENDPOINTS ---
+  if (path === '/api/settings/gifts' || path === '/api/admin/settings/gifts') {
+    if (method === 'POST') {
+      memoryGiftSettings = { ...memoryGiftSettings, ...body, updatedAt: new Date().toISOString() };
+      return jsonRes({ success: true, settings: memoryGiftSettings, message: 'تنظیمات هدایا ذخیره شد' });
+    }
+    return jsonRes({ success: true, settings: memoryGiftSettings });
+  }
+
+  if (path === '/api/packages' || path === '/api/admin/packages') {
+    if (method === 'POST') {
+      const id = body.id || ('pkg_' + Date.now());
+      const now = new Date().toISOString();
+      const existingIdx = memoryPackages.findIndex(p => String(p.id) === String(id));
+      const pkgObj = {
+        id,
+        title: body.title || 'پکیج جدید',
+        subtitle: body.subtitle || '',
+        badge: body.badge || 'ویژه',
+        badgeColor: body.badgeColor || '#059669',
+        image: body.image || '',
+        isActive: body.isActive !== false,
+        items: Array.isArray(body.items) ? body.items : [],
+        originalPrice: Number(body.originalPrice) || 0,
+        packagePrice: Number(body.packagePrice) || 0,
+        discountPercent: Number(body.discountPercent) || 0,
+        giftCredit: Number(body.giftCredit) || 0,
+        bonusItem: body.bonusItem || '',
+        stock: Number(body.stock) >= 0 ? Number(body.stock) : 50,
+        description: body.description || '',
+        createdAt: existingIdx !== -1 ? (memoryPackages[existingIdx].createdAt || now) : now,
+        updatedAt: now
+      };
+      if (existingIdx !== -1) memoryPackages[existingIdx] = pkgObj;
+      else memoryPackages.unshift(pkgObj);
+      return jsonRes({ success: true, package: pkgObj, message: 'پکیج با موفقیت ذخیره شد' });
+    }
+    const onlyActive = path === '/api/packages';
+    return jsonRes({ success: true, packages: onlyActive ? memoryPackages.filter(p => p.isActive !== false) : memoryPackages });
+  }
+
+  if (path.startsWith('/api/admin/packages/')) {
+    const pkgId = path.replace('/api/admin/packages/', '');
+    if (method === 'DELETE') {
+      memoryPackages = memoryPackages.filter(p => String(p.id) !== String(pkgId));
+      return jsonRes({ success: true, message: 'پکیج حذف گردید' });
+    }
+  }
+
+    // --- UPLOAD IMAGE ENDPOINT ---
   if (path === '/api/upload-image' || path === '/api/admin/upload-image' || path === '/api/upload') {
     const imgUrl = body.image || body.url || 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg';
     return jsonRes({ success: true, url: imgUrl, message: 'تصویر با موفقیت آپلود شد.' });

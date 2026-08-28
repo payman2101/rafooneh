@@ -46,6 +46,14 @@ import {
   saveBankSettings,
   getDeliverySettings,
   saveDeliverySettings,
+  getGiftSettings,
+  saveGiftSettings,
+  calculateGiftQuotaForOrder,
+  getPackagesList,
+  getPackageById,
+  savePackage,
+  deletePackage,
+  togglePackageStatus,
   createNotification,
   listNotifications,
   markNotificationAsRead,
@@ -1250,6 +1258,101 @@ function handleUpdateDeliverySettings(req, res) {
 
 app.post('/api/admin/settings/delivery', authMiddleware, handleUpdateDeliverySettings);
 app.post('/api/settings/delivery', handleUpdateDeliverySettings);
+
+// ==========================================
+// Gift Settings & Rewards API
+// ==========================================
+app.get('/api/settings/gifts', (req, res) => {
+  try {
+    const settings = getGiftSettings();
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت تنظیمات هدایا' });
+  }
+});
+
+app.get('/api/admin/settings/gifts', authMiddleware, (req, res) => {
+  try {
+    const settings = getGiftSettings();
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت تنظیمات هدایا' });
+  }
+});
+
+function handleUpdateGiftSettings(req, res) {
+  try {
+    const body = req.body || {};
+    const updated = saveGiftSettings(body);
+    res.json({ success: true, settings: updated, message: 'تنظیمات هدایا با موفقیت ذخیره شد' });
+  } catch (err) {
+    console.error('Update gift settings error:', err);
+    res.status(500).json({ success: false, message: 'خطا در ذخیره تنظیمات هدایا: ' + err.message });
+  }
+}
+app.post('/api/admin/settings/gifts', authMiddleware, handleUpdateGiftSettings);
+app.post('/api/settings/gifts', handleUpdateGiftSettings);
+
+// ==========================================
+// Packages & Bundles API
+// ==========================================
+app.get('/api/packages', (req, res) => {
+  try {
+    const packages = getPackagesList(true);
+    res.json({ success: true, packages });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت لیست پکیج‌ها' });
+  }
+});
+
+app.get('/api/admin/packages', authMiddleware, (req, res) => {
+  try {
+    const packages = getPackagesList(false);
+    res.json({ success: true, packages });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت پکیج‌های مدیریت' });
+  }
+});
+
+app.get(['/api/packages/:id', '/api/admin/packages/:id'], (req, res) => {
+  try {
+    const pkg = getPackageById(req.params.id);
+    if (!pkg) return res.status(404).json({ success: false, message: 'پکیج یافت نشد' });
+    res.json({ success: true, package: pkg });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در دریافت مشخصات پکیج' });
+  }
+});
+
+app.post('/api/admin/packages', authMiddleware, (req, res) => {
+  try {
+    const pkgData = req.body || {};
+    const saved = savePackage(pkgData);
+    res.json({ success: true, package: saved, message: 'پکیج با موفقیت ذخیره شد' });
+  } catch (err) {
+    console.error('Save package error:', err);
+    res.status(500).json({ success: false, message: 'خطا در ذخیره پکیج: ' + err.message });
+  }
+});
+
+app.put('/api/admin/packages/:id/toggle', authMiddleware, (req, res) => {
+  try {
+    const toggled = togglePackageStatus(req.params.id);
+    if (!toggled) return res.status(404).json({ success: false, message: 'پکیج یافت نشد' });
+    res.json({ success: true, package: toggled, message: 'وضعیت پکیج بروزرسانی شد' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در تغییر وضعیت پکیج' });
+  }
+});
+
+app.delete('/api/admin/packages/:id', authMiddleware, (req, res) => {
+  try {
+    const result = deletePackage(req.params.id);
+    res.json({ success: true, message: 'پکیج با موفقیت حذف گردید' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطا در حذف پکیج: ' + err.message });
+  }
+});
 
 // API: Download SQLite database file
 app.get('/api/admin/database/download', authMiddleware, (req, res) => {

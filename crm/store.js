@@ -81,6 +81,10 @@ const ROOT_PRODUCTS_JSON = path.join(process.cwd(), 'products_data.json');
 const ROOT_PRODUCTS_JS = path.join(process.cwd(), 'products_data.js');
 const ROOT_BANK_SETTINGS_FILE = path.join(process.cwd(), 'bank_settings.json');
 const ROOT_DELIVERY_SETTINGS_FILE = path.join(process.cwd(), 'delivery_settings.json');
+const GIFT_SETTINGS_FILE = path.join(DATA_DIR, 'gift_settings.json');
+const ROOT_GIFT_SETTINGS_FILE = path.join(process.cwd(), 'gift_settings.json');
+const PACKAGES_FILE = path.join(DATA_DIR, 'packages.json');
+const ROOT_PACKAGES_FILE = path.join(process.cwd(), 'packages.json');
 const ROOT_NOTIFICATIONS_FILE = path.join(process.cwd(), 'notifications.json');
 
 let productsListCache = null;
@@ -91,6 +95,8 @@ let companyPaymentsListCache = null;
 let purchasesListCache = null;
 let bankSettingsCache = null;
 let deliverySettingsCache = null;
+let giftSettingsCache = null;
+let packagesListCache = null;
 
 let isFirestoreLoading = false;
 let firestoreLoadPromise = null;
@@ -729,7 +735,8 @@ export function createOrder(orderData) {
   const regularItems = items.filter(i => !i.isGift);
   const giftItems = items.filter(i => i.isGift);
   const itemsSubtotal = regularItems.reduce((sum, i) => sum + ((Number(i.price) || 0) * (Number(i.qty) || 1)), 0);
-  const standardGiftQuota = Math.round(itemsSubtotal * 0.05);
+  const isFirstOrder = (!existingIdx || existingIdx === -1) && (customerIdx !== -1 ? (!customers[customerIdx].orderCount || customers[customerIdx].orderCount === 0) : true);
+  const standardGiftQuota = calculateGiftQuotaForOrder(itemsSubtotal, isFirstOrder);
   const usedGiftValue = giftItems.reduce((sum, g) => sum + ((Number(g.realPrice) || Number(g.price) || 0) * (Number(g.qty) || 1)), 0);
   const walletUsed = Math.max(0, Number(orderData.walletUsed) || 0);
   const remainingGiftToCredit = Math.max(0, standardGiftQuota - usedGiftValue);
@@ -2256,6 +2263,195 @@ export function saveDeliverySettings(settings) {
 
   return updated;
 }
+
+
+// -------------------------------------------------------------
+// Gift Settings & Packages Store
+// -------------------------------------------------------------
+export const DEFAULT_GIFT_SETTINGS = {
+  isEnabled: true,
+  defaultGiftPercent: 5,
+  minOrderForGift: 0,
+  firstOrderBonusPercent: 10,
+  isFirstOrderBonusEnabled: true,
+  allowCustomerGiftSelection: true,
+  autoRollRemainingToWallet: true,
+  tieredGiftsEnabled: true,
+  tieredGifts: [
+    {
+      id: 'tier-1',
+      minAmount: 500000,
+      maxAmount: 1500000,
+      giftPercent: 5,
+      title: 'پله نقره‌ای (۵٪ هدیه)',
+      bonusDescription: '۵٪ اعتبار هدیه روی کل سبد خرید'
+    },
+    {
+      id: 'tier-2',
+      minAmount: 1500000,
+      maxAmount: 3000000,
+      giftPercent: 7,
+      title: 'پله طلایی (۷٪ هدیه)',
+      bonusDescription: '۷٪ هدیه + ارسال رایگان'
+    },
+    {
+      id: 'tier-3',
+      minAmount: 3000000,
+      maxAmount: 0,
+      giftPercent: 10,
+      title: 'پله الماس VIP (۱۰٪ هدیه)',
+      bonusDescription: '۱۰٪ هدیه + محصول اشانتیون ویژه'
+    }
+  ],
+  allowedGiftProductIds: [],
+  maxGiftItemPrice: 0,
+  customGiftNotice: 'با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ سفارش را هدیه یا اعتبار کیف پول دریافت کنید!',
+  updatedAt: new Date().toISOString()
+};
+
+export function getGiftSettings() {
+  if (giftSettingsCache) return giftSettingsCache;
+  try {
+    const loaded = readJson(GIFT_SETTINGS_FILE, null);
+    if (loaded && typeof loaded === 'object' && typeof loaded.defaultGiftPercent !== 'undefined') {
+      giftSettingsCache = { ...DEFAULT_GIFT_SETTINGS, ...loaded };
+      return giftSettingsCache;
+    }
+    const rootLoaded = readJson(ROOT_GIFT_SETTINGS_FILE, null);
+    if (rootLoaded && typeof rootLoaded === 'object' && typeof rootLoaded.defaultGiftPercent !== 'undefined') {
+      giftSettingsCache = { ...DEFAULT_GIFT_SETTINGS, ...rootLoaded };
+      return giftSettingsCache;
+    }
+  } catch (e) {
+    console.error('Error reading gift settings:', e);
+  }
+  giftSettingsCache = { ...DEFAULT_GIFT_SETTINGS };
+  return giftSettingsCache;
+}
+
+export function saveGiftSettings(settings) {
+  const current = getGiftSettings();
+  const cleanSettings = {};
+  for (const [k, v] of Object.entries(settings || {})) {
+    if (v !== undefined && v !== null) {
+      cleanSettings[k] = v;
+    }
+  }
+  const updated = {
+    ...current,
+    ...cleanSettings,
+    updatedAt: new Date().toISOString()
+  };
+  giftSettingsCache = updated;
+  try {
+    ensureDataDir();
+    writeJson(GIFT_SETTINGS_FILE, updated);
+    writeJson(ROOT_GIFT_SETTINGS_FILE, updated);
+  } catch (e) {
+    console.error('Error writing gift settings file:', e);
+  }
+  return updated;
+}
+
+export function calculateGiftQuotaForOrder(itemsSubtotal, isFirstOrder = false) {
+  const settings = getGiftSettings();
+  if (!settings.isEnabled) return 0;
+  if (settings.minOrderForGift && itemsSubtotal < Number(settings.minOrderForGift)) {
+    return 0;
+  }
+  if (isFirstOrder && settings.isFirstOrderBonusEnabled && Number(settings.firstOrderBonusPercent) > 0) {
+    return Math.round(itemsSubtotal * (Number(settings.firstOrderBonusPercent) / 100));
+  }
+  if (settings.tieredGiftsEnabled && Array.isArray(settings.tieredGifts) && settings.tieredGifts.length > 0) {
+    const sortedTiers = [...settings.tieredGifts].sort((a, b) => Number(b.minAmount) - Number(a.minAmount));
+    for (const tier of sortedTiers) {
+      const min = Number(tier.minAmount) || 0;
+      const max = Number(tier.maxAmount) || 0;
+      if (itemsSubtotal >= min && (max === 0 || itemsSubtotal <= max)) {
+        const pct = Number(tier.giftPercent) || Number(settings.defaultGiftPercent) || 5;
+        return Math.round(itemsSubtotal * (pct / 100));
+      }
+    }
+  }
+  const defPct = Number(settings.defaultGiftPercent) || 5;
+  return Math.round(itemsSubtotal * (defPct / 100));
+}
+
+export function getPackagesList(onlyActive = false) {
+  if (!packagesListCache) {
+    packagesListCache = readJson(PACKAGES_FILE, readJson(ROOT_PACKAGES_FILE, []));
+    if (!Array.isArray(packagesListCache)) packagesListCache = [];
+  }
+  if (onlyActive) {
+    return packagesListCache.filter(p => p.isActive !== false);
+  }
+  return packagesListCache;
+}
+
+export function getPackageById(id) {
+  const list = getPackagesList();
+  return list.find(p => String(p.id) === String(id)) || null;
+}
+
+export function savePackage(packageData) {
+  const list = getPackagesList();
+  const id = packageData.id || ('pkg_' + Date.now());
+  const now = new Date().toISOString();
+  const existingIdx = list.findIndex(p => String(p.id) === String(id));
+  
+  const pkgObj = {
+    id,
+    title: packageData.title || 'پکیج جدید',
+    subtitle: packageData.subtitle || '',
+    badge: packageData.badge || 'ویژه',
+    badgeColor: packageData.badgeColor || '#059669',
+    image: packageData.image || '',
+    isActive: packageData.isActive !== false,
+    items: Array.isArray(packageData.items) ? packageData.items : [],
+    originalPrice: Number(packageData.originalPrice) || 0,
+    packagePrice: Number(packageData.packagePrice) || 0,
+    discountPercent: Number(packageData.discountPercent) || 0,
+    giftCredit: Number(packageData.giftCredit) || 0,
+    bonusItem: packageData.bonusItem || '',
+    stock: Number(packageData.stock) >= 0 ? Number(packageData.stock) : 50,
+    description: packageData.description || '',
+    createdAt: existingIdx !== -1 ? (list[existingIdx].createdAt || now) : now,
+    updatedAt: now
+  };
+  
+  if (existingIdx !== -1) {
+    list[existingIdx] = pkgObj;
+  } else {
+    list.unshift(pkgObj);
+  }
+  
+  packagesListCache = list;
+  writeJson(PACKAGES_FILE, list);
+  try { writeJson(ROOT_PACKAGES_FILE, list); } catch (e) {}
+  return pkgObj;
+}
+
+export function deletePackage(id) {
+  let list = getPackagesList();
+  list = list.filter(p => String(p.id) !== String(id));
+  packagesListCache = list;
+  writeJson(PACKAGES_FILE, list);
+  try { writeJson(ROOT_PACKAGES_FILE, list); } catch (e) {}
+  return { success: true };
+}
+
+export function togglePackageStatus(id) {
+  const list = getPackagesList();
+  const pkg = list.find(p => String(p.id) === String(id));
+  if (!pkg) return null;
+  pkg.isActive = !pkg.isActive;
+  pkg.updatedAt = new Date().toISOString();
+  packagesListCache = list;
+  writeJson(PACKAGES_FILE, list);
+  try { writeJson(ROOT_PACKAGES_FILE, list); } catch (e) {}
+  return pkg;
+}
+
 
 export async function initDatabaseSync() {
   try {

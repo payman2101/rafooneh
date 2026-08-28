@@ -1,0 +1,40 @@
+{
+  "isEnabled": true,
+  "defaultGiftPercent": 5,
+  "minOrderForGift": 0,
+  "firstOrderBonusPercent": 10,
+  "isFirstOrderBonusEnabled": true,
+  "allowCustomerGiftSelection": true,
+  "autoRollRemainingToWallet": true,
+  "tieredGiftsEnabled": true,
+  "tieredGifts": [
+    {
+      "id": "tier-1",
+      "minAmount": 500000,
+      "maxAmount": 1500000,
+      "giftPercent": 5,
+      "title": "پله نقره‌ای (۵٪ هدیه)",
+      "bonusDescription": "۵٪ اعتبار هدیه روی کل سبد خرید"
+    },
+    {
+      "id": "tier-2",
+      "minAmount": 1500000,
+      "maxAmount": 3000000,
+      "giftPercent": 7,
+      "title": "پله طلایی (۷٪ هدیه)",
+      "bonusDescription": "۷٪ هدیه + ارسال رایگان"
+    },
+    {
+      "id": "tier-3",
+      "minAmount": 3000000,
+      "maxAmount": 0,
+      "giftPercent": 10,
+      "title": "پله الماس VIP (۱۰٪ هدیه)",
+      "bonusDescription": "۱۰٪ هدیه + محصول اشانتیون ویژه"
+    }
+  ],
+  "allowedGiftProductIds": [],
+  "maxGiftItemPrice": 0,
+  "customGiftNotice": "با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ سفارش را هدیه یا اعتبار کیف پول دریافت کنید!",
+  "updatedAt": "2026-08-28T06:38:35.289Z"
+}
