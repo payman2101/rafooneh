@@ -5934,6 +5934,7 @@
             tbody.innerHTML = '';
 
             let subtotal = 0;
+            let totalQty = 0;
             const items = order.items || [];
             items.forEach((item, index) => {
                 const qty = Number(item.qty) || 1;
@@ -5941,6 +5942,7 @@
                 const rowTotal = Number(item.total) || (unitPrice * qty);
 
                 subtotal += rowTotal;
+                totalQty += qty;
 
                 const isGift = item.isGift || (item.price === 0 && item.name && item.name.includes('هدیه'));
                 const nameDisplay = isGift 
@@ -5984,6 +5986,7 @@
             const totalRial = totalAmount * 10;
             const subtotalRial = subtotal * 10;
 
+            const totalQtyCell = document.getElementById('invTotalQtyCell'); if (totalQtyCell) { totalQtyCell.innerText = ; }
             document.getElementById('invSubtotal').innerHTML = `${subtotalRial.toLocaleString('fa-IR')} ریال <span style="font-size:0.8rem; color:#64748b; font-weight:normal; margin-right:4px; direction:rtl; unicode-bidi:isolate;">(${subtotal.toLocaleString('fa-IR')} تومان)</span>`;
             document.getElementById('invGrandTotal').innerText = totalRial.toLocaleString('fa-IR') + ' ریال';
             if (document.getElementById('invGrandTotalToman')) {
