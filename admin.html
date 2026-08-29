@@ -9373,15 +9373,25 @@
             });
 
             if (res && res.ok) {
-                showToast(editId ? 'فاکتور خرید با موفقیت ویرایش شد' : 'فاکتور خرید جدید با موفقیت ثبت گردید', 'success');
-                if (typeof loadPurchases === 'function') loadPurchases();
+                const successMsg = editId ? 'فاکتور خرید با موفقیت ویرایش شد' : 'فاکتور خرید جدید با موفقیت ثبت گردید';
+                if (typeof showToast === 'function') {
+                    showToast(successMsg, 'success');
+                } else {
+                    alert(successMsg);
+                }
+                if (typeof loadPurchases === 'function') await loadPurchases();
                 showSection('purchases');
             } else {
-                const err = await res.json().catch(() => ({}));
-                alert('خطا در ثبت فاکتور خرید: ' + (err.message || 'مشکل در برقراری ارتباط با سرور'));
+                let errText = 'مشکل در برقراری ارتباط با سرور';
+                try {
+                    const err = await res.json();
+                    if (err && err.message) errText = err.message;
+                } catch (e) {}
+                alert('خطا در ثبت فاکتور خرید: ' + errText);
             }
         } catch (e) {
-            alert('خطای سیستمی در ارتباط با سرور: ' + e.message);
+            console.error('Error submitting purchase:', e);
+            alert('خطا در ثبت فاکتور: ' + (e.message || 'مشکل در برقراری ارتباط با سرور'));
         }
     }
 
@@ -9898,6 +9908,46 @@
         } catch (e) {
             alert('خطا در پاکسازی اعلان‌ها');
         }
+    }
+
+    
+    function showToast(message, type = 'success') {
+        let container = document.getElementById('adminToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'adminToastContainer';
+            container.style.cssText = 'position:fixed; top:20px; left:20px; z-index:100000; display:flex; flex-direction:column; gap:10px; max-width:380px; pointer-events:none;';
+            document.body.appendChild(container);
+        }
+        const bgColors = {
+            success: '#059669',
+            error: '#dc2626',
+            warning: '#d97706',
+            info: '#0284c7'
+        };
+        const icons = {
+            success: 'fa-circle-check',
+            error: 'fa-triangle-exclamation',
+            warning: 'fa-circle-exclamation',
+            info: 'fa-circle-info'
+        };
+        const bg = bgColors[type] || bgColors.success;
+        const icon = icons[type] || icons.success;
+
+        const toast = document.createElement('div');
+        toast.style.cssText = `background:${bg}; color:#ffffff; padding:12px 18px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.25); pointer-events:auto; display:flex; gap:10px; align-items:center; cursor:pointer; direction:rtl; font-size:0.9rem; font-weight:500; transition:all 0.3s ease;`;
+        toast.innerHTML = `
+            <i class="fa-solid ${icon}" style="font-size:1.1rem; color:#fff;"></i>
+            <span style="flex:1;">${escapeHtml(message)}</span>
+            <button type="button" onclick="this.parentElement.remove()" style="background:transparent; border:none; color:#fff; cursor:pointer; font-size:1.1rem; opacity:0.8; padding:0 4px;">&times;</button>
+        `;
+        toast.onclick = () => toast.remove();
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            setTimeout(() => toast.remove(), 400);
+        }, 4000);
     }
 
     function showNotificationToast(notif) {
