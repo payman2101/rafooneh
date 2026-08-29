@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "id": "cust-1785921402703-e52d50",
+    "totalOrders": 1,
+    "updatedAt": "2026-08-09T12:16:19.065Z",
+    "phone": "09120045687",
+    "lastOrderAt": "2026-08-05T09:16:42.707Z",
+    "address": "411",
+    "createdAt": "2026-08-05T09:16:42.703Z",
+    "totalSpent": 1900000,
+    "name": "عرفان انوری",
+    "notes": ""
+  },
+  {
+    "id": "cust-1786979985391-6910a0",
+    "phone": "09121111111",
+    "address": "تهران",
+    "lastOrderAt": "2026-08-17T10:00:00.000Z",
+    "createdAt": "2026-08-17T15:19:45.391Z",
+    "totalOrders": 1,
+    "name": "تست",
+    "notes": "",
+    "totalSpent": 160000,
+    "updatedAt": "2026-08-17T15:19:45.398Z"
+  }
+]

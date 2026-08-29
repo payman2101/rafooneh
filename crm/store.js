@@ -142,8 +142,13 @@ export async function ensureFirestoreLoaded() {
 
       if (!customersListCache) {
         const fsCusts = await getCustomersFromFirestore();
-        if (Array.isArray(fsCusts)) {
+        if (Array.isArray(fsCusts) && fsCusts.length > 0) {
           customersListCache = fsCusts;
+          try {
+            ensureDataDir();
+            fs.writeFileSync(CUSTOMERS_FILE, JSON.stringify(fsCusts, null, 2), "utf8");
+            fs.writeFileSync(ROOT_CUSTOMERS_FILE, JSON.stringify(fsCusts, null, 2), "utf8");
+          } catch (e) {}
         } else {
           customersListCache = readJsonLocal(CUSTOMERS_FILE, []);
         }
@@ -1308,8 +1313,8 @@ export async function deleteProduct(id) {
 
 export function listCustomers(filters = {}) {
   let customers = readJson(CUSTOMERS_FILE, []);
+  if (!Array.isArray(customers)) customers = [];
 
-  // Deduplicate customers by normalized phone number to ensure no duplicate rows
   const custMap = new Map();
   customers.forEach(c => {
     const norm = normalizePhone(c.phone) || String(c.id);
@@ -1321,12 +1326,56 @@ export function listCustomers(filters = {}) {
       existing.totalSpent = Math.max(Number(existing.totalSpent || 0), Number(c.totalSpent || 0));
       if (!existing.notes && c.notes) existing.notes = c.notes;
       if (!existing.address && c.address) existing.address = c.address;
-      if (!existing.name && c.name) existing.name = c.name;
+      if ((!existing.name || existing.name === "مشتری" || existing.name === "مشتری عزیز") && c.name) existing.name = c.name;
       if (new Date(c.lastOrderAt || 0) > new Date(existing.lastOrderAt || 0)) {
         existing.lastOrderAt = c.lastOrderAt;
       }
     }
   });
+
+  // Also include and aggregate from orders
+  try {
+    const orders = listOrders();
+    if (Array.isArray(orders) && orders.length > 0) {
+      orders.forEach(o => {
+        if (!o) return;
+        const rawPhone = o.phone || o.customerPhone || o.mobile;
+        if (!rawPhone) return;
+        const norm = normalizePhone(rawPhone) || rawPhone;
+        const orderAmount = Number(o.totalAmount) || 0;
+        const orderDate = o.createdAt || o.date || new Date().toISOString();
+        const custName = o.customerName || o.name || o.fullName || "مشتری";
+        const custAddress = o.address || o.note || "";
+
+        if (!custMap.has(norm)) {
+          custMap.set(norm, {
+            id: o.customerId || ("cust-" + norm),
+            name: custName,
+            phone: norm,
+            address: custAddress,
+            walletBalance: 0,
+            giftCredit: 0,
+            totalOrders: 1,
+            totalSpent: orderAmount,
+            notes: "",
+            createdAt: orderDate,
+            updatedAt: orderDate,
+            lastOrderAt: orderDate
+          });
+        } else {
+          const existing = custMap.get(norm);
+          if ((!existing.name || existing.name === "مشتری" || existing.name === "مشتری عزیز") && custName && custName !== "مشتری") {
+            existing.name = custName;
+          }
+          if (!existing.address && custAddress) existing.address = custAddress;
+          if (new Date(orderDate) > new Date(existing.lastOrderAt || 0)) {
+            existing.lastOrderAt = orderDate;
+          }
+        }
+      });
+    }
+  } catch (e) {}
+
   let result = Array.from(custMap.values());
 
   if (filters.search) {

@@ -865,7 +865,8 @@ app.delete('/api/admin/company-payments/:id', authMiddleware, (req, res) => {
 });
 
 // CRM: Purchases / Purchase Invoices
-app.get('/api/admin/purchases', authMiddleware, (req, res) => {
+app.get('/api/admin/purchases', authMiddleware, async (req, res) => {
+  await ensureFirestoreLoaded().catch(() => {});
   const purchases = listPurchases();
   res.json({ success: true, purchases });
 });
@@ -921,7 +922,8 @@ app.get('/api/admin/alerts', authMiddleware, (req, res) => {
   res.json({ success: true, alerts: getAdminAlerts() });
 });
 
-app.get('/api/admin/orders', authMiddleware, (req, res) => {
+app.get('/api/admin/orders', authMiddleware, async (req, res) => {
+  await ensureFirestoreLoaded().catch(() => {});
   const { status, search, from, to } = req.query;
   const orders = listOrders({ status, search, from, to }).map(o => ({
     ...o,
@@ -986,7 +988,8 @@ app.delete('/api/admin/orders/:id', authMiddleware, (req, res) => {
   }
 });
 
-app.get('/api/admin/customers', authMiddleware, (req, res) => {
+app.get('/api/admin/customers', authMiddleware, async (req, res) => {
+  await ensureFirestoreLoaded().catch(() => {});
   const { search } = req.query;
   res.json({ success: true, customers: listCustomers({ search }) });
 });

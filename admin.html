@@ -7681,6 +7681,34 @@
         if (sumEl) sumEl.textContent = formatPrice(totalSum) + ' تومان';
     }
 
+    
+    function sortPurchasesTable(col) {
+        if (!window.purchasesTableState) {
+            window.purchasesTableState = { search: '', sortCol: 'purchaseDate', sortDir: 'desc', page: 1, pageSize: 15 };
+        }
+        if (window.purchasesTableState.sortCol === col) {
+            window.purchasesTableState.sortDir = window.purchasesTableState.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            window.purchasesTableState.sortCol = col;
+            window.purchasesTableState.sortDir = (col === 'purchaseDate' || col === 'totalAmount') ? 'desc' : 'asc';
+        }
+        const dir = window.purchasesTableState.sortDir === 'asc' ? 1 : -1;
+        if (Array.isArray(allPurchasesData)) {
+            allPurchasesData.sort((a, b) => {
+                let valA = a[col] || '';
+                let valB = b[col] || '';
+                if (col === 'totalAmount') {
+                    return ((Number(valA) || 0) - (Number(valB) || 0)) * dir;
+                } else if (col === 'purchaseDate') {
+                    return (new Date(valA || 0).getTime() - new Date(valB || 0).getTime()) * dir;
+                } else {
+                    return String(valA).localeCompare(String(valB)) * dir;
+                }
+            });
+        }
+        filterPurchasesTable();
+    }
+
     function filterPurchasesTable() {
         const query = (document.getElementById('purchaseSearchInput')?.value || '').trim().toLowerCase();
         if (!query) {
@@ -9112,7 +9140,7 @@
             calcPagePurchaseTotals();
         }
 
-        showSection('purchase-form');
+        showSection('new-purchase');
     }
 
     function addPagePurchaseItemRow(itemData = null) {
@@ -9365,6 +9393,1332 @@
             alert('خطای سیستمی در ارتباط با سرور: ' + e.message);
         }
     }
+
+    function openPurchaseFormFromInvoiceModal() {
+        closePurchaseInvoiceModal();
+        if (activeViewingPurchaseId) {
+            openPurchaseForm(activeViewingPurchaseId);
+        }
+    }
+
+    // ==========================================
+    // PAGE CUSTOMER ORDER FORM (ثبت و ویرایش سفارش مشتری)
+    // ==========================================
+    let activeEditingOrderId = null;
+
+    async function openOrderForm(orderId = null) {
+        await ensureProductsCatalogLoaded();
+
+        activeEditingOrderId = orderId;
+        const editIdEl = document.getElementById('orderFormEditId');
+        if (editIdEl) editIdEl.value = orderId || '';
+
+        const titleEl = document.getElementById('orderFormTitle');
+        const subtitleEl = document.getElementById('orderFormSubtitle');
+        const submitBtn = document.getElementById('pageOrderSubmitBtn');
+
+        if (orderId) {
+            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> ویرایش سفارش مشتری (کد: ${escapeHtml(orderId)})`;
+            if (subtitleEl) subtitleEl.textContent = 'تغییر اطلاعات مشتری، وضعیت سفارش، آدرس تحویل و ویرایش اقلام سفارش';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ذخیره تغییرات سفارش';
+
+            let order = (typeof allOrdersData !== 'undefined' ? allOrdersData : []).find(o => String(o.id) === String(orderId));
+            if (!order) {
+                try {
+                    const res = await api(`/api/admin/orders/${orderId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        order = data.order || data;
+                    }
+                } catch (e) {}
+            }
+            if (!order) {
+                try {
+                    const res = await api('/api/admin/orders');
+                    if (res.ok) {
+                        const data = await res.json();
+                        allOrdersData = data.orders || [];
+                        order = allOrdersData.find(o => String(o.id) === String(orderId));
+                    }
+                } catch (e) {}
+            }
+
+            if (order) {
+                document.getElementById('pageOrderCustomerName').value = order.customerName || order.name || order.fullName || '';
+                document.getElementById('pageOrderCustomerPhone').value = order.phone || order.customerPhone || order.mobile || '';
+                document.getElementById('pageOrderStatus').value = order.status || 'new';
+                document.getElementById('pageOrderPaymentMethod').value = order.paymentMethod || 'cod';
+                document.getElementById('pageOrderAddress').value = order.address || order.note || order.adminNotes || '';
+
+                if (order.createdAt) {
+                    try {
+                        const d = new Date(order.createdAt);
+                        if (!isNaN(d.getTime())) {
+                            const localIso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                            document.getElementById('pageOrderCreatedAt').value = localIso;
+                        }
+                    } catch (e) {}
+                }
+
+                const container = document.getElementById('pageOrderItemsContainer');
+                container.innerHTML = '';
+                const items = normalizeItemsArray(order.items);
+                if (items.length > 0) {
+                    items.forEach(rawIt => {
+                        const it = normalizeItemObject(rawIt);
+                        addPageOrderItemRow({
+                            productId: it.productId || it.id || it.code || it.name,
+                            qty: it.qty || it.quantity || 1,
+                            price: it.price || it.buyPrice || 0,
+                            name: it.name || it.title || ''
+                        }, false);
+                    });
+                } else {
+                    addPageOrderItemRow(null, true);
+                }
+            } else {
+                alert('اطلاعات سفارش مورد نظر یافت نشد.');
+                showSection('orders');
+                return;
+            }
+        } else {
+            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-cart-plus"></i> ثبت سفارش جدید مشتری`;
+            if (subtitleEl) subtitleEl.textContent = 'ثبت و ویرایش سفارش مشتری، انتخاب کالاها، محاسبه مجموع و به‌روزرسانی وضعیت';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ثبت نهایی و ذخیره سفارش';
+
+            document.getElementById('pageOrderCustomerName').value = '';
+            document.getElementById('pageOrderCustomerPhone').value = '';
+            document.getElementById('pageOrderStatus').value = 'confirmed';
+            document.getElementById('pageOrderPaymentMethod').value = 'cod';
+            document.getElementById('pageOrderAddress').value = '';
+
+            const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById('pageOrderCreatedAt').value = nowLocal;
+
+            const container = document.getElementById('pageOrderItemsContainer');
+            container.innerHTML = '';
+            addPageOrderItemRow();
+        }
+
+        calcPageOrderTotals();
+        showSection('new-order');
+    }
+
+    function addPageOrderItemRow(itemData = null, prepend = true) {
+        const container = document.getElementById('pageOrderItemsContainer');
+        if (!container) return;
+
+        const rowId = `pageOrderRow_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+        const div = document.createElement('div');
+        div.className = 'page-order-item-row';
+        div.id = rowId;
+        div.style.cssText = 'display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:14px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:12px;';
+
+        const selectedPId = itemData ? (itemData.productId || itemData.id || itemData.code || itemData.name || '') : '';
+
+        let optionsHtml = '<option value="">-- انتخاب کالا --</option>';
+        if (purchaseProductsCatalog && purchaseProductsCatalog.length > 0) {
+            purchaseProductsCatalog.forEach(p => {
+                const pId = p.id || p.code;
+                const sel = (String(selectedPId) === String(pId) || String(selectedPId) === String(p.name)) ? 'selected' : '';
+                const price = Number(p.price) || Number(p.consumerPrice) || 0;
+                const stock = Number(p.stock) || 0;
+                optionsHtml += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-price="${price}" ${sel}>${escapeHtml(p.name)} (کد: ${pId}) - قیمت: ${formatPrice(price)} تومان - موجودی: ${stock}</option>`;
+            });
+        }
+
+        div.innerHTML = `
+            <div style="flex:2.8; min-width:240px;">
+                <label style="font-size:0.78rem; color:#475569; font-weight:bold; display:block; margin-bottom:4px;">انتخاب کالا *</label>
+                <div class="prod-combobox-container"></div>
+                <select class="form-control prod-select" onchange="onPageOrderProductSelect(this)" style="display:none;">
+                    ${optionsHtml}
+                </select>
+            </div>
+            <div style="flex:0.8; min-width:75px;">
+                <label style="font-size:0.78rem; color:#475569; font-weight:bold; display:block; margin-bottom:4px;">تعداد</label>
+                <input type="number" min="1" value="${itemData ? itemData.qty : 1}" class="form-control page-order-prod-qty" oninput="calcPageOrderTotals()" style="font-size:0.9rem; font-weight:bold; text-align:center;">
+            </div>
+            <div style="flex:1.2; min-width:120px;">
+                <label style="font-size:0.78rem; color:#475569; font-weight:bold; display:block; margin-bottom:4px;">قیمت واحد (تومان)</label>
+                <input type="number" min="0" value="${itemData ? itemData.price : 0}" class="form-control page-order-prod-price" oninput="calcPageOrderTotals()" style="font-size:0.88rem; text-align:center; font-weight:bold;">
+            </div>
+            <div style="flex:1.2; min-width:120px;">
+                <label style="font-size:0.78rem; color:#64748b; font-weight:bold; display:block; margin-bottom:4px;">جمع ردیف (تومان)</label>
+                <input type="text" readonly class="form-control page-order-prod-total" value="0" style="font-size:0.88rem; font-weight:bold; background:#e2e8f0; text-align:center; color:#059669;">
+            </div>
+            <div style="margin-top:20px;">
+                <button type="button" class="btn btn-secondary" onclick="removePageOrderItemRow('${rowId}')" style="background:#fee2e2; color:#dc2626; border-color:#fca5a5; padding:7px 12px;" title="حذف کالا">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `;
+
+        if (prepend && container.firstChild) {
+            container.insertBefore(div, container.firstChild);
+        } else {
+            container.appendChild(div);
+        }
+        renderUnifiedProductCombobox(div, selectedPId, 'order');
+        calcPageOrderTotals();
+
+        if (prepend) {
+            setTimeout(() => {
+                const searchInput = div.querySelector('.prod-search-input');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 50);
+        }
+    }
+
+    function onPageOrderProductSelect(selectEl) {
+        const row = selectEl.closest('.page-order-item-row');
+        if (!row) return;
+
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (opt && opt.value) {
+            const price = Number(opt.getAttribute('data-price')) || 0;
+            const priceInput = row.querySelector('.page-order-prod-price');
+            if (priceInput && (Number(priceInput.value) <= 0 || !priceInput.value)) {
+                priceInput.value = price;
+            }
+        }
+        calcPageOrderTotals();
+    }
+
+    function removePageOrderItemRow(rowId) {
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.remove();
+            calcPageOrderTotals();
+        }
+    }
+
+    function calcPageOrderTotals() {
+        const rows = document.querySelectorAll('.page-order-item-row');
+        let grandTotal = 0;
+        let grandQty = 0;
+
+        rows.forEach(row => {
+            const qtyInput = row.querySelector('.page-order-prod-qty');
+            const priceInput = row.querySelector('.page-order-prod-price');
+            const totalInput = row.querySelector('.page-order-prod-total');
+
+            const qty = Math.max(1, Number(qtyInput?.value) || 0);
+            const price = Math.max(0, Number(priceInput?.value) || 0);
+            const lineTotal = qty * price;
+
+            if (totalInput) totalInput.value = formatPrice(lineTotal);
+            grandTotal += lineTotal;
+            grandQty += qty;
+        });
+
+        const totalQtyEl = document.getElementById('pageOrderGrandQty');
+        const grandTotalEl = document.getElementById('pageOrderGrandTotal');
+
+        if (totalQtyEl) totalQtyEl.textContent = grandQty.toString();
+        if (grandTotalEl) grandTotalEl.textContent = formatPrice(grandTotal) + ' تومان';
+    }
+
+    async function submitPageOrder() {
+        const editId = document.getElementById('orderFormEditId')?.value;
+        const name = document.getElementById('pageOrderCustomerName')?.value?.trim();
+        const phone = document.getElementById('pageOrderCustomerPhone')?.value?.trim();
+        const status = document.getElementById('pageOrderStatus')?.value || 'confirmed';
+        const paymentMethod = document.getElementById('pageOrderPaymentMethod')?.value || 'cod';
+        const address = document.getElementById('pageOrderAddress')?.value?.trim() || '';
+        const createdAt = document.getElementById('pageOrderCreatedAt')?.value || new Date().toISOString();
+
+        if (!name) {
+            alert('لطفاً نام مشتری را وارد کنید.');
+            return;
+        }
+        if (!phone) {
+            alert('لطفاً شماره همراه مشتری را وارد کنید.');
+            return;
+        }
+
+        const rows = document.querySelectorAll('.page-order-item-row');
+        const items = [];
+        let totalAmount = 0;
+
+        rows.forEach(row => {
+            const selectEl = row.querySelector('.prod-select');
+            const searchInput = row.querySelector('.prod-search-input');
+            const qtyInput = row.querySelector('.page-order-prod-qty');
+            const priceInput = row.querySelector('.page-order-prod-price');
+
+            let productId = selectEl?.value;
+            let title = '';
+
+            if (productId) {
+                const catalogItem = purchaseProductsCatalog.find(p => String(p.id || p.code) === String(productId));
+                if (catalogItem) title = catalogItem.name;
+            }
+
+            if (!title && searchInput?.value?.trim()) {
+                const typedVal = searchInput.value.trim();
+                title = typedVal.split('(کد:')[0].trim();
+                if (!productId) {
+                    const catalogItem = purchaseProductsCatalog.find(p => String(p.name).toLowerCase() === title.toLowerCase());
+                    if (catalogItem) productId = catalogItem.id || catalogItem.code;
+                    else productId = title;
+                }
+            }
+
+            const qty = Math.max(1, Number(qtyInput?.value) || 1);
+            const price = Math.max(0, Number(priceInput?.value) || 0);
+
+            if (productId || title) {
+                items.push({
+                    productId: productId || title,
+                    id: productId || title,
+                    title: title || 'کالا',
+                    name: title || 'کالا',
+                    qty,
+                    quantity: qty,
+                    price,
+                    buyPrice: Math.round(price * 0.7)
+                });
+                totalAmount += (qty * price);
+            }
+        });
+
+        if (items.length === 0) {
+            alert('لطفاً حداقل یک کالا به سفارش اضافه کنید.');
+            return;
+        }
+
+        const submitBtn = document.getElementById('pageOrderSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...';
+        }
+
+        try {
+            const endpoint = editId ? `/api/admin/orders/${editId}` : '/api/orders';
+            const method = editId ? 'PUT' : 'POST';
+
+            const payload = {
+                id: editId || undefined,
+                customerName: name,
+                customerPhone: phone,
+                phone,
+                items,
+                totalAmount,
+                status,
+                paymentMethod,
+                address,
+                createdAt,
+                source: 'مدیریت'
+            };
+
+            const res = await api(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                const data = await res.json().catch(() => ({}));
+                if (data.order) {
+                    saveLocalOrder(data.order);
+                } else if (editId) {
+                    saveLocalOrder({ id: editId, ...payload });
+                }
+                alert(editId ? 'سفارش با موفقیت ویرایش شد.' : 'سفارش جدید با موفقیت ثبت شد.');
+                showSection('orders');
+                loadOrders();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('خطا در ذخیره سفارش: ' + (err.message || err.error || 'خطای نا مشخص'));
+            }
+        } catch (e) {
+            alert('خطا در ارتباط با سرور: ' + e.message);
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ثبت نهایی و ذخیره سفارش';
+            }
+        }
+    }
+
+    function openOrderFormFromModal() {
+        closeOrderModal();
+        if (currentOrder && currentOrder.id) {
+            openOrderForm(currentOrder.id);
+        }
+    }
+
+    // ==========================================
+    // NOTIFICATION MANAGEMENT SYSTEM
+    // ==========================================
+    let lastKnownNotifCount = 0;
+    let cachedNotifications = [];
+    let notifPollingInterval = null;
+
+    function toggleAdminNotificationsModal() {
+        const modal = document.getElementById('adminNotificationsModal');
+        if (!modal) return;
+        if (modal.style.display === 'flex') {
+            closeAdminNotificationsModal();
+        } else {
+            modal.style.display = 'flex';
+            loadNotifications(true);
+        }
+    }
+
+    function closeAdminNotificationsModal() {
+        const modal = document.getElementById('adminNotificationsModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function loadNotifications(silently = true) {
+        try {
+            const res = await api('/api/admin/notifications');
+            if (res.ok) {
+                const data = await res.json();
+                const unread = data.unreadCount || 0;
+                const notifs = data.notifications || [];
+                cachedNotifications = notifs;
+
+                // Update badge in topbar and mobile tabs
+                const badge = document.getElementById('adminNotifBadge');
+                const badgeMobile = document.getElementById('adminNotifBadgeMobile');
+                const modalBadge = document.getElementById('adminNotifModalCountBadge');
+
+                const badgeText = unread.toLocaleString('fa-IR');
+                if (badge) {
+                    if (unread > 0) {
+                        badge.style.display = 'inline-block';
+                        badge.textContent = badgeText;
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                if (badgeMobile) {
+                    if (unread > 0) {
+                        badgeMobile.style.display = 'inline-block';
+                        badgeMobile.textContent = badgeText;
+                    } else {
+                        badgeMobile.style.display = 'none';
+                    }
+                }
+                if (modalBadge) {
+                    modalBadge.textContent = `${unread.toLocaleString('fa-IR')} جدید / ${notifs.length.toLocaleString('fa-IR')} کل`;
+                }
+
+                // If new notifications arrived and we were already initialized
+                if (unread > lastKnownNotifCount && lastKnownNotifCount >= 0 && !silently) {
+                    const latest = notifs[0];
+                    if (latest) {
+                        playNotificationSound();
+                        showNotificationToast(latest);
+                    }
+                }
+                lastKnownNotifCount = unread;
+                renderNotificationsList(notifs);
+            }
+        } catch (e) {
+            console.error('Error fetching notifications:', e);
+        }
+    }
+
+    function renderNotificationsList(notifs) {
+        const listEl = document.getElementById('adminNotifListContainer');
+        if (!listEl) return;
+        if (!notifs || notifs.length === 0) {
+            listEl.innerHTML = `
+                <div style="text-align:center; padding:35px 15px; color:var(--muted);">
+                    <i class="fa-solid fa-bell-slash fa-2x" style="color:#94a3b8; margin-bottom:10px;"></i>
+                    <p style="margin:0; font-size:0.9rem;">هیچ اعلانی در سیستم ثبت نشده است.</p>
+                </div>
+            `;
+            return;
+        }
+
+        listEl.innerHTML = notifs.map(n => {
+            const bg = n.isRead ? '#f8fafc' : '#ecfdf5';
+            const border = n.isRead ? '#e2e8f0' : '#a7f3d0';
+            const dotColor = n.isRead ? '#94a3b8' : '#059669';
+            return `
+                <div class="notif-item" style="background:${bg}; border:1px solid ${border}; border-radius:12px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start; position:relative; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.03);" onclick="handleNotificationClick('${n.id}', '${n.orderId || ''}')">
+                    <div style="width:10px; height:10px; border-radius:50%; background:${dotColor}; margin-top:6px; flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
+                            <strong style="font-size:0.92rem; color:#0f172a;">${escapeHtml(n.title || 'سفارش جدید')}</strong>
+                            <span style="font-size:0.75rem; color:#64748b;"><i class="fa-regular fa-clock"></i> ${formatDate(n.createdAt)}</span>
+                        </div>
+                        <div style="font-size:0.85rem; color:#334155; line-height:1.5;">${escapeHtml(n.message || '')}</div>
+                        ${n.orderId ? `
+                            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <button type="button" class="btn btn-primary" style="font-size:0.76rem; padding:4px 10px;" onclick="event.stopPropagation(); openOrder('${n.orderId}'); closeAdminNotificationsModal();">
+                                    <i class="fa-solid fa-eye"></i> بررسی جزئیات سفارش
+                                </button>
+                                <button type="button" class="btn btn-secondary" style="font-size:0.76rem; padding:4px 10px; background:#0d9488; color:#fff; border-color:#0d9488;" onclick="event.stopPropagation(); openInvoiceModalForOrder('${n.orderId}'); closeAdminNotificationsModal();">
+                                    <i class="fa-solid fa-file-invoice"></i> فاکتور و ارسال واتساپ
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function handleNotificationClick(notifId, orderId) {
+        try {
+            await api('/api/admin/notifications/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: notifId })
+            });
+            loadNotifications(true);
+        } catch (e) {}
+
+        if (orderId) {
+            closeAdminNotificationsModal();
+            openOrder(orderId);
+        }
+    }
+
+    async function markAllNotificationsRead() {
+        try {
+            await api('/api/admin/notifications/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ markAll: true })
+            });
+            loadNotifications(true);
+        } catch (e) {
+            alert('خطا در علامت‌گذاری اعلان‌ها');
+        }
+    }
+
+    async function clearAllNotificationsUI() {
+        if (!confirm('آیا از پاکسازی تمام اعلان‌ها اطمینان دارید؟')) return;
+        try {
+            await api('/api/admin/notifications/clear', {
+                method: 'POST'
+            });
+            loadNotifications(true);
+        } catch (e) {
+            alert('خطا در پاکسازی اعلان‌ها');
+        }
+    }
+
+    function showNotificationToast(notif) {
+        let container = document.getElementById('adminToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'adminToastContainer';
+            container.style.cssText = 'position:fixed; top:20px; left:20px; z-index:100000; display:flex; flex-direction:column; gap:10px; max-width:380px; pointer-events:none;';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.style.cssText = 'background:#0f766e; color:#ffffff; padding:14px 18px; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.28); pointer-events:auto; display:flex; gap:12px; align-items:flex-start; border:1px solid #14b8a6; cursor:pointer; direction:rtl;';
+        toast.onclick = () => {
+            if (notif.orderId) openOrder(notif.orderId);
+            toast.remove();
+        };
+        toast.innerHTML = `
+            <i class="fa-solid fa-bell" style="font-size:1.3rem; margin-top:2px; color:#5eead4;"></i>
+            <div style="flex:1;">
+                <strong style="display:block; font-size:0.95rem; margin-bottom:3px; color:#ffffff;">${escapeHtml(notif.title || 'سفارش جدید')}</strong>
+                <div style="font-size:0.84rem; opacity:0.95; line-height:1.5; color:#f0fdfa;">${escapeHtml(notif.message || '')}</div>
+                <div style="font-size:0.75rem; color:#99f6e4; margin-top:6px; font-weight:bold;"><i class="fa-solid fa-arrow-left"></i> کلیک برای مشاهده سفارش و صدور فاکتور</div>
+            </div>
+            <button type="button" onclick="event.stopPropagation(); this.parentElement.remove();" style="background:transparent; border:none; color:#fff; cursor:pointer; font-size:1.1rem; padding:0 4px;">&times;</button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.5s';
+            setTimeout(() => toast.remove(), 500);
+        }, 9000);
+    }
+
+    function playNotificationSound() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const now = ctx.currentTime;
+            const osc1 = ctx.createOscillator();
+            const osc2 = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, now); // D5
+            osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(880, now + 0.15);
+            osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.35); // D6
+
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc1.start(now);
+            osc1.stop(now + 0.6);
+            osc2.start(now + 0.15);
+            osc2.stop(now + 0.6);
+        } catch (e) {
+            // AudioContext might be blocked until user interaction
+        }
+    }
+
+    function startNotificationPolling() {
+        if (notifPollingInterval) clearInterval(notifPollingInterval);
+        // Poll every 12 seconds
+        notifPollingInterval = setInterval(() => {
+            const token = localStorage.getItem('crm_token');
+            if (token && document.getElementById('app').style.display !== 'none') {
+                loadNotifications(false);
+            }
+        }, 12000);
+    }
+
+    async function openInvoiceModalForOrder(orderId) {
+        try {
+            const res = await api(`/api/admin/orders/${orderId}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.order) {
+                    currentOrder = data.order;
+                    renderInvoice(data.order);
+                    const modal = document.getElementById('customerInvoiceModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+            }
+        } catch (e) {
+            console.error('Error opening invoice for order:', e);
+        }
+    }
+
+    
+    /* ==========================================================================
+       CUSTOMERS SECTION CHECKLIST & BATCH WHATSAPP MODAL
+       ========================================================================== */
+    var custSelectedCustomerIds = new Set();
+
+    function updateCustomersSelectionBadge() {
+        const count = custSelectedCustomerIds.size;
+        const badge = document.getElementById('custSectionSelectedCountBadge');
+        if (badge) badge.textContent = count.toLocaleString('fa-IR');
+
+        const selectAllCb = document.getElementById('custSelectAllCheckbox');
+        if (selectAllCb) {
+            const list = cachedCustomersList || [];
+            if (list.length === 0) {
+                selectAllCb.checked = false;
+            } else {
+                selectAllCb.checked = (count > 0 && count === list.length);
+            }
+        }
+    }
+
+    function toggleSingleCustomerSelection(custId, checked) {
+        if (checked) {
+            custSelectedCustomerIds.add(String(custId));
+        } else {
+            custSelectedCustomerIds.delete(String(custId));
+        }
+        updateCustomersSelectionBadge();
+    }
+
+    function toggleAllCustomersPageSelection(checked) {
+        const list = cachedCustomersList || [];
+        if (checked) {
+            list.forEach(c => custSelectedCustomerIds.add(String(c.id)));
+        } else {
+            list.forEach(c => custSelectedCustomerIds.delete(String(c.id)));
+        }
+        updateCustomersSelectionBadge();
+        renderCustomersTable(document.getElementById('customerSearch')?.value || '');
+    }
+
+    function openBatchWhatsappModalForCustomers() {
+        const modal = document.getElementById('batchWhatsappModal');
+        if (!modal) return;
+
+        // If no customer is currently selected, select all by default so user can quickly filter/uncheck
+        if (custSelectedCustomerIds.size === 0 && cachedCustomersList && cachedCustomersList.length > 0) {
+            cachedCustomersList.forEach(c => custSelectedCustomerIds.add(String(c.id)));
+            updateCustomersSelectionBadge();
+            renderCustomersTable();
+        }
+
+        const templateSelect = document.getElementById('batchWaTemplateSelect');
+        const selectedTplKey = templateSelect ? templateSelect.value : 'inactive60';
+        applyBatchWaModalTemplate(selectedTplKey);
+
+        renderBatchModalRecipientsList();
+        modal.style.display = 'flex';
+    }
+
+    function closeBatchWhatsappModal() {
+        const modal = document.getElementById('batchWhatsappModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function renderBatchModalRecipientsList(searchFilter = '') {
+        const container = document.getElementById('batchWaRecipientsListContainer');
+        const countEl = document.getElementById('batchWaModalSelectedCount');
+        if (!container) return;
+
+        const allCustomers = cachedCustomersList || [];
+        let displayList = allCustomers;
+        if (searchFilter && searchFilter.trim()) {
+            const q = searchFilter.trim().toLowerCase();
+            displayList = allCustomers.filter(c => 
+                (c.name && String(c.name).toLowerCase().includes(q)) || 
+                (c.phone && String(c.phone).includes(q))
+            );
+        }
+
+        const selectedCount = custSelectedCustomerIds.size;
+        if (countEl) {
+            countEl.textContent = `${selectedCount.toLocaleString('fa-IR')} مشتری انتخاب شده از ${allCustomers.length.toLocaleString('fa-IR')} کل اعضا`;
+        }
+
+        if (displayList.length === 0) {
+            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--muted); font-size:0.8rem; padding:12px;">مشتری یافت نشد.</div>';
+            return;
+        }
+
+        container.innerHTML = displayList.map(c => {
+            const isChecked = custSelectedCustomerIds.has(String(c.id));
+            return `
+                <label style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:${isChecked ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isChecked ? '#86efac' : '#e2e8f0'}; border-radius:6px; font-size:0.82rem; cursor:pointer; user-select:none; transition:all 0.15s;">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleBatchModalCustomerCheckbox('${c.id}', this.checked)" style="width:16px; height:16px; cursor:pointer; accent-color:#16a34a;">
+                    <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+                        <strong style="color:${isChecked ? '#166534' : 'var(--text)'};">${escapeHtml(c.name || 'مشتری')}</strong>
+                        <div dir="ltr" style="font-size:0.72rem; color:#64748b; font-family:monospace;">${escapeHtml(c.phone || '-')}</div>
+                    </div>
+                </label>
+            `;
+        }).join('');
+    }
+
+    function toggleBatchModalCustomerCheckbox(custId, checked) {
+        if (checked) {
+            custSelectedCustomerIds.add(String(custId));
+        } else {
+            custSelectedCustomerIds.delete(String(custId));
+        }
+        updateCustomersSelectionBadge();
+        renderBatchModalRecipientsList(document.getElementById('batchWaRecipientsFilterInput')?.value || '');
+        renderCustomersTable(document.getElementById('customerSearch')?.value || '');
+    }
+
+    function selectAllBatchModalRecipients(selectAll) {
+        const allCustomers = cachedCustomersList || [];
+        if (selectAll) {
+            allCustomers.forEach(c => custSelectedCustomerIds.add(String(c.id)));
+        } else {
+            custSelectedCustomerIds.clear();
+        }
+        updateCustomersSelectionBadge();
+        renderBatchModalRecipientsList(document.getElementById('batchWaRecipientsFilterInput')?.value || '');
+        renderCustomersTable(document.getElementById('customerSearch')?.value || '');
+    }
+
+    function applyBatchWaModalTemplate(templateKey) {
+        const tpl = WA_TEMPLATES[templateKey] || DEFAULT_WA_TEMPLATES[templateKey] || WA_TEMPLATES.custom;
+        const msgBox = document.getElementById('batchWaMessageText');
+        if (msgBox) {
+            msgBox.value = tpl ? tpl.text : '';
+        }
+    }
+
+    function insertBatchWaVariable(varName) {
+        const msgBox = document.getElementById('batchWaMessageText');
+        if (!msgBox) return;
+        const start = msgBox.selectionStart || msgBox.value.length;
+        const end = msgBox.selectionEnd || msgBox.value.length;
+        const text = msgBox.value;
+        msgBox.value = text.substring(0, start) + varName + text.substring(end);
+        msgBox.focus();
+    }
+
+    function onBatchWaMessageEdited() {
+        const templateDropdown = document.getElementById('batchWaTemplateSelect');
+        const templateKey = templateDropdown ? templateDropdown.value : 'custom';
+        const msgBox = document.getElementById('batchWaMessageText');
+        if (!msgBox) return;
+
+        if (!WA_TEMPLATES[templateKey]) {
+            WA_TEMPLATES[templateKey] = { title: 'قالب پیام', text: '' };
+        }
+        WA_TEMPLATES[templateKey].text = msgBox.value;
+    }
+
+    async function saveBatchWaTemplateToDb() {
+        onBatchWaMessageEdited();
+        try {
+            localStorage.setItem('rafooneh_whatsapp_templates', JSON.stringify(WA_TEMPLATES));
+        } catch (e) {}
+
+        try {
+            await api('/api/admin/whatsapp/settings', {
+                method: 'POST',
+                body: JSON.stringify({ templates: WA_TEMPLATES })
+            });
+        } catch (err) {
+            console.warn('Error saving whatsapp templates:', err);
+        }
+
+        const indicator = document.getElementById('batchWaSaveIndicator');
+        if (indicator) {
+            indicator.style.display = 'inline-block';
+            setTimeout(() => { indicator.style.display = 'none'; }, 3000);
+        }
+    }
+
+    function startBatchWhatsappSendingFromModal() {
+        const selected = (cachedCustomersList || []).filter(c => custSelectedCustomerIds.has(String(c.id)));
+        if (selected.length === 0) {
+            alert('لطفاً حداقل یک مشتری را از چک‌لیست تیک بزنید.');
+            return;
+        }
+
+        const validRecipients = selected.filter(c => normalizeWaPhone(c.phone));
+        if (validRecipients.length === 0) {
+            alert('هیچ شماره همراه معتبری برای مشتریان تیک‌خورده یافت نشد.');
+            return;
+        }
+
+        const msgBox = document.getElementById('batchWaMessageText');
+        const templateText = msgBox ? msgBox.value : '';
+
+        // Save latest text before sending
+        saveBatchWaTemplateToDb();
+        closeBatchWhatsappModal();
+
+        // Launch sequential WhatsApp sender with customized text
+        launchDirectSequentialSender(validRecipients, templateText);
+    }
+
+    function launchDirectSequentialSender(recipients, templateText) {
+        let index = 0;
+        function sendNext() {
+            if (index >= recipients.length) {
+                alert('ارسال پیام واتساپ به تمامی مشتریان انتخاب‌شده به پایان رسید.');
+                return;
+            }
+
+            const cust = recipients[index];
+            const cleanPhone = normalizeWaPhone(cust.phone);
+            const name = (cust && cust.name) ? cust.name.trim() : 'مشتری گرامی';
+            const compiled = templateText
+                .replace(/\{name\}/g, name)
+                .replace(/\{storeUrl\}/g, getStoreUrl());
+
+            const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(compiled)}`;
+
+            const confirmSend = confirm(`[پیام ${index + 1} از ${recipients.length}]
+آیا چت واتساپ برای «${name}» (${cust.phone}) باز شود؟`);
+            if (confirmSend) {
+                window.open(waLink, '_blank');
+                index++;
+                if (index < recipients.length) {
+                    setTimeout(sendNext, 800);
+                }
+            }
+        }
+        sendNext();
+    }
+
+
+    /* ==========================================================================
+       WHATSAPP CAMPAIGNS & CUSTOMER ENGAGEMENT ENGINE
+       ========================================================================== */
+    let currentWaSegment = 'inactive60';
+    let filteredWaAudience = [];
+    let currentDirectWaCustomer = null;
+
+    const WA_TEMPLATES = {
+        inactive60: {
+            title: 'بازگشت مشتریان راکد (۶۰ روز عدم سفارش)',
+            text: `سلام {name} عزیز 🌸
+از آخرین سفارش شما در پخش رافونه بیش از ۲ ماه می‌گذرد و جای خالی شما را حس می‌کنیم!
+برای قدردانی از همراهی‌تان، کد تخفیف ویژه خرید این هفته برای شما فعال شد:
+🎁 کد تخفیف: WELCOME10 (۱۰٪ تخفیف ویژه ثبت سفارش جدید)
+
+مشاهده کاتالوگ و ثبت سریع سفارش:
+{storeUrl}
+
+با احترام، پخش شوینده و بهداشتی رافونه`
+        },
+        newProducts: {
+            title: 'معرفی محصولات جدید و تخفیف‌های پخش',
+            text: `سلام همکار و خریدار گرامی، {name} عزیز 🌟
+لیست محصولات جدید و شارژ شده در انبار پخش رافونه هم‌اکنون در دسترس است:
+✨ مایع ظرفشویی، دستشویی و پودرهای لباسشویی با قیمت همکاری و تحویل فوری.
+
+جهت مشاهده لیست موجودی، قیمت‌های به روز و ثبت سفارش آنلاین:
+{storeUrl}
+
+پخش مستقیم رافونه - تضمین بهترین قیمت و کیفیت`
+        },
+        refill: {
+            title: 'پیشنهاد شارژ مجدد مواد شوینده مصرفی',
+            text: `سلام {name} گرامی 🧴
+طبق بازه زمانی مصرف شوینده‌های بهداشتی، احتمالاً زمان شارژ مجدد اقلام مصرفی فروشگاه یا منزلتان فرا رسیده است.
+می‌توانید سفارش جدید خود را در کمتر از ۱ دقیقه ثبت کنید تا سریع‌ترین ارسال برای شما انجام گیرد:
+🛒 {storeUrl}
+
+همواره در خدمت شما هستیم - پخش رافونه`
+        },
+        vipThanks: {
+            title: 'قدردانی و آفر ویژه مشتریان وفادار',
+            text: `سلام و احترام {name} عزیز 💎
+شما یکی از خریداران ویژه و ارزشمند خانواده بزرگ رافونه هستید!
+سفارشات بعدی شما با اولویت بسته‌بندی VIP و ارسال سریع انجام خواهد شد.
+مشاهده تخفیف‌های ویژه این ماه:
+{storeUrl}
+
+ارادتمند شما، مجموعه رافونه`
+        },
+        custom: {
+            title: 'متن آزاد و دلخواه',
+            text: `سلام {name} عزیز 💐
+پیام اطلاع‌رسانی از طرف پخش رافونه:
+
+مشاهده وبسایت و محصولات:
+{storeUrl}`
+        }
+    };
+
+    function normalizeWaPhone(phone) {
+        if (!phone) return '';
+        let clean = String(phone).replace(/[^\d+]/g, '').trim();
+        if (clean.startsWith('0098')) {
+            clean = '98' + clean.slice(4);
+        } else if (clean.startsWith('+98')) {
+            clean = '98' + clean.slice(3);
+        } else if (clean.startsWith('0')) {
+            clean = '98' + clean.slice(1);
+        } else if (clean.startsWith('9') && clean.length === 10) {
+            clean = '98' + clean;
+        }
+        return clean;
+    }
+
+    function getStoreUrl() {
+        return window.location.origin || 'https://rafooneh.ir';
+    }
+
+    async function initWhatsappCampaignSection() {
+        if (!cachedCustomersList || cachedCustomersList.length === 0) {
+            await loadCustomers();
+        }
+        populateWaProductOptions();
+        updateWaAudienceSegments();
+        applyWhatsappTemplate(currentWaSegment);
+    }
+
+    function populateWaProductOptions() {
+        const sel = document.getElementById('waProductInsertSelect');
+        if (!sel) return;
+        const catalog = window.productsCatalog || (typeof window.getProductsCatalog === 'function' ? window.getProductsCatalog() : []);
+        if (catalog && catalog.length > 0) {
+            sel.innerHTML = '<option value="">-- انتخاب کالا جهت درج در متن --</option>' + catalog.map(p => `
+                <option value="${p.id}" data-name="${escapeHtml(p.name)}" data-price="${p.price || p.consumerPrice || 0}">
+                    ${escapeHtml(p.name)} (${formatPrice(p.price || p.consumerPrice || 0)})
+                </option>
+            `).join('');
+        } else {
+            sel.innerHTML = '<option value="">کاتالوگ کالاها بارگذاری نشد</option>';
+        }
+    }
+
+    function updateWaAudienceSegments() {
+        const list = cachedCustomersList || [];
+        const now = Date.now();
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        let inactive60Count = 0;
+        let inactive30Count = 0;
+        let loyalCount = 0;
+        let allCount = list.length;
+
+        list.forEach(c => {
+            const lastTime = c.lastOrderAt ? new Date(c.lastOrderAt).getTime() : 0;
+            const daysSince = lastTime > 0 ? (now - lastTime) / DAY_MS : 999;
+            const orders = Number(c.totalOrders || 0);
+
+            if (daysSince >= 60) inactive60Count++;
+            if (daysSince >= 30 && daysSince < 60) inactive30Count++;
+            if (orders >= 3 || (Number(c.totalSpent) || 0) > 5000000) loyalCount++;
+        });
+
+        const el60 = document.getElementById('waCount-inactive60');
+        const el30 = document.getElementById('waCount-inactive30');
+        const elLoyal = document.getElementById('waCount-loyal');
+        const elAll = document.getElementById('waCount-all');
+
+        if (el60) el60.textContent = inactive60Count.toLocaleString('fa-IR');
+        if (el30) el30.textContent = inactive30Count.toLocaleString('fa-IR');
+        if (elLoyal) elLoyal.textContent = loyalCount.toLocaleString('fa-IR');
+        if (elAll) elAll.textContent = allCount.toLocaleString('fa-IR');
+
+        filterWaAudienceList();
+    }
+
+    function selectWaSegment(segKey) {
+        currentWaSegment = segKey;
+        document.querySelectorAll('.wa-seg-card').forEach(card => {
+            card.style.borderColor = '#e2e8f0';
+            card.style.boxShadow = 'none';
+        });
+        const activeCard = document.getElementById('waSegCard-' + segKey);
+        if (activeCard) {
+            activeCard.style.borderColor = '#16a34a';
+            activeCard.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.15)';
+        }
+
+        const templateDropdown = document.getElementById('waTemplateSelect');
+        if (templateDropdown) {
+            if (segKey === 'inactive60') templateDropdown.value = 'inactive60';
+            else if (segKey === 'inactive30') templateDropdown.value = 'refill';
+            else if (segKey === 'loyal') templateDropdown.value = 'vipThanks';
+            else templateDropdown.value = 'newProducts';
+            applyWhatsappTemplate(templateDropdown.value);
+        }
+
+        filterWaAudienceList();
+    }
+
+    function filterWaAudienceList() {
+        const list = cachedCustomersList || [];
+        const now = Date.now();
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        filteredWaAudience = list.filter(c => {
+            const lastTime = c.lastOrderAt ? new Date(c.lastOrderAt).getTime() : 0;
+            const daysSince = lastTime > 0 ? (now - lastTime) / DAY_MS : 999;
+            const orders = Number(c.totalOrders || 0);
+
+            if (currentWaSegment === 'inactive60') {
+                return daysSince >= 60;
+            } else if (currentWaSegment === 'inactive30') {
+                return daysSince >= 30 && daysSince < 60;
+            } else if (currentWaSegment === 'loyal') {
+                return orders >= 3 || (Number(c.totalSpent) || 0) > 5000000;
+            } else {
+                return true;
+            }
+        });
+
+        renderWaAudienceTable();
+    }
+
+    function filterWaAudienceTable() {
+        const q = (document.getElementById('waAudienceSearch')?.value || '').trim().toLowerCase();
+        renderWaAudienceTable(q);
+    }
+
+    function renderWaAudienceTable(searchQuery = '') {
+        const tbody = document.getElementById('waAudienceTableBody');
+        const countBadge = document.getElementById('waAudienceTableCount');
+        if (!tbody) return;
+
+        let displayList = [...filteredWaAudience];
+        if (searchQuery) {
+            displayList = displayList.filter(c =>
+                (c.name && String(c.name).toLowerCase().includes(searchQuery)) ||
+                (c.phone && String(c.phone).includes(searchQuery))
+            );
+        }
+
+        if (countBadge) {
+            countBadge.textContent = `${displayList.length.toLocaleString('fa-IR')} مخاطب هدف`;
+        }
+
+        if (!displayList.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:24px; text-align:center; color:var(--muted);">مشتری با این شرایط در این بخش‌بندی یافت نشد.</td></tr>';
+            return;
+        }
+
+        const now = Date.now();
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        tbody.innerHTML = displayList.map(c => {
+            const lastTime = c.lastOrderAt ? new Date(c.lastOrderAt).getTime() : 0;
+            const daysSince = lastTime > 0 ? Math.floor((now - lastTime) / DAY_MS) : null;
+            let daysBadge = '<span class="badge" style="background:#f1f5f9; color:#475569;">بدون سفارش ثبت‌شده</span>';
+            if (daysSince !== null) {
+                if (daysSince >= 60) {
+                    daysBadge = `<span class="badge" style="background:#ffedd5; color:#c2410c; font-weight:bold;">${daysSince.toLocaleString('fa-IR')} روز قبل (راکد)</span>`;
+                } else if (daysSince >= 30) {
+                    daysBadge = `<span class="badge" style="background:#fef3c7; color:#b45309;">${daysSince.toLocaleString('fa-IR')} روز قبل</span>`;
+                } else {
+                    daysBadge = `<span class="badge" style="background:#dcfce7; color:#15803d;">${daysSince.toLocaleString('fa-IR')} روز قبل (فعال)</span>`;
+                }
+            }
+
+            const cleanPhone = normalizeWaPhone(c.phone);
+            const rawMsg = getCompiledWaMessageForCustomer(c);
+            const waLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(rawMsg)}` : '#';
+
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(c.name || 'مشتری')}</strong></td>
+                    <td dir="ltr"><span style="font-family:monospace; font-weight:bold;">${escapeHtml(c.phone || '-')}</span></td>
+                    <td>${(c.totalOrders || 0).toLocaleString('fa-IR')} سفارش</td>
+                    <td><strong style="color:#059669;">${formatPrice(c.totalSpent)}</strong></td>
+                    <td style="font-size:0.85rem;">${formatDate(c.lastOrderAt)}</td>
+                    <td>${daysBadge}</td>
+                    <td style="text-align:center;">
+                        <div style="display:flex; gap:6px; justify-content:center;">
+                            <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="background:#16a34a; border-color:#16a34a; padding:5px 10px; font-size:0.8rem;" title="ارسال پیام به ${escapeHtml(c.name || '')}">
+                                <i class="fa-brands fa-whatsapp"></i> ارسال در واتساپ
+                            </a>
+                            <button class="btn btn-secondary" onclick="openDirectWhatsappModalForCustomer('${c.id}')" style="padding:5px 8px; font-size:0.8rem;" title="ویرایش و ارسال اختصاصی">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function applyWhatsappTemplate(templateKey) {
+        const tpl = WA_TEMPLATES[templateKey] || WA_TEMPLATES.custom;
+        const msgBox = document.getElementById('waMessageBody');
+        const prodContainer = document.getElementById('waProductSelectContainer');
+
+        if (prodContainer) {
+            prodContainer.style.display = (templateKey === 'newProducts') ? 'block' : 'none';
+        }
+
+        if (msgBox) {
+            msgBox.value = tpl.text;
+        }
+        updateWhatsappPreview();
+    }
+
+    function injectProductIntoWaTemplate() {
+        const sel = document.getElementById('waProductInsertSelect');
+        const opt = sel?.options[sel.selectedIndex];
+        if (!opt || !opt.value) return;
+
+        const prodName = opt.getAttribute('data-name');
+        const prodPrice = opt.getAttribute('data-price');
+        const textToAppend = `\n🔥 کالای پیشنهادی: ${prodName} - قیمت: ${formatPrice(prodPrice)}`;
+
+        const msgBox = document.getElementById('waMessageBody');
+        if (msgBox) {
+            msgBox.value = msgBox.value + textToAppend;
+            updateWhatsappPreview();
+        }
+    }
+
+    function insertWaVariable(varName) {
+        const msgBox = document.getElementById('waMessageBody');
+        if (!msgBox) return;
+        const start = msgBox.selectionStart || msgBox.value.length;
+        const end = msgBox.selectionEnd || msgBox.value.length;
+        const text = msgBox.value;
+        msgBox.value = text.substring(0, start) + varName + text.substring(end);
+        msgBox.focus();
+        updateWhatsappPreview();
+    }
+
+    function resetWaTemplate() {
+        const templateDropdown = document.getElementById('waTemplateSelect');
+        applyWhatsappTemplate(templateDropdown?.value || 'inactive60');
+    }
+
+    function updateWhatsappPreview() {
+        const msgBox = document.getElementById('waMessageBody');
+        const previewEl = document.getElementById('waPreviewText');
+        const previewRecipient = document.getElementById('waPreviewRecipient');
+        if (!previewEl) return;
+
+        const raw = msgBox ? msgBox.value : '';
+        const sampleCustomer = filteredWaAudience[0] || (cachedCustomersList && cachedCustomersList[0]) || { name: 'علی اکبری', phone: '09123456789' };
+
+        if (previewRecipient) {
+            previewRecipient.textContent = `برای: ${sampleCustomer.name || 'مشتری'}`;
+        }
+
+        let compiled = raw
+            .replace(/\{name\}/g, sampleCustomer.name || 'مشتری گرامی')
+            .replace(/\{storeUrl\}/g, getStoreUrl());
+
+        previewEl.textContent = compiled;
+        renderWaAudienceTable(document.getElementById('waAudienceSearch')?.value || '');
+    }
+
+    function getCompiledWaMessageForCustomer(cust) {
+        const msgBox = document.getElementById('waMessageBody');
+        const raw = msgBox ? msgBox.value : WA_TEMPLATES.inactive60.text;
+        const name = (cust && cust.name) ? cust.name.trim() : 'مشتری گرامی';
+        return raw
+            .replace(/\{name\}/g, name)
+            .replace(/\{storeUrl\}/g, getStoreUrl());
+    }
+
+    function copyAllWhatsappMessageText() {
+        const previewEl = document.getElementById('waPreviewText');
+        if (!previewEl || !previewEl.textContent) return;
+        navigator.clipboard.writeText(previewEl.textContent).then(() => {
+            alert('متن پیام نمونه با موفقیت در کلیپ‌بورد کپی شد.');
+        }).catch(() => {
+            alert('خطا در کپی متن.');
+        });
+    }
+
+    function exportWhatsappAudienceCsv() {
+        const list = filteredWaAudience.length > 0 ? filteredWaAudience : (cachedCustomersList || []);
+        if (!list || list.length === 0) {
+            alert('مخاطبی برای خروجی اکسل وجود ندارد.');
+            return;
+        }
+
+        let csvContent = 'data:text/csv;charset=utf-8,\uFEFF';
+        csvContent += 'نام مشتری,شماره همراه,تعداد سفارش,مجموع خرید (تومان),آخرین تاریخ سفارش\n';
+
+        list.forEach(c => {
+            const row = [
+                `"${(c.name || '').replace(/"/g, '""')}"`,
+                `"${(c.phone || '')}"`,
+                c.totalOrders || 0,
+                c.totalSpent || 0,
+                `"${c.lastOrderAt || ''}"`
+            ];
+            csvContent += row.join(',') + '\n';
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `rafooneh_whatsapp_audience_${currentWaSegment}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    let sequentialIndex = 0;
+    function startSequentialWhatsappSending() {
+        if (!filteredWaAudience || filteredWaAudience.length === 0) {
+            alert('هیچ مشتری در این فیلتر انتخاب نشده است.');
+            return;
+        }
+
+        const validAudience = filteredWaAudience.filter(c => normalizeWaPhone(c.phone));
+        if (validAudience.length === 0) {
+            alert('هیچ شماره همراه معتبری در میان مخاطبان انتخابی یافت نشد.');
+            return;
+        }
+
+        sequentialIndex = 0;
+        sendNextSequentialWhatsapp(validAudience);
+    }
+
+    function sendNextSequentialWhatsapp(audience) {
+        if (sequentialIndex >= audience.length) {
+            alert('ارسال زنجیره‌ای به تمامی مخاطبان هدف با موفقیت پایان یافت.');
+            return;
+        }
+
+        const cust = audience[sequentialIndex];
+        const cleanPhone = normalizeWaPhone(cust.phone);
+        const rawMsg = getCompiledWaMessageForCustomer(cust);
+        const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(rawMsg)}`;
+
+        const confirmSend = confirm(`[مخاطب ${sequentialIndex + 1} از ${audience.length}]\nآیا چت واتساپ برای «${cust.name || 'مشتری'}» با شماره ${cust.phone} باز شود؟`);
+        if (confirmSend) {
+            window.open(waLink, '_blank');
+            sequentialIndex++;
+            if (sequentialIndex < audience.length) {
+                setTimeout(() => sendNextSequentialWhatsapp(audience), 1000);
+            }
+        }
+    }
+
+    /* DIRECT SINGLE CUSTOMER WHATSAPP MODAL */
+    function openDirectWhatsappModalForCustomer(custId) {
+        const cust = (cachedCustomersList || []).find(c => String(c.id) === String(custId));
+        if (!cust) {
+            alert('مشتری مورد نظر یافت نشد.');
+            return;
+        }
+        currentDirectWaCustomer = cust;
+
+        const modal = document.getElementById('directWhatsappModal');
+        const nameEl = document.getElementById('directWaCustName');
+        const phoneEl = document.getElementById('directWaCustPhone');
+        const statusEl = document.getElementById('directWaCustStatus');
+
+        if (nameEl) nameEl.textContent = cust.name || 'مشتری بدون نام';
+        if (phoneEl) phoneEl.textContent = cust.phone || 'فاقد شماره تماس';
+
+        const lastTime = cust.lastOrderAt ? new Date(cust.lastOrderAt).getTime() : 0;
+        const now = Date.now();
+        const daysSince = lastTime > 0 ? Math.floor((now - lastTime) / (24 * 60 * 60 * 1000)) : null;
+
+        if (statusEl) {
+            if (daysSince !== null) {
+                statusEl.textContent = `آخرین خرید: ${daysSince} روز پیش`;
+            } else {
+                statusEl.textContent = 'بدون سابقه سفارش';
+            }
+        }
+
+        const sel = document.getElementById('directWaTemplateSelect');
+        if (sel) {
+            sel.value = (daysSince !== null && daysSince >= 60) ? 'inactive60' : 'newProducts';
+            applyDirectWaTemplate(sel.value);
+        }
+
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeDirectWhatsappModal() {
+        const modal = document.getElementById('directWhatsappModal');
+        if (modal) modal.style.display = 'none';
+        currentDirectWaCustomer = null;
+    }
+
+    function applyDirectWaTemplate(templateKey) {
+        const tpl = WA_TEMPLATES[templateKey] || WA_TEMPLATES.custom;
+        const msgBox = document.getElementById('directWaMessageText');
+        if (!msgBox) return;
+
+        const cust = currentDirectWaCustomer || { name: 'مشتری گرامی' };
+        const name = (cust && cust.name) ? cust.name.trim() : 'مشتری گرامی';
+
+        let compiled = tpl.text
+            .replace(/\{name\}/g, name)
+            .replace(/\{storeUrl\}/g, getStoreUrl());
+
+        msgBox.value = compiled;
+    }
+
+    function sendDirectWhatsappSubmit() {
+        if (!currentDirectWaCustomer) return;
+        const cleanPhone = normalizeWaPhone(currentDirectWaCustomer.phone);
+        if (!cleanPhone) {
+            alert('شماره همراه مشتری نامعتبر است.');
+            return;
+        }
+
+        const msgBox = document.getElementById('directWaMessageText');
+        const text = msgBox ? msgBox.value : '';
+        const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+
+        window.open(waLink, '_blank');
 
     // ==========================================
     // GIFTS & PACKAGES MANAGEMENT MODULE
