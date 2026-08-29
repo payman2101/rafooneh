@@ -1,7 +1,7 @@
 {
   "isEnabled": true,
-  "defaultGiftPercent": 7,
-  "minOrderForGift": 600000,
+  "defaultGiftPercent": 6,
+  "minOrderForGift": 500000,
   "firstOrderBonusPercent": 10,
   "isFirstOrderBonusEnabled": true,
   "allowCustomerGiftSelection": true,
@@ -12,29 +12,29 @@
       "id": "tier-1",
       "minAmount": 500000,
       "maxAmount": 1500000,
-      "giftPercent": 5,
-      "title": "پله نقره‌ای (۵٪ هدیه)",
-      "bonusDescription": "۵٪ اعتبار هدیه روی کل سبد خرید"
+      "giftPercent": 6,
+      "title": "پله نقره‌ای (۶٪ هدیه)",
+      "bonusDescription": "۶٪ ارزش فاکتور هدیه کالا"
     },
     {
       "id": "tier-2",
       "minAmount": 1500000,
       "maxAmount": 3000000,
-      "giftPercent": 7,
-      "title": "پله طلایی (۷٪ هدیه)",
-      "bonusDescription": "۷٪ هدیه + ارسال رایگان"
+      "giftPercent": 8,
+      "title": "پله طلایی (۸٪ هدیه)",
+      "bonusDescription": "۸٪ هدیه + ارسال رایگان"
     },
     {
       "id": "tier-3",
       "minAmount": 3000000,
       "maxAmount": 0,
-      "giftPercent": 10,
-      "title": "پله الماس VIP (۱۰٪ هدیه)",
-      "bonusDescription": "۱۰٪ هدیه + محصول اشانتیون ویژه"
+      "giftPercent": 12,
+      "title": "پله الماس VIP (۱۲٪ هدیه)",
+      "bonusDescription": "۱۲٪ هدیه + محصول اشانتیون ویژه"
     }
   ],
   "allowedGiftProductIds": [],
   "maxGiftItemPrice": 0,
-  "customGiftNotice": "تست هدیه رافونه",
-  "updatedAt": "2026-08-28T16:44:48.443Z"
+  "customGiftNotice": "با هر خرید، ۶ الی ۱۲ درصد هدیه دریافت نمایید",
+  "updatedAt": "2026-08-29T04:51:02.495Z"
 }

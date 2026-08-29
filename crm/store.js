@@ -1734,6 +1734,43 @@ export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
     let rafoonehOrdersCount = 0;
     const productSummaryMap = {};
 
+    // Retrieve purchase invoices to correlate varying purchase costs & multipliers
+    let purchaseInvoices = [];
+    try {
+      purchaseInvoices = listPurchases();
+      if (!Array.isArray(purchaseInvoices)) purchaseInvoices = [];
+    } catch (e) {
+      purchaseInvoices = [];
+    }
+
+    // Build map of product purchase history across invoices
+    const productPurchasesMap = {};
+    purchaseInvoices.forEach(pur => {
+      const pDate = pur.purchaseDate || pur.createdAt || '';
+      const pRef = pur.refNumber || pur.id || '';
+      (pur.items || []).forEach(pItem => {
+        if (!pItem) return;
+        const key1 = String(pItem.productId || '').trim();
+        const key2 = String(pItem.code || '').trim();
+        const key3 = String(pItem.name || '').trim().toLowerCase();
+        const pEntry = {
+          purchaseId: pur.id,
+          refNumber: pRef,
+          purchaseDate: pDate,
+          qty: Number(pItem.qty) || 0,
+          consumerPrice: Number(pItem.consumerPrice) || Number(pItem.price) || 0,
+          multiplier: Number(pItem.multiplier) || (Number(pItem.consumerPrice) > 0 && Number(pItem.buyPrice) > 0 ? +(Number(pItem.buyPrice) / Number(pItem.consumerPrice)).toFixed(3) : 0.70),
+          buyPrice: Number(pItem.buyPrice) || 0
+        };
+        [key1, key2, key3].forEach(k => {
+          if (k) {
+            if (!productPurchasesMap[k]) productPurchasesMap[k] = [];
+            productPurchasesMap[k].push(pEntry);
+          }
+        });
+      });
+    });
+
     filteredOrders.forEach(o => {
       const enriched = enrichOrderWithProfit(o, pMap) || o;
       let orderHasRafooneh = false;
@@ -1753,14 +1790,38 @@ export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
         orderHasRafooneh = true;
 
         const qty = Number(item.qty || item.quantity) || 1;
-        const itemPrice = Number(item.price) || Number(prod.price) || 0;
-        let buyPrice = Number(item.buyPrice);
+        const itemSellingPrice = Number(item.price) || Number(prod.price) || 0;
+
+        // Check purchase history for this product
+        const purchaseHistory = productPurchasesMap[String(prod.code || '')] ||
+                               productPurchasesMap[String(prod.id || '')] ||
+                               productPurchasesMap[String(item.code || '')] ||
+                               productPurchasesMap[String(item.id || '')] ||
+                               productPurchasesMap[String(item.name || '').trim().toLowerCase()] ||
+                               [];
+
+        // Derive consumer price (latest purchase consumer price or catalog consumer price)
+        let consumerPrice = 0;
+        let multiplier = 0.70;
+        let buyPrice = 0;
+
+        if (purchaseHistory.length > 0) {
+          const latestPur = purchaseHistory[purchaseHistory.length - 1];
+          consumerPrice = Number(latestPur.consumerPrice) || Number(prod.newPrice) || Number(prod.consumerPrice) || itemSellingPrice;
+          multiplier = Number(latestPur.multiplier) || 0.70;
+          buyPrice = Number(latestPur.buyPrice) || Math.round(consumerPrice * multiplier);
+        } else {
+          consumerPrice = Number(prod.newPrice) || Number(prod.consumerPrice) || Number(item.consumerPrice) || itemSellingPrice;
+          multiplier = Number(prod.multiplier) || 0.70;
+          buyPrice = Number(item.buyPrice) || Number(prod.buyPrice) || Math.round(consumerPrice * multiplier);
+        }
+
         if (isNaN(buyPrice) || buyPrice <= 0) {
-          buyPrice = Number(prod.buyPrice) || Math.round(itemPrice * 0.7);
+          buyPrice = Math.round((consumerPrice || itemSellingPrice) * 0.70);
         }
 
         const itemCost = buyPrice * qty;
-        const itemRev = (Number(item.total) || (itemPrice * qty)) || itemCost;
+        const itemRev = (Number(item.total) || (itemSellingPrice * qty)) || itemCost;
 
         const mapKey = String(prod.code || prod.id || item.code || item.id || item.name || pid);
 
@@ -1770,10 +1831,13 @@ export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
             code: prod.code || item.code || prod.id || item.id || mapKey,
             name: item.name || prod.name || 'محصول رافونه',
             unitsSold: 0,
+            consumerPrice,
+            multiplier,
             buyPrice,
             totalBuyCost: 0,
-            sellingPrice: itemPrice,
-            totalRevenue: 0
+            sellingPrice: itemSellingPrice,
+            totalRevenue: 0,
+            purchaseSources: purchaseHistory.slice(-3) // Last 3 purchase invoices for quick reference
           };
         }
 
@@ -1800,6 +1864,7 @@ export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
       totalItemsCount,
       totalBuyCost,
       totalRevenue,
+      totalProfit: totalRevenue - totalBuyCost,
       products: productList
     };
   } catch (err) {
@@ -1811,6 +1876,7 @@ export function getCompanyPaymentStats({ fromDate, toDate } = {}) {
       totalItemsCount: 0,
       totalBuyCost: 0,
       totalRevenue: 0,
+      totalProfit: 0,
       products: []
     };
   }
@@ -1831,8 +1897,13 @@ export function createCompanyPayment(paymentData) {
     fromDate: paymentData.fromDate || '',
     toDate: paymentData.toDate || '',
     totalBuyCost: Number(paymentData.totalBuyCost) || 0,
+    totalRevenue: Number(paymentData.totalRevenue) || 0,
+    deductions: Number(paymentData.deductions) || 0,
+    additions: Number(paymentData.additions) || 0,
+    finalPayableAmount: Number(paymentData.finalPayableAmount) || Number(paymentData.totalBuyCost) || 0,
     totalItemsCount: Number(paymentData.totalItemsCount) || 0,
     ordersCount: Number(paymentData.ordersCount) || 0,
+    paymentMethod: paymentData.paymentMethod || 'حواله بانکی / شبا',
     refNumber: paymentData.refNumber || '',
     notes: paymentData.notes || '',
     status: paymentData.status || 'پرداخت شده',

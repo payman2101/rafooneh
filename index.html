@@ -5986,7 +5986,7 @@
             const totalRial = totalAmount * 10;
             const subtotalRial = subtotal * 10;
 
-            const totalQtyCell = document.getElementById('invTotalQtyCell'); if (totalQtyCell) { totalQtyCell.innerText = ; }
+            const totalQtyCell = document.getElementById('invTotalQtyCell'); if (totalQtyCell) { totalQtyCell.innerText = totalQty.toLocaleString('fa-IR'); }
             document.getElementById('invSubtotal').innerHTML = `${subtotalRial.toLocaleString('fa-IR')} ریال <span style="font-size:0.8rem; color:#64748b; font-weight:normal; margin-right:4px; direction:rtl; unicode-bidi:isolate;">(${subtotal.toLocaleString('fa-IR')} تومان)</span>`;
             document.getElementById('invGrandTotal').innerText = totalRial.toLocaleString('fa-IR') + ' ریال';
             if (document.getElementById('invGrandTotalToman')) {
@@ -6762,7 +6762,9 @@
                     }
 
                     let html = '';
+                    window._customerOrdersCache = {};
                     orders.forEach(o => {
+                        window._customerOrdersCache[o.id] = o;
                         const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString('fa-IR') : '---';
                         const itemsCount = Array.isArray(o.items) ? o.items.reduce((s, i) => s + (Number(i.qty) || 1), 0) : 0;
                         const giftsCount = Array.isArray(o.giftItems) ? o.giftItems.reduce((s, g) => s + (Number(g.qty) || 1), 0) : 0;
@@ -6789,7 +6791,7 @@
                                         <span style="font-size:0.78rem; color:#64748b;">مبلغ فاکتور:</span>
                                         <strong style="color:#047857; font-size:0.95rem; margin-right:4px;">${total.toLocaleString('fa-IR')} تومان</strong>
                                     </div>
-                                    <button onclick="closeCustomerDashboardModal(); showCustomerInvoice(${JSON.stringify(o).replace(/"/g, '&quot;')});" style="background:#f0fdf4; border:1px solid #86efac; color:#065f46; padding:6px 12px; border-radius:10px; font-size:0.78rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px;">
+                                    <button onclick="viewCustomerOrderInvoice('${escapeHtml(o.id)}')" style="background:#f0fdf4; border:1px solid #86efac; color:#065f46; padding:6px 12px; border-radius:10px; font-size:0.78rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px;">
                                         <i class="fa-solid fa-file-invoice"></i> مشاهده فاکتور
                                     </button>
                                 </div>
@@ -6803,6 +6805,15 @@
             } catch (err) {
                 console.error('Error loading customer orders:', err);
                 container.innerHTML = `<div style="color:#ef4444; text-align:center; padding:16px;">عدم امکان برقراری ارتباط با سرور.</div>`;
+            }
+        }
+
+        function viewCustomerOrderInvoice(orderId) {
+            closeCustomerDashboardModal();
+            if (window._customerOrdersCache && window._customerOrdersCache[orderId]) {
+                showCustomerInvoice(window._customerOrdersCache[orderId]);
+            } else {
+                trackOrderById(orderId);
             }
         }
 
