@@ -202,7 +202,59 @@
             padding: 10px 15px;
         }
 
-        /* Notice Banner */
+        /* Gift Guide Trigger & Notice Banner */
+        .gift-guide-trigger-bar {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 14px;
+            padding: 10px 14px;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .gift-guide-trigger-bar:hover {
+            background: #ecfdf5;
+            border-color: #86efac;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(5, 150, 105, 0.08);
+        }
+        .gift-guide-trigger-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #dcfce7;
+            color: #059669;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .gift-guide-btn-badge {
+            background: #059669;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-weight: 600;
+            padding: 6px 14px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(5, 150, 105, 0.22);
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+        .gift-guide-btn-badge:hover {
+            background: #047857;
+            transform: translateY(-1px);
+        }
         .promo-banner {
             background: linear-gradient(45deg, #fff3e0, #ffe0b2);
             border-right: 4px solid var(--accent);
@@ -2889,18 +2941,19 @@
             <input type="text" id="searchInput" class="search-input" placeholder="جستجوی سریع نام یا کد کالا (مثلاً: ۱۰۲۱، مایع دست، اسپری)..." oninput="handleSearchInput()">
         </div>
 
-        <!-- Banner -->
-        <div class="promo-banner" onclick="openGiftSelectionModal()" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="background: rgba(255,255,255,0.25); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+        <!-- Gift Scheme Guide Trigger -->
+        <div class="gift-guide-trigger-bar" id="giftGuideTriggerBar" onclick="openGiftGuideModal()">
+            <div style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+                <div class="gift-guide-trigger-icon">
                     <i class="fa-solid fa-gift"></i>
                 </div>
                 <div>
-                    <strong>۵٪ هدیه رایگان روی تمام خریدها:</strong> با افزودن کالا به سبد خرید، محصول هدیه دلخواه خود را رایگان دریافت کنید.
+                    <span style="font-weight: 700; font-size: 0.86rem; color: #166534;">طرح پاداش و هدیه رافونه</span>
+                    <span style="font-size: 0.78rem; color: #475569; margin-right: 6px;">(دریافت کالای رایگان یا شارژ کیف پول با خرید محصولات رافونه)</span>
                 </div>
             </div>
-            <button type="button" class="btn btn-sm" onclick="event.stopPropagation(); openGiftSelectionModal();" style="background: white; color: #059669; border: none; border-radius: 20px; font-weight: bold; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                <i class="fa-solid fa-gift"></i> مشاهده لیست هدایا
+            <button type="button" class="gift-guide-btn-badge" onclick="event.stopPropagation(); openGiftGuideModal();">
+                <i class="fa-solid fa-circle-question"></i> راهنما و نحوه تعلق
             </button>
         </div>
 
@@ -2924,7 +2977,7 @@
         </div>
 
         <!-- Interactive Gift Trigger Pill in Floating Cart Bar -->
-        <div class="cart-bar-gift-pill" id="cartBarGiftPill" onclick="openGiftSelectionModal()" title="مشاهده کالاهای هدیه رایگان (۵٪ مبلغ خرید)">
+        <div class="cart-bar-gift-pill" id="cartBarGiftPill" onclick="openGiftSelectionModal()" title="مشاهده و انتخاب کالاهای هدیه رایگان رافونه">
             <div class="gift-icon-sparkle">
                 <i class="fa-solid fa-gift"></i>
             </div>
@@ -3078,7 +3131,12 @@
                         <div id="giftModalQuotaSubtitle" style="font-size: 0.82rem; color: #d1fae5; margin-top: 2px; font-weight: 500;">سقف ارزش هدیه شما: ۰ تومان (بر اساس کالاهای رافونه)</div>
                     </div>
                 </div>
-                <button class="btn-close" onclick="closeGiftSelectionModal()" style="color: white; font-size: 1.6rem; line-height: 1;" title="بستن">×</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" onclick="openGiftGuideModal()" style="background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.35); border-radius: 8px; color: white; font-size: 0.76rem; padding: 4px 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600; transition: background 0.15s ease;" title="راهنمای طرح هدایا">
+                        <i class="fa-solid fa-circle-question"></i> راهنما
+                    </button>
+                    <button class="btn-close" onclick="closeGiftSelectionModal()" style="color: white; font-size: 1.6rem; line-height: 1;" title="بستن">×</button>
+                </div>
             </div>
 
             <!-- Header Dynamic Quota & Selected Gifts Tracker -->
@@ -3152,6 +3210,76 @@
                         <i class="fa-solid fa-check"></i> تأیید و بستن پنجره
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gift Guide (طرح هدایا و پاداش‌های رافونه) -->
+    <div class="modal-overlay" id="giftGuideModal" style="display: none; z-index: 10003;">
+        <div class="modal-card" style="max-width: 580px; max-height: 90vh; display: flex; flex-direction: column; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 14px 18px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 38px; height: 38px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                        <i class="fa-solid fa-gift" style="color: #a7f3d0;"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.05rem; color: white;">راهنمای طرح هدایا و پاداش‌های رافونه</h3>
+                        <div style="font-size: 0.78rem; color: #d1fae5; margin-top: 2px;">نحوه محاسبه و دریافت هدیه یا اعتبار نقدی در خریدها</div>
+                    </div>
+                </div>
+                <button class="btn-close" onclick="closeGiftGuideModal()" style="color: white; font-size: 1.6rem; line-height: 1;" title="بستن">×</button>
+            </div>
+
+            <div style="padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; font-size: 0.86rem; color: #334155; line-height: 1.7;">
+                <!-- Step 1 -->
+                <div style="display: flex; gap: 12px; align-items: flex-start; background: #f8fafc; padding: 12px 14px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.88rem; flex-shrink: 0;">۱</div>
+                    <div>
+                        <strong style="color: #0f172a; display: block; margin-bottom: 2px;">خرید کالاهای برند رافونه:</strong>
+                        با افزودن محصولات شوینده و بهداشتی برند رافونه به سبد خرید، به تناسب مبلغ کل، درصد مشخصی به عنوان «سقف اعتبار هدیه» برای شما فعال می‌شود.
+                    </div>
+                </div>
+
+                <!-- Step 2: Dynamic Tiers Table / Cards -->
+                <div style="background: #f0fdf4; padding: 12px 14px; border-radius: 12px; border: 1px solid #bbf7d0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: 700; color: #166534; font-size: 0.86rem;"><i class="fa-solid fa-layer-group" style="margin-left: 5px;"></i> سطوح و درصد هدایای پلکانی:</span>
+                    </div>
+                    <div id="giftGuideTiersContainer" style="display: flex; flex-direction: column; gap: 6px;">
+                        <!-- Dynamic tiers rendered here -->
+                    </div>
+                </div>
+
+                <!-- Step 3: Gift Choice (Products or Wallet) -->
+                <div style="display: flex; gap: 12px; align-items: flex-start; background: #f8fafc; padding: 12px 14px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.88rem; flex-shrink: 0;">۲</div>
+                    <div>
+                        <strong style="color: #0f172a; display: block; margin-bottom: 2px;">انتخاب کالای رایگان دلخواه:</strong>
+                        می‌توانید با زدن دکمه «انتخاب کالا» در نوار سبد خرید، هر محصولی از برند رافونه را تا سقف اعتبار هدیه‌تان به صورت کاملاً رایگان به سبد اضافه فرمایید.
+                    </div>
+                </div>
+
+                <!-- Step 4: Wallet Rollover -->
+                <div style="display: flex; gap: 12px; align-items: flex-start; background: #f8fafc; padding: 12px 14px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.88rem; flex-shrink: 0;">۳</div>
+                    <div>
+                        <strong style="color: #0f172a; display: block; margin-bottom: 2px;">انتقال خودکار مانده به کیف پول:</strong>
+                        اگر کالای هدیه انتخاب نکنید یا بخشی از سقف اعتبار هدیه شما دست‌نخورده بماند، مانده آن به صورت خودکار به کیف پول حساب شما واریز شده و در خریدهای بعدی کسر می‌گردد.
+                    </div>
+                </div>
+
+                <!-- Custom notice if any -->
+                <div id="giftGuideCustomNotice" style="display: none; background: #fffbeb; border: 1px dashed #fcd34d; border-radius: 10px; padding: 10px 12px; font-size: 0.8rem; color: #92400e;">
+                </div>
+            </div>
+
+            <div style="padding: 12px 18px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeGiftGuideModal()" style="font-size: 0.84rem; padding: 8px 16px; border-radius: 10px; border: 1px solid #cbd5e1; background: white; color: #475569; cursor: pointer;">
+                    متوجه شدم
+                </button>
+                <button type="button" class="btn btn-primary" onclick="closeGiftGuideModal(); openGiftSelectionModal();" style="background: #059669; border: none; font-size: 0.86rem; padding: 8px 18px; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 3px 8px rgba(5,150,105,0.3);">
+                    <i class="fa-solid fa-gift"></i> مشاهده لیست هدایا
+                </button>
             </div>
         </div>
     </div>
@@ -4736,6 +4864,70 @@
 
         function closeGiftSelectionModal() {
             const modal = document.getElementById('giftSelectionModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openGiftGuideModal() {
+            try {
+                const container = document.getElementById('giftGuideTiersContainer');
+                if (container) {
+                    const tiers = (dynamicGiftSettings && Array.isArray(dynamicGiftSettings.tieredGifts) && dynamicGiftSettings.tieredGifts.length > 0)
+                        ? [...dynamicGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0))
+                        : [];
+
+                    if (tiers.length === 0) {
+                        const defPct = Number(dynamicGiftSettings?.defaultGiftPercent) || 5;
+                        container.innerHTML = `
+                            <div style="background: white; border: 1px solid #dcfce7; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.84rem;">
+                                <span>خرید تمام محصولات برند رافونه</span>
+                                <strong style="color: #059669; font-size: 0.86rem;">${defPct}٪ هدیه رایگان</strong>
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = tiers.map(tier => {
+                            const minVal = Number(tier.minAmount) || 0;
+                            const maxVal = Number(tier.maxAmount) || 0;
+                            const pct = Number(tier.giftPercent) || 0;
+                            let rangeText = '';
+                            if (maxVal > 0) {
+                                rangeText = `از ${minVal.toLocaleString('fa-IR')} تا ${maxVal.toLocaleString('fa-IR')} تومان`;
+                            } else {
+                                rangeText = `از ${minVal.toLocaleString('fa-IR')} تومان به بالا`;
+                            }
+                            return `
+                                <div style="background: white; border: 1px solid #dcfce7; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-circle-check" style="color: #059669; font-size: 0.8rem;"></i>
+                                        <strong>${escapeHtml(tier.title || rangeText)}</strong>
+                                        <span style="font-size: 0.74rem; color: #64748b;">(${rangeText})</span>
+                                    </div>
+                                    <span style="background: #ecfdf5; color: #047857; font-weight: 700; border: 1px solid #a7f3d0; border-radius: 6px; padding: 2px 8px; font-size: 0.82rem;">${pct}٪ هدیه</span>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+
+                const noticeEl = document.getElementById('giftGuideCustomNotice');
+                if (noticeEl) {
+                    const noticeText = dynamicGiftSettings?.customGiftNotice?.trim();
+                    if (noticeText) {
+                        noticeEl.style.display = 'block';
+                        noticeEl.innerHTML = `<i class="fa-solid fa-bullhorn" style="margin-left: 5px;"></i> ${escapeHtml(noticeText)}`;
+                    } else {
+                        noticeEl.style.display = 'none';
+                    }
+                }
+
+                const modal = document.getElementById('giftGuideModal');
+                if (modal) modal.style.display = 'flex';
+            } catch (err) {
+                console.error('Error opening gift guide modal:', err);
+            }
+        }
+
+        function closeGiftGuideModal() {
+            const modal = document.getElementById('giftGuideModal');
             if (modal) modal.style.display = 'none';
         }
 

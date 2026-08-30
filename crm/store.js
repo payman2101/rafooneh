@@ -901,7 +901,7 @@ export function createOrder(orderData) {
           type: 'gift_rollover',
           amount: remainingGiftToCredit,
           orderId: order.id,
-          description: `انتقال مانده هدیه ۵٪ سفارش ${order.id} به کیف پول`,
+          description: `انتقال مانده اعتبار هدیه سفارش ${order.id} به کیف پول`,
           createdAt: new Date().toISOString(),
           balanceAfter: newWallet
         });
