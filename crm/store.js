@@ -156,19 +156,57 @@ export async function ensureFirestoreLoaded() {
 
       if (!companyPaymentsListCache) {
         const fsPays = await getCompanyPaymentsFromFirestore();
-        if (Array.isArray(fsPays)) {
+        if (Array.isArray(fsPays) && fsPays.length > 0) {
           companyPaymentsListCache = fsPays;
+          try {
+            ensureDataDir();
+            fs.writeFileSync(COMPANY_PAYMENTS_FILE, JSON.stringify(fsPays, null, 2), "utf8");
+            fs.writeFileSync(ROOT_COMPANY_PAYMENTS_FILE, JSON.stringify(fsPays, null, 2), "utf8");
+          } catch (e) {}
         } else {
-          companyPaymentsListCache = readJsonLocal(COMPANY_PAYMENTS_FILE, []);
+          try {
+            const sqlPays = await getAllCompanyPaymentsCloudSql();
+            if (Array.isArray(sqlPays) && sqlPays.length > 0) {
+              companyPaymentsListCache = sqlPays;
+              try {
+                ensureDataDir();
+                fs.writeFileSync(COMPANY_PAYMENTS_FILE, JSON.stringify(sqlPays, null, 2), "utf8");
+                fs.writeFileSync(ROOT_COMPANY_PAYMENTS_FILE, JSON.stringify(sqlPays, null, 2), "utf8");
+              } catch (e) {}
+            } else {
+              companyPaymentsListCache = readJsonLocal(COMPANY_PAYMENTS_FILE, []);
+            }
+          } catch (e) {
+            companyPaymentsListCache = readJsonLocal(COMPANY_PAYMENTS_FILE, []);
+          }
         }
       }
 
       if (!purchasesListCache) {
         const fsPurs = await getPurchasesFromFirestore();
-        if (Array.isArray(fsPurs)) {
+        if (Array.isArray(fsPurs) && fsPurs.length > 0) {
           purchasesListCache = fsPurs;
+          try {
+            ensureDataDir();
+            fs.writeFileSync(PURCHASES_FILE, JSON.stringify(fsPurs, null, 2), "utf8");
+            fs.writeFileSync(ROOT_PURCHASES_FILE, JSON.stringify(fsPurs, null, 2), "utf8");
+          } catch (e) {}
         } else {
-          purchasesListCache = readJsonLocal(PURCHASES_FILE, []);
+          try {
+            const sqlPurs = await getAllPurchasesCloudSql();
+            if (Array.isArray(sqlPurs) && sqlPurs.length > 0) {
+              purchasesListCache = sqlPurs;
+              try {
+                ensureDataDir();
+                fs.writeFileSync(PURCHASES_FILE, JSON.stringify(sqlPurs, null, 2), "utf8");
+                fs.writeFileSync(ROOT_PURCHASES_FILE, JSON.stringify(sqlPurs, null, 2), "utf8");
+              } catch (e) {}
+            } else {
+              purchasesListCache = readJsonLocal(PURCHASES_FILE, []);
+            }
+          } catch (e) {
+            purchasesListCache = readJsonLocal(PURCHASES_FILE, []);
+          }
         }
       }
 
@@ -1936,7 +1974,7 @@ export function listCompanyPayments() {
   return payments.sort((a, b) => new Date(b.paymentDate || b.createdAt) - new Date(a.paymentDate || a.createdAt));
 }
 
-export function createCompanyPayment(paymentData) {
+export async function createCompanyPayment(paymentData) {
   const payments = readJson(COMPANY_PAYMENTS_FILE, []);
   const nowStr = new Date().toISOString();
 
@@ -1957,26 +1995,35 @@ export function createCompanyPayment(paymentData) {
     notes: paymentData.notes || '',
     status: paymentData.status || 'پرداخت شده',
     items: Array.isArray(paymentData.items) ? paymentData.items : [],
-    createdAt: nowStr
+    createdAt: paymentData.createdAt || nowStr
   };
 
-  payments.unshift(newPayment);
+  const existingIdx = payments.findIndex(p => String(p.id) === String(newPayment.id));
+  if (existingIdx >= 0) {
+    payments[existingIdx] = { ...payments[existingIdx], ...newPayment };
+  } else {
+    payments.unshift(newPayment);
+  }
+
   writeJson(COMPANY_PAYMENTS_FILE, payments);
-  saveCompanyPaymentToFirestore(newPayment).catch(e => console.error('Firestore save payment error:', e));
-  try { saveCompanyPaymentSqlite(newPayment); } catch (e) { console.error('SQLite save payment notice:', e); }
-  try { saveCompanyPaymentCloudSql(newPayment); } catch (e) { console.error('Cloud SQL save payment notice:', e); }
+  try { writeJson(ROOT_COMPANY_PAYMENTS_FILE, payments); } catch (e) {}
+
+  await saveCompanyPaymentToFirestore(newPayment).catch(e => console.error('Firestore save payment error:', e));
+  try { await saveCompanyPaymentSqlite(newPayment); } catch (e) { console.error('SQLite save payment notice:', e); }
+  try { await saveCompanyPaymentCloudSql(newPayment); } catch (e) { console.error('Cloud SQL save payment notice:', e); }
   return newPayment;
 }
 
-export function deleteCompanyPayment(id) {
+export async function deleteCompanyPayment(id) {
   let payments = readJson(COMPANY_PAYMENTS_FILE, []);
   const initialLen = payments.length;
   payments = payments.filter(p => String(p.id) !== String(id));
   if (payments.length !== initialLen) {
     writeJson(COMPANY_PAYMENTS_FILE, payments);
-    deleteCompanyPaymentFromFirestore(id).catch(e => console.error('Firestore delete payment error:', e));
-    try { deleteCompanyPaymentSqlite(id); } catch (e) { console.error('SQLite delete payment notice:', e); }
-    try { deleteCompanyPaymentCloudSql(id); } catch (e) { console.error('Cloud SQL delete payment notice:', e); }
+    try { writeJson(ROOT_COMPANY_PAYMENTS_FILE, payments); } catch (e) {}
+    await deleteCompanyPaymentFromFirestore(id).catch(e => console.error('Firestore delete payment error:', e));
+    try { await deleteCompanyPaymentSqlite(id); } catch (e) { console.error('SQLite delete payment notice:', e); }
+    try { await deleteCompanyPaymentCloudSql(id); } catch (e) { console.error('Cloud SQL delete payment notice:', e); }
     return true;
   }
   return false;
@@ -2693,6 +2740,28 @@ export async function initDatabaseSync() {
       }
     } catch (dErr) {
       console.error('[Database Sync] Delivery settings hydrate error:', dErr.message);
+    }
+    try {
+      const sqlPayments = await getAllCompanyPaymentsCloudSql();
+      if (Array.isArray(sqlPayments) && sqlPayments.length > 0) {
+        companyPaymentsListCache = sqlPayments;
+        writeJson(COMPANY_PAYMENTS_FILE, sqlPayments);
+        try { writeJson(ROOT_COMPANY_PAYMENTS_FILE, sqlPayments); } catch (e) {}
+        console.log(`[Database Sync] Hydrated ${sqlPayments.length} company payments from Supabase/Cloud SQL.`);
+      }
+    } catch (pErr) {
+      console.error('[Database Sync] Company payments hydrate error:', pErr.message);
+    }
+    try {
+      const sqlPurchases = await getAllPurchasesCloudSql();
+      if (Array.isArray(sqlPurchases) && sqlPurchases.length > 0) {
+        purchasesListCache = sqlPurchases;
+        writeJson(PURCHASES_FILE, sqlPurchases);
+        try { writeJson(ROOT_PURCHASES_FILE, sqlPurchases); } catch (e) {}
+        console.log(`[Database Sync] Hydrated ${sqlPurchases.length} purchases from Supabase/Cloud SQL.`);
+      }
+    } catch (puErr) {
+      console.error('[Database Sync] Purchases hydrate error:', puErr.message);
     }
   } catch (e) {
     console.error('Cloud SQL init notice:', e);

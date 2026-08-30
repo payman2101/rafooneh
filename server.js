@@ -823,8 +823,9 @@ app.get('/api/admin/profit', authMiddleware, (req, res) => {
 });
 
 // CRM: Company Payment Calculation & Settlement
-app.get('/api/admin/company-payments/stats', authMiddleware, (req, res) => {
+app.get('/api/admin/company-payments/stats', authMiddleware, async (req, res) => {
   try {
+    await ensureFirestoreLoaded().catch(() => {});
     const { fromDate, toDate } = req.query;
     const stats = getCompanyPaymentStats({ fromDate, toDate });
     res.json({ success: true, stats });
@@ -834,8 +835,9 @@ app.get('/api/admin/company-payments/stats', authMiddleware, (req, res) => {
   }
 });
 
-app.get('/api/admin/company-payments', authMiddleware, (req, res) => {
+app.get('/api/admin/company-payments', authMiddleware, async (req, res) => {
   try {
+    await ensureFirestoreLoaded().catch(() => {});
     const payments = listCompanyPayments();
     res.json({ success: true, payments });
   } catch (err) {
@@ -844,9 +846,10 @@ app.get('/api/admin/company-payments', authMiddleware, (req, res) => {
   }
 });
 
-app.post('/api/admin/company-payments', authMiddleware, (req, res) => {
+app.post('/api/admin/company-payments', authMiddleware, async (req, res) => {
   try {
-    const payment = createCompanyPayment(req.body);
+    await ensureFirestoreLoaded().catch(() => {});
+    const payment = await createCompanyPayment(req.body);
     res.json({ success: true, payment });
   } catch (err) {
     console.error('Error in POST /api/admin/company-payments:', err);
@@ -854,9 +857,10 @@ app.post('/api/admin/company-payments', authMiddleware, (req, res) => {
   }
 });
 
-app.delete('/api/admin/company-payments/:id', authMiddleware, (req, res) => {
+app.delete('/api/admin/company-payments/:id', authMiddleware, async (req, res) => {
   try {
-    const deleted = deleteCompanyPayment(req.params.id);
+    await ensureFirestoreLoaded().catch(() => {});
+    const deleted = await deleteCompanyPayment(req.params.id);
     res.json({ success: deleted });
   } catch (err) {
     console.error('Error in DELETE /api/admin/company-payments:', err);

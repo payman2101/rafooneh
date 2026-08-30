@@ -1,1 +1,45 @@
-[]
+[
+  {
+    "id": "PAY-1788004182155-351",
+    "paymentDate": "2026-08-29",
+    "fromDate": "2026-08-28",
+    "toDate": "2026-08-29",
+    "totalBuyCost": 150000,
+    "totalItemsCount": 3,
+    "ordersCount": 1,
+    "refNumber": "REF-12345",
+    "notes": "تست تسویه",
+    "status": "پرداخت شده",
+    "items": [
+      {
+        "productId": "prod-1",
+        "name": "مایع ظرفشویی",
+        "qty": 3,
+        "buyPrice": 50000,
+        "rowTotal": 150000
+      }
+    ],
+    "createdAt": "2026-08-29T11:49:42.155Z"
+  },
+  {
+    "id": "TEST-PAY-1",
+    "paymentDate": "2026-08-30",
+    "fromDate": "2026-08-01",
+    "toDate": "2026-08-30",
+    "totalBuyCost": 120000,
+    "totalItemsCount": 5,
+    "ordersCount": 2,
+    "refNumber": "REF-999",
+    "notes": "تست مستقیم کلود اس کیو ال",
+    "status": "پرداخت شده",
+    "items": [
+      {
+        "id": "p1",
+        "name": "کالا",
+        "qty": 5,
+        "price": 24000
+      }
+    ],
+    "createdAt": "2026-08-30T07:23:06.040Z"
+  }
+]

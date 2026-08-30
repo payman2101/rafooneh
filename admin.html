@@ -7467,30 +7467,55 @@
         const tbody = document.getElementById('companyPaymentHistoryBody');
         if (!tbody) return;
 
-        let payments = [];
+        let localPayments = [];
+        try {
+            localPayments = JSON.parse(localStorage.getItem('rafooneh_company_payments') || '[]');
+            if (!Array.isArray(localPayments)) localPayments = [];
+        } catch (e) {
+            localPayments = [];
+        }
 
+        let serverPayments = [];
         try {
             const res = await api('/api/admin/company-payments');
             if (res && res.ok) {
                 const data = await res.json();
-                if (data.success && Array.isArray(data.payments)) {
-                    payments = data.payments;
-                    localStorage.setItem('rafooneh_company_payments', JSON.stringify(payments));
+                if (data && data.success && Array.isArray(data.payments)) {
+                    serverPayments = data.payments;
                 }
             }
         } catch (err) {
             console.warn('Could not fetch company payment history from server, using local store');
         }
 
-        if (!payments || payments.length === 0) {
-            try {
-                payments = JSON.parse(localStorage.getItem('rafooneh_company_payments') || '[]');
-            } catch (e) {
-                payments = [];
-            }
-        }
+        // Merge server and local payments
+        const paymentMap = new Map();
+        serverPayments.forEach(p => {
+            if (p && p.id) paymentMap.set(String(p.id), p);
+        });
 
-        companyPaymentHistoryList = payments || [];
+        localPayments.forEach(lp => {
+            if (lp && lp.id) {
+                if (!paymentMap.has(String(lp.id))) {
+                    paymentMap.set(String(lp.id), lp);
+                    // Sync unpersisted local payment to server
+                    api('/api/admin/company-payments', {
+                        method: 'POST',
+                        body: JSON.stringify(lp)
+                    }).catch(() => {});
+                }
+            }
+        });
+
+        companyPaymentHistoryList = Array.from(paymentMap.values()).sort((a, b) => {
+            const dateA = new Date(a.paymentDate || a.createdAt || 0).getTime();
+            const dateB = new Date(b.paymentDate || b.createdAt || 0).getTime();
+            return dateB - dateA;
+        });
+
+        try {
+            localStorage.setItem('rafooneh_company_payments', JSON.stringify(companyPaymentHistoryList));
+        } catch (e) {}
 
         if (companyPaymentHistoryList.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">هیچ تسویه‌حسابی هنوز ثبت نشده است.</td></tr>';
@@ -7531,7 +7556,7 @@
     }
 
         function printCompanySettlementSlip(settlementId) {
-        const payment = companyPaymentsHistory.find(p => String(p.id) === String(settlementId));
+        const payment = (companyPaymentHistoryList || []).find(p => String(p.id) === String(settlementId));
         if (!payment) {
             alert('اطلاعات تسویه‌حساب یافت نشد.');
             return;
