@@ -2468,42 +2468,42 @@ export function saveDeliverySettings(settings) {
 // -------------------------------------------------------------
 export const DEFAULT_GIFT_SETTINGS = {
   isEnabled: true,
-  defaultGiftPercent: 5,
-  minOrderForGift: 0,
-  firstOrderBonusPercent: 10,
-  isFirstOrderBonusEnabled: true,
+  defaultGiftPercent: 0,
+  minOrderForGift: 1000000,
+  firstOrderBonusPercent: 5,
+  isFirstOrderBonusEnabled: false,
   allowCustomerGiftSelection: true,
   autoRollRemainingToWallet: true,
   tieredGiftsEnabled: true,
   tieredGifts: [
     {
       id: 'tier-1',
-      minAmount: 500000,
-      maxAmount: 1500000,
-      giftPercent: 5,
-      title: 'پله نقره‌ای (۵٪ هدیه)',
-      bonusDescription: '۵٪ اعتبار هدیه روی کل سبد خرید'
+      minAmount: 1000000,
+      maxAmount: 2000000,
+      giftPercent: 3,
+      title: 'پله ۱ (۳٪ هدیه)',
+      bonusDescription: '۳٪ ارزش کالاهای رافونه به عنوان هدیه'
     },
     {
       id: 'tier-2',
-      minAmount: 1500000,
-      maxAmount: 3000000,
-      giftPercent: 7,
-      title: 'پله طلایی (۷٪ هدیه)',
-      bonusDescription: '۷٪ هدیه + ارسال رایگان'
+      minAmount: 2000000,
+      maxAmount: 4000000,
+      giftPercent: 5,
+      title: 'پله ۲ (۵٪ هدیه)',
+      bonusDescription: '۵٪ ارزش کالاهای رافونه به عنوان هدیه'
     },
     {
       id: 'tier-3',
-      minAmount: 3000000,
+      minAmount: 4000000,
       maxAmount: 0,
-      giftPercent: 10,
-      title: 'پله الماس VIP (۱۰٪ هدیه)',
-      bonusDescription: '۱۰٪ هدیه + محصول اشانتیون ویژه'
+      giftPercent: 8,
+      title: 'پله ۳ VIP (۸٪ هدیه)',
+      bonusDescription: '۸٪ ارزش کالاهای رافونه به عنوان هدیه + اشانتیون ویژه'
     }
   ],
   allowedGiftProductIds: [],
   maxGiftItemPrice: 0,
-  customGiftNotice: 'با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ سفارش را هدیه یا اعتبار کیف پول دریافت کنید!',
+  customGiftNotice: 'طرح هدیه کالاهای رافونه: خرید ۱ الی ۲ میلیون تومان ۳٪، ۲ الی ۴ میلیون تومان ۵٪ و بالای ۴ میلیون تومان ۸٪ هدیه کالا!',
   updatedAt: new Date().toISOString()
 };
 
@@ -2573,28 +2573,59 @@ export function saveGiftSettings(settings) {
   return updated;
 }
 
-export function calculateGiftQuotaForOrder(itemsSubtotal, isFirstOrder = false) {
+export function calculateGiftQuotaForOrder(itemsSubtotal, options = false) {
+  const isFirstOrder = (typeof options === 'object' && options !== null) ? Boolean(options.isFirstOrder) : Boolean(options);
   const settings = getGiftSettings();
-  if (!settings.isEnabled) return 0;
-  if (settings.minOrderForGift && itemsSubtotal < Number(settings.minOrderForGift)) {
+  if (!settings || settings.isEnabled === false) return 0;
+  const subtotal = Number(itemsSubtotal) || 0;
+  if (subtotal <= 0) return 0;
+
+  const minOrder = Number(settings.minOrderForGift) || 0;
+  if (minOrder > 0 && subtotal < minOrder) {
     return 0;
   }
-  if (isFirstOrder && settings.isFirstOrderBonusEnabled && Number(settings.firstOrderBonusPercent) > 0) {
-    return Math.round(itemsSubtotal * (Number(settings.firstOrderBonusPercent) / 100));
-  }
+
+  let pct = 0;
+
   if (settings.tieredGiftsEnabled && Array.isArray(settings.tieredGifts) && settings.tieredGifts.length > 0) {
-    const sortedTiers = [...settings.tieredGifts].sort((a, b) => Number(b.minAmount) - Number(a.minAmount));
-    for (const tier of sortedTiers) {
+    // Sort tiers ascending by minAmount
+    const sortedTiers = [...settings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+    let matchedTier = null;
+
+    for (let i = 0; i < sortedTiers.length; i++) {
+      const tier = sortedTiers[i];
       const min = Number(tier.minAmount) || 0;
       const max = Number(tier.maxAmount) || 0;
-      if (itemsSubtotal >= min && (max === 0 || itemsSubtotal <= max)) {
-        const pct = Number(tier.giftPercent) || Number(settings.defaultGiftPercent) || 5;
-        return Math.round(itemsSubtotal * (pct / 100));
+
+      // Tier 1 (1M to 2M): subtotal >= 1M && subtotal <= 2M
+      // Tier 2 (2M to 4M): subtotal > 2M && subtotal <= 4M
+      // Tier 3 (4M+): subtotal > 4M
+      const isFirst = (i === 0);
+      const isAboveMin = isFirst ? (subtotal >= min) : (subtotal > min);
+      const isBelowMax = (max === 0 || subtotal <= max);
+
+      if (isAboveMin && isBelowMax) {
+        matchedTier = tier;
+        break;
       }
     }
+
+    if (matchedTier && matchedTier.giftPercent !== undefined) {
+      pct = Number(matchedTier.giftPercent) || 0;
+    } else {
+      pct = 0;
+    }
+  } else {
+    pct = Number(settings.defaultGiftPercent) || 0;
   }
-  const defPct = Number(settings.defaultGiftPercent) || 5;
-  return Math.round(itemsSubtotal * (defPct / 100));
+
+  if (isFirstOrder && settings.isFirstOrderBonusEnabled && Number(settings.firstOrderBonusPercent) > 0) {
+    const bonus = Number(settings.firstOrderBonusPercent) || 0;
+    if (bonus > pct) pct = bonus;
+  }
+
+  if (pct <= 0) return 0;
+  return Math.round(subtotal * (pct / 100));
 }
 
 export function getPackagesList(onlyActive = false) {

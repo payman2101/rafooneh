@@ -95,21 +95,21 @@ let memoryBankSettings = {
 
 let memoryGiftSettings = {
   isEnabled: true,
-  defaultGiftPercent: 5,
-  minOrderForGift: 0,
-  firstOrderBonusPercent: 10,
-  isFirstOrderBonusEnabled: true,
+  defaultGiftPercent: 0,
+  minOrderForGift: 1000000,
+  firstOrderBonusPercent: 5,
+  isFirstOrderBonusEnabled: false,
   allowCustomerGiftSelection: true,
   autoRollRemainingToWallet: true,
   tieredGiftsEnabled: true,
   tieredGifts: [
-    { id: 'tier-1', minAmount: 500000, maxAmount: 1500000, giftPercent: 5, title: 'پله نقره‌ای (۵٪ هدیه)', bonusDescription: '۵٪ اعتبار هدیه روی کل سفارش' },
-    { id: 'tier-2', minAmount: 1500000, maxAmount: 3000000, giftPercent: 7, title: 'پله طلایی (۷٪ هدیه)', bonusDescription: '۷٪ هدیه + ارسال رایگان' },
-    { id: 'tier-3', minAmount: 3000000, maxAmount: 0, giftPercent: 10, title: 'پله الماس VIP (۱۰٪ هدیه)', bonusDescription: '۱۰٪ هدیه + محصول اشانتیون ویژه' }
+    { id: 'tier-1', minAmount: 1000000, maxAmount: 2000000, giftPercent: 3, title: 'پله ۱ (۳٪ هدیه)', bonusDescription: '۳٪ ارزش کالاهای رافونه به عنوان هدیه' },
+    { id: 'tier-2', minAmount: 2000000, maxAmount: 4000000, giftPercent: 5, title: 'پله ۲ (۵٪ هدیه)', bonusDescription: '۵٪ ارزش کالاهای رافونه به عنوان هدیه' },
+    { id: 'tier-3', minAmount: 4000000, maxAmount: 0, giftPercent: 8, title: 'پله ۳ VIP (۸٪ هدیه)', bonusDescription: '۸٪ ارزش کالاهای رافونه به عنوان هدیه + اشانتیون ویژه' }
   ],
   allowedGiftProductIds: [],
   maxGiftItemPrice: 0,
-  customGiftNotice: 'با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ سفارش را هدیه یا اعتبار کیف پول دریافت کنید!',
+  customGiftNotice: 'طرح هدیه کالاهای رافونه: خرید ۱ الی ۲ میلیون تومان ۳٪، ۲ الی ۴ میلیون تومان ۵٪ و بالای ۴ میلیون تومان ۸٪ هدیه کالا!',
   updatedAt: new Date().toISOString()
 };
 let memoryPackages = [];

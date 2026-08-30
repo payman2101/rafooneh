@@ -1,40 +1,40 @@
 {
   "isEnabled": true,
-  "defaultGiftPercent": 6,
-  "minOrderForGift": 500000,
-  "firstOrderBonusPercent": 10,
-  "isFirstOrderBonusEnabled": true,
+  "defaultGiftPercent": 0,
+  "minOrderForGift": 1000000,
+  "firstOrderBonusPercent": 5,
+  "isFirstOrderBonusEnabled": false,
   "allowCustomerGiftSelection": true,
   "autoRollRemainingToWallet": true,
   "tieredGiftsEnabled": true,
   "tieredGifts": [
     {
       "id": "tier-1",
-      "minAmount": 500000,
-      "maxAmount": 1500000,
-      "giftPercent": 6,
-      "title": "پله نقره‌ای (۶٪ هدیه)",
-      "bonusDescription": "۶٪ ارزش فاکتور هدیه کالا"
+      "minAmount": 1000000,
+      "maxAmount": 2000000,
+      "giftPercent": 3,
+      "title": "پله ۱ (۳٪ هدیه)",
+      "bonusDescription": "۳٪ ارزش کالاهای رافونه به عنوان هدیه"
     },
     {
       "id": "tier-2",
-      "minAmount": 1500000,
-      "maxAmount": 3000000,
-      "giftPercent": 8,
-      "title": "پله طلایی (۸٪ هدیه)",
-      "bonusDescription": "۸٪ هدیه + ارسال رایگان"
+      "minAmount": 2000000,
+      "maxAmount": 4000000,
+      "giftPercent": 5,
+      "title": "پله ۲ (۵٪ هدیه)",
+      "bonusDescription": "۵٪ ارزش کالاهای رافونه به عنوان هدیه"
     },
     {
       "id": "tier-3",
-      "minAmount": 3000000,
+      "minAmount": 4000000,
       "maxAmount": 0,
-      "giftPercent": 12,
-      "title": "پله الماس VIP (۱۲٪ هدیه)",
-      "bonusDescription": "۱۲٪ هدیه + محصول اشانتیون ویژه"
+      "giftPercent": 8,
+      "title": "پله ۳ VIP (۸٪ هدیه)",
+      "bonusDescription": "۸٪ ارزش کالاهای رافونه به عنوان هدیه + اشانتیون ویژه"
     }
   ],
   "allowedGiftProductIds": [],
   "maxGiftItemPrice": 0,
-  "customGiftNotice": "با هر خرید، ۶ الی ۱۲ درصد هدیه دریافت نمایید",
-  "updatedAt": "2026-08-29T04:51:02.495Z"
+  "customGiftNotice": "طرح هدیه کالاهای رافونه: خرید ۱ الی ۲ میلیون تومان ۳٪، ۲ الی ۴ میلیون تومان ۵٪ و بالای ۴ میلیون تومان ۸٪ هدیه کالا!",
+  "updatedAt": "2026-08-30T09:15:03.131Z"
 }

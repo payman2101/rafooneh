@@ -10793,17 +10793,17 @@
     // ==========================================
     let currentGiftSettings = {
         isEnabled: true,
-        defaultGiftPercent: 5,
-        minOrderForGift: 0,
-        isFirstOrderBonusEnabled: true,
-        firstOrderBonusPercent: 10,
+        defaultGiftPercent: 0,
+        minOrderForGift: 1000000,
+        isFirstOrderBonusEnabled: false,
+        firstOrderBonusPercent: 5,
         tieredGiftsEnabled: true,
         tieredGifts: [
-            { id: 'tier-1', minAmount: 500000, maxAmount: 1500000, giftPercent: 5, title: 'پله نقره‌ای (۵٪ هدیه)', bonusDescription: '۵٪ ارزش فاکتور هدیه کالا' },
-            { id: 'tier-2', minAmount: 1500000, maxAmount: 3000000, giftPercent: 7, title: 'پله طلایی (۷٪ هدیه)', bonusDescription: '۷٪ هدیه + ارسال رایگان' },
-            { id: 'tier-3', minAmount: 3000000, maxAmount: 0, giftPercent: 10, title: 'پله الماس VIP (۱۰٪ هدیه)', bonusDescription: '۱۰٪ هدیه + محصول اشانتیون ویژه' }
+            { id: 'tier-1', minAmount: 1000000, maxAmount: 2000000, giftPercent: 3, title: 'پله ۱ (۳٪ هدیه)', bonusDescription: '۳٪ ارزش کالاهای رافونه به عنوان هدیه' },
+            { id: 'tier-2', minAmount: 2000000, maxAmount: 4000000, giftPercent: 5, title: 'پله ۲ (۵٪ هدیه)', bonusDescription: '۵٪ ارزش کالاهای رافونه به عنوان هدیه' },
+            { id: 'tier-3', minAmount: 4000000, maxAmount: 0, giftPercent: 8, title: 'پله ۳ VIP (۸٪ هدیه)', bonusDescription: '۸٪ ارزش کالاهای رافونه به عنوان هدیه + اشانتیون ویژه' }
         ],
-        customGiftNotice: 'با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ فاکتور را کالای هدیه رایگان انتخاب فرمایید!',
+        customGiftNotice: 'طرح هدیه کالاهای رافونه: خرید ۱ الی ۲ میلیون تومان ۳٪، ۲ الی ۴ میلیون تومان ۵٪ و بالای ۴ میلیون تومان ۸٪ هدیه کالا!',
         updatedAt: new Date().toISOString()
     };
 
@@ -11039,15 +11039,26 @@
             applicablePct = firstOrderBonusPct;
             matchedTierTitle = `طرح ویژه خوش‌آمدگویی سفارش اول (${firstOrderBonusPct}٪)`;
         } else if (Array.isArray(currentGiftSettings.tieredGifts) && currentGiftSettings.tieredGifts.length > 0) {
-            const sortedTiers = [...currentGiftSettings.tieredGifts].sort((a, b) => Number(b.minAmount) - Number(a.minAmount));
-            for (const tier of sortedTiers) {
+            const sortedTiers = [...currentGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+            let found = false;
+            for (let i = 0; i < sortedTiers.length; i++) {
+                const tier = sortedTiers[i];
                 const min = Number(tier.minAmount) || 0;
                 const max = Number(tier.maxAmount) || 0;
-                if (amount >= min && (max === 0 || amount <= max)) {
-                    applicablePct = Number(tier.giftPercent) || defaultPercent;
+                const isFirst = (i === 0);
+                const isAboveMin = isFirst ? (amount >= min) : (amount > min);
+                const isBelowMax = (max === 0 || amount <= max);
+
+                if (isAboveMin && isBelowMax) {
+                    applicablePct = Number(tier.giftPercent) || 0;
                     matchedTierTitle = tier.title || `پله ${applicablePct}٪`;
+                    found = true;
                     break;
                 }
+            }
+            if (!found) {
+                applicablePct = 0;
+                matchedTierTitle = 'کمتر از حد نصاب پله‌های هدیه (۰٪)';
             }
         }
 

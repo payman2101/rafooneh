@@ -2807,7 +2807,7 @@
 
                 <button class="drawer-menu-item" onclick="toggleDrawer(false); openCustomerDashboardModal('wallet');">
                     <i class="fa-solid fa-wallet"></i>
-                    <span>کیف پول و اعتبارات هدیه (۵٪)</span>
+                    <span>کیف پول و اعتبارات هدیه</span>
                 </button>
 
                 <button class="drawer-menu-item" onclick="toggleDrawer(false); openCustomerDashboardModal('orders');">
@@ -2817,7 +2817,7 @@
 
                 <button class="drawer-menu-item" onclick="toggleDrawer(false); openGiftSelectionModal();">
                     <i class="fa-solid fa-gift" style="color: #ea580c;"></i>
-                    <span>انتخاب هدایای رایگان (۵٪ تخفیف هدیه)</span>
+                    <span>انتخاب هدایای رایگان رافونه</span>
                 </button>
 
                 <button class="drawer-menu-item" onclick="toggleDrawer(false); openTrackOrderModal();">
@@ -3083,9 +3083,11 @@
 
             <!-- Header Dynamic Quota & Selected Gifts Tracker -->
             <div id="giftModalStatusBar" style="padding: 12px 16px; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; font-size: 0.84rem; color: #166534;">
+                <!-- Visual Tier Levels Bar -->
+                <div id="giftModalTiersBar" style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;"></div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 8px;">
                     <div style="background: white; border: 1px solid #bbf7d0; border-radius: 10px; padding: 6px 10px; text-align: center;">
-                        <span style="font-size: 0.72rem; color: #64748b; display: block;">سقف کل هدیه (۵٪)</span>
+                        <span style="font-size: 0.72rem; color: #64748b; display: block;" id="giftModalTotalQuotaLabel">سقف ارزش هدیه</span>
                         <strong id="giftTotalQuotaDisplay" style="color: #065f46; font-size: 0.88rem;">۰ تومان</strong>
                     </div>
                     <div style="background: white; border: 1px solid #86efac; border-radius: 10px; padding: 6px 10px; text-align: center;">
@@ -3562,7 +3564,7 @@
                     <i class="fa-solid fa-gift" style="color: #059669;"></i> مزایای حساب کاربری پخش پیمان:
                 </div>
                 <ul style="margin: 0; padding-right: 18px; font-size: 0.78rem; color: #15803d; line-height: 1.6;">
-                    <li>ذخیره دائمی مانده ۵٪ اعتبار هدیه خریدها در کیف پول شما</li>
+                    <li>ذخیره دائمی مانده اعتبار هدیه خریدها در کیف پول شما</li>
                     <li>امکان تجمیع و استفاده از مانده هدیه در خریدهای بعدی</li>
                     <li>دسترسی همیشگی به سوابق فاکتورها و وضعیت سفارشات</li>
                 </ul>
@@ -3656,7 +3658,7 @@
                         </div>
                         <div style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; padding: 6px 12px; text-align: center;">
                             <div style="font-size: 0.7rem; opacity: 0.85;">نرخ هدیه هر خرید</div>
-                            <div style="font-size: 0.95rem; font-weight: 800; color: #fef08a;">۵٪ نقدی</div>
+                            <div style="font-size: 0.95rem; font-weight: 800; color: #fef08a;" id="dashWalletGiftRateDisplay">پلکانی (۳ تا ۸٪)</div>
                         </div>
                     </div>
 
@@ -3673,7 +3675,7 @@
                     <div style="font-weight: 700; color: #0f766e; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-circle-info"></i> مانده هدیه چگونه محاسبه و ذخیره می‌شود؟
                     </div>
-                    در هر خرید ۵٪ از مبلغ به عنوان سقف هدیه به شما تعلق می‌گیرد. چنانچه کالای کم‌قیمت‌تری انتخاب فرمایید یا هدیه‌ای بر ندارید، باقیمانده مبلغ به صورت خودکار در این کیف پول ذخیره شده و در خریدهای بعدی قابل استفاده است.
+                    بر اساس جدول و پله‌های هدیه، درصدی از مبلغ خرید کالاهای رافونه به عنوان سقف هدیه به شما تعلق می‌گیرد. چنانچه کالای کم‌قیمت‌تری انتخاب فرمایید یا هدیه‌ای بر ندارید، باقیمانده مبلغ به صورت خودکار در این کیف پول ذخیره شده و در خریدهای بعدی قابل استفاده است.
                 </div>
 
                 <!-- Transactions Header -->
@@ -4188,7 +4190,7 @@
                 
                 // Update Gift allowance in floating cart bar (based on Rafooneh brand products)
                 const rafoonehSubtotal = typeof calculateCartRafoonehTotal === "function" ? calculateCartRafoonehTotal() : totalPrice;
-                const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
+                const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : 0;
                 const giftsCount = typeof getSelectedGiftsCount === 'function' ? getSelectedGiftsCount() : 0;
                 const giftsVal = typeof getSelectedGiftsTotalValue === 'function' ? getSelectedGiftsTotalValue() : 0;
 
@@ -4559,7 +4561,7 @@
 
         function getRemainingGiftAllowance() {
             const rafoonehSubtotal = calculateCartRafoonehTotal();
-            const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
+            const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : 0;
             const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
             const totalAllowance = orderGiftQuota + walletCredit;
             const used = getSelectedGiftsTotalValue();
@@ -4575,8 +4577,10 @@
 
         function updateGiftModalTracker() {
             try {
-                const rafoonehSubtotal = calculateCartRafoonehTotal();
-                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
+                const rafoonehSubtotal = typeof calculateCartRafoonehTotal === "function" ? calculateCartRafoonehTotal() : 0;
+                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : 0;
+                const activePct = typeof getActiveGiftPercent === "function" ? getActiveGiftPercent(rafoonehSubtotal) : 0;
+                const nextTier = typeof getNextGiftTierRequirement === "function" ? getNextGiftTierRequirement(rafoonehSubtotal) : null;
                 const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
                 const totalAllowance = orderGiftQuota + walletCredit;
                 const used = getSelectedGiftsTotalValue();
@@ -4584,21 +4588,48 @@
                 const giftsList = getSelectedGiftsList();
                 const totalCount = getSelectedGiftsCount();
 
+                // Dynamic visual tier levels bar in modal
+                const tiersBar = document.getElementById('giftModalTiersBar');
+                if (tiersBar && dynamicGiftSettings && dynamicGiftSettings.tieredGiftsEnabled && Array.isArray(dynamicGiftSettings.tieredGifts)) {
+                    const sortedTiers = [...dynamicGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+                    tiersBar.innerHTML = sortedTiers.map(t => {
+                        const min = Number(t.minAmount) || 0;
+                        const max = Number(t.maxAmount) || 0;
+                        const isCurrent = rafoonehSubtotal >= min && (max === 0 || rafoonehSubtotal <= max);
+                        const rangeStr = max > 0 
+                            ? ((min / 1000000) + ' تا ' + (max / 1000000) + ' میلیون تومان')
+                            : ('بالای ' + (min / 1000000) + ' میلیون تومان');
+                        return `
+                            <div style="flex:1; min-width:95px; text-align:center; padding:6px 8px; border-radius:10px; font-size:0.75rem; transition:all 0.2s; ${isCurrent ? 'background:linear-gradient(135deg, #059669, #047857); color:white; font-weight:bold; box-shadow:0 2px 6px rgba(5,150,105,0.25); border:1.5px solid #047857;' : 'background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;'}">
+                                <div style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                                    ${isCurrent ? '<i class="fa-solid fa-circle-check" style="color:#a7f3d0; font-size:0.7rem;"></i>' : ''}
+                                    <span>${escapeHtml(t.title || ('پله ' + t.giftPercent + '٪'))}</span>
+                                </div>
+                                <div style="font-size:0.65rem; opacity:0.88; margin-top:2px;">${rangeStr}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
                 const subtitle = document.getElementById('giftModalQuotaSubtitle');
                 if (subtitle) {
                     if (totalAllowance > 0) {
                         if (walletCredit > 0) {
-                            subtitle.textContent = `سقف ارزش هدیه: ${totalAllowance.toLocaleString('fa-IR')} تومان (${orderGiftQuota.toLocaleString('fa-IR')} ت هدیه رافونه + ${walletCredit.toLocaleString('fa-IR')} ت کیف پول)`;
+                            subtitle.textContent = `سقف ارزش هدیه: ${totalAllowance.toLocaleString('fa-IR')} تومان (${orderGiftQuota.toLocaleString('fa-IR')} ت هدیه ${activePct}٪ رافونه + ${walletCredit.toLocaleString('fa-IR')} ت کیف پول)`;
                         } else {
-                            subtitle.textContent = `سقف ارزش هدیه شما: ${totalAllowance.toLocaleString('fa-IR')} تومان (بر اساس کالاهای رافونه)`;
+                            subtitle.textContent = `سقف هدیه شما: ${totalAllowance.toLocaleString('fa-IR')} تومان (پله ${activePct}٪ هدیه برند رافونه)`;
                         }
+                    } else if (rafoonehSubtotal > 0 && nextTier) {
+                        subtitle.textContent = `مبلغ کالاهای رافونه: ${rafoonehSubtotal.toLocaleString('fa-IR')} ت (زیر حد نصاب ۱ میلیون ت). با ${nextTier.neededAmount.toLocaleString('fa-IR')} ت دیگر، پله ${nextTier.nextPercent}٪ هدیه فعال می‌شود.`;
                     } else {
-                        subtitle.textContent = `با افزودن کالاهای برند رافونه به سبد خرید، درصد هدیه فعال می‌شود`;
+                        subtitle.textContent = `خرید بالای ۱ میلیون تومان از برند رافونه شامل هدیه رایگان ۳ تا ۸ درصدی است`;
                     }
                 }
 
                 const totalQuotaEl = document.getElementById('giftTotalQuotaDisplay');
-                if (totalQuotaEl) totalQuotaEl.textContent = `${totalAllowance.toLocaleString('fa-IR')} تومان`;
+                if (totalQuotaEl) {
+                    totalQuotaEl.textContent = activePct > 0 ? `${totalAllowance.toLocaleString('fa-IR')} ت (${activePct}٪)` : `${totalAllowance.toLocaleString('fa-IR')} تومان`;
+                }
 
                 const usedQuotaEl = document.getElementById('giftUsedQuotaDisplay');
                 if (usedQuotaEl) usedQuotaEl.textContent = `${used.toLocaleString('fa-IR')} تومان (${totalCount.toLocaleString('fa-IR')} قلم)`;
@@ -4646,24 +4677,10 @@
 
                 const footerSummary = document.getElementById('giftModalFooterSummary');
                 if (footerSummary) {
-                    if (giftsList.length > 0) {
-                        footerSummary.innerHTML = `
-                            <span style="color:#065f46; font-weight:bold;">
-                                ${totalCount.toLocaleString('fa-IR')} قلم هدیه رافونه (ارزش: ${used.toLocaleString('fa-IR')} ت)
-                            </span>
-                            <span style="color:#64748b; margin-right:6px;">| مانده ذخیره‌شونده در کیف پول: <strong style="color:#059669;">${remaining.toLocaleString('fa-IR')} ت</strong></span>
-                        `;
+                    if (totalAllowance > 0) {
+                        footerSummary.innerHTML = `سقف کل: <strong>${totalAllowance.toLocaleString('fa-IR')} ت</strong> | انتخاب شده: <strong>${used.toLocaleString('fa-IR')} ت</strong> | باقیمانده: <strong style="color:#059669;">${remaining.toLocaleString('fa-IR')} ت</strong>`;
                     } else {
-                        footerSummary.innerHTML = `<span style="color:#64748b;">مانده اعتبار هدیه رافونه (${orderGiftQuota.toLocaleString('fa-IR')} ت) در کیف پول حساب شما محفوظ خواهد ماند.</span>`;
-                    }
-                }
-
-                const confirmBtn = document.getElementById('giftModalConfirmBtn');
-                if (confirmBtn) {
-                    if (giftsList.length > 0) {
-                        confirmBtn.innerHTML = `<i class="fa-solid fa-check"></i> تأیید و بستن (${totalCount.toLocaleString('fa-IR')} هدیه)`;
-                    } else {
-                        confirmBtn.innerHTML = `<i class="fa-solid fa-check"></i> تأیید و بستن پنجره`;
+                        footerSummary.innerHTML = `<span style="color:#64748b;">با افزایش خرید از برند رافونه، سقف هدیه شما به صورت خودکار فعال و افزوده می‌شود.</span>`;
                     }
                 }
             } catch (err) {
@@ -4709,7 +4726,7 @@
             if (e && e.stopPropagation) e.stopPropagation();
             try {
                 const rafoonehSubtotal = calculateCartRafoonehTotal();
-                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
+                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : 0;
                 const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
                 const totalAllowance = orderGiftQuota + walletCredit;
                 
@@ -4725,7 +4742,13 @@
                 const price = Number(p.price) || 0;
 
                 if (totalAllowance <= 0) {
-                    showGiftToast('ابتدا اقلامی از برند رافونه به سبد خرید اضافه فرمایید تا هدیه فعال شود.', 'fa-circle-info', '#d97706');
+                    const minForGift = Number(dynamicGiftSettings.minOrderForGift) || 1000000;
+                    if (rafoonehSubtotal < minForGift) {
+                        const needed = minForGift - rafoonehSubtotal;
+                        showGiftToast(`مبلغ خرید کالاهای رافونه ${rafoonehSubtotal.toLocaleString('fa-IR')} تومان است. با افزودن ${needed.toLocaleString('fa-IR')} تومان دیگر، هدیه فعال می‌شود.`, 'fa-circle-info', '#d97706');
+                    } else {
+                        showGiftToast('ابتدا اقلامی از برند رافونه به سبد خرید اضافه فرمایید تا هدیه فعال شود.', 'fa-circle-info', '#d97706');
+                    }
                     return;
                 }
 
@@ -4832,7 +4855,7 @@
             if (!container) return;
 
             const rafoonehSubtotal = calculateCartRafoonehTotal();
-            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
+            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : 0;
             const remainingAllowance = getRemainingGiftAllowance();
             const query = (document.getElementById('giftSearchInput')?.value || '').trim().toLowerCase();
 
@@ -4994,7 +5017,7 @@
 
             // Gift Offer Box (Calculated based on Rafooneh brand products)
             const rafoonehSubtotal = typeof calculateCartRafoonehTotal === "function" ? calculateCartRafoonehTotal() : itemsSubtotal;
-            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
+            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : 0;
             if (giftAllowance > 0) {
                 // If total used gift value exceeds quota due to cart changes, trim excess
                 let usedGiftVal = getSelectedGiftsTotalValue();
@@ -5288,7 +5311,7 @@
                         id: 'gift-' + (g.product.id || g.product.code || Date.now()) + '-' + Math.random().toString(36).substring(2, 5),
                         productId: g.product.id || g.product.code,
                         code: g.product.code || g.product.id,
-                        name: '🎁 هدیه خرید (رایگان ۵٪): ' + g.product.name,
+                        name: '🎁 هدیه خرید (رایگان): ' + g.product.name,
                         qty: g.qty,
                         price: 0,
                         realPrice: Number(g.product.price) || 0,
@@ -5375,7 +5398,7 @@
             }
 
             if (giftsList.length > 0) {
-                orderText += `\n🎁 *اقلام هدیه رایگان ۵٪ خرید:*\n`;
+                orderText += `\n🎁 *اقلام هدیه رایگان رافونه:*\n`;
                 giftsList.forEach(g => {
                     orderText += `▫️ ${g.product.name} × ${g.qty} عدد (ارزش هر عدد: ${((Number(g.product.price) || 0) * 10).toLocaleString('fa-IR')} ریال - کاملاً رایگان)\n`;
                 });
@@ -6721,7 +6744,7 @@
                 listEl.innerHTML = `
                     <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; padding:16px; text-align:center; color:#64748b; font-size:0.84rem;">
                         <i class="fa-solid fa-receipt" style="font-size:1.5rem; color:#94a3b8; display:block; margin-bottom:6px;"></i>
-                        هنوز تراکنشی در کیف پول شما ثبت نشده است. با هر خرید، مانده ۵٪ هدیه در اینجا اضافه می‌شود.
+                        هنوز تراکنشی در کیف پول شما ثبت نشده است. با هر خرید، مانده هدیه در اینجا اضافه می‌شود.
                     </div>
                 `;
                 return;
@@ -7152,6 +7175,8 @@
         loadProductsFromApi();
         loadCustomerBankSettings();
         loadStoreDeliverySettings();
+        fetchDynamicGiftSettings();
+        fetchStorefrontPackages();
         initCustomerSession();
         syncPendingLocalOrders();
         setInterval(loadProductsFromApi, 3000);
@@ -7164,21 +7189,125 @@
     // -------------------------------------------------------------
     let dynamicGiftSettings = {
         isEnabled: true,
-        defaultGiftPercent: 5,
-        minOrderForGift: 0,
-        firstOrderBonusPercent: 10,
-        isFirstOrderBonusEnabled: true,
+        defaultGiftPercent: 0,
+        minOrderForGift: 1000000,
+        firstOrderBonusPercent: 5,
+        isFirstOrderBonusEnabled: false,
         allowCustomerGiftSelection: true,
         autoRollRemainingToWallet: true,
         tieredGiftsEnabled: true,
         tieredGifts: [
-            { id: 'tier-1', minAmount: 500000, maxAmount: 1500000, giftPercent: 5, title: 'پله نقره‌ای (۵٪ هدیه)', bonusDescription: '۵٪ اعتبار هدیه روی کل سبد خرید' },
-            { id: 'tier-2', minAmount: 1500000, maxAmount: 3000000, giftPercent: 7, title: 'پله طلایی (۷٪ هدیه)', bonusDescription: '۷٪ هدیه + ارسال رایگان' },
-            { id: 'tier-3', minAmount: 3000000, maxAmount: 0, giftPercent: 10, title: 'پله الماس VIP (۱۰٪ هدیه)', bonusDescription: '۱۰٪ هدیه + محصول اشانتیون ویژه' }
+            { id: 'tier-1', minAmount: 1000000, maxAmount: 2000000, giftPercent: 3, title: 'پله ۱ (۳٪ هدیه)', bonusDescription: '۳٪ ارزش کالاهای رافونه به عنوان هدیه' },
+            { id: 'tier-2', minAmount: 2000000, maxAmount: 4000000, giftPercent: 5, title: 'پله ۲ (۵٪ هدیه)', bonusDescription: '۵٪ ارزش کالاهای رافونه به عنوان هدیه' },
+            { id: 'tier-3', minAmount: 4000000, maxAmount: 0, giftPercent: 8, title: 'پله ۳ VIP (۸٪ هدیه)', bonusDescription: '۸٪ ارزش کالاهای رافونه به عنوان هدیه + اشانتیون ویژه' }
         ],
-        customGiftNotice: ''
+        customGiftNotice: 'طرح هدیه کالاهای رافونه: خرید ۱ الی ۲ میلیون تومان ۳٪، ۲ الی ۴ میلیون تومان ۵٪ و بالای ۴ میلیون تومان ۸٪ هدیه کالا!'
     };
     let storefrontPackagesList = [];
+
+    function getActiveGiftTierInfo(orderAmount, isFirstOrder = false) {
+        if (!dynamicGiftSettings || dynamicGiftSettings.isEnabled === false) return null;
+        const subtotal = Number(orderAmount) || 0;
+        if (subtotal <= 0) return null;
+        
+        const minOrder = Number(dynamicGiftSettings.minOrderForGift) || 0;
+        if (minOrder > 0 && subtotal < minOrder) {
+            return null;
+        }
+
+        if (dynamicGiftSettings.tieredGiftsEnabled && Array.isArray(dynamicGiftSettings.tieredGifts) && dynamicGiftSettings.tieredGifts.length > 0) {
+            // Sort tiers ascending
+            const sortedTiers = [...dynamicGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+            for (let i = 0; i < sortedTiers.length; i++) {
+                const tier = sortedTiers[i];
+                const min = Number(tier.minAmount) || 0;
+                const max = Number(tier.maxAmount) || 0;
+                const isFirst = (i === 0);
+                const isAboveMin = isFirst ? (subtotal >= min) : (subtotal > min);
+                const isBelowMax = (max === 0 || subtotal <= max);
+
+                if (isAboveMin && isBelowMax) {
+                    return {
+                        id: tier.id,
+                        minAmount: min,
+                        maxAmount: max,
+                        giftPercent: Number(tier.giftPercent) || 0,
+                        title: tier.title || ('پله ' + tier.giftPercent + '٪'),
+                        bonusDescription: tier.bonusDescription || ''
+                    };
+                }
+            }
+            // If less than lowest tier minimum -> no gift (0%)
+            return null;
+        }
+
+        const defPct = Number(dynamicGiftSettings.defaultGiftPercent) || 0;
+        if (defPct > 0) {
+            return {
+                id: 'default',
+                minAmount: minOrder,
+                maxAmount: 0,
+                giftPercent: defPct,
+                title: 'هدیه ' + defPct + '٪',
+                bonusDescription: ''
+            };
+        }
+        return null;
+    }
+
+    function calculateOrderGiftAllowance(orderAmount, isFirstOrder = false) {
+        if (!dynamicGiftSettings || dynamicGiftSettings.isEnabled === false) return 0;
+        if (orderAmount <= 0) return 0;
+
+        const tierInfo = getActiveGiftTierInfo(orderAmount, isFirstOrder);
+        let pct = tierInfo ? (Number(tierInfo.giftPercent) || 0) : 0;
+
+        if (isFirstOrder && dynamicGiftSettings.isFirstOrderBonusEnabled && dynamicGiftSettings.firstOrderBonusPercent) {
+            const bonusPct = Number(dynamicGiftSettings.firstOrderBonusPercent) || 0;
+            if (bonusPct > pct) {
+                pct = bonusPct;
+            }
+        }
+
+        if (pct <= 0) return 0;
+        return Math.round(orderAmount * (pct / 100));
+    }
+
+    function getActiveGiftPercent(orderAmount, isFirstOrder = false) {
+        if (!dynamicGiftSettings || dynamicGiftSettings.isEnabled === false) return 0;
+        if (orderAmount <= 0) return 0;
+
+        const tierInfo = getActiveGiftTierInfo(orderAmount, isFirstOrder);
+        let pct = tierInfo ? (Number(tierInfo.giftPercent) || 0) : 0;
+
+        if (isFirstOrder && dynamicGiftSettings.isFirstOrderBonusEnabled && dynamicGiftSettings.firstOrderBonusPercent) {
+            const bonusPct = Number(dynamicGiftSettings.firstOrderBonusPercent) || 0;
+            if (bonusPct > pct) {
+                pct = bonusPct;
+            }
+        }
+        return pct;
+    }
+
+    function getNextGiftTierRequirement(orderAmount) {
+        if (!dynamicGiftSettings || dynamicGiftSettings.isEnabled === false) return null;
+        if (!dynamicGiftSettings.tieredGiftsEnabled || !Array.isArray(dynamicGiftSettings.tieredGifts) || dynamicGiftSettings.tieredGifts.length === 0) {
+            return null;
+        }
+        const sortedTiers = [...dynamicGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+        for (const tier of sortedTiers) {
+            const min = Number(tier.minAmount) || 0;
+            if (orderAmount < min) {
+                return {
+                    tier,
+                    neededAmount: min - orderAmount,
+                    nextPercent: Number(tier.giftPercent) || 0,
+                    nextTitle: tier.title || ('پله ' + tier.giftPercent + '٪')
+                };
+            }
+        }
+        return null;
+    }
 
     async function fetchDynamicGiftSettings() {
         try {
@@ -7187,7 +7316,11 @@
                 const data = await res.json();
                 if (data && data.settings) {
                     dynamicGiftSettings = { ...dynamicGiftSettings, ...data.settings };
+                    if (dynamicGiftSettings.customGiftNotice && document.getElementById('promoBannerGiftSub')) {
+                        document.getElementById('promoBannerGiftSub').textContent = dynamicGiftSettings.customGiftNotice;
+                    }
                     if (typeof updateCartBar === 'function') updateCartBar();
+                    if (typeof updateGiftModalTracker === 'function') updateGiftModalTracker();
                 }
             }
         } catch (e) {
@@ -7208,62 +7341,6 @@
         } catch (e) {
             console.log('Error loading storefront packages:', e);
         }
-    }
-
-    function calculateOrderGiftAllowance(orderAmount, isFirstOrder = false) {
-        if (!dynamicGiftSettings || dynamicGiftSettings.isEnabled === false) return 0;
-        if (orderAmount < (dynamicGiftSettings.minOrderForGift || 0)) return 0;
-
-        let pct = Number(dynamicGiftSettings.defaultGiftPercent) || 5;
-
-        if (dynamicGiftSettings.tieredGiftsEnabled && Array.isArray(dynamicGiftSettings.tieredGifts) && dynamicGiftSettings.tieredGifts.length > 0) {
-            const sortedTiers = [...dynamicGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
-            let matchedTier = null;
-            for (const tier of sortedTiers) {
-                const min = Number(tier.minAmount) || 0;
-                const max = Number(tier.maxAmount) || 0;
-                if (orderAmount >= min && (max === 0 || orderAmount <= max)) {
-                    matchedTier = tier;
-                }
-            }
-            if (matchedTier && matchedTier.giftPercent !== undefined) {
-                pct = Number(matchedTier.giftPercent);
-            }
-        }
-
-        if (isFirstOrder && dynamicGiftSettings.isFirstOrderBonusEnabled && dynamicGiftSettings.firstOrderBonusPercent) {
-            pct = Math.max(pct, Number(dynamicGiftSettings.firstOrderBonusPercent));
-        }
-
-        return Math.round(orderAmount * (pct / 100));
-    }
-
-    function getActiveGiftPercent(orderAmount, isFirstOrder = false) {
-        if (!dynamicGiftSettings || dynamicGiftSettings.isEnabled === false) return 0;
-        if (orderAmount < (dynamicGiftSettings.minOrderForGift || 0)) return 0;
-
-        let pct = Number(dynamicGiftSettings.defaultGiftPercent) || 5;
-
-        if (dynamicGiftSettings.tieredGiftsEnabled && Array.isArray(dynamicGiftSettings.tieredGifts) && dynamicGiftSettings.tieredGifts.length > 0) {
-            const sortedTiers = [...dynamicGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
-            let matchedTier = null;
-            for (const tier of sortedTiers) {
-                const min = Number(tier.minAmount) || 0;
-                const max = Number(tier.maxAmount) || 0;
-                if (orderAmount >= min && (max === 0 || orderAmount <= max)) {
-                    matchedTier = tier;
-                }
-            }
-            if (matchedTier && matchedTier.giftPercent !== undefined) {
-                pct = Number(matchedTier.giftPercent);
-            }
-        }
-
-        if (isFirstOrder && dynamicGiftSettings.isFirstOrderBonusEnabled && dynamicGiftSettings.firstOrderBonusPercent) {
-            pct = Math.max(pct, Number(dynamicGiftSettings.firstOrderBonusPercent));
-        }
-
-        return pct;
     }
 
     function renderStorefrontPackagesBanner() {
