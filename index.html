@@ -3074,8 +3074,8 @@
                         <i class="fa-solid fa-gift" style="color: #a7f3d0;"></i>
                     </div>
                     <div>
-                        <h3 style="margin: 0; font-size: 1.08rem; color: white;">انتخاب هدایای رایگان (۵٪ مبلغ خرید)</h3>
-                        <div id="giftModalQuotaSubtitle" style="font-size: 0.82rem; color: #d1fae5; margin-top: 2px; font-weight: 500;">سقف ارزش هدیه شما: ۰ تومان</div>
+                        <h3 style="margin: 0; font-size: 1.08rem; color: white;">انتخاب هدایای رایگان برند رافونه</h3>
+                        <div id="giftModalQuotaSubtitle" style="font-size: 0.82rem; color: #d1fae5; margin-top: 2px; font-weight: 500;">سقف ارزش هدیه شما: ۰ تومان (بر اساس کالاهای رافونه)</div>
                     </div>
                 </div>
                 <button class="btn-close" onclick="closeGiftSelectionModal()" style="color: white; font-size: 1.6rem; line-height: 1;" title="بستن">×</button>
@@ -3116,14 +3116,13 @@
                     <input type="text" id="giftSearchInput" class="form-control" placeholder="جستجوی سریع نام یا کد کالا در لیست هدایا..." oninput="renderGiftProductList()" style="padding-right: 34px; font-size: 0.85rem; height: 38px; border-radius: 10px;">
                 </div>
                 <div class="gift-cat-chips" id="giftCategoryChips">
-                    <button type="button" class="gift-cat-btn active" data-cat="all" onclick="filterGiftCategory('all', this)">همه هدایا</button>
+                    <button type="button" class="gift-cat-btn active" data-cat="all" onclick="filterGiftCategory('all', this)">همه هدایای رافونه</button>
                     <button type="button" class="gift-cat-btn" data-cat="handwash" onclick="filterGiftCategory('handwash', this)">مایع دست</button>
                     <button type="button" class="gift-cat-btn" data-cat="dishwash" onclick="filterGiftCategory('dishwash', this)">مایع ظرف</button>
                     <button type="button" class="gift-cat-btn" data-cat="cleaners" onclick="filterGiftCategory('cleaners', this)">پاک‌کننده</button>
                     <button type="button" class="gift-cat-btn" data-cat="sanitary" onclick="filterGiftCategory('sanitary', this)">جرم‌گیر</button>
                     <button type="button" class="gift-cat-btn" data-cat="laundry" onclick="filterGiftCategory('laundry', this)">شوینده لباس</button>
                     <button type="button" class="gift-cat-btn" data-cat="cellulosic" onclick="filterGiftCategory('cellulosic', this)">سلولزی</button>
-                    <button type="button" class="gift-cat-btn" data-cat="imported" onclick="filterGiftCategory('imported', this)">محصولات خارجی</button>
                 </div>
             </div>
 
@@ -4187,8 +4186,9 @@
                 cartCount.innerText = totalItems.toLocaleString('fa-IR');
                 cartTotalPrice.innerText = totalPrice.toLocaleString('fa-IR') + ' تومان';
                 
-                // Update 5% Gift allowance in floating cart bar
-                const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(totalPrice) : Math.round(totalPrice * 0.05);
+                // Update Gift allowance in floating cart bar (based on Rafooneh brand products)
+                const rafoonehSubtotal = typeof calculateCartRafoonehTotal === "function" ? calculateCartRafoonehTotal() : totalPrice;
+                const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
                 const giftsCount = typeof getSelectedGiftsCount === 'function' ? getSelectedGiftsCount() : 0;
                 const giftsVal = typeof getSelectedGiftsTotalValue === 'function' ? getSelectedGiftsTotalValue() : 0;
 
@@ -4504,6 +4504,30 @@
         let selectedGiftProducts = {}; // Map of productId/code -> quantity (e.g. { "101": 2, "105": 1 })
         let activeGiftCategory = 'all';
 
+        // Helper to verify if a product belongs to Rafooneh brand
+        function isRafoonehProduct(p) {
+            if (!p) return false;
+            const brand = String(p.brand || '').toLowerCase().trim();
+            const brandName = String(p.brandName || '').toLowerCase().trim();
+            const cat = String(p.category || '').toLowerCase().trim();
+            if (brand === 'rafooneh' || brandName.includes('رافونه')) return true;
+            if (cat === 'imported' || brand === 'foreign' || brandName.includes('خارجی')) return false;
+            return true;
+        }
+
+        // Calculate subtotal of Rafooneh brand products currently in cart
+        function calculateCartRafoonehTotal() {
+            let total = 0;
+            const prodList = (typeof products !== 'undefined' && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== 'undefined' ? productsData : []);
+            for (const [id, qty] of Object.entries(cart)) {
+                const p = prodList.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
+                if (p && isRafoonehProduct(p)) {
+                    total += (Number(p.price) || 0) * (Number(qty) || 0);
+                }
+            }
+            return total;
+        }
+
         function getSelectedGiftsList() {
             const prodList = (typeof products !== 'undefined' && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== 'undefined' ? productsData : []);
             const list = [];
@@ -4511,7 +4535,7 @@
                 const numericQty = Number(qty) || 0;
                 if (numericQty > 0) {
                     const p = prodList.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
-                    if (p) {
+                    if (p && isRafoonehProduct(p)) {
                         const price = Number(p.price) || 0;
                         list.push({
                             product: p,
@@ -4534,8 +4558,8 @@
         }
 
         function getRemainingGiftAllowance() {
-            const itemsSubtotal = calculateCartTotal();
-            const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
+            const rafoonehSubtotal = calculateCartRafoonehTotal();
+            const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
             const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
             const totalAllowance = orderGiftQuota + walletCredit;
             const used = getSelectedGiftsTotalValue();
@@ -4551,8 +4575,8 @@
 
         function updateGiftModalTracker() {
             try {
-                const itemsSubtotal = calculateCartTotal();
-                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
+                const rafoonehSubtotal = calculateCartRafoonehTotal();
+                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
                 const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
                 const totalAllowance = orderGiftQuota + walletCredit;
                 const used = getSelectedGiftsTotalValue();
@@ -4564,12 +4588,12 @@
                 if (subtitle) {
                     if (totalAllowance > 0) {
                         if (walletCredit > 0) {
-                            subtitle.textContent = `سقف ارزش هدیه: ${totalAllowance.toLocaleString('fa-IR')} تومان (${orderGiftQuota.toLocaleString('fa-IR')} ت هدیه خرید + ${walletCredit.toLocaleString('fa-IR')} ت کیف پول)`;
+                            subtitle.textContent = `سقف ارزش هدیه: ${totalAllowance.toLocaleString('fa-IR')} تومان (${orderGiftQuota.toLocaleString('fa-IR')} ت هدیه رافونه + ${walletCredit.toLocaleString('fa-IR')} ت کیف پول)`;
                         } else {
-                            subtitle.textContent = `سقف ارزش هدیه شما: ${totalAllowance.toLocaleString('fa-IR')} تومان (۵٪ مبلغ کل خرید)`;
+                            subtitle.textContent = `سقف ارزش هدیه شما: ${totalAllowance.toLocaleString('fa-IR')} تومان (بر اساس کالاهای رافونه)`;
                         }
                     } else {
-                        subtitle.textContent = `با افزودن کالا به سبد خرید، ۵٪ مبلغ خرید به عنوان هدیه فعال می‌شود`;
+                        subtitle.textContent = `با افزودن کالاهای برند رافونه به سبد خرید، درصد هدیه فعال می‌شود`;
                     }
                 }
 
@@ -4602,11 +4626,11 @@
                         chipsContainer.innerHTML = `
                             <span style="font-size:0.75rem; color:#64748b;">
                                 <i class="fa-solid fa-hand-pointer" style="margin-left:3px; color:#059669;"></i>
-                                از لیست زیر کالاهای مورد نظرتان را انتخاب کنید. مانده سقف هدیه به صورت خودکار در کیف پول حساب شما برای خریدهای بعدی ذخیره خواهد شد.
+                                از لیست محصولات برند رافونه کالاهای مورد نظرتان را انتخاب کنید. مانده سقف هدیه در کیف پول ذخیره خواهد شد.
                             </span>
                         `;
                     } else {
-                        let chipsHtml = `<span style="font-size:0.75rem; font-weight:bold; color:#065f46; margin-left:4px;">هدایای انتخاب شده:</span>`;
+                        let chipsHtml = `<span style="font-size:0.75rem; font-weight:bold; color:#065f46; margin-left:4px;">هدایای انتخاب شده (رافونه):</span>`;
                         giftsList.forEach(g => {
                             chipsHtml += `
                                 <div style="background:#ffffff; border:1px solid #86efac; border-radius:14px; padding:3px 8px; font-size:0.75rem; color:#065f46; display:inline-flex; align-items:center; gap:5px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
@@ -4625,12 +4649,12 @@
                     if (giftsList.length > 0) {
                         footerSummary.innerHTML = `
                             <span style="color:#065f46; font-weight:bold;">
-                                ${totalCount.toLocaleString('fa-IR')} قلم هدیه (ارزش: ${used.toLocaleString('fa-IR')} ت)
+                                ${totalCount.toLocaleString('fa-IR')} قلم هدیه رافونه (ارزش: ${used.toLocaleString('fa-IR')} ت)
                             </span>
                             <span style="color:#64748b; margin-right:6px;">| مانده ذخیره‌شونده در کیف پول: <strong style="color:#059669;">${remaining.toLocaleString('fa-IR')} ت</strong></span>
                         `;
                     } else {
-                        footerSummary.innerHTML = `<span style="color:#64748b;">مانده ۵٪ هدیه (${orderGiftQuota.toLocaleString('fa-IR')} ت) در کیف پول حساب شما محفوظ خواهد ماند.</span>`;
+                        footerSummary.innerHTML = `<span style="color:#64748b;">مانده اعتبار هدیه رافونه (${orderGiftQuota.toLocaleString('fa-IR')} ت) در کیف پول حساب شما محفوظ خواهد ماند.</span>`;
                     }
                 }
 
@@ -4678,24 +4702,30 @@
             closeGiftSelectionModal();
             updateCartBar();
             refreshOrderSummaryList();
-            showGiftToast('هدایا حذف شدند و کل ۵٪ مبلغ به کیف پول حساب شما منتقل خواهد شد.', 'fa-info-circle', '#059669');
+            showGiftToast('هدایا حذف شدند و کل مبلغ هدیه به کیف پول حساب شما منتقل خواهد شد.', 'fa-info-circle', '#059669');
         }
 
         function addGiftProduct(productId, e) {
             if (e && e.stopPropagation) e.stopPropagation();
             try {
-                const itemsSubtotal = calculateCartTotal();
-                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
+                const rafoonehSubtotal = calculateCartRafoonehTotal();
+                const orderGiftQuota = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
                 const walletCredit = (currentCustomer && Number(currentCustomer.walletBalance) > 0) ? Number(currentCustomer.walletBalance) : 0;
                 const totalAllowance = orderGiftQuota + walletCredit;
                 
                 const prodList = (typeof products !== 'undefined' && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== 'undefined' ? productsData : []);
                 const p = prodList.find(prod => String(prod.id) === String(productId) || String(prod.code) === String(productId));
                 if (!p) return;
+
+                if (!isRafoonehProduct(p)) {
+                    showGiftToast('هدایا فقط شامل محصولات برند رافونه می‌باشند.', 'fa-circle-exclamation', '#ef4444');
+                    return;
+                }
+
                 const price = Number(p.price) || 0;
 
                 if (totalAllowance <= 0) {
-                    showGiftToast('ابتدا اقلامی را به سبد خرید اضافه فرمایید تا ۵٪ هدیه فعال شود.', 'fa-circle-info', '#d97706');
+                    showGiftToast('ابتدا اقلامی از برند رافونه به سبد خرید اضافه فرمایید تا هدیه فعال شود.', 'fa-circle-info', '#d97706');
                     return;
                 }
 
@@ -4801,14 +4831,14 @@
             const countText = document.getElementById('giftEligibleCountText');
             if (!container) return;
 
-            const itemsSubtotal = calculateCartTotal();
-            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
+            const rafoonehSubtotal = calculateCartRafoonehTotal();
+            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
             const remainingAllowance = getRemainingGiftAllowance();
             const query = (document.getElementById('giftSearchInput')?.value || '').trim().toLowerCase();
 
-            // All valid products
+            // All valid products strictly from Rafooneh brand
             const prodList = (typeof products !== 'undefined' && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== 'undefined' ? productsData : []);
-            let allValid = prodList.filter(p => (Number(p.price) || 0) > 0);
+            let allValid = prodList.filter(p => (Number(p.price) || 0) > 0 && isRafoonehProduct(p));
 
             // Filter by category
             if (activeGiftCategory && activeGiftCategory !== 'all') {
@@ -4837,22 +4867,22 @@
 
             if (countText) {
                 if (giftAllowance > 0) {
-                    countText.textContent = `${eligible.length.toLocaleString('fa-IR')} کالا واجد شرایط با باقیمانده سقف (${allValid.length.toLocaleString('fa-IR')} کل)`;
+                    countText.textContent = `${eligible.length.toLocaleString('fa-IR')} کالای برند رافونه واجد شرایط با باقیمانده سقف (${allValid.length.toLocaleString('fa-IR')} کل)`;
                 } else {
-                    countText.textContent = `${allValid.length.toLocaleString('fa-IR')} محصول موجود در لیست هدایا`;
+                    countText.textContent = `${allValid.length.toLocaleString('fa-IR')} محصول برند رافونه موجود در لیست هدایا`;
                 }
             }
 
             let html = '';
 
-            // Status message if no cart
+            // Status message if no cart or no Rafooneh products in cart
             if (giftAllowance <= 0) {
                 html += `
                     <div style="background:#f8fafc; border:1.5px dashed #cbd5e1; border-radius:12px; padding:12px 14px; text-align:center; color:#475569; margin-bottom:6px;">
                         <i class="fa-solid fa-gift" style="font-size:1.6rem; color:#059669; margin-bottom:4px; display:block;"></i>
-                        <strong style="font-size:0.88rem; color:#1e293b; display:block; margin-bottom:4px;">مشاهده و انتخاب کالای هدیه ۵٪</strong>
+                        <strong style="font-size:0.88rem; color:#1e293b; display:block; margin-bottom:4px;">مشاهده و انتخاب کالای هدیه برند رافونه</strong>
                         <p style="font-size:0.8rem; margin:0; line-height:1.6; color:#64748b;">
-                            با خرید از فروشگاه، به میزان <strong>۵٪ مبلغ فاکتور</strong> می‌توانید کالای هدیه ۱۰۰٪ رایگان انتخاب فرمایید.
+                            هدایا صرفاً مربوط به <strong>کالاهای برند رافونه</strong> می‌باشند. با خرید محصولات رافونه، درصد هدیه برای انتخاب رایگان این اقلام فعال می‌گردد.
                         </p>
                     </div>
                 `;
@@ -4962,8 +4992,9 @@
                 }
             }
 
-            // 5% Gift Offer Box
-            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(itemsSubtotal) : Math.round(itemsSubtotal * 0.05);
+            // Gift Offer Box (Calculated based on Rafooneh brand products)
+            const rafoonehSubtotal = typeof calculateCartRafoonehTotal === "function" ? calculateCartRafoonehTotal() : itemsSubtotal;
+            const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : Math.round(rafoonehSubtotal * 0.05);
             if (giftAllowance > 0) {
                 // If total used gift value exceeds quota due to cart changes, trim excess
                 let usedGiftVal = getSelectedGiftsTotalValue();
@@ -5002,7 +5033,7 @@
                                     <span style="color:#64748b; font-size:0.75rem;">(${g.totalRealPrice.toLocaleString('fa-IR')} ت)</span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <span style="font-weight:bold; color:#059669; background:#dcfce7; padding:1px 6px; border-radius:8px; font-size:0.7rem;">۱۰۰٪ رایگان</span>
+                                    <span style="font-weight:bold; color:#059669; background:#dcfce7; padding:1px 6px; border-radius:8px; font-size:0.7rem;">۱۰۰٪ رایگان رافونه</span>
                                     <button type="button" onclick="event.stopPropagation(); removeGiftProduct('${g.product.id || g.product.code}', event);" style="background:transparent; border:none; color:#ef4444; font-size:0.85rem; cursor:pointer; padding:2px 4px;" title="حذف این هدیه">
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>
@@ -5026,10 +5057,10 @@
                             </div>
                             <div>
                                 <strong style="color:#065f46; font-size:0.88rem; display:block;">
-                                    ۵٪ هدیه رایگان روی سفارش شما:
+                                    🎁 هدیه رایگان (ویژه کالاهای برند رافونه):
                                 </strong>
                                 <span style="font-size:0.78rem; color:#047857; display:block; margin-top:2px;">
-                                    سقف کل انتخاب کالا: <strong>${giftAllowance.toLocaleString('fa-IR')} تومان</strong>
+                                    سقف ارزش کالا: <strong>${giftAllowance.toLocaleString('fa-IR')} تومان</strong> (محاسبه از خرید اقلام رافونه)
                                 </span>
                             </div>
                         </div>
@@ -5040,7 +5071,7 @@
                     ${giftsList.length > 0 ? giftItemsHtml : `
                         <div style="margin-top:8px; font-size:0.76rem; color:#047857; display:flex; align-items:center; gap:4px;">
                             <i class="fa-solid fa-hand-pointer" style="font-size:0.7rem;"></i>
-                            <span>برای انتخاب یک یا چند قلم کالا تا سقف ۵٪، روی این بخش کلیک کنید.</span>
+                            <span>برای انتخاب کالای هدیه از میان محصولات برند رافونه، روی این بخش کلیک کنید.</span>
                         </div>
                     `}
                 `;
