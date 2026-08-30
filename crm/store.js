@@ -2574,7 +2574,7 @@ export function saveGiftSettings(settings) {
 }
 
 export function calculateGiftQuotaForOrder(itemsSubtotal, options = false) {
-  const isFirstOrder = (typeof options === 'object' && options !== null) ? Boolean(options.isFirstOrder) : Boolean(options);
+  const isFirstOrder = (typeof options === object && options !== null) ? Boolean(options.isFirstOrder) : Boolean(options);
   const settings = getGiftSettings();
   if (!settings || settings.isEnabled === false) return 0;
   const subtotal = Number(itemsSubtotal) || 0;
@@ -2588,8 +2588,10 @@ export function calculateGiftQuotaForOrder(itemsSubtotal, options = false) {
   let pct = 0;
 
   if (settings.tieredGiftsEnabled && Array.isArray(settings.tieredGifts) && settings.tieredGifts.length > 0) {
-    // Sort tiers ascending by minAmount
-    const sortedTiers = [...settings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+    const sortedTiers = [...settings.tieredGifts]
+      .filter(t => t && typeof t === object && (Number(t.giftPercent) >= 0 || Number(t.minAmount) >= 0))
+      .sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+
     let matchedTier = null;
 
     for (let i = 0; i < sortedTiers.length; i++) {
@@ -2597,11 +2599,10 @@ export function calculateGiftQuotaForOrder(itemsSubtotal, options = false) {
       const min = Number(tier.minAmount) || 0;
       const max = Number(tier.maxAmount) || 0;
 
-      // Tier 1 (1M to 2M): subtotal >= 1M && subtotal <= 2M
-      // Tier 2 (2M to 4M): subtotal > 2M && subtotal <= 4M
-      // Tier 3 (4M+): subtotal > 4M
-      const isFirst = (i === 0);
-      const isAboveMin = isFirst ? (subtotal >= min) : (subtotal > min);
+      const prevTier = i > 0 ? sortedTiers[i - 1] : null;
+      const isContiguousWithPrev = prevTier && (Number(prevTier.maxAmount) === min);
+
+      const isAboveMin = isContiguousWithPrev ? (subtotal > min) : (subtotal >= min);
       const isBelowMax = (max === 0 || subtotal <= max);
 
       if (isAboveMin && isBelowMax) {
@@ -2613,7 +2614,12 @@ export function calculateGiftQuotaForOrder(itemsSubtotal, options = false) {
     if (matchedTier && matchedTier.giftPercent !== undefined) {
       pct = Number(matchedTier.giftPercent) || 0;
     } else {
-      pct = 0;
+      const lowestMin = sortedTiers.length > 0 ? (Number(sortedTiers[0].minAmount) || 0) : 0;
+      if (subtotal < lowestMin) {
+        pct = 0;
+      } else {
+        pct = Number(settings.defaultGiftPercent) || 0;
+      }
     }
   } else {
     pct = Number(settings.defaultGiftPercent) || 0;

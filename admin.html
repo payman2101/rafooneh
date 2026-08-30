@@ -10942,25 +10942,25 @@
                     <div style="display:grid; grid-template-columns:1.2fr 1.2fr 1fr; gap:10px;">
                         <div>
                             <label style="font-size:0.75rem; color:#475569; display:block; margin-bottom:3px;">از مبلغ (تومان):</label>
-                            <input type="number" class="form-control" value="${tier.minAmount || 0}" step="50000" style="font-size:0.85rem; font-weight:bold;" onchange="updateTierField('${tier.id}', 'minAmount', this.value)">
+                            <input type="number" class="form-control" value="${tier.minAmount || 0}" step="50000" style="font-size:0.85rem; font-weight:bold;" oninput="updateTierField('${tier.id}', 'minAmount', this.value)">
                         </div>
                         <div>
                             <label style="font-size:0.75rem; color:#475569; display:block; margin-bottom:3px;">تا مبلغ (تومان - ۰ = سقف ندارد):</label>
-                            <input type="number" class="form-control" value="${tier.maxAmount || 0}" step="50000" style="font-size:0.85rem; font-weight:bold;" onchange="updateTierField('${tier.id}', 'maxAmount', this.value)">
+                            <input type="number" class="form-control" value="${tier.maxAmount || 0}" step="50000" style="font-size:0.85rem; font-weight:bold;" oninput="updateTierField('${tier.id}', 'maxAmount', this.value)">
                         </div>
                         <div>
                             <label style="font-size:0.75rem; color:#475569; display:block; margin-bottom:3px;">درصد هدیه (%):</label>
-                            <input type="number" class="form-control" value="${tier.giftPercent || 5}" min="1" max="100" style="font-size:0.85rem; font-weight:bold; color:#047857; text-align:center;" onchange="updateTierField('${tier.id}', 'giftPercent', this.value)">
+                            <input type="number" class="form-control" value="${tier.giftPercent || 5}" min="1" max="100" style="font-size:0.85rem; font-weight:bold; color:#047857; text-align:center;" oninput="updateTierField('${tier.id}', 'giftPercent', this.value)">
                         </div>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                         <div>
                             <label style="font-size:0.75rem; color:#475569; display:block; margin-bottom:3px;">عنوان نمایشی سطح:</label>
-                            <input type="text" class="form-control" value="${escapeHtml(tier.title || '')}" placeholder="مثال: پله نقره‌ای (۵٪ هدیه)" style="font-size:0.82rem;" onchange="updateTierField('${tier.id}', 'title', this.value)">
+                            <input type="text" class="form-control" value="${escapeHtml(tier.title || '')}" placeholder="مثال: پله نقره‌ای (۵٪ هدیه)" style="font-size:0.82rem;" oninput="updateTierField('${tier.id}', 'title', this.value)">
                         </div>
                         <div>
                             <label style="font-size:0.75rem; color:#475569; display:block; margin-bottom:3px;">توضیحات و پاداش جانبی:</label>
-                            <input type="text" class="form-control" value="${escapeHtml(tier.bonusDescription || '')}" placeholder="مثال: ارسال رایگان + هدیه کالا" style="font-size:0.82rem;" onchange="updateTierField('${tier.id}', 'bonusDescription', this.value)">
+                            <input type="text" class="form-control" value="${escapeHtml(tier.bonusDescription || '')}" placeholder="مثال: ارسال رایگان + هدیه کالا" style="font-size:0.82rem;" oninput="updateTierField('${tier.id}', 'bonusDescription', this.value)">
                         </div>
                     </div>
                 </div>
@@ -11016,11 +11016,14 @@
 
         const amount = Number(document.getElementById('simOrderAmountInput')?.value) || 0;
         const custType = document.getElementById('simCustomerTypeSelect')?.value || 'regular';
+
         const isMasterEnabled = document.getElementById('isGiftEnabledSwitch') ? document.getElementById('isGiftEnabledSwitch').checked : currentGiftSettings.isEnabled;
-        const defaultPercent = Number(document.getElementById('defaultGiftPercentInput')?.value) || Number(currentGiftSettings.defaultGiftPercent) || 5;
+        const defVal = document.getElementById('defaultGiftPercentInput')?.value;
+        const defaultPercent = (defVal !== undefined && defVal !== '') ? Number(defVal) : (Number(currentGiftSettings.defaultGiftPercent) || 0);
         const minOrder = Number(document.getElementById('minOrderForGiftInput')?.value) || Number(currentGiftSettings.minOrderForGift) || 0;
         const isFirstOrderBonus = document.getElementById('isFirstOrderBonusSwitch') ? document.getElementById('isFirstOrderBonusSwitch').checked : currentGiftSettings.isFirstOrderBonusEnabled;
-        const firstOrderBonusPct = Number(document.getElementById('firstOrderBonusPercentInput')?.value) || Number(currentGiftSettings.firstOrderBonusPercent) || 10;
+        const bVal = document.getElementById('firstOrderBonusPercentInput')?.value;
+        const firstOrderBonusPct = (bVal !== undefined && bVal !== '') ? Number(bVal) : (Number(currentGiftSettings.firstOrderBonusPercent) || 0);
 
         if (!isMasterEnabled) {
             box.innerHTML = '<span style="color:#dc2626; font-weight:bold;"><i class="fa-solid fa-triangle-exclamation"></i> سیستم هدایا غیرفعال است (اعتبار: ۰ تومان).</span>';
@@ -11039,14 +11042,17 @@
             applicablePct = firstOrderBonusPct;
             matchedTierTitle = `طرح ویژه خوش‌آمدگویی سفارش اول (${firstOrderBonusPct}٪)`;
         } else if (Array.isArray(currentGiftSettings.tieredGifts) && currentGiftSettings.tieredGifts.length > 0) {
-            const sortedTiers = [...currentGiftSettings.tieredGifts].sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
+            const sortedTiers = [...currentGiftSettings.tieredGifts]
+                .filter(t => t && Number(t.minAmount) >= 0)
+                .sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
             let found = false;
             for (let i = 0; i < sortedTiers.length; i++) {
                 const tier = sortedTiers[i];
                 const min = Number(tier.minAmount) || 0;
                 const max = Number(tier.maxAmount) || 0;
-                const isFirst = (i === 0);
-                const isAboveMin = isFirst ? (amount >= min) : (amount > min);
+                const prevTier = i > 0 ? sortedTiers[i - 1] : null;
+                const isContiguousWithPrev = prevTier && (Number(prevTier.maxAmount) === min);
+                const isAboveMin = isContiguousWithPrev ? (amount > min) : (amount >= min);
                 const isBelowMax = (max === 0 || amount <= max);
 
                 if (isAboveMin && isBelowMax) {
@@ -11057,13 +11063,18 @@
                 }
             }
             if (!found) {
-                applicablePct = 0;
-                matchedTierTitle = 'کمتر از حد نصاب پله‌های هدیه (۰٪)';
+                const lowestMin = sortedTiers.length > 0 ? (Number(sortedTiers[0].minAmount) || 0) : 0;
+                if (amount < lowestMin) {
+                    applicablePct = 0;
+                    matchedTierTitle = 'کمتر از حد نصاب پله‌های هدیه (۰٪)';
+                } else {
+                    applicablePct = defaultPercent;
+                    matchedTierTitle = 'درصد پیش‌فرض پایه';
+                }
             }
         }
 
         const calculatedGiftCredit = Math.round(amount * (applicablePct / 100));
-
         box.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span><strong>سطح اعمال‌شده:</strong> ${escapeHtml(matchedTierTitle)}</span>
@@ -11073,7 +11084,7 @@
                 اعتبار هدیه قابل انتخاب مشتری: ${calculatedGiftCredit.toLocaleString('fa-IR')} تومان
             </div>
             <div style="font-size:0.78rem; color:#64748b; margin-top:4px;">
-                مشتری می‌تواند از میان تمامی کالاهای فعال فروشگاه تا سقف این مبلغ، کالای رایگان به سبد خود اضافه فرماید.
+                مشتری می‌تواند از میان تمامی کالاهای برند رافونه تا سقف این مبلغ، کالای رایگان به سبد خود اضافه فرماید.
             </div>
         `;
     }
@@ -11088,12 +11099,18 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره تنظیمات...';
         }
 
+        const defVal = document.getElementById('defaultGiftPercentInput')?.value;
+        const defaultGiftPercent = (defVal !== undefined && defVal !== '') ? Number(defVal) : 0;
+        
+        const bVal = document.getElementById('firstOrderBonusPercentInput')?.value;
+        const firstOrderBonusPercent = (bVal !== undefined && bVal !== '') ? Number(bVal) : 0;
+
         const payload = {
             isEnabled: document.getElementById('isGiftEnabledSwitch') ? document.getElementById('isGiftEnabledSwitch').checked : true,
-            defaultGiftPercent: Number(document.getElementById('defaultGiftPercentInput')?.value) || 5,
+            defaultGiftPercent: defaultGiftPercent,
             minOrderForGift: Number(document.getElementById('minOrderForGiftInput')?.value) || 0,
-            isFirstOrderBonusEnabled: document.getElementById('isFirstOrderBonusSwitch') ? document.getElementById('isFirstOrderBonusSwitch').checked : true,
-            firstOrderBonusPercent: Number(document.getElementById('firstOrderBonusPercentInput')?.value) || 10,
+            isFirstOrderBonusEnabled: document.getElementById('isFirstOrderBonusSwitch') ? document.getElementById('isFirstOrderBonusSwitch').checked : false,
+            firstOrderBonusPercent: firstOrderBonusPercent,
             customGiftNotice: document.getElementById('customGiftNoticeInput')?.value?.trim() || '',
             tieredGiftsEnabled: true,
             tieredGifts: Array.isArray(currentGiftSettings.tieredGifts) ? currentGiftSettings.tieredGifts : [],
