@@ -2911,6 +2911,7 @@
     <!-- Categories Tab -->
     <div class="categories-container" id="categoriesContainer">
         <button class="category-btn active" data-cat="all" onclick="filterCategory('all', this)">همه</button>
+        <button class="category-btn" data-cat="packages" onclick="scrollToPackagesSection(this)" style="background:#fdf2f8; color:#be185d; border-color:#fbcfe8; font-weight:bold;"><i class="fa-solid fa-boxes-stacked"></i> پکیج‌های ویژه</button>
         <button class="category-btn" data-cat="handwash" onclick="filterCategory('handwash', this)">مایع دستشویی</button>
         <button class="category-btn" data-cat="dishwash" onclick="filterCategory('dishwash', this)">مایع ظرفشویی</button>
         <button class="category-btn" data-cat="cleaners" onclick="filterCategory('cleaners', this)">پاک‌کننده و اسپری</button>
@@ -2934,6 +2935,9 @@
                 <span>طرح هدایا و پاداش‌های رافونه</span>
             </button>
         </div>
+
+        <!-- Storefront Packages Section -->
+        <div id="storefrontPackagesSection" style="margin-bottom: 24px;"></div>
 
         <!-- Products Grid -->
         <div class="products-grid" id="productsGrid">
@@ -7548,6 +7552,20 @@
             }
         } catch (e) {
             console.log('Using default gifts logic:', e);
+        }
+    }
+
+    function scrollToPackagesSection(btn) {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        const container = document.getElementById('storefrontPackagesSection');
+        if (container) {
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            container.style.transition = 'all 0.4s ease';
+            container.style.boxShadow = '0 0 0 3px #db2777';
+            setTimeout(() => {
+                if (container) container.style.boxShadow = '';
+            }, 1500);
         }
     }
 

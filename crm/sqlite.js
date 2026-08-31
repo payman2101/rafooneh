@@ -292,6 +292,42 @@ export async function seedSqliteFromJson() {
       saveDeliverySettingsSqlite(deliveryData, db);
     }
   }
+
+  // 6. Seed Packages
+  const pkgRow = db.prepare('SELECT COUNT(*) as count FROM packages').get();
+  if (!pkgRow || pkgRow.count === 0) {
+    const pkgJsonPath = path.join(DATA_DIR, 'packages.json');
+    const rootPkgJsonPath = path.join(process.cwd(), 'packages.json');
+    let pkgs = [];
+    if (fs.existsSync(pkgJsonPath)) {
+      try { pkgs = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')); } catch (e) {}
+    } else if (fs.existsSync(rootPkgJsonPath)) {
+      try { pkgs = JSON.parse(fs.readFileSync(rootPkgJsonPath, 'utf8')); } catch (e) {}
+    }
+    if (Array.isArray(pkgs) && pkgs.length > 0) {
+      console.log(`[SQLite Seeding] Migrating ${pkgs.length} packages to SQLite...`);
+      for (const p of pkgs) {
+        savePackageSqlite(p, db);
+      }
+    }
+  }
+
+  // 7. Seed Gift Settings
+  const giftRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('gift_settings');
+  if (!giftRow || !giftRow.value) {
+    const gJsonPath = path.join(DATA_DIR, 'gift_settings.json');
+    const rootGJsonPath = path.join(process.cwd(), 'gift_settings.json');
+    let giftData = null;
+    if (fs.existsSync(gJsonPath)) {
+      try { giftData = JSON.parse(fs.readFileSync(gJsonPath, 'utf8')); } catch (e) {}
+    } else if (fs.existsSync(rootGJsonPath)) {
+      try { giftData = JSON.parse(fs.readFileSync(rootGJsonPath, 'utf8')); } catch (e) {}
+    }
+    if (giftData && typeof giftData === 'object') {
+      console.log('[SQLite Seeding] Migrating gift settings to SQLite...');
+      saveGiftSettingsSqlite(giftData, db);
+    }
+  }
 }
 
 // CRUD helper functions for Products
