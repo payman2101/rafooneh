@@ -2398,17 +2398,12 @@
                 <!-- TAB 1: GIFT SETTINGS -->
                 <div id="subTabGiftSettings">
                     <form onsubmit="saveGiftSettingsForm(event)" id="giftSettingsForm">
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;">
+                        <div style="display:flex; flex-direction:column; gap:20px; max-width:850px; margin:0 auto;">
                             
-                            <!-- Left Box: Global & Tiered Controls -->
-                            <div class="card" style="padding:24px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
-                                <h3 style="margin:0 0 16px 0; font-size:1.05rem; color:#1e293b; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
-                                    <i class="fa-solid fa-award" style="color:#d97706;"></i> تنظیمات اصلی پاداش و هدیه
-                                </h3>
-
-                                <!-- Master Toggle -->
-                                <div style="background:#f8fafc; border:2px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:20px; transition:all 0.2s ease;" id="giftMasterStatusCard">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                            <!-- Master Toggle Card -->
+                            <div class="card" style="padding:20px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
+                                <div style="background:#f8fafc; border:2px solid #e2e8f0; border-radius:14px; padding:16px; transition:all 0.2s ease;" id="giftMasterStatusCard">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
                                         <div style="display:flex; align-items:center; gap:12px;">
                                             <div id="giftMasterIconBox" style="width:44px; height:44px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
                                                 <i class="fa-solid fa-gift"></i>
@@ -2417,114 +2412,58 @@
                                                 <label for="isGiftEnabledSwitch" style="margin:0; font-weight:800; font-size:1rem; color:#0f172a; cursor:pointer;">
                                                     سیستم هدیه و کش‌بک خرید
                                                 </label>
-                                                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;" id="giftMasterStatusDescription">
-                                                    فعال - مشتریان می‌توانند متناسب با مبلغ خرید هدیه رایگان انتخاب کنند
+                                                <div style="font-size:0.82rem; color:#64748b; margin-top:2px;" id="giftMasterStatusDescription">
+                                                    فعال - مشتریان متناسب با پله‌های تعریف‌شده زیر، کالای هدیه رایگان یا شارژ کیف پول دریافت می‌کنند
                                                 </div>
                                             </div>
                                         </div>
                                         <label class="switch-toggle" style="position:relative; display:inline-block; width:52px; height:28px; margin:0; flex-shrink:0;">
                                             <input type="checkbox" id="isGiftEnabledSwitch" onchange="onGiftMasterSwitchToggle(this)">
-                                            <span class="slider-round"></span>
+                                            <span class="slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#cbd5e1; transition:.4s; border-radius:34px;"></span>
                                         </label>
                                     </div>
                                 </div>
-
-                                <!-- Base Percent & Min Order -->
-                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-                                    <div class="form-group">
-                                        <label for="defaultGiftPercentInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
-                                            <i class="fa-solid fa-percent" style="color:var(--primary); margin-left:4px;"></i> درصد هدیه پایه (پیش‌فرض):
-                                        </label>
-                                        <div style="position:relative;">
-                                            <input type="number" id="defaultGiftPercentInput" class="form-control" min="0" max="50" step="0.5" value="5" style="font-size:0.95rem; font-weight:bold; padding-left:35px;" oninput="simulateGiftTier()">
-                                            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#64748b; font-size:0.85rem;">٪</span>
-                                        </div>
-                                        <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">درصد محاسبه کالای هدیه از کل سبد</div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="minOrderForGiftInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
-                                            <i class="fa-solid fa-coins" style="color:var(--primary); margin-left:4px;"></i> حداقل خرید برای هدیه (تومان):
-                                        </label>
-                                        <input type="number" id="minOrderForGiftInput" class="form-control" min="0" step="50000" value="500000" style="font-size:0.95rem;" oninput="simulateGiftTier()">
-                                        <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">سفارشات کمتر از این مبلغ هدیه ندارند</div>
-                                    </div>
-                                </div>
-
-                                <!-- First Order Bonus -->
-                                <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:16px;">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                        <label for="isFirstOrderBonusSwitch" style="margin:0; font-weight:700; font-size:0.88rem; color:#065f46; cursor:pointer;">
-                                            <i class="fa-solid fa-user-plus" style="margin-left:4px;"></i> بونوس هدیه اولین خرید مشتری
-                                        </label>
-                                        <input type="checkbox" id="isFirstOrderBonusSwitch" onchange="simulateGiftTier()" style="width:18px; height:18px; cursor:pointer;">
-                                    </div>
-                                    <div style="display:grid; grid-template-columns: 1fr; gap:8px;">
-                                        <div style="display:flex; align-items:center; gap:8px;">
-                                            <span style="font-size:0.82rem; color:#047857;">درصد هدیه سفارش اول:</span>
-                                            <input type="number" id="firstOrderBonusPercentInput" class="form-control" min="1" max="50" value="10" style="width:90px; height:32px; font-size:0.85rem; font-weight:bold;" oninput="simulateGiftTier()">
-                                            <span style="font-size:0.82rem; color:#047857;">درصد</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Custom Banner Notice Text -->
-                                <div class="form-group" style="margin-bottom:20px;">
-                                    <label for="customGiftNoticeInput" style="font-weight:700; font-size:0.88rem; color:#334155; margin-bottom:6px; display:block;">
-                                        <i class="fa-solid fa-bullhorn" style="color:#2563eb; margin-left:4px;"></i> متن پیام اطلاع‌رسانی هدیه در سایت:
-                                    </label>
-                                    <textarea id="customGiftNoticeInput" class="form-control" rows="2" style="font-size:0.85rem; line-height:1.6;" placeholder="با هر خرید از پخش بهداشتی پیمان، ۵ الی ۱۰ درصد از مبلغ فاکتور را کالای هدیه رایگان انتخاب کنید!"></textarea>
-                                </div>
-
-                                <!-- Save Button -->
-                                <button type="submit" id="saveGiftSettingsBtn" class="btn btn-primary" style="width:100%; padding:12px; font-size:1rem; font-weight:bold; display:flex; justify-content:center; align-items:center; gap:8px; background:#d97706; border-color:#d97706;">
-                                    <i class="fa-solid fa-floppy-disk"></i> ذخیره تنظیمات هدایا
-                                </button>
-                                <div id="giftSaveStatusNotice" style="display:none; margin-top:10px; padding:10px; border-radius:8px; text-align:center; font-size:0.85rem; font-weight:bold;"></div>
                             </div>
 
-                            <!-- Right Box: Tiered Gifts System & Live Simulator -->
+                            <!-- Tiered Gifts System & Live Simulator Card -->
                             <div class="card" style="padding:24px; border-radius:16px; border:1px solid #cbd5e1; background:#ffffff;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
-                                    <h3 style="margin:0; font-size:1.05rem; color:#1e293b; display:flex; align-items:center; gap:8px;">
-                                        <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> سطوح پلکانی پاداش و هدیه (Tiered System)
-                                    </h3>
-                                    <button type="button" class="btn btn-secondary" onclick="addTierRow()" style="padding:4px 10px; font-size:0.8rem; background:#f1f5f9; border-color:#cbd5e1;">
-                                        <i class="fa-solid fa-plus"></i> افزودن پله
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px; flex-wrap:wrap; gap:10px;">
+                                    <div>
+                                        <h3 style="margin:0; font-size:1.08rem; color:#1e293b; display:flex; align-items:center; gap:8px;">
+                                            <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> سطوح پلکانی پاداش و هدیه
+                                        </h3>
+                                        <p style="font-size:0.82rem; color:#64748b; margin:4px 0 0 0;">
+                                            درصد هدیه برای هر بازه خرید را مشخص کنید. این درصدها مستقیماً در سایت و سبد خرید اعمال می‌شوند:
+                                        </p>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" onclick="addTierRow()" style="padding:8px 16px; font-size:0.85rem; background:#059669; border-color:#059669; border-radius:10px;">
+                                        <i class="fa-solid fa-plus"></i> افزودن پله جدید
                                     </button>
                                 </div>
 
-                                <p style="font-size:0.82rem; color:#64748b; margin-top:0; margin-bottom:12px;">
-                                    می‌توانید برای مبالغ بالاتر، درصد هدیه بیشتری به عنوان تشویق خرید عمده تعیین فرمایید:
-                                </p>
-
-                                <div id="tieredGiftsContainer" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+                                <div id="tieredGiftsContainer" style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px;">
                                     <!-- Dynamic Tier Rows Rendered Here -->
                                 </div>
 
                                 <!-- Live Simulator Tool -->
-                                <div style="background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:14px; padding:16px;">
-                                    <h4 style="margin:0 0 10px 0; font-size:0.92rem; color:#1e40af; display:flex; align-items:center; gap:6px;">
+                                <div style="background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:14px; padding:18px; margin-bottom:20px;">
+                                    <h4 style="margin:0 0 12px 0; font-size:0.95rem; color:#1e40af; display:flex; align-items:center; gap:6px;">
                                         <i class="fa-solid fa-calculator"></i> ماشین حساب و شبیه‌ساز زنده هدیه
                                     </h4>
-                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:10px;">
-                                        <div>
-                                            <label style="font-size:0.78rem; color:#475569; display:block; margin-bottom:4px;">مبلغ فرضی سبد خرید (تومان):</label>
-                                            <input type="number" id="simOrderAmountInput" class="form-control" value="2000000" step="100000" style="font-size:0.9rem; font-weight:bold;" oninput="simulateGiftTier()">
-                                        </div>
-                                        <div>
-                                            <label style="font-size:0.78rem; color:#475569; display:block; margin-bottom:4px;">نوع مشتری:</label>
-                                            <select id="simCustomerTypeSelect" class="form-control" style="font-size:0.85rem;" onchange="simulateGiftTier()">
-                                                <option value="regular">مشتری عادی / دائمی</option>
-                                                <option value="first_order">اولین خرید (شامل بونوس)</option>
-                                            </select>
-                                        </div>
+                                    <div style="margin-bottom:12px;">
+                                        <label style="font-size:0.8rem; color:#475569; display:block; margin-bottom:4px; font-weight:600;">مبلغ فرضی خرید محصولات رافونه (تومان):</label>
+                                        <input type="number" id="simOrderAmountInput" class="form-control" value="2000000" step="100000" style="font-size:0.95rem; font-weight:bold;" oninput="simulateGiftTier()">
                                     </div>
-                                    <div id="simResultBox" style="background:#ffffff; border-radius:10px; padding:12px; border:1px solid #dbeafe; font-size:0.85rem; line-height:1.7; color:#1e3a8a;">
+                                    <div id="simResultBox" style="background:#ffffff; border-radius:10px; padding:14px; border:1px solid #dbeafe; font-size:0.88rem; line-height:1.8; color:#1e3a8a;">
                                         در حال محاسبه...
                                     </div>
                                 </div>
 
+                                <!-- Save Button -->
+                                <button type="submit" id="saveGiftSettingsBtn" class="btn btn-primary" style="width:100%; padding:14px; font-size:1.05rem; font-weight:bold; display:flex; justify-content:center; align-items:center; gap:8px; background:#d97706; border-color:#d97706; border-radius:12px; box-shadow:0 4px 12px rgba(217,119,6,0.25); cursor:pointer;">
+                                    <i class="fa-solid fa-floppy-disk"></i> ذخیره تنظیمات هدایا
+                                </button>
+                                <div id="giftSaveStatusNotice" style="display:none; margin-top:12px; padding:12px; border-radius:10px; text-align:center; font-size:0.9rem; font-weight:bold;"></div>
                             </div>
                         </div>
                     </form>
@@ -10866,19 +10805,7 @@
 
     function updateGiftSettingsUI() {
         const isEnabledSwitch = document.getElementById('isGiftEnabledSwitch');
-        const defaultPercentInput = document.getElementById('defaultGiftPercentInput');
-        const minOrderInput = document.getElementById('minOrderForGiftInput');
-        const isFirstOrderBonusSwitch = document.getElementById('isFirstOrderBonusSwitch');
-        const firstOrderBonusPercentInput = document.getElementById('firstOrderBonusPercentInput');
-        const customNoticeInput = document.getElementById('customGiftNoticeInput');
-
         if (isEnabledSwitch) isEnabledSwitch.checked = currentGiftSettings.isEnabled !== false;
-        if (defaultPercentInput) defaultPercentInput.value = currentGiftSettings.defaultGiftPercent !== undefined ? currentGiftSettings.defaultGiftPercent : 5;
-        if (minOrderInput) minOrderInput.value = currentGiftSettings.minOrderForGift !== undefined ? currentGiftSettings.minOrderForGift : 0;
-        if (isFirstOrderBonusSwitch) isFirstOrderBonusSwitch.checked = currentGiftSettings.isFirstOrderBonusEnabled !== false;
-        if (firstOrderBonusPercentInput) firstOrderBonusPercentInput.value = currentGiftSettings.firstOrderBonusPercent !== undefined ? currentGiftSettings.firstOrderBonusPercent : 10;
-        if (customNoticeInput) customNoticeInput.value = currentGiftSettings.customGiftNotice || '';
-
         onGiftMasterSwitchToggle(isEnabledSwitch);
         renderTieredGiftsTable();
         simulateGiftTier();
@@ -10899,7 +10826,7 @@
                     iconBox.innerHTML = '<i class="fa-solid fa-gift" style="font-size:1.5rem; color:white;"></i>';
                 }
                 if (desc) {
-                    desc.innerHTML = '<strong style="color:#059669;">سیستم هدایا در حال حاضر فعال است.</strong> مشتریان متناسب با مبلغ سبد خرید خود اعتبار هدیه دریافت می‌کنند.';
+                    desc.innerHTML = '<strong style="color:#059669;">سیستم هدایا در حال حاضر فعال است.</strong> مشتریان متناسب با پله‌های زیر، کالای هدیه رایگان یا شارژ کیف پول دریافت می‌کنند.';
                 }
             } else {
                 card.style.borderColor = '#cbd5e1';
@@ -10921,13 +10848,11 @@
 
         const tiers = Array.isArray(currentGiftSettings.tieredGifts) ? currentGiftSettings.tieredGifts : [];
         if (tiers.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:16px; color:#64748b; font-size:0.85rem; background:#f8fafc; border-radius:10px; border:1px dashed #cbd5e1;">هیچ سطح پلکانی تعریف نشده است. جهت ایجاد پله جدید، دکمه «افزودن پله» را کلیک فرمایید.</div>';
+            container.innerHTML = '<div style="text-align:center; padding:16px; color:#64748b; font-size:0.85rem; background:#f8fafc; border-radius:10px; border:1px dashed #cbd5e1;">هیچ سطح پلکانی تعریف نشده است. جهت ایجاد پله جدید، دکمه «افزودن پله جدید» را کلیک فرمایید.</div>';
             return;
         }
 
         container.innerHTML = tiers.map((tier, idx) => {
-            const minFormatted = (Number(tier.minAmount) || 0).toLocaleString('fa-IR');
-            const maxFormatted = Number(tier.maxAmount) > 0 ? (Number(tier.maxAmount)).toLocaleString('fa-IR') + ' تومان' : 'نامحدود (سقف ندارد)';
             return `
                 <div class="tier-card" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -10935,10 +10860,11 @@
                             <span style="display:inline-flex; width:24px; height:24px; border-radius:50%; background:#dbeafe; color:#1e40af; font-size:0.78rem; justify-content:center; align-items:center; font-weight:bold;">${idx + 1}</span>
                             ${escapeHtml(tier.title || ('سطح ' + (idx + 1)))}
                         </span>
-                        <button type="button" class="btn btn-secondary" onclick="deleteTierRow('${tier.id}')" style="padding:4px 8px; font-size:0.75rem; background:#fee2e2; color:#dc2626; border-color:#fca5a5;">
+                        <button type="button" class="btn btn-secondary" onclick="deleteTierRow('${tier.id}')" style="padding:4px 8px; font-size:0.75rem; background:#fee2e2; color:#dc2626; border-color:#fca5a5; cursor:pointer;">
                             <i class="fa-solid fa-trash"></i> حذف پله
                         </button>
                     </div>
+
                     <div style="display:grid; grid-template-columns:1.2fr 1.2fr 1fr; gap:10px;">
                         <div>
                             <label style="font-size:0.75rem; color:#475569; display:block; margin-bottom:3px;">از مبلغ (تومان):</label>
@@ -10953,14 +10879,15 @@
                             <input type="number" class="form-control" value="${tier.giftPercent || 5}" min="1" max="100" style="font-size:0.85rem; font-weight:bold; color:#047857; text-align:center;" oninput="updateTierField('${tier.id}', 'giftPercent', this.value)">
                         </div>
                     </div>
+
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                         <div>
                             <label style="font-size:0.75rem; color:#475569; display:block; margin-bottom:3px;">عنوان نمایشی سطح:</label>
-                            <input type="text" class="form-control" value="${escapeHtml(tier.title || '')}" placeholder="مثال: پله نقره‌ای (۵٪ هدیه)" style="font-size:0.82rem;" oninput="updateTierField('${tier.id}', 'title', this.value)">
+                            <input type="text" class="form-control" value="${escapeHtml(tier.title || '')}" placeholder="مثال: پله ۲ (۵٪ هدیه)" style="font-size:0.82rem;" oninput="updateTierField('${tier.id}', 'title', this.value)">
                         </div>
                         <div>
                             <label style="font-size:0.75rem; color:#475569; display:block; margin-bottom:3px;">توضیحات و پاداش جانبی:</label>
-                            <input type="text" class="form-control" value="${escapeHtml(tier.bonusDescription || '')}" placeholder="مثال: ارسال رایگان + هدیه کالا" style="font-size:0.82rem;" oninput="updateTierField('${tier.id}', 'bonusDescription', this.value)">
+                            <input type="text" class="form-control" value="${escapeHtml(tier.bonusDescription || '')}" placeholder="مثال: ۵٪ ارزش فاکتور هدیه کالا" style="font-size:0.82rem;" oninput="updateTierField('${tier.id}', 'bonusDescription', this.value)">
                         </div>
                     </div>
                 </div>
@@ -11015,77 +10942,77 @@
         if (!box) return;
 
         const amount = Number(document.getElementById('simOrderAmountInput')?.value) || 0;
-        const custType = document.getElementById('simCustomerTypeSelect')?.value || 'regular';
-
         const isMasterEnabled = document.getElementById('isGiftEnabledSwitch') ? document.getElementById('isGiftEnabledSwitch').checked : currentGiftSettings.isEnabled;
-        const defVal = document.getElementById('defaultGiftPercentInput')?.value;
-        const defaultPercent = (defVal !== undefined && defVal !== '') ? Number(defVal) : (Number(currentGiftSettings.defaultGiftPercent) || 0);
-        const minOrder = Number(document.getElementById('minOrderForGiftInput')?.value) || Number(currentGiftSettings.minOrderForGift) || 0;
-        const isFirstOrderBonus = document.getElementById('isFirstOrderBonusSwitch') ? document.getElementById('isFirstOrderBonusSwitch').checked : currentGiftSettings.isFirstOrderBonusEnabled;
-        const bVal = document.getElementById('firstOrderBonusPercentInput')?.value;
-        const firstOrderBonusPct = (bVal !== undefined && bVal !== '') ? Number(bVal) : (Number(currentGiftSettings.firstOrderBonusPercent) || 0);
 
         if (!isMasterEnabled) {
-            box.innerHTML = '<span style="color:#dc2626; font-weight:bold;"><i class="fa-solid fa-triangle-exclamation"></i> سیستم هدایا غیرفعال است (اعتبار: ۰ تومان).</span>';
+            box.innerHTML = '<span style="color:#dc2626; font-weight:bold;"><i class="fa-solid fa-triangle-exclamation"></i> سیستم هدایا در حال حاضر غیرفعال است (اعتبار: ۰ تومان).</span>';
             return;
         }
 
-        if (minOrder > 0 && amount < minOrder) {
-            box.innerHTML = `<span style="color:#d97706;"><i class="fa-solid fa-circle-info"></i> حداقل سفارش برای دریافت هدیه ${minOrder.toLocaleString('fa-IR')} تومان است. مبلغ سفارش کمتر است (اعتبار: ۰ تومان).</span>`;
+        const tiers = Array.isArray(currentGiftSettings.tieredGifts) ? currentGiftSettings.tieredGifts : [];
+        if (tiers.length === 0) {
+            box.innerHTML = '<span style="color:#64748b;"><i class="fa-solid fa-circle-info"></i> هیچ پله‌ای تعریف نشده است.</span>';
             return;
         }
 
-        let applicablePct = defaultPercent;
-        let matchedTierTitle = 'درصد پیش‌فرض پایه';
+        const sortedTiers = [...tiers]
+            .filter(t => t && Number(t.minAmount) >= 0)
+            .sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
 
-        if (custType === 'first_order' && isFirstOrderBonus && firstOrderBonusPct > 0) {
-            applicablePct = firstOrderBonusPct;
-            matchedTierTitle = `طرح ویژه خوش‌آمدگویی سفارش اول (${firstOrderBonusPct}٪)`;
-        } else if (Array.isArray(currentGiftSettings.tieredGifts) && currentGiftSettings.tieredGifts.length > 0) {
-            const sortedTiers = [...currentGiftSettings.tieredGifts]
-                .filter(t => t && Number(t.minAmount) >= 0)
-                .sort((a, b) => (Number(a.minAmount) || 0) - (Number(b.minAmount) || 0));
-            let found = false;
-            for (let i = 0; i < sortedTiers.length; i++) {
-                const tier = sortedTiers[i];
-                const min = Number(tier.minAmount) || 0;
-                const max = Number(tier.maxAmount) || 0;
-                const prevTier = i > 0 ? sortedTiers[i - 1] : null;
-                const isContiguousWithPrev = prevTier && (Number(prevTier.maxAmount) === min);
-                const isAboveMin = isContiguousWithPrev ? (amount > min) : (amount >= min);
-                const isBelowMax = (max === 0 || amount <= max);
+        let applicablePct = 0;
+        let matchedTier = null;
 
-                if (isAboveMin && isBelowMax) {
-                    applicablePct = Number(tier.giftPercent) || 0;
-                    matchedTierTitle = tier.title || `پله ${applicablePct}٪`;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                const lowestMin = sortedTiers.length > 0 ? (Number(sortedTiers[0].minAmount) || 0) : 0;
-                if (amount < lowestMin) {
-                    applicablePct = 0;
-                    matchedTierTitle = 'کمتر از حد نصاب پله‌های هدیه (۰٪)';
-                } else {
-                    applicablePct = defaultPercent;
-                    matchedTierTitle = 'درصد پیش‌فرض پایه';
-                }
+        for (let i = 0; i < sortedTiers.length; i++) {
+            const tier = sortedTiers[i];
+            const min = Number(tier.minAmount) || 0;
+            const max = Number(tier.maxAmount) || 0;
+            const prevTier = i > 0 ? sortedTiers[i - 1] : null;
+            const isContiguousWithPrev = prevTier && (Number(prevTier.maxAmount) === min);
+            const isAboveMin = isContiguousWithPrev ? (amount > min) : (amount >= min);
+            const isBelowMax = (max === 0 || amount <= max);
+
+            if (isAboveMin && isBelowMax) {
+                applicablePct = Number(tier.giftPercent) || 0;
+                matchedTier = tier;
+                break;
             }
         }
 
-        const calculatedGiftCredit = Math.round(amount * (applicablePct / 100));
+        const lowestMin = sortedTiers.length > 0 ? (Number(sortedTiers[0].minAmount) || 0) : 0;
+        if (!matchedTier) {
+            if (amount < lowestMin) {
+                box.innerHTML = `
+                    <div style="color:#d97706; font-weight:bold;">
+                        <i class="fa-solid fa-circle-info"></i> کمتر از حداقل پله‌های هدیه (حداقل ${lowestMin.toLocaleString('fa-IR')} تومان).
+                    </div>
+                    <div style="font-size:0.82rem; color:#64748b; margin-top:4px;">
+                        اعتبار هدیه: <strong>۰ تومان (۰٪)</strong>
+                    </div>
+                `;
+                return;
+            } else {
+                const highest = sortedTiers[sortedTiers.length - 1];
+                matchedTier = highest;
+                applicablePct = Number(highest.giftPercent) || 0;
+            }
+        }
+
+        const giftValue = Math.round((amount * applicablePct) / 100);
         box.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <span><strong>سطح اعمال‌شده:</strong> ${escapeHtml(matchedTierTitle)}</span>
-                <span class="badge" style="background:#059669; color:white; font-size:0.85rem; padding:3px 8px;">${applicablePct}٪ هدیه</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <span style="font-weight:800; color:#065f46;">
+                    <i class="fa-solid fa-circle-check" style="color:#10b981;"></i> ${escapeHtml(matchedTier.title || 'سطح فعال')}:
+                    <span style="background:#dcfce7; color:#047857; padding:2px 8px; border-radius:6px; font-size:0.85rem; margin-right:4px;">${applicablePct}٪ هدیه</span>
+                </span>
+                <span style="font-weight:800; color:#0f766e; font-size:0.95rem;">
+                    سقف اعتبار هدیه: ${giftValue.toLocaleString('fa-IR')} تومان
+                </span>
             </div>
-            <div style="font-size:1.05rem; font-weight:bold; color:#047857;">
-                اعتبار هدیه قابل انتخاب مشتری: ${calculatedGiftCredit.toLocaleString('fa-IR')} تومان
-            </div>
-            <div style="font-size:0.78rem; color:#64748b; margin-top:4px;">
-                مشتری می‌تواند از میان تمامی کالاهای برند رافونه تا سقف این مبلغ، کالای رایگان به سبد خود اضافه فرماید.
-            </div>
+            ${matchedTier.bonusDescription ? `
+                <div style="font-size:0.8rem; color:#047857; margin-top:6px; background:#ecfdf5; padding:4px 8px; border-radius:6px;">
+                    <i class="fa-solid fa-gift" style="color:#10b981;"></i> ${escapeHtml(matchedTier.bonusDescription)}
+                </div>
+            ` : ''}
         `;
     }
 
@@ -11099,21 +11026,20 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره تنظیمات...';
         }
 
-        const defVal = document.getElementById('defaultGiftPercentInput')?.value;
-        const defaultGiftPercent = (defVal !== undefined && defVal !== '') ? Number(defVal) : 0;
-        
-        const bVal = document.getElementById('firstOrderBonusPercentInput')?.value;
-        const firstOrderBonusPercent = (bVal !== undefined && bVal !== '') ? Number(bVal) : 0;
+        const tiers = Array.isArray(currentGiftSettings.tieredGifts) ? currentGiftSettings.tieredGifts : [];
+        const sortedTiers = [...tiers].filter(t => t && Number(t.minAmount) >= 0).sort((a,b) => (Number(a.minAmount)||0) - (Number(b.minAmount)||0));
+        const minOrder = sortedTiers.length > 0 ? (Number(sortedTiers[0].minAmount) || 0) : 0;
+        const defaultPercent = sortedTiers.length > 0 ? (Number(sortedTiers[0].giftPercent) || 5) : 5;
 
         const payload = {
             isEnabled: document.getElementById('isGiftEnabledSwitch') ? document.getElementById('isGiftEnabledSwitch').checked : true,
-            defaultGiftPercent: defaultGiftPercent,
-            minOrderForGift: Number(document.getElementById('minOrderForGiftInput')?.value) || 0,
-            isFirstOrderBonusEnabled: document.getElementById('isFirstOrderBonusSwitch') ? document.getElementById('isFirstOrderBonusSwitch').checked : false,
-            firstOrderBonusPercent: firstOrderBonusPercent,
-            customGiftNotice: document.getElementById('customGiftNoticeInput')?.value?.trim() || '',
+            defaultGiftPercent: defaultPercent,
+            minOrderForGift: minOrder,
+            isFirstOrderBonusEnabled: false,
+            firstOrderBonusPercent: 0,
+            customGiftNotice: '',
             tieredGiftsEnabled: true,
-            tieredGifts: Array.isArray(currentGiftSettings.tieredGifts) ? currentGiftSettings.tieredGifts : [],
+            tieredGifts: tiers,
             updatedAt: new Date().toISOString()
         };
 
@@ -11133,10 +11059,10 @@
                 notice.style.background = '#f0fdf4';
                 notice.style.border = '1px solid #86efac';
                 notice.style.color = '#166534';
-                notice.innerHTML = '<i class="fa-solid fa-circle-check"></i> تنظیمات و سطوح پلکانی هدایا با موفقیت ذخیره و در سرور و سایت اعمال شد.';
+                notice.innerHTML = '<i class="fa-solid fa-circle-check"></i> سطوح پلکانی هدایا با موفقیت ذخیره و در سرور و سایت اعمال شد.';
                 setTimeout(() => { if (notice) notice.style.display = 'none'; }, 4000);
             }
-            alert('تنظیمات هدایا و پاداش‌های پلکانی با موفقیت ذخیره گردید.');
+            alert('تنظیمات هدایا و سطوح پلکانی با موفقیت ذخیره گردید.');
         } catch (err) {
             console.error('Save gift settings error:', err);
             if (notice) {

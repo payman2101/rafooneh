@@ -202,58 +202,44 @@
             padding: 10px 15px;
         }
 
-        /* Gift Guide Trigger & Notice Banner */
-        .gift-guide-trigger-bar {
+        /* Gift Guide Trigger Pill Button */
+        .gift-guide-pill-btn {
             background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            border-radius: 14px;
-            padding: 10px 14px;
-            margin-bottom: 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-        }
-        .gift-guide-trigger-bar:hover {
-            background: #ecfdf5;
-            border-color: #86efac;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(5, 150, 105, 0.08);
-        }
-        .gift-guide-trigger-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #dcfce7;
-            color: #059669;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-        .gift-guide-btn-badge {
-            background: #059669;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            font-weight: 600;
-            padding: 6px 14px;
-            font-size: 0.78rem;
+            border: 1.5px solid #86efac;
+            color: #166534;
+            border-radius: 9999px;
+            padding: 7px 18px;
+            font-size: 0.85rem;
+            font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            white-space: nowrap;
-            box-shadow: 0 2px 5px rgba(5, 150, 105, 0.22);
-            transition: background 0.15s ease, transform 0.15s ease;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+            transition: all 0.2s ease;
         }
-        .gift-guide-btn-badge:hover {
-            background: #047857;
+        .gift-guide-pill-btn:hover {
+            background: #10b981;
+            color: #ffffff;
+            border-color: #059669;
             transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+        }
+        .gift-guide-pill-btn .gift-pill-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #dcfce7;
+            color: #059669;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+        .gift-guide-pill-btn:hover .gift-pill-icon {
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
         }
         .promo-banner {
             background: linear-gradient(45deg, #fff3e0, #ffe0b2);
@@ -2941,19 +2927,11 @@
             <input type="text" id="searchInput" class="search-input" placeholder="جستجوی سریع نام یا کد کالا (مثلاً: ۱۰۲۱، مایع دست، اسپری)..." oninput="handleSearchInput()">
         </div>
 
-        <!-- Gift Scheme Guide Trigger -->
-        <div class="gift-guide-trigger-bar" id="giftGuideTriggerBar" onclick="openGiftGuideModal()">
-            <div style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
-                <div class="gift-guide-trigger-icon">
-                    <i class="fa-solid fa-gift"></i>
-                </div>
-                <div>
-                    <span style="font-weight: 700; font-size: 0.86rem; color: #166534;">طرح پاداش و هدیه رافونه</span>
-                    <span style="font-size: 0.78rem; color: #475569; margin-right: 6px;">(دریافت کالای رایگان یا شارژ کیف پول با خرید محصولات رافونه)</span>
-                </div>
-            </div>
-            <button type="button" class="gift-guide-btn-badge" onclick="event.stopPropagation(); openGiftGuideModal();">
-                <i class="fa-solid fa-circle-question"></i> راهنما و نحوه تعلق
+        <!-- Gift Scheme Guide Button -->
+        <div style="display: flex; justify-content: center; margin-bottom: 18px;">
+            <button type="button" id="giftGuideTriggerBtn" class="gift-guide-pill-btn" onclick="openGiftGuideModal()" title="مشاهده راهنما و سطوح هدیه">
+                <span class="gift-pill-icon"><i class="fa-solid fa-gift"></i></span>
+                <span>طرح هدایا و پاداش‌های رافونه</span>
             </button>
         </div>
 
