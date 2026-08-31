@@ -1,5 +1,5 @@
 import { db } from '../src/db/index.js';
-import { products, customers, orders, companyPayments, purchases, settings, bankSettings } from '../src/db/schema.js';
+import { products, customers, orders, companyPayments, purchases, settings, bankSettings, packages } from '../src/db/schema.js';
 import { eq, or, sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
@@ -119,6 +119,48 @@ export async function initCloudSql() {
         console.log(`[Cloud SQL Seeding] Migrating delivery settings to PostgreSQL...`);
         await saveDeliverySettingsCloudSql(deliveryData);
       }
+    }
+
+    // 7. Check & Seed Packages
+    try {
+      const existingPkgs = await db.select({ count: sql`count(*)` }).from(packages);
+      if (Number(existingPkgs[0]?.count || 0) === 0) {
+        const jsonPath = path.join(DATA_DIR, 'packages.json');
+        const rootJsonPath = path.join(process.cwd(), 'packages.json');
+        let pkgs = [];
+        if (fs.existsSync(jsonPath)) {
+          try { pkgs = JSON.parse(fs.readFileSync(jsonPath, 'utf8')); } catch (e) {}
+        } else if (fs.existsSync(rootJsonPath)) {
+          try { pkgs = JSON.parse(fs.readFileSync(rootJsonPath, 'utf8')); } catch (e) {}
+        }
+        if (Array.isArray(pkgs) && pkgs.length > 0) {
+          console.log(`[Cloud SQL Seeding] Migrating ${pkgs.length} packages to Supabase/PostgreSQL...`);
+          await saveAllPackagesCloudSql(pkgs);
+        }
+      }
+    } catch (pkgSeedErr) {
+      console.error('[Cloud SQL Packages Seeding Notice]:', pkgSeedErr.message);
+    }
+
+    // 8. Check & Seed Gift Settings
+    try {
+      const existingGift = await db.select().from(settings).where(eq(settings.key, 'gift_settings')).limit(1);
+      if (!existingGift || existingGift.length === 0) {
+        const jsonPath = path.join(DATA_DIR, 'gift_settings.json');
+        const rootJsonPath = path.join(process.cwd(), 'gift_settings.json');
+        let giftData = null;
+        if (fs.existsSync(jsonPath)) {
+          try { giftData = JSON.parse(fs.readFileSync(jsonPath, 'utf8')); } catch (e) {}
+        } else if (fs.existsSync(rootJsonPath)) {
+          try { giftData = JSON.parse(fs.readFileSync(rootJsonPath, 'utf8')); } catch (e) {}
+        }
+        if (giftData && typeof giftData === 'object') {
+          console.log(`[Cloud SQL Seeding] Migrating gift settings to Supabase/PostgreSQL...`);
+          await saveGiftSettingsCloudSql(giftData);
+        }
+      }
+    } catch (giftSeedErr) {
+      console.error('[Cloud SQL Gift Settings Seeding Notice]:', giftSeedErr.message);
     }
 
     console.log('[Cloud SQL] Database ready.');
@@ -549,6 +591,128 @@ export async function saveDeliverySettingsCloudSql(settingObj) {
       });
   } catch (err) {
     console.error('[Cloud SQL] Error saving delivery settings:', err.message);
+  }
+}
+
+// Packages CRUD for Supabase / Cloud SQL
+function mapPackageToPg(pkg) {
+  const id = String(pkg.id || '');
+  const itemsJson = typeof pkg.items === 'string' ? pkg.items : JSON.stringify(pkg.items || []);
+  return {
+    id,
+    title: String(pkg.title || 'پکیج جدید'),
+    subtitle: String(pkg.subtitle || ''),
+    badge: String(pkg.badge || 'ویژه'),
+    badgeColor: String(pkg.badgeColor || '#059669'),
+    image: String(pkg.image || ''),
+    isActive: pkg.isActive !== false,
+    items: itemsJson,
+    originalPrice: Number(pkg.originalPrice) || 0,
+    packagePrice: Number(pkg.packagePrice) || 0,
+    discountPercent: Number(pkg.discountPercent) || 0,
+    giftCredit: Number(pkg.giftCredit) || 0,
+    bonusItem: String(pkg.bonusItem || ''),
+    stock: Number(pkg.stock) >= 0 ? Number(pkg.stock) : 50,
+    description: String(pkg.description || ''),
+    createdAt: pkg.createdAt || new Date().toISOString(),
+    updatedAt: pkg.updatedAt || new Date().toISOString()
+  };
+}
+
+export async function savePackageCloudSql(pkg) {
+  if (!pkg || !pkg.id) return;
+  const record = mapPackageToPg(pkg);
+  try {
+    await db.insert(packages).values(record).onConflictDoUpdate({
+      target: packages.id,
+      set: {
+        title: record.title,
+        subtitle: record.subtitle,
+        badge: record.badge,
+        badgeColor: record.badgeColor,
+        image: record.image,
+        isActive: record.isActive,
+        items: record.items,
+        originalPrice: record.originalPrice,
+        packagePrice: record.packagePrice,
+        discountPercent: record.discountPercent,
+        giftCredit: record.giftCredit,
+        bonusItem: record.bonusItem,
+        stock: record.stock,
+        description: record.description,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      }
+    });
+  } catch (err) {
+    console.error('[Cloud SQL] Error saving package:', err.message);
+  }
+}
+
+export async function saveAllPackagesCloudSql(packagesList) {
+  if (!Array.isArray(packagesList) || packagesList.length === 0) return;
+  for (const pkg of packagesList) {
+    await savePackageCloudSql(pkg);
+  }
+}
+
+export async function getAllPackagesCloudSql() {
+  try {
+    const rows = await db.select().from(packages);
+    return rows.map(r => {
+      let items = [];
+      try { items = typeof r.items === 'string' ? JSON.parse(r.items || '[]') : (r.items || []); } catch (e) {}
+      return {
+        ...r,
+        isActive: r.isActive !== false,
+        items
+      };
+    });
+  } catch (err) {
+    console.error('[Cloud SQL] Error getting packages:', err.message);
+    return [];
+  }
+}
+
+export async function deletePackageCloudSql(id) {
+  if (!id) return;
+  try {
+    await db.delete(packages).where(eq(packages.id, String(id)));
+  } catch (err) {
+    console.error('[Cloud SQL] Error deleting package:', err.message);
+  }
+}
+
+// Gift Settings CRUD for Supabase / Cloud SQL
+export async function getGiftSettingsCloudSql() {
+  try {
+    const sRows = await db.select().from(settings).where(eq(settings.key, 'gift_settings')).limit(1);
+    if (sRows && sRows.length > 0) {
+      try {
+        const parsed = JSON.parse(sRows[0].value);
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (e) {}
+    }
+  } catch (err) {
+    console.error('[Cloud SQL] Error getting gift settings:', err.message);
+  }
+  return null;
+}
+
+export async function saveGiftSettingsCloudSql(giftObj) {
+  try {
+    const sPayload = {
+      key: 'gift_settings',
+      value: JSON.stringify(giftObj),
+      updatedAt: giftObj.updatedAt || new Date().toISOString()
+    };
+    await db.insert(settings).values(sPayload)
+      .onConflictDoUpdate({
+        target: settings.key,
+        set: sPayload
+      });
+  } catch (err) {
+    console.error('[Cloud SQL] Error saving gift settings:', err.message);
   }
 }
 

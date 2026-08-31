@@ -47,7 +47,13 @@ import {
   getBankSettingsCloudSql,
   saveBankSettingsCloudSql,
   getDeliverySettingsCloudSql,
-  saveDeliverySettingsCloudSql
+  saveDeliverySettingsCloudSql,
+  savePackageCloudSql,
+  saveAllPackagesCloudSql,
+  getAllPackagesCloudSql,
+  deletePackageCloudSql,
+  getGiftSettingsCloudSql,
+  saveGiftSettingsCloudSql
 } from './cloudsql.js';
 import {
   seedSqliteFromJson,
@@ -2555,14 +2561,17 @@ export function saveGiftSettings(settings) {
   // 1. Save to Firestore asynchronously
   saveGiftSettingsToFirestore(updated).catch(err => console.error('[Firestore save gift error]:', err));
 
-  // 2. Save to SQLite
+  // 2. Save to Supabase / PostgreSQL
+  saveGiftSettingsCloudSql(updated).catch(err => console.error('[Cloud SQL save gift error]:', err));
+
+  // 3. Save to SQLite
   try {
     saveGiftSettingsSqlite(updated);
   } catch (e) {
     console.error('[SQLite save gift error]:', e);
   }
 
-  // 3. Save to local JSON files
+  // 4. Save to local JSON files
   try {
     ensureDataDir();
     writeJson(GIFT_SETTINGS_FILE, updated);
@@ -2699,14 +2708,17 @@ export function savePackage(packageData) {
   // 1. Save to Firestore
   savePackageToFirestore(pkgObj).catch(err => console.error('[Firestore save package error]:', err));
 
-  // 2. Save to SQLite
+  // 2. Save to Supabase / PostgreSQL
+  savePackageCloudSql(pkgObj).catch(err => console.error('[Cloud SQL save package error]:', err));
+
+  // 3. Save to SQLite
   try {
     savePackageSqlite(pkgObj);
   } catch (e) {
     console.error('[SQLite save package error]:', e);
   }
 
-  // 3. Save to JSON files
+  // 4. Save to JSON files
   writeJson(PACKAGES_FILE, list);
   try { writeJson(ROOT_PACKAGES_FILE, list); } catch (e) {}
   return pkgObj;
@@ -2720,14 +2732,17 @@ export function deletePackage(id) {
   // 1. Delete from Firestore
   deletePackageFromFirestore(id).catch(err => console.error('[Firestore delete package error]:', err));
 
-  // 2. Delete from SQLite
+  // 2. Delete from Supabase / PostgreSQL
+  deletePackageCloudSql(id).catch(err => console.error('[Cloud SQL delete package error]:', err));
+
+  // 3. Delete from SQLite
   try {
     deletePackageSqlite(id);
   } catch (e) {
     console.error('[SQLite delete package error]:', e);
   }
 
-  // 3. Save to JSON files
+  // 4. Save to JSON files
   writeJson(PACKAGES_FILE, list);
   try { writeJson(ROOT_PACKAGES_FILE, list); } catch (e) {}
   return { success: true };
@@ -2742,6 +2757,7 @@ export function togglePackageStatus(id) {
   packagesListCache = list;
 
   savePackageToFirestore(pkg).catch(err => console.error('[Firestore toggle package error]:', err));
+  savePackageCloudSql(pkg).catch(err => console.error('[Cloud SQL toggle package error]:', err));
   try { savePackageSqlite(pkg); } catch (e) {}
 
   writeJson(PACKAGES_FILE, list);
@@ -2777,6 +2793,30 @@ export async function initDatabaseSync() {
       }
     } catch (dErr) {
       console.error('[Database Sync] Delivery settings hydrate error:', dErr.message);
+    }
+    try {
+      const sqlGifts = await getGiftSettingsCloudSql();
+      if (sqlGifts && typeof sqlGifts === 'object' && typeof sqlGifts.defaultGiftPercent !== 'undefined') {
+        giftSettingsCache = { ...DEFAULT_GIFT_SETTINGS, ...sqlGifts };
+        writeJson(GIFT_SETTINGS_FILE, giftSettingsCache);
+        writeJson(ROOT_GIFT_SETTINGS_FILE, giftSettingsCache);
+        try { saveGiftSettingsSqlite(giftSettingsCache); } catch (e) {}
+        console.log('[Database Sync] Hydrated gift settings from Supabase/Cloud SQL.');
+      }
+    } catch (gErr) {
+      console.error('[Database Sync] Gift settings hydrate error:', gErr.message);
+    }
+    try {
+      const sqlPkgs = await getAllPackagesCloudSql();
+      if (Array.isArray(sqlPkgs) && sqlPkgs.length > 0) {
+        packagesListCache = sqlPkgs;
+        writeJson(PACKAGES_FILE, sqlPkgs);
+        try { writeJson(ROOT_PACKAGES_FILE, sqlPkgs); } catch (e) {}
+        try { saveAllPackagesSqlite(sqlPkgs); } catch (e) {}
+        console.log(`[Database Sync] Hydrated ${sqlPkgs.length} packages from Supabase/Cloud SQL.`);
+      }
+    } catch (pkgErr) {
+      console.error('[Database Sync] Packages hydrate error:', pkgErr.message);
     }
     try {
       const sqlPayments = await getAllCompanyPaymentsCloudSql();

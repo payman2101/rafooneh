@@ -96,3 +96,23 @@ export const bankSettings = pgTable('bank_settings', {
   updatedAt: text('updated_at'),
 });
 
+export const packages = pgTable('packages', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  subtitle: text('subtitle'),
+  badge: text('badge'),
+  badgeColor: text('badge_color'),
+  image: text('image'),
+  isActive: boolean('is_active').default(true),
+  items: text('items'),
+  originalPrice: doublePrecision('original_price').default(0),
+  packagePrice: doublePrecision('package_price').default(0),
+  discountPercent: doublePrecision('discount_percent').default(0),
+  giftCredit: doublePrecision('gift_credit').default(0),
+  bonusItem: text('bonus_item'),
+  stock: integer('stock').default(50),
+  description: text('description'),
+  createdAt: text('created_at'),
+  updatedAt: text('updated_at'),
+});
+
