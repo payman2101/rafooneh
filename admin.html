@@ -11616,39 +11616,59 @@
     }
 
     async function applyBatchMultiplier() {
-        const mul = Number(document.getElementById('batchMultiplierValue')?.value || 0.70);
-        const scope = document.getElementById('batchMultiplierScope')?.value || 'all';
-
+        const mul = Number(document.getElementById("batchMultiplierValue")?.value || 0.70);
+        const scope = document.getElementById("batchMultiplierScope")?.value || "all";
         if (mul <= 0 || mul > 1.5) {
-            alert('لطفاً یک ضریب معتبر وارد فرمایید (مثلاً 0.70).');
+            alert("لطفاً یک ضریب معتبر وارد فرمایید (مثلاً 0.70).");
             return;
         }
+        const submitBtn = document.querySelector("#batchMultiplierModal .btn-primary");
+        const originalBtnHtml = submitBtn ? submitBtn.innerHTML : "";
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "<i class="fa-solid fa-spinner fa-spin"></i> در حال بروزرسانی دیتابیس...";
+        }
 
-        const prods = Array.isArray(purchaseProductsCatalog) ? purchaseProductsCatalog : (window.products_data || []);
-        let updatedCount = 0;
-
-        prods.forEach(p => {
-            const brand = String(p.brand || '').toLowerCase();
-            const brandName = String(p.brandName || '').toLowerCase();
-            const isDomestic = (brand === 'rafooneh' || brandName.includes('رافونه')) || (brand !== 'foreign' && !brandName.includes('خارجی'));
-
-            if (scope === 'domestic' && !isDomestic) return;
-            if (scope === 'foreign' && isDomestic) return;
-
-            const basePrice = Number(p.newPrice) || Number(p.consumerPrice) || Number(p.price) || 0;
-            if (basePrice > 0) {
-                p.buyPrice = Math.round(basePrice * mul);
-                p.multiplier = mul;
-                updatedCount++;
+        try {
+            const res = await api("/api/admin/products/batch-buyprice", {
+                method: "POST",
+                body: JSON.stringify({ multiplier: mul, scope: scope })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById("batchMultiplierModal").style.display = "none";
+                await loadAdminProducts();
+                alert(data.message || "قیمت خرید اقلام با ضریب " + mul + " با موفقیت در دیتابیس سوپا و سیستم بروزرسانی گردید.");
+            } else {
+                throw new Error(data.message || "خطا در ثبت قیمت‌های خرید");
             }
-        });
-
-        document.getElementById('batchMultiplierModal').style.display = 'none';
-        renderAdminProductsTable();
-        alert(`قیمت خرید ${updatedCount} قلم کالا با ضریب ${mul} با موفقیت محاسبه و بروزرسانی گردید.`);
-    }
-
-    function calcNewProdPricesFromMultiplier() {
+        } catch (err) {
+            console.error("Batch buyPrice update error:", err);
+            const prods = Array.isArray(purchaseProductsCatalog) ? purchaseProductsCatalog : (window.products_data || []);
+            let updatedCount = 0;
+            prods.forEach(p => {
+                const brand = String(p.brand || "").toLowerCase();
+                const brandName = String(p.brandName || "").toLowerCase();
+                const isDomestic = (brand === "rafooneh" || brandName.includes("رافونه")) || (brand !== "foreign" && !brandName.includes("خارجی"));
+                if (scope === "domestic" && !isDomestic) return;
+                if (scope === "foreign" && isDomestic) return;
+                const basePrice = Number(p.newPrice) || Number(p.consumerPrice) || Number(p.price) || 0;
+                if (basePrice > 0) {
+                    p.buyPrice = Math.round(basePrice * mul);
+                    p.multiplier = mul;
+                    updatedCount++;
+                }
+            });
+            document.getElementById("batchMultiplierModal").style.display = "none";
+            if (typeof renderAdminProductsTable === "function") renderAdminProductsTable();
+            alert("قیمت خرید " + updatedCount + " قلم کالا با ضریب " + mul + " در حافظه موقت محاسبه گردید.");
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+        }
+    }    function calcNewProdPricesFromMultiplier() {
         const consumer = Number(document.getElementById('newProdNewPrice')?.value || 0);
         const mul = Number(document.getElementById('newProdMultiplier')?.value || 0.70);
         if (consumer > 0 && mul > 0) {

@@ -267,6 +267,9 @@ export function saveProductsList(list, skipFirestoreSync = false) {
       saveAllProductsToFirestore(list).catch(err => console.error('Firestore save products error:', err));
     }
 
+    // Always sync products to Supabase / PostgreSQL
+    saveAllProductsCloudSql(list).catch(err => console.error('Cloud SQL save products error:', err));
+
     ensureDataDir();
     const jsonStr = JSON.stringify(list, null, 2);
     try { fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8'); } catch (e) {}
@@ -1267,6 +1270,7 @@ export async function updateProduct(id, updates) {
   const categoryName = brand === 'foreign' ? 'محصولات خارجی' : (updates.categoryName || categoryNames[category] || list[idx].categoryName || 'پاک‌کننده و اسپری');
 
   const newPrice = updates.newPrice !== undefined ? Number(updates.newPrice) : (updates.consumerPrice !== undefined ? Number(updates.consumerPrice) : Number(list[idx].newPrice || list[idx].consumerPrice || 0));
+  const buyPrice = updates.buyPrice !== undefined ? Number(updates.buyPrice) : Number(list[idx].buyPrice || 0);
 
   list[idx] = {
     ...list[idx],
@@ -1279,6 +1283,7 @@ export async function updateProduct(id, updates) {
     badge,
     newPrice,
     consumerPrice: newPrice,
+    buyPrice,
     isCustomized: true,
     updatedAt: new Date().toISOString()
   };
@@ -1287,6 +1292,56 @@ export async function updateProduct(id, updates) {
   saveProductsList(list, false);
   await saveProductToFirestore(list[idx]).catch(e => console.error('Firestore save product error:', e));
   return list[idx];
+}
+
+export async function batchUpdateProductsBuyPrice({ multiplier, scope, updates }) {
+  const list = await getFreshProductsFromFirestore();
+  if (!list || !list.length) return { success: false, count: 0 };
+  const mul = Number(multiplier);
+  let updatedCount = 0;
+  const updatedItems = [];
+  const nowStr = new Date().toISOString();
+
+  if (Array.isArray(updates) && updates.length > 0) {
+    updates.forEach(u => {
+      const pid = String(u.id || u.code);
+      const idx = list.findIndex(p => String(p.id) === pid || String(p.code) === pid);
+      if (idx !== -1 && u.buyPrice !== undefined) {
+        list[idx].buyPrice = Number(u.buyPrice) || 0;
+        list[idx].updatedAt = nowStr;
+        list[idx].isCustomized = true;
+        updatedItems.push(list[idx]);
+        updatedCount++;
+      }
+    });
+  } else if (mul > 0 && mul <= 1.5) {
+    list.forEach(p => {
+      const brand = String(p.brand || '').toLowerCase();
+      const brandName = String(p.brandName || '').toLowerCase();
+      const isDomestic = (brand === 'rafooneh' || brandName.includes('رافونه')) || (brand !== 'foreign' && !brandName.includes('خارجی'));
+      if (scope === 'domestic' && !isDomestic) return;
+      if (scope === 'foreign' && isDomestic) return;
+      const basePrice = Number(p.newPrice) || Number(p.consumerPrice) || Number(p.price) || 0;
+      if (basePrice > 0) {
+        p.buyPrice = Math.round(basePrice * mul);
+        p.multiplier = mul;
+        p.updatedAt = nowStr;
+        p.isCustomized = true;
+        updatedItems.push(p);
+        updatedCount++;
+      }
+    });
+  }
+
+  if (updatedCount > 0) {
+    saveProductsList(list, false);
+    for (const item of updatedItems) {
+      await saveProductCloudSql(item).catch(e => console.error('Cloud SQL batch save error:', e));
+      saveProductToFirestore(item).catch(e => console.error('Firestore batch save error:', e));
+    }
+  }
+
+  return { success: true, count: updatedCount, products: list };
 }
 
 export async function addProduct(productData) {

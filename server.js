@@ -34,6 +34,7 @@ import {
   getAdminAlerts,
   listProducts,
   updateProduct,
+  batchUpdateProductsBuyPrice,
   addProduct,
   deleteProduct,
   readProductsList,
@@ -1076,6 +1077,20 @@ app.get('/api/admin/products', authMiddleware, async (req, res) => {
     brandCounts,
     products
   });
+});
+
+app.post('/api/admin/products/batch-buyprice', authMiddleware, async (req, res) => {
+  try {
+    const result = await batchUpdateProductsBuyPrice(req.body);
+    res.json({
+      success: true,
+      message: `قیمت خرید ${result.count} قلم کالا در دیتابیس با موفقیت به روزرسانی شد`,
+      count: result.count
+    });
+  } catch (err) {
+    console.error('Error in batchUpdateProductsBuyPrice:', err);
+    res.status(500).json({ success: false, message: 'خطا در به روزرسانی گروهی قیمت‌های خرید در دیتابیس' });
+  }
 });
 
 app.post('/api/admin/products', authMiddleware, async (req, res) => {
