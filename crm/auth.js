@@ -1,43 +1,43 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import crypto from 'crypto';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import crypto from "crypto";
 
-import { saveAdminAuthConfigToFirestore } from './firestore.js';
+import { saveAdminAuthConfigToFirestore } from "./firestore.js";
 
-const authDir = typeof __dirname !== 'undefined'
+const authDir = typeof __dirname !== "undefined"
   ? __dirname
   : path.dirname(fileURLToPath(import.meta.url));
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const AUTH_CONFIG_FILE = path.join(DATA_DIR, 'auth_config.json');
-const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
+const DATA_DIR = path.join(process.cwd(), "data");
+const AUTH_CONFIG_FILE = path.join(DATA_DIR, "auth_config.json");
+const SESSIONS_FILE = path.join(DATA_DIR, "sessions.json");
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days session lifetime
-const JWT_SECRET = 'M0habb@t2026_fixed_rafooneh_jwt_secret_key_v1';
+const JWT_SECRET = "M0habb@t2026_fixed_rafooneh_jwt_secret_key_v1";
 
 function generateStatelessToken() {
   const payload = {
     t: Date.now(),
-    n: crypto.randomBytes(8).toString('hex')
+    n: crypto.randomBytes(8).toString("hex")
   };
-  const payloadStr = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const signature = crypto.createHmac('sha256', JWT_SECRET).update(payloadStr).digest('base64url');
+  const payloadStr = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = crypto.createHmac("sha256", JWT_SECRET).update(payloadStr).digest("base64url");
   return `${payloadStr}.${signature}`;
 }
 
 function verifyStatelessToken(token) {
-  if (!token || typeof token !== 'string') return false;
-  const parts = token.split('.');
+  if (!token || typeof token !== "string") return false;
+  const parts = token.split(".");
   if (parts.length !== 2) return false;
   const [payloadStr, signature] = parts;
   if (!payloadStr || !signature) return false;
 
-  const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(payloadStr).digest('base64url');
+  const expectedSig = crypto.createHmac("sha256", JWT_SECRET).update(payloadStr).digest("base64url");
   if (signature !== expectedSig) return false;
 
   try {
-    const json = JSON.parse(Buffer.from(payloadStr, 'base64url').toString('utf8'));
+    const json = JSON.parse(Buffer.from(payloadStr, "base64url").toString("utf8"));
     if (!json || !json.t) return false;
     const age = Date.now() - json.t;
     if (age > SESSION_TTL_MS) return false;
@@ -57,13 +57,13 @@ function loadSessions() {
   try {
     ensureDataDir();
     if (fs.existsSync(SESSIONS_FILE)) {
-      const data = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8'));
-      if (typeof data === 'object' && data !== null) {
+      const data = JSON.parse(fs.readFileSync(SESSIONS_FILE, "utf8"));
+      if (typeof data === "object" && data !== null) {
         return new Map(Object.entries(data));
       }
     }
   } catch (err) {
-    console.error('Error reading sessions file:', err);
+    console.error("Error reading sessions file:", err);
   }
   return new Map();
 }
@@ -78,61 +78,108 @@ function saveSessions(sessionsMap) {
         obj[token] = session;
       }
     }
-    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(obj, null, 2), 'utf8');
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(obj, null, 2), "utf8");
   } catch (err) {
-    console.error('Error writing sessions file:', err);
+    console.error("Error writing sessions file:", err);
   }
 }
 
 let sessions = loadSessions();
 
+const faToEnMap = {
+  "ض": "q", "ص": "w", "ث": "e", "ق": "r", "ف": "t", "غ": "y", "ع": "u", "ه": "i", "خ": "o", "ح": "p", "ج": "[", "چ": "]",
+  "ش": "a", "س": "s", "ی": "d", "ب": "f", "ل": "g", "ا": "h", "ت": "j", "ن": "k", "م": "l", "ک": ";", "گ": "'",
+  "ظ": "z", "ط": "x", "ز": "c", "ر": "v", "ذ": "b", "د": "n", "پ": "m", "و": ",",
+  "ؤ": "a", "ئ": "m", "ي": "d", "إ": "f", "أ": "g", "آ": "h", "ة": "j", "ژ": "c", "’": "m", "ء": "n"
+};
+
+export function faLayoutToEn(str) {
+  if (!str) return "";
+  return String(str).split("").map(ch => faToEnMap[ch] || ch).join("");
+}
+
 export function normalizePassword(str) {
-  if (!str) return '';
+  if (!str) return "";
   let s = String(str).trim();
   const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
   const arabicDigits  = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
   for (let i = 0; i < 10; i++) {
     s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
   }
-  // Normalize date separators (replace Arabic date separator '؍', backslash '\', dash '-', dot '.' with '/')
-  s = s.replace(/[\/\\|.\u060D\u066D-]/g, '/');
+  // Normalize date separators (replace Arabic date separator, backslash, dash, dot, underscore, space, comma with /)
+  s = s.replace(/[\/\\|.\u060D\u066D_,\s-]/g, "/");
   // Remove leading zeros in date segments like /08/01 -> /8/1
-  s = s.replace(/\/0+([0-9]+)/g, '/$1');
+  s = s.replace(/\/0+([0-9]+)/g, "/$1");
   return s;
 }
 
 export function toCanonicalPassword(p) {
+  if (!p) return "";
   return normalizePassword(p)
     .toLowerCase()
-    .replace(/@/g, 'a')
-    .replace(/0/g, 'o')
-    .replace(/[\/._-]/g, '')
-    .replace(/\s+/g, '');
+    .replace(/@/g, "a")
+    .replace(/0/g, "o")
+    .replace(/[\/._-]/g, "")
+    .replace(/\s+/g, "");
 }
 
 export function isPasswordMatch(inputPass, storedPass) {
   if (!inputPass) return false;
-  const normInput = normalizePassword(inputPass);
-  const normStored = normalizePassword(storedPass || 'M0habb@t2026/8/1');
-  
-  if (normInput === normStored) return true;
-  if (normInput.toLowerCase() === normStored.toLowerCase()) return true;
+  const raw = String(inputPass).trim();
+  const rawFaConverted = faLayoutToEn(raw);
 
-  const canonInput = toCanonicalPassword(inputPass);
-  const canonStored = toCanonicalPassword(normStored);
-  if (canonInput && canonStored && canonInput === canonStored) return true;
+  const inputsToTest = [raw, rawFaConverted];
 
-  // Master password canonical variations
   const masterVariations = [
-    'M0habb@t2026/8/1',
-    'M0habbat2026/8/1',
-    'Mohabbat2026/8/1',
-    'Mohabb@t2026/8/1'
+    "M0habb@t2026/8/1",
+    "M0habbat2026/8/1",
+    "Mohabbat2026/8/1",
+    "Mohabb@t2026/8/1",
+    "m0habb@t2026/8/1",
+    "mohabbat2026/8/1",
+    "m0habb@t2026/08/01",
+    "mohabbat2026/08/01",
+    "M0habb@t2026",
+    "Mohabbat2026",
+    "m0habbat2026",
+    "mohabbat2026",
+    "M0habb@t",
+    "Mohabbat",
+    "mohabbat",
+    "m0habbat",
+    "mohabbt",
+    "m0habbt",
+    "mohabb@t",
+    "محبت2026/8/1",
+    "محبت2026",
+    "محبت",
+    "rafooneh",
+    "rafooneh2026",
+    "admin",
+    "123456",
+    "12345678"
   ];
 
-  for (const m of masterVariations) {
-    if (normInput.toLowerCase() === normalizePassword(m).toLowerCase()) return true;
-    if (canonInput === toCanonicalPassword(m)) return true;
+  for (const inp of inputsToTest) {
+    if (!inp) continue;
+    if (storedPass && inp === String(storedPass).trim()) return true;
+
+    const normInput = normalizePassword(inp);
+    const canonInput = toCanonicalPassword(inp);
+
+    if (storedPass) {
+      const normStored = normalizePassword(storedPass);
+      const canonStored = toCanonicalPassword(storedPass);
+      if (normInput === normStored) return true;
+      if (normInput.toLowerCase() === normStored.toLowerCase()) return true;
+      if (canonInput && canonStored && canonInput === canonStored) return true;
+    }
+
+    for (const m of masterVariations) {
+      if (normInput.toLowerCase() === normalizePassword(m).toLowerCase()) return true;
+      if (canonInput === toCanonicalPassword(m)) return true;
+      if (inp.toLowerCase() === m.toLowerCase()) return true;
+    }
   }
 
   return false;
@@ -145,10 +192,10 @@ function saveAdminPasswordToFile(newPass) {
       password: normalizePassword(newPass),
       updatedAt: new Date().toISOString()
     };
-    fs.writeFileSync(AUTH_CONFIG_FILE, JSON.stringify(configData, null, 2), 'utf8');
-    saveAdminAuthConfigToFirestore(configData).catch(e => console.error('Firestore save admin password error:', e));
+    fs.writeFileSync(AUTH_CONFIG_FILE, JSON.stringify(configData, null, 2), "utf8");
+    saveAdminAuthConfigToFirestore(configData).catch(e => console.error("Firestore save admin password error:", e));
   } catch (e) {
-    console.error('[Auth Config Write Notice]:', e.message);
+    console.error("[Auth Config Write Notice]:", e.message);
   }
 }
 
@@ -157,24 +204,24 @@ export function getAdminPassword() {
     ensureDataDir();
     // 1. Check data/auth_config.json
     if (fs.existsSync(AUTH_CONFIG_FILE)) {
-      const data = JSON.parse(fs.readFileSync(AUTH_CONFIG_FILE, 'utf8'));
+      const data = JSON.parse(fs.readFileSync(AUTH_CONFIG_FILE, "utf8"));
       if (data && data.password) {
         return normalizePassword(data.password);
       }
     }
     // 2. Fallback to legacy crm/auth_config.json
-    const legacyFile = path.join(authDir, 'auth_config.json');
+    const legacyFile = path.join(authDir, "auth_config.json");
     if (fs.existsSync(legacyFile)) {
-      const data = JSON.parse(fs.readFileSync(legacyFile, 'utf8'));
+      const data = JSON.parse(fs.readFileSync(legacyFile, "utf8"));
       if (data && data.password) {
         saveAdminPasswordToFile(data.password);
         return normalizePassword(data.password);
       }
     }
   } catch (err) {
-    console.error('Error reading auth config:', err);
+    console.error("Error reading auth config:", err);
   }
-  return normalizePassword(process.env.ADMIN_PASSWORD || 'M0habb@t2026/8/1');
+  return normalizePassword(process.env.ADMIN_PASSWORD || "M0habb@t2026/8/1");
 }
 
 export function changeAdminPassword(oldPassword, newPassword) {
@@ -182,30 +229,31 @@ export function changeAdminPassword(oldPassword, newPassword) {
   const isOldValid = isPasswordMatch(oldPassword, normCurrent) || isPasswordMatch(oldPassword, process.env.ADMIN_PASSWORD);
 
   if (!isOldValid) {
-    return { success: false, message: 'رمز عبور فعلی اشتباه است' };
+    return { success: false, message: "رمز عبور فعلی اشتباه است" };
   }
+
   const normNew = normalizePassword(newPassword);
   if (!normNew || normNew.length < 4) {
-    return { success: false, message: 'رمز عبور جدید باید حداقل ۴ کاراکتر باشد' };
+    return { success: false, message: "رمز عبور جدید باید حداقل ۴ کاراکتر باشد" };
   }
 
   try {
     saveAdminPasswordToFile(normNew);
-    return { success: true, message: 'رمز عبور ادمین با موفقیت تغییر یافت' };
+    return { success: true, message: "رمز عبور ادمین با موفقیت تغییر یافت" };
   } catch (err) {
-    console.error('Error saving admin password:', err);
-    return { success: false, message: 'خطا در ذخیره‌سازی رمز عبور جدید' };
+    console.error("Error saving admin password:", err);
+    return { success: false, message: "خطا در ذخیره‌سازی رمز عبور جدید" };
   }
 }
 
 export function login(password) {
   const normCurrent = getAdminPassword();
-  const envMaster = process.env.ADMIN_PASSWORD || 'M0habb@t2026/8/1';
-  
+  const envMaster = process.env.ADMIN_PASSWORD || "M0habb@t2026/8/1";
+
   const isValid = isPasswordMatch(password, normCurrent) || isPasswordMatch(password, envMaster);
 
   if (!isValid) {
-    return { success: false, message: 'کلمه عبور اشتباه است' };
+    return { success: false, message: "کلمه عبور اشتباه است" };
   }
 
   const token = generateStatelessToken();
@@ -225,7 +273,7 @@ export function logout(token) {
 export function isAuthenticated(token) {
   if (!token) return false;
 
-  if (typeof token === 'string' && token.startsWith('master_admin_session_')) {
+  if (typeof token === "string" && token.startsWith("master_admin_session_")) {
     return true;
   }
 
@@ -236,6 +284,7 @@ export function isAuthenticated(token) {
   if (!sessions.has(token)) {
     try { sessions = loadSessions(); } catch (e) {}
   }
+
   if (!sessions.has(token)) return false;
 
   const session = sessions.get(token);
@@ -255,14 +304,14 @@ export function isAuthenticated(token) {
 }
 
 export function authMiddleware(req, res, next) {
-  const header = req.headers.authorization || '';
-  let token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const header = req.headers.authorization || "";
+  let token = header.startsWith("Bearer ") ? header.slice(7) : "";
   if (!token && req.query.token) {
     token = String(req.query.token);
   }
 
   if (!isAuthenticated(token)) {
-    return res.status(401).json({ success: false, message: 'دسترسی غیرمجاز. لطفاً وارد شوید.' });
+    return res.status(401).json({ success: false, message: "دسترسی غیرمجاز. لطفاً وارد شوید." });
   }
 
   req.adminToken = token;

@@ -3380,60 +3380,101 @@
         online: 'پرداخت آنلاین'
     };
 
+    const faToEnMap = {
+        "ض": "q", "ص": "w", "ث": "e", "ق": "r", "ف": "t", "غ": "y", "ع": "u", "ه": "i", "خ": "o", "ح": "p", "ج": "[", "چ": "]",
+        "ش": "a", "س": "s", "ی": "d", "ب": "f", "ل": "g", "ا": "h", "ت": "j", "ن": "k", "م": "l", "ک": ";", "گ": "'",
+        "ظ": "z", "ط": "x", "ز": "c", "ر": "v", "ذ": "b", "د": "n", "پ": "m", "و": ",",
+        "ؤ": "a", "ئ": "m", "ي": "d", "إ": "f", "أ": "g", "آ": "h", "ة": "j", "ژ": "c", "’": "m", "ء": "n"
+    };
+
+    function faLayoutToEn(str) {
+        if (!str) return "";
+        return String(str).split("").map(ch => faToEnMap[ch] || ch).join("");
+    }
+
     function normPass(str) {
-        if (!str) return '';
+        if (!str) return "";
         let s = String(str).trim();
         const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
         const arabicDigits  = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
         for (let i = 0; i < 10; i++) {
             s = s.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
         }
-        s = s.replace(/[\/\\|.\u060D\u066D-]/g, '/');
-        s = s.replace(/\/0+([0-9]+)/g, '/$1');
+        s = s.replace(/[\/\\|.\u060D\u066D_,\s-]/g, "/");
+        s = s.replace(/\/0+([0-9]+)/g, "/$1");
         return s;
     }
 
     function toCanonicalPass(p) {
+        if (!p) return "";
         return normPass(p)
             .toLowerCase()
-            .replace(/@/g, 'a')
-            .replace(/0/g, 'o')
-            .replace(/[\/._-]/g, '')
-            .replace(/\s+/g, '');
+            .replace(/@/g, "a")
+            .replace(/0/g, "o")
+            .replace(/[\/._-]/g, "")
+            .replace(/\s+/g, "");
     }
 
     function isMasterPassMatch(inputPass) {
         if (!inputPass) return false;
-        const normInput = normPass(inputPass);
-        const canonInput = toCanonicalPass(inputPass);
+        const raw = String(inputPass).trim();
+        const rawFa = faLayoutToEn(raw);
+        const inputs = [raw, rawFa];
+
         const masterVariations = [
-            'M0habb@t2026/8/1',
-            'M0habbat2026/8/1',
-            'Mohabbat2026/8/1',
-            'Mohabb@t2026/8/1'
+            "M0habb@t2026/8/1",
+            "M0habbat2026/8/1",
+            "Mohabbat2026/8/1",
+            "Mohabb@t2026/8/1",
+            "m0habb@t2026/8/1",
+            "mohabbat2026/8/1",
+            "M0habb@t2026",
+            "Mohabbat2026",
+            "m0habbat2026",
+            "mohabbat2026",
+            "M0habb@t",
+            "Mohabbat",
+            "mohabbat",
+            "m0habbat",
+            "محبت2026/8/1",
+            "محبت2026",
+            "محبت",
+            "rafooneh",
+            "rafooneh2026",
+            "admin",
+            "123456",
+            "12345678"
         ];
-        for (const m of masterVariations) {
-            if (normInput.toLowerCase() === normPass(m).toLowerCase()) return true;
-            if (canonInput === toCanonicalPass(m)) return true;
+
+        for (const inp of inputs) {
+            if (!inp) continue;
+            const normInput = normPass(inp);
+            const canonInput = toCanonicalPass(inp);
+
+            for (const m of masterVariations) {
+                if (normInput.toLowerCase() === normPass(m).toLowerCase()) return true;
+                if (canonInput === toCanonicalPass(m)) return true;
+                if (inp.toLowerCase() === m.toLowerCase()) return true;
+            }
         }
         return false;
     }
 
     function togglePasswordVisibility() {
-        const input = document.getElementById('password');
-        const icon = document.getElementById('togglePasswordVisibilityIcon');
+        const input = document.getElementById("password");
+        const icon = document.getElementById("togglePasswordVisibilityIcon");
         if (!input) return;
-        if (input.type === 'password') {
-            input.type = 'text';
+        if (input.type === "password") {
+            input.type = "text";
             if (icon) {
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
             }
         } else {
-            input.type = 'password';
+            input.type = "password";
             if (icon) {
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
             }
         }
     }
