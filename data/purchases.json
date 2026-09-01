@@ -1,12 +1,10 @@
 [
   {
     "id": "PUR-1788003291953-280",
-    "refNumber": "12345",
-    "supplierName": "تست تامین‌کننده",
     "purchaseDate": "2026-08-29",
     "totalAmount": 500000,
-    "totalItemsCount": 10,
-    "notes": "تست",
+    "updatedAt": "2026-08-29T11:34:51.953Z",
+    "refNumber": "12345",
     "items": [
       {
         "productId": "prod-1",
@@ -19,30 +17,9 @@
         "rowTotal": 500000
       }
     ],
-    "createdAt": "2026-08-29T11:34:51.953Z",
-    "updatedAt": "2026-08-29T11:34:51.953Z"
-  },
-  {
-    "id": "PUR-1788003677264",
-    "refNumber": "FACT-946507",
-    "supplierName": "تأمین‌کننده",
-    "purchaseDate": "2026-08-29T15:10",
-    "totalAmount": 1441926,
-    "totalItemsCount": 1,
-    "notes": "",
-    "items": [
-      {
-        "productId": "904",
-        "id": "904",
-        "name": "مایع دستشویی سبز 10 لیتری",
-        "qty": 1,
-        "buyPrice": 1441926,
-        "consumerPrice": 1914400,
-        "multiplier": "0.7532",
-        "rowTotal": 1441926
-      }
-    ],
-    "createdAt": "2026-08-29T11:41:17.264Z",
-    "updatedAt": "2026-08-29T11:41:17.264Z"
+    "totalItemsCount": 10,
+    "supplierName": "تست تامین‌کننده",
+    "notes": "تست",
+    "createdAt": "2026-08-29T11:34:51.953Z"
   }
 ]

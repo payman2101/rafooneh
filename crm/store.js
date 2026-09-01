@@ -309,58 +309,37 @@ function mergeSingleProduct(existing, incoming) {
 }
 
 export async function getFreshProductsFromFirestore() {
-  let cloudProds = [];
+  // 1. Supabase PostgreSQL is the DIRECT PRIMARY DATABASE
   try {
-    const res = await getAllProductsCloudSql();
-    if (Array.isArray(res)) cloudProds = res;
+    const cloudProds = await getAllProductsCloudSql();
+    if (Array.isArray(cloudProds) && cloudProds.length > 0) {
+      productsListCache = cloudProds;
+      productsMapCache = null;
+      // Sync to local files and cache
+      ensureDataDir();
+      const jsonStr = JSON.stringify(cloudProds, null, 2);
+      try { fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8'); } catch (e) {}
+      try { fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8'); } catch (e) {}
+      try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8'); } catch (e) {}
+      return cloudProds;
+    }
   } catch (e) {
-    console.error('Error fetching products from CloudSQL:', e);
+    console.error('Error fetching fresh products from Supabase / Cloud SQL:', e);
   }
 
+  // 2. Secondary fallback only if Supabase is temporarily unreachable
   let fsProds = [];
   try {
     const res = await getProductsFromFirestore();
-    if (Array.isArray(res)) fsProds = res;
+    if (Array.isArray(res) && res.length > 0) fsProds = res;
   } catch (e) {
-    console.error('Error fetching fresh products from Firestore:', e);
+    console.error('Error fetching fallback products from Firestore:', e);
   }
 
-  const localList = readProductsListLocal();
-  const map = new Map();
-
-  // 1. Populate map with localList
-  localList.forEach(p => {
-    if (p && (p.id || p.code)) {
-      map.set(String(p.id || p.code), p);
-    }
-  });
-
-  // 2. Merge Firestore products
-  if (Array.isArray(fsProds) && fsProds.length > 0) {
-    fsProds.forEach(fp => {
-      if (!fp || (!fp.id && !fp.code)) return;
-      const key = String(fp.id || fp.code);
-      const existing = map.get(key) || {};
-      map.set(key, { ...existing, ...fp });
-    });
-  }
-
-  // 3. Supabase PostgreSQL is the HIGHEST PRIORITY SOURCE OF TRUTH!
-  // Any product data directly in Supabase DB overrides local JSON and Firestore!
-  if (Array.isArray(cloudProds) && cloudProds.length > 0) {
-    cloudProds.forEach(cp => {
-      if (!cp || (!cp.id && !cp.code)) return;
-      const key = String(cp.id || cp.code);
-      const existing = map.get(key) || {};
-      map.set(key, { ...existing, ...cp });
-    });
-  }
-
-  const mergedList = Array.from(map.values());
-  if (mergedList.length > 0) {
-    productsListCache = mergedList;
+  if (fsProds.length > 0) {
+    productsListCache = fsProds;
     productsMapCache = null;
-    return mergedList;
+    return fsProds;
   }
 
   return productsListCache || readProductsListLocal();
@@ -368,22 +347,21 @@ export async function getFreshProductsFromFirestore() {
 
 export async function refreshProductsFromCloudSql() {
   try {
-    const fsProducts = await getFreshProductsFromFirestore();
-    if (Array.isArray(fsProducts) && fsProducts.length > 0) {
-      return fsProducts;
-    }
-
     const dbProducts = await getAllProductsCloudSql();
     if (Array.isArray(dbProducts) && dbProducts.length > 0) {
       productsListCache = dbProducts;
       productsMapCache = null;
-      saveAllProductsToFirestore(dbProducts).catch(() => {});
+      ensureDataDir();
+      const jsonStr = JSON.stringify(dbProducts, null, 2);
+      try { fs.writeFileSync(DATA_PRODUCTS_FILE, jsonStr, 'utf8'); } catch (e) {}
+      try { fs.writeFileSync(ROOT_PRODUCTS_JSON, jsonStr, 'utf8'); } catch (e) {}
+      try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8'); } catch (e) {}
       return dbProducts;
     }
   } catch (e) {
-    console.error('Error refreshing products from Cloud SQL / Firestore:', e);
+    console.error('Error refreshing products from Supabase / Cloud SQL:', e);
   }
-  return productsListCache || readProductsListLocal();
+  return getFreshProductsFromFirestore();
 }
 
 function readProductsListLocal() {
@@ -1223,7 +1201,10 @@ export async function updateOrder(id, updates) {
 }
 
 export async function listProducts(filters = {}) {
-  const list = await getFreshProductsFromFirestore();
+  let list = await getAllProductsCloudSql();
+  if (!Array.isArray(list) || list.length === 0) {
+    list = await getFreshProductsFromFirestore();
+  }
   let result = [...list];
 
   if (filters.brand && filters.brand !== 'all') {
@@ -1247,7 +1228,10 @@ export async function listProducts(filters = {}) {
 }
 
 export async function updateProduct(id, updates) {
-  const list = await getFreshProductsFromFirestore();
+  let list = await getAllProductsCloudSql();
+  if (!list || !list.length) {
+    list = await getFreshProductsFromFirestore();
+  }
   if (!list || !list.length) return null;
   const pid = String(id);
   const idx = list.findIndex(p => String(p.id) === pid || String(p.code) === pid);
@@ -1274,33 +1258,47 @@ export async function updateProduct(id, updates) {
   const category = brand === 'foreign' ? 'imported' : (updates.category || list[idx].category || 'cleaners');
   const categoryName = brand === 'foreign' ? 'محصولات خارجی' : (updates.categoryName || categoryNames[category] || list[idx].categoryName || 'پاک‌کننده و اسپری');
 
-  const newPrice = updates.newPrice !== undefined ? Number(updates.newPrice) : (updates.consumerPrice !== undefined ? Number(updates.consumerPrice) : Number(list[idx].newPrice || list[idx].consumerPrice || 0));
+  const price = updates.price !== undefined ? Number(updates.price) : Number(list[idx].price || 0);
+  const newPrice = updates.newPrice !== undefined ? Number(updates.newPrice) : (updates.consumerPrice !== undefined ? Number(updates.consumerPrice) : Number(list[idx].newPrice || 0));
+  const consumerPrice = updates.consumerPrice !== undefined ? Number(updates.consumerPrice) : (newPrice > 0 ? newPrice : 0);
   const buyPrice = updates.buyPrice !== undefined ? Number(updates.buyPrice) : Number(list[idx].buyPrice || 0);
 
-  list[idx] = {
+  const updatedItem = {
     ...list[idx],
     ...updates,
     brand,
     brandName,
     category,
     categoryName,
+    price,
     stock,
     badge,
     newPrice,
-    consumerPrice: newPrice,
+    consumerPrice,
     buyPrice,
     isCustomized: true,
     updatedAt: new Date().toISOString()
   };
 
-  await saveProductCloudSql(list[idx]).catch(e => console.error('Cloud SQL update product error:', e));
+  list[idx] = updatedItem;
+
+  // 1. Direct write to Supabase PostgreSQL (Single source of truth)
+  await saveProductCloudSql(updatedItem).catch(e => console.error('[Cloud SQL] Save product error:', e));
+
+  // 2. Update memory cache and JSON fallbacks
   saveProductsList(list, false);
-  await saveProductToFirestore(list[idx]).catch(e => console.error('Firestore save product error:', e));
-  return list[idx];
+
+  // 3. Backup sync to Firestore
+  saveProductToFirestore(updatedItem).catch(e => console.error('[Firestore] Save product error:', e));
+
+  return updatedItem;
 }
 
 export async function batchUpdateProductsBuyPrice({ multiplier, scope, updates }) {
-  const list = await getFreshProductsFromFirestore();
+  let list = await getAllProductsCloudSql();
+  if (!list || !list.length) {
+    list = await getFreshProductsFromFirestore();
+  }
   if (!list || !list.length) return { success: false, count: 0 };
   const mul = Number(multiplier);
   let updatedCount = 0;
@@ -1339,18 +1337,21 @@ export async function batchUpdateProductsBuyPrice({ multiplier, scope, updates }
   }
 
   if (updatedCount > 0) {
-    saveProductsList(list, false);
     for (const item of updatedItems) {
       await saveProductCloudSql(item).catch(e => console.error('Cloud SQL batch save error:', e));
       saveProductToFirestore(item).catch(e => console.error('Firestore batch save error:', e));
     }
+    saveProductsList(list, false);
   }
 
   return { success: true, count: updatedCount, products: list };
 }
 
 export async function addProduct(productData) {
-  const list = await getFreshProductsFromFirestore();
+  let list = await getAllProductsCloudSql();
+  if (!list || !list.length) {
+    list = await getFreshProductsFromFirestore();
+  }
 
   const code = String(productData.id || productData.code || Date.now());
   const stock = Number(productData.stock) || 0;
@@ -1398,7 +1399,10 @@ export async function addProduct(productData) {
 }
 
 export async function deleteProduct(id) {
-  let list = await getFreshProductsFromFirestore();
+  let list = await getAllProductsCloudSql();
+  if (!list || !list.length) {
+    list = await getFreshProductsFromFirestore();
+  }
   if (!list || !list.length) return false;
   const pid = String(id);
   const initialLength = list.length;

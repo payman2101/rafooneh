@@ -204,25 +204,53 @@ function getSupabaseClient(env = {}) {
 }
 
 function mapToDbSchema(product) {
+  const id = String(product.id || product.code || '');
+  const newPrice = product.newPrice !== undefined && product.newPrice !== null ? Number(product.newPrice) : (product.new_price !== undefined ? Number(product.new_price) : 0);
+  const consumerPrice = product.consumerPrice !== undefined && product.consumerPrice !== null ? Number(product.consumerPrice) : (product.consumer_price !== undefined ? Number(product.consumer_price) : (newPrice > 0 ? newPrice : 0));
   return {
-    id: product.id,
-    code: product.code,
-    name: product.name,
-    brand: product.brand,
-    brand_name: product.brandName,
-    category: product.category,
-    category_name: product.categoryName,
-    price: product.price,
-    new_price: product.newPrice,
-    consumer_price: product.consumerPrice,
-    buy_price: product.buyPrice,
-    packing: product.packing,
-    stock: product.stock,
-    image: product.image,
-    badge: product.badge,
-    description: product.description,
-    is_customized: product.isCustomized,
-    updated_at: product.updatedAt
+    id,
+    code: String(product.code || id),
+    name: product.name || '',
+    brand: product.brand || 'rafooneh',
+    brand_name: product.brandName || product.brand_name || (product.brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه'),
+    category: product.category || 'other',
+    category_name: product.categoryName || product.category_name || 'سایر شوینده‌ها',
+    price: Number(product.price) || 0,
+    new_price: newPrice,
+    consumer_price: consumerPrice,
+    buy_price: Number(product.buyPrice !== undefined ? product.buyPrice : (product.buy_price || 0)) || 0,
+    packing: Number(product.packing) || 1,
+    stock: (product.stock !== undefined && product.stock !== null && !isNaN(Number(product.stock))) ? Number(product.stock) : 0,
+    image: product.image || '',
+    badge: product.badge || null,
+    description: product.description || '',
+    is_customized: Boolean(product.isCustomized !== undefined ? product.isCustomized : product.is_customized),
+    updated_at: product.updatedAt || product.updated_at || new Date().toISOString()
+  };
+}
+
+function mapFromDbSchema(row) {
+  if (!row) return null;
+  const id = String(row.id || row.code || '');
+  return {
+    id,
+    code: String(row.code || id),
+    name: row.name || '',
+    brand: row.brand || 'rafooneh',
+    brandName: row.brand_name || row.brandName || (row.brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه'),
+    category: row.category || 'other',
+    categoryName: row.category_name || row.categoryName || 'سایر شوینده‌ها',
+    price: Number(row.price) || 0,
+    newPrice: Number(row.new_price !== undefined ? row.new_price : (row.newPrice || 0)) || 0,
+    consumerPrice: Number(row.consumer_price !== undefined ? row.consumer_price : (row.consumerPrice || 0)) || 0,
+    buyPrice: Number(row.buy_price !== undefined ? row.buy_price : (row.buyPrice || 0)) || 0,
+    packing: Number(row.packing) || 1,
+    stock: (row.stock !== undefined && row.stock !== null && !isNaN(Number(row.stock))) ? Number(row.stock) : 0,
+    image: row.image || '',
+    badge: row.badge || null,
+    description: row.description || '',
+    isCustomized: Boolean(row.is_customized !== undefined ? row.is_customized : row.isCustomized),
+    updatedAt: row.updated_at || row.updatedAt || ''
   };
 }
 
@@ -2311,24 +2339,12 @@ export async function onRequest(context) {
   if (path === '/api/products' || path === '/api/admin/products') {
     if (method === 'GET') {
       let pgProds = await getAllProductsFromPg(env);
-      if (!pgProds) pgProds = [];
-
-      const map = new Map();
-      if (Array.isArray(defaultProducts)) {
-        defaultProducts.forEach(p => {
-          if (p && (p.id || p.code)) map.set(String(p.id || p.code), p);
-        });
-      }
+      let products = [];
       if (Array.isArray(pgProds) && pgProds.length > 0) {
-        pgProds.forEach(pp => {
-          if (!pp || (!pp.id && !pp.code)) return;
-          const key = String(pp.id || pp.code);
-          const existing = map.get(key) || {};
-          map.set(key, { ...existing, ...pp });
-        });
+        products = pgProds.map(mapFromDbSchema);
+      } else if (Array.isArray(defaultProducts)) {
+        products = [...defaultProducts];
       }
-
-      let products = Array.from(map.values());
 
       const brand = url.searchParams.get('brand');
       const category = url.searchParams.get('category');
@@ -2371,7 +2387,7 @@ export async function onRequest(context) {
       const id = String(body.id || body.code || Date.now());
       const stock = Number(body.stock) || 0;
       const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
-      const newPriceVal = Number(body.newPrice || body.consumerPrice) || 0;
+      const newPriceVal = Number(body.newPrice !== undefined ? body.newPrice : (body.consumerPrice || 0)) || 0;
       
       const product = {
         id,
@@ -2409,23 +2425,30 @@ export async function onRequest(context) {
     
     if (method === 'PATCH' || method === 'PUT') {
       const pgProds = await getAllProductsFromPg(env);
-      let existing = pgProds ? pgProds.find(p => String(p.id) === id || String(p.code) === id) : {};
-      if (!existing) {
+      let existing = pgProds ? pgProds.find(p => String(p.id) === id || String(p.code) === id) : null;
+      if (existing) {
+        existing = mapFromDbSchema(existing);
+      } else {
         existing = {};
       }
 
       const stock = body.stock !== undefined ? Number(body.stock) : Number(existing.stock || 0);
       const badge = stock <= 0 ? 'ناموجود' : (stock <= 5 ? `تعداد محدود (${stock} عدد)` : null);
-      const newPriceVal = body.newPrice !== undefined ? Number(body.newPrice) : (body.consumerPrice !== undefined ? Number(body.consumerPrice) : Number(existing.newPrice || existing.consumerPrice || 0));
+      const priceVal = body.price !== undefined ? Number(body.price) : Number(existing.price || 0);
+      const newPriceVal = body.newPrice !== undefined ? Number(body.newPrice) : (body.consumerPrice !== undefined ? Number(body.consumerPrice) : Number(existing.newPrice || 0));
+      const consumerPriceVal = body.consumerPrice !== undefined ? Number(body.consumerPrice) : (newPriceVal > 0 ? newPriceVal : 0);
+      const buyPriceVal = body.buyPrice !== undefined ? Number(body.buyPrice) : Number(existing.buyPrice || 0);
 
       const updatedProd = {
         ...existing,
         ...body,
         id,
+        price: priceVal,
         stock,
         badge,
         newPrice: newPriceVal,
-        consumerPrice: newPriceVal,
+        consumerPrice: consumerPriceVal,
+        buyPrice: buyPriceVal,
         isCustomized: true,
         updatedAt: new Date().toISOString()
       };

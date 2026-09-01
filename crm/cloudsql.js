@@ -172,25 +172,27 @@ export async function initCloudSql() {
 // Helper formatting functions
 function mapProductToPg(p) {
   const id = String(p.id || p.code || '');
+  const newPrice = p.newPrice !== undefined && p.newPrice !== null ? Number(p.newPrice) : (p.new_price !== undefined ? Number(p.new_price) : 0);
+  const consumerPrice = p.consumerPrice !== undefined && p.consumerPrice !== null ? Number(p.consumerPrice) : (p.consumer_price !== undefined ? Number(p.consumer_price) : (newPrice > 0 ? newPrice : 0));
   return {
     id,
     code: String(p.code || id),
     name: p.name || '',
     brand: p.brand || 'rafooneh',
-    brandName: p.brandName || 'برند رافونه',
+    brandName: p.brandName || p.brand_name || (p.brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه'),
     category: p.category || 'other',
-    categoryName: p.categoryName || 'سایر شوینده‌ها',
+    categoryName: p.categoryName || p.category_name || 'سایر شوینده‌ها',
     price: Number(p.price) || 0,
-    consumerPrice: Number(p.consumerPrice || p.newPrice) || 0,
-    newPrice: Number(p.newPrice || p.consumerPrice) || 0,
-    buyPrice: Number(p.buyPrice) || 0,
+    consumerPrice: consumerPrice,
+    newPrice: newPrice,
+    buyPrice: Number(p.buyPrice !== undefined ? p.buyPrice : (p.buy_price || 0)) || 0,
     packing: Number(p.packing) || 1,
-    stock: Number(p.stock) || 0,
+    stock: (p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock))) ? Number(p.stock) : 0,
     image: p.image || '',
     badge: p.badge || null,
     description: p.description || '',
-    isCustomized: Boolean(p.isCustomized),
-    updatedAt: p.updatedAt || new Date().toISOString()
+    isCustomized: Boolean(p.isCustomized !== undefined ? p.isCustomized : p.is_customized),
+    updatedAt: p.updatedAt || p.updated_at || new Date().toISOString()
   };
 }
 

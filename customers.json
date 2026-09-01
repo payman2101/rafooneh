@@ -1,26 +1,26 @@
 [
   {
     "id": "cust-1785921402703-e52d50",
-    "name": "عرفان انوری",
-    "totalOrders": 1,
-    "address": "411",
-    "phone": "09120045687",
     "createdAt": "2026-08-05T09:16:42.703Z",
     "lastOrderAt": "2026-08-05T09:16:42.707Z",
+    "totalSpent": 1900000,
+    "address": "411",
+    "phone": "09120045687",
+    "totalOrders": 1,
+    "name": "عرفان انوری",
     "notes": "",
-    "updatedAt": "2026-08-09T12:16:19.065Z",
-    "totalSpent": 1900000
+    "updatedAt": "2026-08-09T12:16:19.065Z"
   },
   {
     "id": "cust-1786979985391-6910a0",
-    "lastOrderAt": "2026-08-17T10:00:00.000Z",
-    "createdAt": "2026-08-17T15:19:45.391Z",
-    "notes": "",
-    "totalSpent": 160000,
-    "totalOrders": 1,
-    "address": "تهران",
     "name": "تست",
     "phone": "09121111111",
-    "updatedAt": "2026-08-17T15:19:45.398Z"
+    "updatedAt": "2026-08-17T15:19:45.398Z",
+    "notes": "",
+    "createdAt": "2026-08-17T15:19:45.391Z",
+    "totalOrders": 1,
+    "totalSpent": 160000,
+    "address": "تهران",
+    "lastOrderAt": "2026-08-17T10:00:00.000Z"
   }
 ]

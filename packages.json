@@ -6,7 +6,7 @@
     "badge": "حداکثر صرفه اقتصادی",
     "badgeColor": "#047857",
     "image": "",
-    "isActive": true,
+    "isActive": false,
     "items": [
       {
         "productId": "904",
@@ -45,7 +45,7 @@
     "stock": 40,
     "description": "بسته‌بندی گالنی حجیم با بالاترین درصد تخفیف، ویژه خانه‌های پرمصرف، شرکت‌ها، رستوران‌ها و مراکز بهداشتی.",
     "createdAt": "2026-08-30T12:26:52.906Z",
-    "updatedAt": "2026-08-30T12:27:07.646Z"
+    "updatedAt": "2026-09-01T10:56:45.650Z"
   },
   {
     "id": "pkg-family-essentials",
@@ -54,7 +54,7 @@
     "badge": "پرفروش‌ترین",
     "badgeColor": "#059669",
     "image": "",
-    "isActive": true,
+    "isActive": false,
     "items": [
       {
         "productId": "1027",
@@ -107,7 +107,7 @@
     "stock": 60,
     "description": "سبد اقتصادی شوینده‌های اساسی خانه با حجم بالا و حداکثر صرفه اقتصادی برای خانواده‌های محترم.",
     "createdAt": "2026-08-30T12:26:52.906Z",
-    "updatedAt": "2026-08-30T12:27:07.644Z"
+    "updatedAt": "2026-09-01T10:56:45.650Z"
   },
   {
     "id": "pkg-finish-dishwasher-vip",
@@ -116,7 +116,7 @@
     "badge": "ضمانت ۱۰۰٪ اصالت",
     "badgeColor": "#2563eb",
     "image": "",
-    "isActive": true,
+    "isActive": false,
     "items": [
       {
         "productId": "2211",
@@ -162,7 +162,7 @@
     "stock": 30,
     "description": "ست کامل و اصل محافظت و شستشوی بی‌نقص ماشین ظرفشویی وارداتی از ترکیه با ضمانت اصالت فیزیکی کالا.",
     "createdAt": "2026-08-30T12:26:52.906Z",
-    "updatedAt": "2026-08-30T12:27:07.647Z"
+    "updatedAt": "2026-09-01T10:56:45.650Z"
   },
   {
     "id": "pkg-home-gold",
@@ -171,7 +171,7 @@
     "badge": "محبوب‌ترین",
     "badgeColor": "#d97706",
     "image": "",
-    "isActive": true,
+    "isActive": false,
     "items": [
       {
         "productId": "1051",
@@ -231,7 +231,7 @@
     "stock": 80,
     "description": "مجموعه ۷ قلم پرطرفدار شوینده‌های تخصصی رافونه جهت برق‌اندازی و جرم‌گیری کامل آشپزخانه، سینک، گاز، مبل، فرش و سطوح.",
     "createdAt": "2026-08-30T12:26:52.905Z",
-    "updatedAt": "2026-08-30T12:27:07.636Z"
+    "updatedAt": "2026-09-01T10:56:45.650Z"
   },
   {
     "id": "pkg-sanitary-hygiene",
@@ -240,7 +240,7 @@
     "badge": "ضدعفونی قوی",
     "badgeColor": "#7c3aed",
     "image": "",
-    "isActive": true,
+    "isActive": false,
     "items": [
       {
         "productId": "1049",
@@ -293,6 +293,6 @@
     "stock": 50,
     "description": "ترکیب قدرتمند ژل غلیظ، سفیدکننده، جرم‌گیر شیرآلات و پاک‌کننده سنگ جهت درخشش و بهداشت کامل سرویس‌ها.",
     "createdAt": "2026-08-30T12:26:52.906Z",
-    "updatedAt": "2026-08-30T12:27:07.645Z"
+    "updatedAt": "2026-09-01T10:56:45.650Z"
   }
 ]
