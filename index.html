@@ -4314,7 +4314,7 @@
                         cartBarGiftAmount.style.color = "#db2777";
                     }
                     if (cartBarGiftAction) {
-                        cartBarGiftAction.innerHTML = "<i class="fa-solid fa-box-open"></i> هدیه پکیج فعال است";
+                        cartBarGiftAction.innerHTML = '<i class="fa-solid fa-box-open"></i> هدیه پکیج فعال است';
                         cartBarGiftAction.style.background = "linear-gradient(135deg, #db2777, #be185d)";
                         cartBarGiftAction.onclick = function(e) {
                             e.stopPropagation();
@@ -4337,10 +4337,10 @@
                     }
                     if (cartBarGiftAction) {
                         if (giftsCount > 0) {
-                            cartBarGiftAction.innerHTML = "<i class="fa-solid fa-gift"></i> " + giftsCount.toLocaleString("fa-IR") + " هدیه انتخاب شد";
+                            cartBarGiftAction.innerHTML = '<i class="fa-solid fa-gift"></i> ' + giftsCount.toLocaleString("fa-IR") + " هدیه انتخاب شد";
                             cartBarGiftAction.style.background = "#047857";
                         } else {
-                            cartBarGiftAction.innerHTML = "انتخاب هدایا <i class="fa-solid fa-angle-left" style="font-size:0.65rem; margin-right:2px;"></i>";
+                            cartBarGiftAction.innerHTML = 'انتخاب هدایا <i class="fa-solid fa-angle-left" style="font-size:0.65rem; margin-right:2px;"></i>';
                             cartBarGiftAction.style.background = "#059669";
                         }
                         cartBarGiftAction.onclick = function(e) {
