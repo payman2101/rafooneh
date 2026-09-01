@@ -11369,20 +11369,23 @@
     function populatePackageProductSelector() {
         const select = document.getElementById('pkgItemProductSelect');
         if (!select) return;
-
         const prods = Array.isArray(purchaseProductsCatalog) && purchaseProductsCatalog.length > 0
             ? purchaseProductsCatalog
             : (Array.isArray(window.products_data) ? window.products_data : []);
-
         let opts = '<option value="">-- انتخاب کالا از کاتالوگ انبار --</option>';
         prods.forEach(p => {
             const pId = p.id || p.code;
             const price = Number(p.newPrice) || Number(p.consumerPrice) || Number(p.price) || 0;
-            opts += `<option value="${pId}" data-name="${escapeHtml(p.name)}" data-price="${price}">${escapeHtml(p.name)} (قیمت مصرف‌کننده: ${price.toLocaleString('fa-IR')} تومان)</option>`;
+            const stock = (p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock))) ? Number(p.stock) : 0;
+            const isOutOfStock = stock <= 0 || p.badge === 'ناموجود';
+            if (isOutOfStock) {
+                opts += `<option value="${pId}" data-stock="0" disabled style="color:#94a3b8; background:#f8fafc;">⛔ ${escapeHtml(p.name)} [ناموجود در انبار]</option>`;
+            } else {
+                opts += `<option value="${pId}" data-stock="${stock}" data-name="${escapeHtml(p.name)}" data-price="${price}">${escapeHtml(p.name)} (موجودی: ${stock.toLocaleString('fa-IR')} عدد - قیمت: ${price.toLocaleString('fa-IR')} تومان)</option>`;
+            }
         });
         select.innerHTML = opts;
     }
-
     function addPackageItemFromSelector() {
         const select = document.getElementById('pkgItemProductSelect');
         const qtyInp = document.getElementById('pkgItemQtyInput');
@@ -11390,13 +11393,16 @@
             alert('لطفاً ابتدا یک کالا از لیست انتخاب فرمایید.');
             return;
         }
-
         const opt = select.options[select.selectedIndex];
         const pId = select.value;
+        const stock = Number(opt.getAttribute('data-stock')) || 0;
+        if (stock <= 0) {
+            alert('کالای انتخابی ناموجود است. تمامی اقلام پکیج باید در انبار دارای موجودی باشند.');
+            return;
+        }
         const name = opt.getAttribute('data-name') || 'کالای انتخابی';
         const price = Number(opt.getAttribute('data-price')) || 0;
         const qty = Math.max(1, Number(qtyInp?.value) || 1);
-
         const existing = currentEditingPkgItems.find(i => String(i.productId || i.id) === String(pId));
         if (existing) {
             existing.qty += qty;
@@ -11408,13 +11414,11 @@
                 qty
             });
         }
-
         if (qtyInp) qtyInp.value = 1;
         select.value = '';
         renderPackageItemsTable();
         recalcPackagePricing();
     }
-
     function deletePackageItemRow(idx) {
         if (idx >= 0 && idx < currentEditingPkgItems.length) {
             currentEditingPkgItems.splice(idx, 1);
@@ -11422,18 +11426,15 @@
             recalcPackagePricing();
         }
     }
-
     function renderPackageItemsTable() {
         const tbody = document.getElementById('pkgItemsListTableBody');
         const countSpan = document.getElementById('pkgSelectedItemsCount');
         if (countSpan) countSpan.innerText = currentEditingPkgItems.length;
         if (!tbody) return;
-
         if (currentEditingPkgItems.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:#94a3b8;">هنوز هیچ کالایی به این پکیج افزوده نشده است. از منوی بالا کالاها را انتخاب و اضافه فرمایید.</td></tr>';
             return;
         }
-
         tbody.innerHTML = currentEditingPkgItems.map((it, idx) => {
             const price = Number(it.price) || 0;
             const qty = Number(it.qty) || 1;
@@ -11455,7 +11456,6 @@
             `;
         }).join('');
     }
-
     function recalcPackagePricing() {
         let totalItemsWorth = 0;
         currentEditingPkgItems.forEach(it => {
@@ -11463,13 +11463,10 @@
             const qty = Number(it.qty) || 1;
             totalItemsWorth += (price * qty);
         });
-
         const worthEl = document.getElementById('pkgTotalItemsWorth');
         const badgeEl = document.getElementById('pkgDiscountSummaryBadge');
         const priceInp = document.getElementById('pkgPriceInput');
-
         if (worthEl) worthEl.innerText = totalItemsWorth.toLocaleString('fa-IR');
-
         const pkgPrice = Number(priceInp?.value) || 0;
         if (totalItemsWorth > 0 && pkgPrice > 0) {
             const diff = totalItemsWorth - pkgPrice;
@@ -11485,13 +11482,23 @@
             if (badgeEl) badgeEl.innerHTML = 'تخفیف پکیج: ۰٪';
         }
     }
-
     async function savePackageForm(event) {
         if (event) event.preventDefault();
-
         if (currentEditingPkgItems.length === 0) {
             alert('لطفاً حداقل یک قلم کالا برای این پکیج تعریف فرمایید.');
             return;
+        }
+        const prods = Array.isArray(purchaseProductsCatalog) && purchaseProductsCatalog.length > 0
+            ? purchaseProductsCatalog
+            : (Array.isArray(window.products_data) ? window.products_data : []);
+        
+        for (const it of currentEditingPkgItems) {
+            const prod = prods.find(p => String(p.id) === String(it.productId || it.id) || String(p.code) === String(it.productId || it.id) || (p.name && it.name && p.name.trim() === it.name.trim()));
+            const stock = prod && (prod.stock !== undefined && prod.stock !== null && !isNaN(Number(prod.stock))) ? Number(prod.stock) : 0;
+            if (!prod || stock <= 0 || prod.badge === 'ناموجود') {
+                alert(`امکان ذخیره یا فعال‌سازی پکیج وجود ندارد!\nکالای «${it.name}» فاقد موجودی در انبار است.\n\nتمامی اقلام پکیج باید دارای موجودی معتبر باشند.`);
+                return;
+            }
         }
 
         const editId = document.getElementById('pkgEditId')?.value || '';
@@ -11504,19 +11511,15 @@
         const bonusItem = document.getElementById('pkgBonusItemInput')?.value?.trim() || '';
         const stock = Number(document.getElementById('pkgStockInput')?.value) || 50;
         const description = document.getElementById('pkgDescriptionInput')?.value?.trim() || '';
-
         if (!title) {
             alert('عنوان پکیج الزامی است.');
             return;
         }
-
         let originalPrice = 0;
         currentEditingPkgItems.forEach(it => {
             originalPrice += (Number(it.price) || 0) * (Number(it.qty) || 1);
         });
-
         const discountPercent = originalPrice > packagePrice ? Math.round(((originalPrice - packagePrice) / originalPrice) * 100) : 0;
-
         const pkgObj = {
             id: editId || ('pkg_' + Date.now()),
             title,
@@ -11535,7 +11538,6 @@
             description,
             updatedAt: new Date().toISOString()
         };
-
         const btn = document.getElementById('savePackageBtn');
         if (btn) {
             btn.disabled = true;

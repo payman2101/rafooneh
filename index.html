@@ -799,15 +799,18 @@
         .modal-card {
             background: white;
             width: 100%;
-            max-width: 520px;
+            max-width: 540px;
             border-radius: 24px;
             padding: 24px;
-            max-height: min(92vh, calc(100dvh - 24px));
+            max-height: min(90vh, calc(100dvh - 32px));
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
+            margin: auto;
         }
 
         @media (max-width: 600px) {
@@ -853,12 +856,12 @@
         }
 
         .order-summary-list {
-            background: var(--bg);
-            border-radius: 12px;
-            padding: 12px 15px;
-            margin-bottom: 18px;
-            max-height: 150px;
-            overflow-y: auto;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            max-height: none;
         }
 
         .summary-item {
@@ -2734,6 +2737,103 @@
             background: rgba(255, 255, 255, 0.35);
             transform: scale(1.05);
         }
+    
+        /* Package Gift Floating Snackbar with Close Button */
+        .package-gift-snackbar {
+            position: fixed;
+            bottom: 82px;
+            left: 50%;
+            transform: translateX(-50%) translateY(0);
+            background: linear-gradient(135deg, #831843 0%, #be185d 100%);
+            color: #ffffff;
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 12px 28px -4px rgba(190, 24, 93, 0.45), 0 8px 12px -6px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            z-index: 10006;
+            max-width: 94%;
+            width: 460px;
+            direction: rtl;
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            animation: snackbarSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes snackbarSlideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        .package-gift-snackbar.hide {
+            opacity: 0;
+            transform: translateX(-50%) translateY(24px);
+            transition: all 0.25s ease;
+        }
+        .package-gift-snackbar .snackbar-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+        .package-gift-snackbar .snackbar-icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            color: #ffd1dc;
+            flex-shrink: 0;
+        }
+        .package-gift-snackbar .snackbar-text-wrap {
+            flex: 1;
+        }
+        .package-gift-snackbar .snackbar-title {
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: #fdf2f8;
+            margin-bottom: 2px;
+        }
+        .package-gift-snackbar .snackbar-desc {
+            font-size: 0.78rem;
+            color: #ffe4e6;
+            line-height: 1.4;
+        }
+        .package-gift-snackbar .snackbar-close-btn {
+            background: rgba(255, 255, 255, 0.18);
+            border: none;
+            color: #ffffff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .package-gift-snackbar .snackbar-close-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+        @media (max-width: 600px) {
+            .package-gift-snackbar {
+                bottom: 78px;
+                width: calc(100% - 20px);
+                padding: 10px 12px;
+                border-radius: 14px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -5079,6 +5179,46 @@
             }
         }
 
+        
+        function showPackageGiftSnackbar(bonusText) {
+            const old = document.getElementById("packageGiftSnackbar");
+            if (old) old.remove();
+
+            const snackbar = document.createElement("div");
+            snackbar.id = "packageGiftSnackbar";
+            snackbar.className = "package-gift-snackbar";
+            snackbar.innerHTML = `
+                <div class="snackbar-content">
+                    <div class="snackbar-icon-box">
+                        <i class="fa-solid fa-gift"></i>
+                    </div>
+                    <div class="snackbar-text-wrap">
+                        <div class="snackbar-title">🎁 هدیه اختصاصی پکیج فعال شد:</div>
+                        <div class="snackbar-desc">${escapeHtml(bonusText || "اشانتیون و هدایای اختصاصی همراه با سفارش شما تحویل می‌گردد.")}</div>
+                    </div>
+                </div>
+                <button type="button" class="snackbar-close-btn" onclick="dismissPackageGiftSnackbar()" title="بستن">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+            document.body.appendChild(snackbar);
+
+            if (window._pkgSnackbarTimer) clearTimeout(window._pkgSnackbarTimer);
+            window._pkgSnackbarTimer = setTimeout(() => {
+                dismissPackageGiftSnackbar();
+            }, 7000);
+        }
+
+        function dismissPackageGiftSnackbar() {
+            const snackbar = document.getElementById("packageGiftSnackbar");
+            if (snackbar) {
+                snackbar.classList.add("hide");
+                setTimeout(() => {
+                    if (snackbar) snackbar.remove();
+                }, 300);
+            }
+        }
+
         function showGiftToast(message, icon = 'fa-gift', color = '#059669') {
             const toast = document.createElement('div');
             toast.className = 'toast-notification';
@@ -5255,70 +5395,104 @@
             const summaryList = document.getElementById("orderSummaryList");
             if (!summaryList) return;
             summaryList.innerHTML = "";
-            let itemsSubtotal = 0;
 
-            for (const [id, qty] of Object.entries(cart)) {
-                const p = products.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
-                if (p) {
-                    const itemTotal = p.price * qty;
-                    itemsSubtotal += itemTotal;
-                    const itemRow = document.createElement("div");
-                    itemRow.className = "summary-item";
-                    itemRow.innerHTML = `
-                        <span><strong>${escapeHtml(p.name)}</strong> × ${qty.toLocaleString("fa-IR")}</span>
-                        <span>${itemTotal.toLocaleString("fa-IR")} تومان</span>
-                    `;
-                    summaryList.appendChild(itemRow);
-                }
-            }
+            const prodList = (typeof products !== "undefined" && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== "undefined" ? productsData : []);
+            const activePkgs = typeof getActiveCartPackagesList === "function" ? getActiveCartPackagesList() : [];
+            const hasPackages = activePkgs.length > 0;
 
-            // Gift Offer Box or Package Gift Notification Box
-            if (typeof hasActivePackageInCart === "function" && hasActivePackageInCart()) {
-                const activePkgs = typeof getActiveCartPackagesList === "function" ? getActiveCartPackagesList() : [];
-                const bonusNames = typeof getActiveCartPackagesBonusNames === "function" ? getActiveCartPackagesBonusNames() : "اشانتیون اختصاصی";
-                
+            const pkgItemQuantities = {};
+            if (hasPackages) {
                 activePkgs.forEach(item => {
+                    const pkg = item.pkg;
+                    const pkgQty = item.qty;
+                    const pkgPrice = Number(pkg.packagePrice) || Number(pkg.price) || 0;
+                    const rowTotal = pkgPrice * pkgQty;
+
+                    if (Array.isArray(pkg.items)) {
+                        pkg.items.forEach(it => {
+                            const pid = String(it.productId || it.id || it.code || "");
+                            const itQty = (Number(it.qty) || 1) * pkgQty;
+                            pkgItemQuantities[pid] = (pkgItemQuantities[pid] || 0) + itQty;
+                        });
+                    }
+
                     const pkgRow = document.createElement("div");
                     pkgRow.className = "summary-item";
-                    pkgRow.style.cssText = "background:#fdf2f8; border:1px solid #fbcfe8; border-radius:10px; padding:8px 10px; margin-bottom:6px;";
+                    pkgRow.style.cssText = "background:#fdf2f8; border:1.5px solid #fbcfe8; border-radius:12px; padding:10px 12px; margin-bottom:8px;";
                     pkgRow.innerHTML = `
                         <div style="width:100%;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-weight:bold; color:#831843;"><i class="fa-solid fa-boxes-stacked" style="color:#db2777;"></i> پکیج: ${escapeHtml(item.pkg.title)} × ${item.qty.toLocaleString("fa-IR")}</span>
-                                <button type="button" onclick="removeStorefrontPackageFromCart('${item.pkg.id}')" style="background:transparent; border:none; color:#e11d48; font-size:0.78rem; cursor:pointer; padding:2px 4px;" title="حذف این پکیج">
-                                    <i class="fa-solid fa-trash"></i> حذف پکیج
-                                </button>
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                                <div>
+                                    <span style="font-weight:bold; color:#831843; font-size:0.92rem; display:flex; align-items:center; gap:6px;">
+                                        <i class="fa-solid fa-boxes-stacked" style="color:#db2777;"></i>
+                                        پکیج «${escapeHtml(pkg.title)}» × ${pkgQty.toLocaleString("fa-IR")}
+                                    </span>
+                                    <div style="font-size:0.76rem; color:#64748b; margin-top:4px; line-height:1.4;">
+                                        اقلام: ${(pkg.items || []).map(it => escapeHtml(it.name || "کالا") + ' (' + (Number(it.qty)||1) * pkgQty + ' عدد)').join(' + ')}
+                                    </div>
+                                    ${pkg.bonusItem ? `<div style="font-size:0.78rem; color:#db2777; margin-top:4px; font-weight:bold;"><i class="fa-solid fa-gift"></i> هدیه اختصاصی پکیج: ${escapeHtml(pkg.bonusItem)} (۱۰۰٪ رایگان)</div>` : ""}
+                                </div>
+                                <div style="text-align:left; flex-shrink:0;">
+                                    <div style="font-weight:800; color:#831843; font-size:0.95rem;">${rowTotal.toLocaleString("fa-IR")} تومان</div>
+                                    <button type="button" onclick="removeStorefrontPackageFromCart('${pkg.id}')" style="background:transparent; border:none; color:#e11d48; font-size:0.74rem; cursor:pointer; padding:2px 0; margin-top:3px;" title="حذف این پکیج">
+                                        <i class="fa-solid fa-trash"></i> حذف پکیج
+                                    </button>
+                                </div>
                             </div>
-                            ${item.pkg.bonusItem ? `<div style="font-size:0.75rem; color:#db2777; margin-top:3px; font-weight:bold;"><i class="fa-solid fa-gift"></i> هدیه اختصاصی پکیج: ${escapeHtml(item.pkg.bonusItem)} (۱۰۰٪ رایگان)</div>` : ""}
                         </div>
                     `;
                     summaryList.appendChild(pkgRow);
                 });
+            }
 
+            // Standalone Products
+            for (const [id, qty] of Object.entries(cart)) {
+                const numQty = Number(qty) || 0;
+                const p = prodList.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
+                if (p && numQty > 0) {
+                    const pid = String(p.id || p.code || id);
+                    const consumedByPkgs = pkgItemQuantities[pid] || 0;
+                    const standaloneQty = Math.max(0, numQty - consumedByPkgs);
+                    if (standaloneQty > 0) {
+                        const itemTotal = (Number(p.price) || 0) * standaloneQty;
+                        const itemRow = document.createElement("div");
+                        itemRow.className = "summary-item";
+                        itemRow.innerHTML = `
+                            <span><strong>${escapeHtml(p.name)}</strong> × ${standaloneQty.toLocaleString("fa-IR")}</span>
+                            <span style="font-weight:bold;">${itemTotal.toLocaleString("fa-IR")} تومان</span>
+                        `;
+                        summaryList.appendChild(itemRow);
+                    }
+                }
+            }
+
+            // Gift section (Packages vs General Rafooneh Gifts)
+            if (hasPackages) {
+                const bonusNames = typeof getActiveCartPackagesBonusNames === "function" ? getActiveCartPackagesBonusNames() : "اشانتیون ویژه";
                 const pkgBox = document.createElement("div");
                 pkgBox.className = "gift-offer-box";
-                pkgBox.style.cssText = "background:linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); border:1.5px solid #f472b6; border-radius:12px; padding:12px 14px; margin:10px 0; box-shadow:0 2px 8px rgba(219,39,119,0.12);";
+                pkgBox.style.cssText = "background:linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); border:1.5px solid #f472b6; border-radius:12px; padding:10px 12px; margin:8px 0; box-shadow:0 2px 8px rgba(219,39,119,0.1);";
                 pkgBox.innerHTML = `
                     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div style="width:34px; height:34px; background:#db2777; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:32px; height:32px; background:#db2777; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.95rem; flex-shrink:0;">
                                 <i class="fa-solid fa-gift"></i>
                             </div>
                             <div>
-                                <strong style="color:#831843; font-size:0.88rem; display:block;">🎁 هدیه اختصاصی پکیج برای شما اعمال شد</strong>
-                                <span style="font-size:0.76rem; color:#9d174d; display:block; margin-top:2px;">
+                                <strong style="color:#831843; font-size:0.85rem; display:block;">🎁 هدیه اختصاصی پکیج برای شما اعمال شد</strong>
+                                <span style="font-size:0.75rem; color:#9d174d; display:block; margin-top:2px;">
                                     ${escapeHtml(bonusNames)} (به دلیل تخفیف ویژه پکیج، هدایای پلکانی عمومی غیرفعال است)
                                 </span>
                             </div>
                         </div>
-                        <span style="font-weight:bold; color:#db2777; background:#fff; border:1px solid #fbcfe8; padding:3px 10px; border-radius:12px; font-size:0.72rem;">
-                            اشانتیون ویژه پکیج
-                        </span>
+                        <button type="button" onclick="showPackageGiftSnackbar('${escapeHtml(bonusNames)}')" style="background:#db2777; color:white; border:none; border-radius:14px; padding:4px 10px; font-size:0.72rem; font-weight:bold; cursor:pointer;">
+                            مشاهده جزئیات هدیه
+                        </button>
                     </div>
                 `;
                 summaryList.appendChild(pkgBox);
             } else {
-                const rafoonehSubtotal = typeof calculateCartRafoonehTotal === "function" ? calculateCartRafoonehTotal() : itemsSubtotal;
+                const rafoonehSubtotal = typeof calculateCartRafoonehTotal === "function" ? calculateCartRafoonehTotal() : calculateCartTotal();
                 const giftAllowance = typeof calculateOrderGiftAllowance === "function" ? calculateOrderGiftAllowance(rafoonehSubtotal) : 0;
                 if (giftAllowance > 0) {
                     let usedGiftVal = getSelectedGiftsTotalValue();
@@ -5336,7 +5510,7 @@
                     const remainingAllowance = Math.max(0, giftAllowance - usedGiftVal);
                     const giftBox = document.createElement("div");
                     giftBox.className = "gift-offer-box";
-                    giftBox.style.cssText = "background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:1.5px solid #10b981; border-radius:12px; padding:12px 14px; margin:10px 0; cursor:pointer; box-shadow:0 2px 8px rgba(16,185,129,0.15); transition:transform 0.2s ease;";
+                    giftBox.style.cssText = "background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:1.5px solid #10b981; border-radius:12px; padding:10px 12px; margin:8px 0; cursor:pointer; box-shadow:0 2px 8px rgba(16,185,129,0.12);";
                     giftBox.onclick = function(e) {
                         if (e.target.tagName !== "BUTTON" && !e.target.closest("button")) {
                             openGiftSelectionModal();
@@ -5344,18 +5518,18 @@
                     };
                     let giftItemsHtml = "";
                     if (giftsList.length > 0) {
-                        giftItemsHtml = `<div style="margin-top:10px; padding-top:8px; border-top:1px dashed #6ee7b7; display:flex; flex-direction:column; gap:6px;">`;
+                        giftItemsHtml = `<div style="margin-top:8px; padding-top:6px; border-top:1px dashed #6ee7b7; display:flex; flex-direction:column; gap:4px;">`;
                         giftsList.forEach(g => {
                             giftItemsHtml += `
-                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#065f46;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:#065f46;">
                                     <div style="display:flex; align-items:center; gap:6px;">
-                                        <i class="fa-solid fa-gift" style="color:#059669; font-size:0.85rem;"></i>
+                                        <i class="fa-solid fa-gift" style="color:#059669; font-size:0.8rem;"></i>
                                         <span><strong>${escapeHtml(g.product.name)}</strong> × ${g.qty.toLocaleString("fa-IR")}</span>
-                                        <span style="color:#64748b; font-size:0.75rem;">(${g.totalRealPrice.toLocaleString("fa-IR")} ت)</span>
+                                        <span style="color:#64748b; font-size:0.72rem;">(${g.totalRealPrice.toLocaleString("fa-IR")} ت)</span>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:6px;">
-                                        <span style="font-weight:bold; color:#059669; background:#dcfce7; padding:1px 6px; border-radius:8px; font-size:0.7rem;">۱۰۰٪ رایگان رافونه</span>
-                                        <button type="button" onclick="event.stopPropagation(); removeGiftProduct('${g.product.id || g.product.code}', event);" style="background:transparent; border:none; color:#ef4444; font-size:0.85rem; cursor:pointer; padding:2px 4px;" title="حذف این هدیه">
+                                        <span style="font-weight:bold; color:#059669; background:#dcfce7; padding:1px 5px; border-radius:6px; font-size:0.68rem;">۱۰۰٪ رایگان</span>
+                                        <button type="button" onclick="event.stopPropagation(); removeGiftProduct('${g.product.id || g.product.code}', event);" style="background:transparent; border:none; color:#ef4444; font-size:0.8rem; cursor:pointer; padding:2px;" title="حذف این هدیه">
                                             <i class="fa-solid fa-xmark"></i>
                                         </button>
                                     </div>
@@ -5363,7 +5537,7 @@
                             `;
                         });
                         giftItemsHtml += `
-                            <div style="margin-top:4px; padding-top:6px; border-top:1px dotted #a7f3d0; font-size:0.76rem; color:#047857; display:flex; justify-content:space-between; align-items:center;">
+                            <div style="margin-top:4px; padding-top:4px; border-top:1px dotted #a7f3d0; font-size:0.74rem; color:#047857; display:flex; justify-content:space-between; align-items:center;">
                                 <span>مجموع ارزش هدایا: <strong>${usedGiftVal.toLocaleString("fa-IR")} تومان</strong></span>
                                 <span>باقیمانده سقف: <strong>${remainingAllowance.toLocaleString("fa-IR")} تومان</strong></span>
                             </div>
@@ -5372,26 +5546,26 @@
                     giftBox.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <div style="width:32px; height:32px; background:#059669; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.95rem; flex-shrink:0;">
+                                <div style="width:30px; height:30px; background:#059669; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0;">
                                     <i class="fa-solid fa-gift"></i>
                                 </div>
                                 <div>
-                                    <strong style="color:#065f46; font-size:0.88rem; display:block;">
-                                        🎁 هدیه رایگان (ویژه کالاهای برند رافونه):
+                                    <strong style="color:#065f46; font-size:0.85rem; display:block;">
+                                        🎁 هدیه رایگان (ویژه اقلام برند رافونه):
                                     </strong>
-                                    <span style="font-size:0.78rem; color:#047857; display:block; margin-top:2px;">
-                                        سقف ارزش کالا: <strong>${giftAllowance.toLocaleString("fa-IR")} تومان</strong> (محاسبه از خرید اقلام رافونه)
+                                    <span style="font-size:0.75rem; color:#047857; display:block; margin-top:2px;">
+                                        سقف ارزش کالا: <strong>${giftAllowance.toLocaleString("fa-IR")} تومان</strong>
                                     </span>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-sm" onclick="openGiftSelectionModal()" style="background:#059669; color:white; border:none; border-radius:20px; padding:6px 14px; font-size:0.78rem; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(5,150,105,0.25);">
-                                ${giftsList.length > 0 ? `🎁 مدیریت هدایا (${totalGiftCount.toLocaleString("fa-IR")})` : "🎁 انتخاب کالاهای هدیه"}
+                            <button type="button" class="btn btn-sm" onclick="openGiftSelectionModal()" style="background:#059669; color:white; border:none; border-radius:16px; padding:5px 12px; font-size:0.75rem; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(5,150,105,0.2);">
+                                ${giftsList.length > 0 ? `🎁 مدیریت هدایا (${totalGiftCount.toLocaleString("fa-IR")})` : "🎁 انتخاب کالای هدیه"}
                             </button>
                         </div>
                         ${giftsList.length > 0 ? giftItemsHtml : `
-                            <div style="margin-top:8px; font-size:0.76rem; color:#047857; display:flex; align-items:center; gap:4px;">
-                                <i class="fa-solid fa-hand-pointer" style="font-size:0.7rem;"></i>
-                                <span>برای انتخاب کالای هدیه از میان محصولات برند رافونه، روی این بخش کلیک کنید.</span>
+                            <div style="margin-top:6px; font-size:0.74rem; color:#047857; display:flex; align-items:center; gap:4px;">
+                                <i class="fa-solid fa-hand-pointer" style="font-size:0.68rem;"></i>
+                                <span>برای انتخاب کالای هدیه رایگان، روی این بخش کلیک کنید.</span>
                             </div>
                         `}
                     `;
@@ -5401,15 +5575,17 @@
                 }
             }
 
+            const itemsSubtotal = typeof calculateCartTotal === "function" ? calculateCartTotal() : 0;
+
             // Subtotal Row
             const subtotalRow = document.createElement("div");
             subtotalRow.className = "summary-item";
-            subtotalRow.style.paddingTop = "6px";
-            subtotalRow.style.marginTop = "4px";
-            subtotalRow.style.borderTop = "1px dashed #e2e8f0";
+            subtotalRow.style.paddingTop = "8px";
+            subtotalRow.style.marginTop = "6px";
+            subtotalRow.style.borderTop = "1px dashed #cbd5e1";
             subtotalRow.innerHTML = `
-                <span style="color:#475569;">جمع کل اقلام:</span>
-                <span>${itemsSubtotal.toLocaleString("fa-IR")} تومان</span>
+                <span style="color:#475569; font-weight:600;">جمع کل اقلام:</span>
+                <span style="font-weight:bold; color:#1e293b;">${itemsSubtotal.toLocaleString("fa-IR")} تومان</span>
             `;
             summaryList.appendChild(subtotalRow);
 
@@ -5430,7 +5606,7 @@
             }
             summaryList.appendChild(deliveryRow);
 
-            // Wallet Deduction Row (if applied)
+            // Wallet Deduction Row
             let walletDeduct = 0;
             if (useWalletDiscount && currentCustomer && Number(currentCustomer.walletBalance) > 0) {
                 walletDeduct = Math.min(Number(currentCustomer.walletBalance), itemsSubtotal + deliveryFee);
@@ -5445,17 +5621,17 @@
                 summaryList.appendChild(walletRow);
             }
 
-            // Final Payable Grand Total Row
+            // Final Grand Total Row (Equal to cart bar and exact calculated total)
             const grandTotal = Math.max(0, itemsSubtotal + deliveryFee - walletDeduct);
             const totalRow = document.createElement("div");
             totalRow.className = "summary-item";
             totalRow.style.fontWeight = "bold";
-            totalRow.style.borderTop = "1px solid #cbd5e1";
-            totalRow.style.paddingTop = "8px";
-            totalRow.style.marginTop = "4px";
+            totalRow.style.borderTop = "2px solid #0f766e";
+            totalRow.style.paddingTop = "10px";
+            totalRow.style.marginTop = "6px";
             totalRow.innerHTML = `
-                <span>جمع کل قابل پرداخت:</span>
-                <span style="color:var(--primary-dark); font-size:1.05rem;">${grandTotal.toLocaleString("fa-IR")} تومان</span>
+                <span style="font-size:1rem; color:#0f172a;">جمع کل قابل پرداخت:</span>
+                <span style="color:#0f766e; font-size:1.15rem; font-weight:800;">${grandTotal.toLocaleString("fa-IR")} تومان</span>
             `;
             summaryList.appendChild(totalRow);
         }        function openCheckoutModal() {
@@ -5483,9 +5659,41 @@
 
         function calculateCartTotal() {
             let total = 0;
+            const prodList = (typeof products !== "undefined" && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== "undefined" ? productsData : []);
+            const pkgsList = (typeof storefrontPackagesList !== "undefined" && Array.isArray(storefrontPackagesList)) ? storefrontPackagesList : [];
+            
+            const pkgItemQuantities = {};
+            if (typeof selectedCartPackages === "object" && selectedCartPackages) {
+                for (const [pkgId, pQty] of Object.entries(selectedCartPackages)) {
+                    const numPkgQty = Number(pQty) || 0;
+                    if (numPkgQty > 0) {
+                        const pkg = pkgsList.find(p => String(p.id) === String(pkgId));
+                        if (pkg) {
+                            const pkgPrice = Number(pkg.packagePrice) || Number(pkg.price) || 0;
+                            total += (pkgPrice * numPkgQty);
+                            if (Array.isArray(pkg.items)) {
+                                pkg.items.forEach(it => {
+                                    const pid = String(it.productId || it.id || it.code || "");
+                                    const itQty = (Number(it.qty) || 1) * numPkgQty;
+                                    pkgItemQuantities[pid] = (pkgItemQuantities[pid] || 0) + itQty;
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
             for (const [id, qty] of Object.entries(cart)) {
-                const p = products.find(prod => prod.id == id);
-                if (p) total += p.price * qty;
+                const numQty = Number(qty) || 0;
+                const p = prodList.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
+                if (p && numQty > 0) {
+                    const pid = String(p.id || p.code || id);
+                    const consumedByPkgs = pkgItemQuantities[pid] || 0;
+                    const standaloneQty = Math.max(0, numQty - consumedByPkgs);
+                    if (standaloneQty > 0) {
+                        total += (Number(p.price) || 0) * standaloneQty;
+                    }
+                }
             }
             return total;
         }
@@ -5499,8 +5707,25 @@
         function deductLocalProductStock(items) {
             if (!Array.isArray(items)) return;
             try {
+                const flatItems = [];
+                items.forEach(item => {
+                    if (item.isPackage && Array.isArray(item.packageItems)) {
+                        const pkgQty = Number(item.qty) || 1;
+                        item.packageItems.forEach(pi => {
+                            flatItems.push({
+                                id: pi.productId || pi.id || pi.code,
+                                productId: pi.productId || pi.id || pi.code,
+                                name: pi.name,
+                                qty: (Number(pi.qty) || 1) * pkgQty
+                            });
+                        });
+                    } else {
+                        flatItems.push(item);
+                    }
+                });
+
                 if (typeof products !== 'undefined' && Array.isArray(products)) {
-                    items.forEach(item => {
+                    flatItems.forEach(item => {
                         const pid = String(item.id || item.productId || item.code || '');
                         const qty = Number(item.qty) || 1;
                         const p = products.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
@@ -5512,7 +5737,7 @@
                     });
                 }
                 if (typeof productsData !== 'undefined' && Array.isArray(productsData)) {
-                    items.forEach(item => {
+                    flatItems.forEach(item => {
                         const pid = String(item.id || item.productId || item.code || '');
                         const qty = Number(item.qty) || 1;
                         const p = productsData.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
@@ -5527,12 +5752,13 @@
                 if (customProds) {
                     let list = JSON.parse(customProds);
                     let modified = false;
-                    items.forEach(item => {
+                    flatItems.forEach(item => {
                         const pid = String(item.id || item.productId || item.code || '');
                         const qty = Number(item.qty) || 1;
-                        const p = list.find(x => String(x.id) === pid || String(x.code) === pid || x.name === item.name);
+                        const p = list.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
                         if (p) {
-                            p.stock = Math.max(0, (Number(p.stock) || 0) - qty);
+                            let currentStock = p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock)) ? Number(p.stock) : 10;
+                            p.stock = Math.max(0, currentStock - qty);
                             p.badge = p.stock <= 0 ? 'ناموجود' : (p.stock <= 5 ? `تعداد محدود (${p.stock} عدد)` : null);
                             modified = true;
                         }
@@ -5541,8 +5767,10 @@
                         localStorage.setItem('rafooneh_custom_products', JSON.stringify(list));
                     }
                 }
-                if (typeof renderProducts === 'function') {
-                    renderProducts();
+                if (typeof renderProducts === 'function') renderProducts();
+                if (typeof filterValidActivePackages === 'function' && typeof storefrontPackagesList !== 'undefined') {
+                    storefrontPackagesList = filterValidActivePackages(storefrontPackagesList);
+                    if (typeof renderStorefrontPackagesBanner === 'function') renderStorefrontPackagesBanner();
                 }
             } catch (err) {
                 console.error('Error deducting local product stock:', err);
@@ -5551,12 +5779,11 @@
 
         async function handleOrderSubmit(e) {
             if (e) e.preventDefault();
-
             const submitBtn = document.getElementById('submitBtn');
             const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال ثبت سفارش...`;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ثبت سفارش...';
             }
 
             const name = document.getElementById('custName').value.trim();
@@ -5573,7 +5800,6 @@
                 return;
             }
 
-            // Mandatory Location Check for Express Delivery
             if (selectedDeliveryType === 'express' && !hasCustomLocationSet) {
                 alert('جهت محاسبه دقیق هزینه و ارسال سفارش تحویل فوری، لطفاً موقعیت مکانی خود را روی نقشه مشخص فرمایید یا از دکمه «دریافت لوکیشن با GPS» استفاده کنید.');
                 toggleDeliveryMap(true);
@@ -5583,33 +5809,45 @@
                 return;
             }
 
+            const prodList = (typeof products !== "undefined" && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== "undefined" ? productsData : []);
+            const activePkgs = typeof getActiveCartPackagesList === "function" ? getActiveCartPackagesList() : [];
             const orderItems = [];
-            for (const [id, qty] of Object.entries(cart)) {
-                const p = products.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
-                if (p) {
-                    orderItems.push({
-                        id: p.id,
-                        code: p.id,
-                        productId: p.id,
-                        name: p.name,
-                        qty,
-                        price: p.price,
-                        total: p.price * qty
-                    });
-                }
-            }
+            const pkgItemQuantities = {};
 
-            // If package was ordered, add package bonus gifts
-            if (typeof hasActivePackageInCart === "function" && hasActivePackageInCart()) {
-                const activePkgs = typeof getActiveCartPackagesList === "function" ? getActiveCartPackagesList() : [];
+            if (activePkgs.length > 0) {
                 activePkgs.forEach(item => {
-                    if (item.pkg && item.pkg.bonusItem) {
+                    const pkg = item.pkg;
+                    const pkgQty = item.qty;
+                    const pkgPrice = Number(pkg.packagePrice) || Number(pkg.price) || 0;
+                    
+                    if (Array.isArray(pkg.items)) {
+                        pkg.items.forEach(it => {
+                            const pid = String(it.productId || it.id || it.code || "");
+                            const itQty = (Number(it.qty) || 1) * pkgQty;
+                            pkgItemQuantities[pid] = (pkgItemQuantities[pid] || 0) + itQty;
+                        });
+                    }
+
+                    orderItems.push({
+                        id: "pkg-" + pkg.id,
+                        productId: pkg.id,
+                        code: "PKG-" + pkg.id,
+                        name: "📦 پکیج «" + pkg.title + "»",
+                        qty: pkgQty,
+                        price: pkgPrice,
+                        total: pkgPrice * pkgQty,
+                        isPackage: true,
+                        packageId: pkg.id,
+                        packageItems: pkg.items
+                    });
+
+                    if (pkg.bonusItem) {
                         orderItems.push({
-                            id: "pkg-gift-" + item.pkg.id + "-" + Math.random().toString(36).substring(2, 5),
-                            productId: "pkg-bonus-" + item.pkg.id,
+                            id: "pkg-gift-" + pkg.id + "-" + Math.random().toString(36).substring(2, 5),
+                            productId: "pkg-bonus-" + pkg.id,
                             code: "PKG-GIFT",
-                            name: "🎁 هدیه پکیج «" + item.pkg.title + "» (رایگان): " + item.pkg.bonusItem,
-                            qty: item.qty,
+                            name: "🎁 هدیه اختصاصی پکیج «" + pkg.title + "» (رایگان): " + pkg.bonusItem,
+                            qty: pkgQty,
                             price: 0,
                             realPrice: 0,
                             isGift: true,
@@ -5619,23 +5857,45 @@
                 });
             }
 
-            // If gift products were selected, add them to order items as free gifts
-            const giftsList = getSelectedGiftsList();
-            if (giftsList.length > 0) {
+            for (const [id, qty] of Object.entries(cart)) {
+                const numQty = Number(qty) || 0;
+                const p = prodList.find(prod => String(prod.id) === String(id) || String(prod.code) === String(id));
+                if (p && numQty > 0) {
+                    const pid = String(p.id || p.code || id);
+                    const consumedByPkgs = pkgItemQuantities[pid] || 0;
+                    const standaloneQty = Math.max(0, numQty - consumedByPkgs);
+                    if (standaloneQty > 0) {
+                        orderItems.push({
+                            id: p.id,
+                            productId: p.id,
+                            code: p.code || p.id,
+                            name: p.name,
+                            qty: standaloneQty,
+                            price: p.price,
+                            total: p.price * standaloneQty
+                        });
+                    }
+                }
+            }
+
+            // Standalone gifts if selected
+            if (activePkgs.length === 0 && typeof getSelectedGiftsList === "function") {
+                const giftsList = getSelectedGiftsList();
                 giftsList.forEach(g => {
                     orderItems.push({
-                        id: 'gift-' + (g.product.id || g.product.code || Date.now()) + '-' + Math.random().toString(36).substring(2, 5),
+                        id: "gift-" + (g.product.id || g.product.code),
                         productId: g.product.id || g.product.code,
                         code: g.product.code || g.product.id,
-                        name: '🎁 هدیه خرید (رایگان): ' + g.product.name,
+                        name: "🎁 هدیه رایگان رافونه: " + g.product.name,
                         qty: g.qty,
                         price: 0,
-                        realPrice: Number(g.product.price) || 0,
+                        realPrice: g.price,
                         isGift: true,
                         total: 0
                     });
                 });
             }
+
 
             // Deduct product stock locally immediately
             deductLocalProductStock(orderItems);
@@ -7705,19 +7965,37 @@
         }
     }
 
+    function filterValidActivePackages(pkgs) {
+        if (!Array.isArray(pkgs)) return [];
+        const prodList = (typeof products !== "undefined" && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== "undefined" ? productsData : []);
+        return pkgs.filter(pkg => {
+            if (pkg.isActive === false) return false;
+            if (!Array.isArray(pkg.items) || pkg.items.length === 0) return false;
+            return pkg.items.every(item => {
+                const pid = String(item.productId || item.id || item.code || "");
+                const p = prodList.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
+                if (!p) return false;
+                const stock = (p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock))) ? Number(p.stock) : 0;
+                return stock > 0 && p.badge !== "ناموجود";
+            });
+        });
+    }
+
     function renderStorefrontPackagesBanner() {
-        let container = document.getElementById('storefrontPackagesSection');
+        let container = document.getElementById("storefrontPackagesSection");
         if (!container) {
-            const prodSec = document.getElementById('productsSection') || document.querySelector('.products-grid')?.parentElement;
+            const prodSec = document.getElementById("productsSection") || document.querySelector(".products-grid")?.parentElement;
             if (prodSec) {
-                container = document.createElement('div');
-                container.id = 'storefrontPackagesSection';
-                container.style.marginBottom = '24px';
+                container = document.createElement("div");
+                container.id = "storefrontPackagesSection";
+                container.style.marginBottom = "24px";
                 prodSec.insertBefore(container, prodSec.firstChild);
             }
         }
+        
+        storefrontPackagesList = filterValidActivePackages(storefrontPackagesList);
         if (!container || storefrontPackagesList.length === 0) {
-            if (container) container.innerHTML = '';
+            if (container) container.innerHTML = "";
             return;
         }
 
@@ -7793,31 +8071,49 @@
     }
 
     function addStorefrontPackageToCart(pkgId) {
-        const pkg = (typeof storefrontPackagesList !== "undefined" && Array.isArray(storefrontPackagesList)) ? storefrontPackagesList.find(p => String(p.id) === String(pkgId)) : null;
+        const pkgsList = (typeof storefrontPackagesList !== "undefined" && Array.isArray(storefrontPackagesList)) ? storefrontPackagesList : [];
+        const pkg = pkgsList.find(p => String(p.id) === String(pkgId));
         if (!pkg || !Array.isArray(pkg.items)) {
-            alert("پکیج مورد نظر یافت نشد.");
+            alert("پکیج مورد نظر یافت نشد یا در دسترس نیست.");
             return;
         }
+
+        const prodList = (typeof products !== "undefined" && Array.isArray(products) && products.length > 0) ? products : (typeof productsData !== "undefined" ? productsData : []);
+        const outOfStockItem = pkg.items.find(item => {
+            const pid = String(item.productId || item.id || item.code || "");
+            const p = prodList.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
+            if (!p) return true;
+            const stock = (p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock))) ? Number(p.stock) : 0;
+            return stock <= 0 || p.badge === "ناموجود";
+        });
+
+        if (outOfStockItem) {
+            alert("متأسفانه کالای «" + (outOfStockItem.name || "موجود در پکیج") + "» ناموجود شده است و این پکیج امکان سفارش ندارد.");
+            if (typeof storefrontPackagesList !== "undefined") {
+                pkg.isActive = false;
+                storefrontPackagesList = storefrontPackagesList.filter(p => p.id !== pkg.id);
+                if (typeof renderStorefrontPackagesBanner === "function") renderStorefrontPackagesBanner();
+            }
+            return;
+        }
+
         selectedCartPackages[String(pkg.id)] = (selectedCartPackages[String(pkg.id)] || 0) + 1;
-        selectedGiftProducts = {}; // Disable & clear general gifts when package is selected
-        let addedCount = 0;
+        selectedGiftProducts = {};
+
         pkg.items.forEach(item => {
-            const pid = item.productId;
+            const pid = String(item.productId || item.id || item.code || "");
             const qty = Number(item.qty) || 1;
             if (pid) {
                 cart[pid] = (cart[pid] || 0) + qty;
-                addedCount += qty;
             }
         });
+
         if (typeof updateCartBar === "function") updateCartBar();
         if (typeof renderProducts === "function") renderProducts();
         if (typeof refreshOrderSummaryList === "function") refreshOrderSummaryList();
-        const bonusMsg = pkg.bonusItem ? (" (شامل هدیه: " + pkg.bonusItem + ")") : "";
-        if (typeof showGiftToast === "function") {
-            showGiftToast("🎁 پکیج «" + pkg.title + "»" + bonusMsg + " به سبد خرید اضافه شد.", "fa-box-open", "#db2777");
-        } else {
-            alert("🎁 پکیج «" + pkg.title + "»" + bonusMsg + " با موفقیت به سبد خرید افزوده شد.");
-        }
+
+        const bonusMsg = pkg.bonusItem ? ("🎁 هدیه اختصاصی: " + pkg.bonusItem) : "شامل تخفیف ویژه و اشانتیون اختصاصی";
+        showPackageGiftSnackbar(bonusMsg);
     }
 
     function removeStorefrontPackageFromCart(pkgId) {

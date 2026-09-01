@@ -277,6 +277,11 @@ export function saveProductsList(list, skipFirestoreSync = false) {
     try { fs.writeFileSync(ROOT_PRODUCTS_JS, `const productsData = ${jsonStr};\n`, 'utf8'); } catch (e) {}
 
     try { saveAllProductsSqlite(list); } catch (err) { console.error('SQLite save products error:', err); }
+
+    // Auto-deactivate packages if constituent product stock hits 0
+    try {
+      syncPackagesAvailabilityWithProductStock(list);
+    } catch (err) {}
   } catch (err) {
     console.error('Error saving products list:', err);
   }
@@ -2698,6 +2703,48 @@ export function calculateGiftQuotaForOrder(itemsSubtotal, options = false) {
   return Math.round(subtotal * (pct / 100));
 }
 
+export function syncPackagesAvailabilityWithProductStock(prods) {
+  try {
+    const prodList = (Array.isArray(prods) && prods.length > 0) ? prods : readProductsList();
+    if (!prodList || !prodList.length) return;
+    
+    const pkgs = getPackagesList(false);
+    if (!Array.isArray(pkgs) || pkgs.length === 0) return;
+    
+    let modified = false;
+    pkgs.forEach(pkg => {
+      if (!Array.isArray(pkg.items) || pkg.items.length === 0) return;
+      
+      const hasOutOfStockItem = pkg.items.some(item => {
+        const pid = String(item.productId || item.id || item.code || '');
+        const p = prodList.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
+        if (!p) return true;
+        const stock = (p.stock !== undefined && p.stock !== null && !isNaN(Number(p.stock))) ? Number(p.stock) : 0;
+        return stock <= 0 || p.badge === 'ناموجود';
+      });
+      
+      if (hasOutOfStockItem && pkg.isActive) {
+        pkg.isActive = false;
+        pkg.updatedAt = new Date().toISOString();
+        modified = true;
+      }
+    });
+    
+    if (modified) {
+      packagesListCache = pkgs;
+      writeJson(PACKAGES_FILE, pkgs);
+      try { writeJson(ROOT_PACKAGES_FILE, pkgs); } catch (e) {}
+      pkgs.forEach(pkg => {
+        savePackageToFirestore(pkg).catch(() => {});
+        savePackageCloudSql(pkg).catch(() => {});
+        try { savePackageSqlite(pkg); } catch (e) {}
+      });
+    }
+  } catch (err) {
+    console.error('Error syncing package availability with product stock:', err);
+  }
+}
+
 export function getPackagesList(onlyActive = false) {
   if (!packagesListCache) {
     try {
@@ -2716,7 +2763,18 @@ export function getPackagesList(onlyActive = false) {
     }
   }
   if (onlyActive) {
-    return packagesListCache.filter(p => p.isActive !== false);
+    const prodList = readProductsList();
+    return packagesListCache.filter(p => {
+      if (p.isActive === false) return false;
+      if (!Array.isArray(p.items) || p.items.length === 0) return false;
+      return p.items.every(item => {
+        const pid = String(item.productId || item.id || item.code || '');
+        const prod = prodList.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
+        if (!prod) return false;
+        const stock = (prod.stock !== undefined && prod.stock !== null && !isNaN(Number(prod.stock))) ? Number(prod.stock) : 0;
+        return stock > 0 && prod.badge !== 'ناموجود';
+      });
+    });
   }
   return packagesListCache;
 }
@@ -2727,11 +2785,24 @@ export function getPackageById(id) {
 }
 
 export function savePackage(packageData) {
-  const list = getPackagesList();
+  const list = getPackagesList(false);
   const id = packageData.id || ('pkg_' + Date.now());
   const now = new Date().toISOString();
   const existingIdx = list.findIndex(p => String(p.id) === String(id));
+  const prodList = readProductsList();
   
+  const items = Array.isArray(packageData.items) ? packageData.items : [];
+  
+  const hasOutOfStockItem = items.some(item => {
+    const pid = String(item.productId || item.id || item.code || '');
+    const prod = prodList.find(x => String(x.id) === pid || String(x.code) === pid || (x.name && item.name && x.name.trim() === item.name.trim()));
+    if (!prod) return true;
+    const stock = (prod.stock !== undefined && prod.stock !== null && !isNaN(Number(prod.stock))) ? Number(prod.stock) : 0;
+    return stock <= 0 || prod.badge === 'ناموجود';
+  });
+
+  const shouldBeActive = (packageData.isActive !== false) && !hasOutOfStockItem;
+
   const pkgObj = {
     id,
     title: packageData.title || 'پکیج جدید',
@@ -2739,8 +2810,8 @@ export function savePackage(packageData) {
     badge: packageData.badge || 'ویژه',
     badgeColor: packageData.badgeColor || '#059669',
     image: packageData.image || '',
-    isActive: packageData.isActive !== false,
-    items: Array.isArray(packageData.items) ? packageData.items : [],
+    isActive: shouldBeActive,
+    items: items,
     originalPrice: Number(packageData.originalPrice) || 0,
     packagePrice: Number(packageData.packagePrice) || 0,
     discountPercent: Number(packageData.discountPercent) || 0,
