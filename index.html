@@ -3998,6 +3998,27 @@
 
         let cart = {};
         let currentCategory = 'all';
+        let storefrontPackagesList = [];
+        let selectedCartPackages = {};
+        let selectedGiftProducts = {};
+
+        // Dynamic gifts settings default
+        let dynamicGiftSettings = {
+            isEnabled: true,
+            defaultGiftPercent: 0,
+            minOrderForGift: 1000000,
+            firstOrderBonusPercent: 5,
+            isFirstOrderBonusEnabled: false,
+            allowCustomerGiftSelection: true,
+            autoRollRemainingToWallet: true,
+            tieredGiftsEnabled: true,
+            tieredGifts: [
+                { id: 'tier-1', minAmount: 1000000, maxAmount: 2000000, giftPercent: 3, title: 'پله ۱ (۳٪ هدیه)', bonusDescription: '۳٪ ارزش کالاهای رافونه به عنوان هدیه' },
+                { id: 'tier-2', minAmount: 2000000, maxAmount: 4000000, giftPercent: 5, title: 'پله ۲ (۵٪ هدیه)', bonusDescription: '۵٪ ارزش کالاهای رافونه به عنوان هدیه' },
+                { id: 'tier-3', minAmount: 4000000, maxAmount: 0, giftPercent: 8, title: 'پله ۳ VIP (۸٪ هدیه)', bonusDescription: '۸٪ ارزش کالاهای رافونه به عنوان هدیه + اشانتیون ویژه' }
+            ],
+            customGiftNotice: 'طرح هدیه کالاهای رافونه: خرید ۱ الی ۲ میلیون تومان ۳٪، ۲ الی ۴ میلیون تومان ۵٪ و بالای ۴ میلیون تومان ۸٪ هدیه کالا!'
+        };
 
         function handleSearchInput() {
             renderProducts(currentCategory);
@@ -4089,7 +4110,7 @@
             const searchQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
 
             if (filter === 'packages') {
-                if (packagesSection) {
+                if (packagesSection && typeof packagesSection.scrollIntoView === 'function') {
                     packagesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
                 const activePkgs = (typeof filterValidActivePackages === 'function' && typeof storefrontPackagesList !== 'undefined')
@@ -4781,8 +4802,7 @@
             );
         }
 
-        let selectedGiftProducts = {}; // Map of productId/code -> quantity (e.g. { "101": 2, "105": 1 })
-        let selectedCartPackages = {}; // Map of packageId -> quantity
+        // Gift & package selection state is managed above
 
         function hasActivePackageInCart() {
             if (!selectedCartPackages || typeof selectedCartPackages !== "object") return false;
@@ -7802,23 +7822,6 @@
     // -------------------------------------------------------------
     // DYNAMIC GIFTS & PACKAGES ENGINE
     // -------------------------------------------------------------
-    let dynamicGiftSettings = {
-        isEnabled: true,
-        defaultGiftPercent: 0,
-        minOrderForGift: 1000000,
-        firstOrderBonusPercent: 5,
-        isFirstOrderBonusEnabled: false,
-        allowCustomerGiftSelection: true,
-        autoRollRemainingToWallet: true,
-        tieredGiftsEnabled: true,
-        tieredGifts: [
-            { id: 'tier-1', minAmount: 1000000, maxAmount: 2000000, giftPercent: 3, title: 'پله ۱ (۳٪ هدیه)', bonusDescription: '۳٪ ارزش کالاهای رافونه به عنوان هدیه' },
-            { id: 'tier-2', minAmount: 2000000, maxAmount: 4000000, giftPercent: 5, title: 'پله ۲ (۵٪ هدیه)', bonusDescription: '۵٪ ارزش کالاهای رافونه به عنوان هدیه' },
-            { id: 'tier-3', minAmount: 4000000, maxAmount: 0, giftPercent: 8, title: 'پله ۳ VIP (۸٪ هدیه)', bonusDescription: '۸٪ ارزش کالاهای رافونه به عنوان هدیه + اشانتیون ویژه' }
-        ],
-        customGiftNotice: 'طرح هدیه کالاهای رافونه: خرید ۱ الی ۲ میلیون تومان ۳٪، ۲ الی ۴ میلیون تومان ۵٪ و بالای ۴ میلیون تومان ۸٪ هدیه کالا!'
-    };
-    let storefrontPackagesList = [];
 
     function getActiveGiftTierInfo(orderAmount, isFirstOrder = false) {
         if (typeof hasActivePackageInCart === "function" && hasActivePackageInCart()) return null;
