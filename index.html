@@ -3011,7 +3011,7 @@
     <!-- Categories Tab -->
     <div class="categories-container" id="categoriesContainer">
         <button class="category-btn active" data-cat="all" onclick="filterCategory('all', this)">همه</button>
-        <button class="category-btn" data-cat="packages" onclick="scrollToPackagesSection(this)" style="background:#fdf2f8; color:#be185d; border-color:#fbcfe8; font-weight:bold;"><i class="fa-solid fa-boxes-stacked"></i> پکیج‌های ویژه</button>
+        <button class="category-btn" data-cat="packages" onclick="filterCategory('packages', this)" style="background:#fdf2f8; color:#be185d; border-color:#fbcfe8; font-weight:bold;"><i class="fa-solid fa-boxes-stacked"></i> پکیج‌های ویژه</button>
         <button class="category-btn" data-cat="handwash" onclick="filterCategory('handwash', this)">مایع دستشویی</button>
         <button class="category-btn" data-cat="dishwash" onclick="filterCategory('dishwash', this)">مایع ظرفشویی</button>
         <button class="category-btn" data-cat="cleaners" onclick="filterCategory('cleaners', this)">پاک‌کننده و اسپری</button>
@@ -4051,7 +4051,10 @@
                 buttons.forEach(btn => {
                     const cat = btn.getAttribute('data-cat') || 'all';
                     if (cat === 'packages') {
-                        const pkgCount = (typeof packagesList !== 'undefined' && Array.isArray(packagesList)) ? packagesList.length : 0;
+                        const activePkgs = (typeof filterValidActivePackages === 'function' && typeof storefrontPackagesList !== 'undefined') 
+                            ? filterValidActivePackages(storefrontPackagesList) 
+                            : ((typeof storefrontPackagesList !== 'undefined' && Array.isArray(storefrontPackagesList)) ? storefrontPackagesList : []);
+                        const pkgCount = activePkgs.length;
                         btn.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> پکیج‌های ویژه ${pkgCount > 0 ? `<span class="cat-count-badge">(${pkgCount.toLocaleString('fa-IR')} پکیج)</span>` : ''}`;
                         return;
                     }
@@ -4066,14 +4069,42 @@
             }
         }
 
-        function renderProducts(filter = 'all') {
+        function renderProducts(filter = (currentCategory || 'all')) {
             currentCategory = filter;
             updateCategoryTabCounts();
+
+            // Toggle packages section visibility: ONLY show in 'all' and 'packages' tabs
+            const packagesSection = document.getElementById('storefrontPackagesSection');
+            if (packagesSection) {
+                if (currentCategory === 'all' || currentCategory === 'packages') {
+                    packagesSection.style.display = 'block';
+                } else {
+                    packagesSection.style.display = 'none';
+                }
+            }
 
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
 
             const searchQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+
+            if (filter === 'packages') {
+                if (packagesSection) {
+                    packagesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                const activePkgs = (typeof filterValidActivePackages === 'function' && typeof storefrontPackagesList !== 'undefined')
+                    ? filterValidActivePackages(storefrontPackagesList)
+                    : (storefrontPackagesList || []);
+                if (!activePkgs || activePkgs.length === 0) {
+                    grid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                            <i class="fa-solid fa-boxes-stacked" style="font-size: 3rem; margin-bottom: 12px; color: #cbd5e1;"></i>
+                            <p style="font-size: 1.1rem; font-weight: bold;">در حال حاضر پکیج فعالی موجود نیست.</p>
+                        </div>
+                    `;
+                }
+                return;
+            }
 
             // ONLY show in-stock products on storefront
             let filtered = products.filter(isProductInStock);
@@ -7945,17 +7976,10 @@
     }
 
     function scrollToPackagesSection(btn) {
-        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-        const container = document.getElementById('storefrontPackagesSection');
-        if (container) {
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            container.style.transition = 'all 0.4s ease';
-            container.style.boxShadow = '0 0 0 3px #db2777';
-            setTimeout(() => {
-                if (container) container.style.boxShadow = '';
-            }, 1500);
+        if (!btn) {
+            btn = document.querySelector('.category-btn[data-cat="packages"]');
         }
+        filterCategory('packages', btn || document.querySelector('.category-btn[data-cat="packages"]'));
     }
 
     async function fetchStorefrontPackages() {
@@ -7966,6 +7990,7 @@
                 if (data && Array.isArray(data.packages)) {
                     storefrontPackagesList = data.packages.filter(p => p.isActive !== false);
                     renderStorefrontPackagesBanner();
+                    if (typeof updateCategoryTabCounts === 'function') updateCategoryTabCounts();
                 }
             }
         } catch (e) {
@@ -8005,6 +8030,13 @@
         if (!container || storefrontPackagesList.length === 0) {
             if (container) container.innerHTML = "";
             return;
+        }
+
+        // Only display if current category is 'all' or 'packages'
+        if (typeof currentCategory !== 'undefined' && currentCategory !== 'all' && currentCategory !== 'packages') {
+            container.style.display = 'none';
+        } else {
+            container.style.display = 'block';
         }
 
         container.innerHTML = `
