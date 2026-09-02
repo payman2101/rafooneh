@@ -2439,10 +2439,29 @@ export async function onRequest(context) {
       const consumerPriceVal = body.consumerPrice !== undefined ? Number(body.consumerPrice) : (newPriceVal > 0 ? newPriceVal : 0);
       const buyPriceVal = body.buyPrice !== undefined ? Number(body.buyPrice) : Number(existing.buyPrice || 0);
 
+      const categoryNames = {
+        handwash: 'مایع دستشویی',
+        dishwash: 'مایع ظرفشویی',
+        laundry: 'شوینده لباس',
+        cleaners: 'پاک‌کننده و اسپری',
+        sanitary: 'جرم‌گیر و ضدعفونی',
+        cellulosic: 'سلولزی و مصرفی',
+        imported: 'محصولات خارجی',
+        other: 'سایر شوینده‌ها'
+      };
+      const brand = body.brand || existing.brand || 'rafooneh';
+      const brandName = brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه';
+      const category = brand === 'foreign' ? 'imported' : (body.category || existing.category || 'cleaners');
+      const categoryName = brand === 'foreign' ? 'محصولات خارجی' : (body.categoryName || categoryNames[category] || existing.categoryName || 'پاک‌کننده و اسپری');
+
       const updatedProd = {
         ...existing,
         ...body,
         id,
+        brand,
+        brandName,
+        category,
+        categoryName,
         price: priceVal,
         stock,
         badge,

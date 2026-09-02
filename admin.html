@@ -1071,7 +1071,7 @@
         <button onclick="toggleAdminNotificationsModal()" style="color:#0f766e; font-weight:bold;">اعلان‌ها <span class="badge badge-danger" id="adminNotifBadgeMobile" style="display:none; padding:2px 6px; font-size:0.7rem; background:#ef4444; color:#fff;">0</span></button>
         <button onclick="showSection('products', this)">انبار و برندها</button>
         <button onclick="showSection('delivery-settings', this)">تحویل فوری</button>
-        <button onclick="showPackagesSection(this)" style="color:#db2777; font-weight:bold;"><i class="fa-solid fa-boxes-stacked"></i> پکیج‌ها <span class="badge" id="adminPackagesCountBadgeMobile" style="background:#fce7f3; color:#db2777; font-size:0.7rem; padding:1px 5px; border-radius:6px;">5</span></button>
+        <button onclick="showPackagesSection(this)" style="color:#db2777; font-weight:bold;"><i class="fa-solid fa-boxes-stacked"></i> پکیج‌ها <span class="badge" id="adminPackagesCountBadgeMobile" style="background:#fce7f3; color:#db2777; font-size:0.7rem; padding:1px 5px; border-radius:6px;">0</span></button>
         <button onclick="showGiftSettingsSection(this)" style="color:#d97706; font-weight:bold;"><i class="fa-solid fa-gift"></i> هدایا</button>
         <button onclick="showSection('bank-settings', this)">کارت و حساب</button>
         <button onclick="showSection('profit', this)">تحلیل سود</button>
@@ -1098,7 +1098,7 @@
             </button>
             <button class="nav-item" data-section="packages" onclick="showPackagesSection(this)">
                 <i class="fa-solid fa-boxes-stacked" style="color:#db2777;"></i> مدیریت پکیج‌های ویژه
-                <span class="badge" id="adminPackagesCountBadgeSidebar" style="background:#fce7f3; color:#db2777; margin-right:auto; font-size:0.75rem; font-weight:bold; padding:2px 8px; border-radius:10px;">5</span>
+                <span class="badge" id="adminPackagesCountBadgeSidebar" style="background:#fce7f3; color:#db2777; margin-right:auto; font-size:0.75rem; font-weight:bold; padding:2px 8px; border-radius:10px;">0</span>
             </button>
             <button class="nav-item" data-section="gifts-packages" onclick="showGiftSettingsSection(this)">
                 <i class="fa-solid fa-gift" style="color:#f59e0b;"></i> تنظیمات و درصد هدایا
@@ -1170,12 +1170,12 @@
                         </div>
                         <div>
                             <div style="font-weight: bold; font-size: 0.95rem; color: var(--text);">پکیج‌های اقتصادی و بسته‌های ویژه فروشگاه</div>
-                            <div style="font-size: 0.78rem; color: var(--muted); margin-top: 2px;">تعداد <strong id="dashPackagesCount" style="color:#db2777;">۵</strong> پکیج فعال تخفیف‌دار و دارای هدیه در سیستم ثبت است</div>
+                            <div style="font-size: 0.78rem; color: var(--muted); margin-top: 2px;">تعداد <strong id="dashPackagesCount" style="color:#db2777;">۰</strong> پکیج فعال تخفیف‌دار و دارای هدیه در سیستم ثبت است</div>
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <button type="button" class="btn btn-primary" onclick="showPackagesSection()" style="font-size:0.85rem; padding:6px 14px; background:#db2777; border-color:#db2777;">
-                            <i class="fa-solid fa-boxes-packing"></i> مشاهده و مدیریت پکیج‌ها (<span id="dashPackagesBtnCount">۵</span>)
+                            <i class="fa-solid fa-boxes-packing"></i> مشاهده و مدیریت پکیج‌ها (<span id="dashPackagesBtnCount">۰</span>)
                         </button>
                         <button type="button" class="btn btn-secondary" onclick="openPackageModal()" style="font-size:0.85rem; padding:6px 12px;">
                             <i class="fa-solid fa-plus"></i> ساخت پکیج جدید
@@ -1572,9 +1572,9 @@
                         <div class="sub">تنوع کل اقلام</div>
                     </div>
                     <div class="stat-card">
-                        <div class="label">برندهای داخلی</div>
+                        <div class="label">محصولات برند رافونه</div>
                         <div class="value" id="statRafoonehProducts" style="color:var(--primary);">0</div>
-                        <div class="sub">اقلام تولید داخل</div>
+                        <div class="sub">اقلام تولیدی رافونه</div>
                     </div>
                     <div class="stat-card">
                         <div class="label">کالاهای خارجی / وارداتی</div>
@@ -1589,7 +1589,7 @@
                         <div class="filters" style="gap:10px; align-items:center;">
                             <select id="productBrandFilter" onchange="loadAdminProducts()">
                                 <option value="all">همه برندها</option>
-                                <option value="domestic">برندهای داخلی</option>
+                                <option value="domestic">برند رافونه</option>
                                 <option value="foreign">کالاهای خارجی / وارداتی</option>
                             </select>
                             <select id="productCategoryFilter" onchange="loadAdminProducts()">
@@ -2413,7 +2413,7 @@
                 <!-- Sub Navigation Tabs -->
                 <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">
                     <button type="button" id="tabBtnPackages" class="btn btn-primary" onclick="switchGiftSectionTab('packages')" style="font-size:0.92rem; padding:8px 18px; border-radius:10px; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-boxes-packing"></i> لیست و مدیریت پکیج‌ها (<span id="adminPackagesCountBadge" style="font-weight:bold;">5</span>)
+                        <i class="fa-solid fa-boxes-packing"></i> لیست و مدیریت پکیج‌ها (<span id="adminPackagesCountBadge" style="font-weight:bold;">0</span>)
                     </button>
                     <button type="button" id="tabBtnGiftSettings" class="btn btn-secondary" onclick="switchGiftSectionTab('settings')" style="font-size:0.92rem; padding:8px 18px; border-radius:10px; display:flex; align-items:center; gap:6px;">
                         <i class="fa-solid fa-sliders"></i> تنظیمات و درصد هدایا
@@ -2900,7 +2900,7 @@
                 <div class="form-group">
                     <label for="newProdBrand">انتخاب برند</label>
                     <select id="newProdBrand" class="form-control" onchange="handleBrandChange('new')">
-                        <option value="domestic" selected>برند داخلی</option>
+                        <option value="rafooneh" selected>برند رافونه</option>
                         <option value="foreign">کالاهای خارجی / وارداتی</option>
                     </select>
                 </div>
@@ -2998,7 +2998,7 @@
                 <div class="form-group">
                     <label for="editProdBrand">انتخاب برند</label>
                     <select id="editProdBrand" class="form-control" onchange="handleBrandChange('edit')">
-                        <option value="domestic">برند داخلی</option>
+                        <option value="rafooneh">برند رافونه</option>
                         <option value="foreign">کالاهای خارجی / وارداتی</option>
                     </select>
                 </div>
@@ -5851,9 +5851,20 @@
         }
 
         const brandBadges = {
-            domestic: '<span class="badge badge-confirmed">برند داخلی</span>',
-            rafooneh: '<span class="badge badge-confirmed">برند داخلی</span>',
+            domestic: '<span class="badge badge-confirmed">برند رافونه</span>',
+            rafooneh: '<span class="badge badge-confirmed">برند رافونه</span>',
             foreign: '<span class="badge badge-new">کالای خارجی / وارداتی</span>'
+        };
+
+        const categoryMap = {
+            handwash: 'مایع دستشویی',
+            dishwash: 'مایع ظرفشویی',
+            laundry: 'شوینده لباس',
+            cleaners: 'پاک‌کننده و اسپری',
+            sanitary: 'جرم‌گیر و ضدعفونی',
+            cellulosic: 'سلولزی و مصرفی',
+            imported: 'محصولات خارجی',
+            other: 'سایر شوینده‌ها'
         };
 
         tbody.innerHTML = products.map(p => {
@@ -5872,7 +5883,7 @@
                 </td>
                 <td><strong>${p.name}</strong></td>
                 <td>${brandBadges[p.brand] || `<span class="badge badge-preparing">${p.brandName || p.brand || '—'}</span>`}</td>
-                <td>${(p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی'))) ? '<span style="color:#64748b; font-size:0.8rem;">— (محصولات خارجی)</span>' : (p.categoryName || p.category || '—')}</td>
+                <td>${(p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی'))) ? '<span style="color:#64748b; font-size:0.8rem;">— (محصولات خارجی)</span>' : (categoryMap[p.category] || p.categoryName || p.category || '—')}</td>
                 <td>
                     <input type="number" id="inpStock-${p.id}" class="form-control" value="${p.stock}" min="0" style="width:70px; padding:4px 6px; text-align:center;" onkeydown="if(event.key==='Enter') saveProductInline('${p.id}', this.closest('tr').querySelector('.btn-primary'))">
                 </td>
@@ -6092,8 +6103,13 @@
         document.getElementById('editProdId').value = p.id;
         document.getElementById('editProdCodeView').value = p.id;
         document.getElementById('editProdName').value = p.name || '';
-        document.getElementById('editProdBrand').value = p.brand || 'rafooneh';
-        document.getElementById('editProdCategory').value = p.brand === 'foreign' ? 'imported' : (p.category || 'cleaners');
+        document.getElementById('editProdBrand').value = (p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی'))) ? 'foreign' : 'rafooneh';
+        handleBrandChange('edit');
+        if (p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی'))) {
+            document.getElementById('editProdCategory').value = 'imported';
+        } else {
+            document.getElementById('editProdCategory').value = p.category || 'cleaners';
+        }
         document.getElementById('editProdStock').value = p.stock || 0;
         document.getElementById('editProdPrice').value = p.price || 0;
         document.getElementById('editProdNewPrice').value = p.newPrice > 0 ? p.newPrice : '';
@@ -6101,7 +6117,6 @@
         document.getElementById('editProdImage').value = p.image || '';
         document.getElementById('editProdDescription').value = p.description || '';
 
-        handleBrandChange('edit');
         updateEditImagePreview(p.image);
         calcEditDiscount();
         document.getElementById('editProductModal').style.display = 'flex';
@@ -6116,7 +6131,7 @@
         const id = document.getElementById('editProdId').value;
         const name = document.getElementById('editProdName').value.trim();
         const brand = document.getElementById('editProdBrand').value;
-        const category = document.getElementById('editProdCategory').value;
+        const category = brand === 'foreign' ? 'imported' : document.getElementById('editProdCategory').value;
         const stock = Number(document.getElementById('editProdStock').value || 0);
         const price = Number(document.getElementById('editProdPrice').value || 0);
         const newPrice = Number(document.getElementById('editProdNewPrice').value || 0);
@@ -6124,18 +6139,65 @@
         const image = document.getElementById('editProdImage').value.trim();
         const description = document.getElementById('editProdDescription').value.trim();
 
-        const patchData = { id, name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description };
-        updateLocalProductCache(id, patchData);
+        const categoryMap = {
+            handwash: 'مایع دستشویی',
+            dishwash: 'مایع ظرفشویی',
+            laundry: 'شوینده لباس',
+            cleaners: 'پاک‌کننده و اسپری',
+            sanitary: 'جرم‌گیر و ضدعفونی',
+            cellulosic: 'سلولزی و مصرفی',
+            imported: 'محصولات خارجی',
+            other: 'سایر شوینده‌ها'
+        };
+        const categoryName = brand === 'foreign' ? 'محصولات خارجی' : (categoryMap[category] || 'سایر شوینده‌ها');
+        const brandName = brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه';
+
+        const patchData = { 
+            id, 
+            name, 
+            brand, 
+            brandName, 
+            category, 
+            categoryName, 
+            stock, 
+            price, 
+            newPrice, 
+            consumerPrice: newPrice, 
+            buyPrice, 
+            image, 
+            description 
+        };
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const origText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره در دیتابیس سوپابیس...';
+        }
 
         try {
-            await api(`/api/admin/products/${id}`, {
+            const res = await api(`/api/admin/products/${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify(patchData)
             });
-        } catch(err) {}
-
-        closeEditProductModal();
-        await loadAdminProducts();
+            if (!res || !res.ok) {
+                const errData = await res?.json().catch(() => ({}));
+                throw new Error(errData?.message || 'خطا در ثبت تغییرات در دیتابیس');
+            }
+            const resData = await res.json();
+            const savedProd = resData?.product || patchData;
+            updateLocalProductCache(id, savedProd);
+            closeEditProductModal();
+            await loadAdminProducts();
+        } catch(err) {
+            console.error('Error saving product to Supabase:', err);
+            alert('⚠️ خطا در به‌روزرسانی محصول در دیتابیس سوپا:\n' + (err.message || err));
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = origText;
+            }
+        }
     }
 
     function openAddProductModal() {
@@ -6154,7 +6216,7 @@
         const id = document.getElementById('newProdCode').value.trim();
         const name = document.getElementById('newProdName').value.trim();
         const brand = document.getElementById('newProdBrand').value;
-        const category = document.getElementById('newProdCategory').value;
+        const category = brand === 'foreign' ? 'imported' : document.getElementById('newProdCategory').value;
         const stock = Number(document.getElementById('newProdStock').value || 0);
         const price = Number(document.getElementById('newProdPrice').value || 0);
         const newPrice = Number(document.getElementById('newProdNewPrice').value || 0);
@@ -6162,19 +6224,65 @@
         const image = document.getElementById('newProdImage').value.trim();
         const description = document.getElementById('newProdDescription').value.trim();
 
-        const prodData = { id, code: id, name, brand, category, stock, price, newPrice, consumerPrice: newPrice, buyPrice, image, description };
-        updateLocalProductCache(id, prodData);
+        const categoryMap = {
+            handwash: 'مایع دستشویی',
+            dishwash: 'مایع ظرفشویی',
+            laundry: 'شوینده لباس',
+            cleaners: 'پاک‌کننده و اسپری',
+            sanitary: 'جرم‌گیر و ضدعفونی',
+            cellulosic: 'سلولزی و مصرفی',
+            imported: 'محصولات خارجی',
+            other: 'سایر شوینده‌ها'
+        };
+        const categoryName = brand === 'foreign' ? 'محصولات خارجی' : (categoryMap[category] || 'سایر شوینده‌ها');
+        const brandName = brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه';
+
+        const prodData = { 
+            id, 
+            code: id, 
+            name, 
+            brand, 
+            brandName, 
+            category, 
+            categoryName, 
+            stock, 
+            price, 
+            newPrice, 
+            consumerPrice: newPrice, 
+            buyPrice, 
+            image, 
+            description 
+        };
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const origText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ثبت در دیتابیس سوپابیس...';
+        }
 
         try {
-            await api('/api/admin/products', {
+            const res = await api('/api/admin/products', {
                 method: 'POST',
                 body: JSON.stringify(prodData)
             });
-        } catch(err) {}
-
-        closeAddProductModal();
-        await loadAdminProducts();
-        alert('محصول جدید با موفقیت اضافه گردید.');
+            if (!res || !res.ok) {
+                const errData = await res?.json().catch(() => ({}));
+                throw new Error(errData?.message || 'خطا در ثبت محصول در دیتابیس');
+            }
+            updateLocalProductCache(id, prodData);
+            closeAddProductModal();
+            await loadAdminProducts();
+            alert('محصول جدید با موفقیت در دیتابیس سوپابیس اضافه گردید.');
+        } catch(err) {
+            console.error('Error adding product to Supabase:', err);
+            alert('⚠️ خطا در ایجاد محصول در دیتابیس سوپا:\n' + (err.message || err));
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = origText;
+            }
+        }
     }
 
     async function deleteProductAdmin(id) {
@@ -11182,19 +11290,9 @@
 
     async function loadAdminPackages(force = false) {
         const grid = document.getElementById('adminPackagesListGrid');
-        if (grid && adminPackagesList.length === 0) {
-            grid.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b; grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>در حال بارگذاری لیست پکیج‌ها...</div>';
+        if (grid && (!adminPackagesList || adminPackagesList.length === 0)) {
+            grid.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b; grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>در حال بارگذاری لیست پکیج‌ها از دیتابیس...</div>';
         }
-        try {
-            const localSaved = localStorage.getItem('rafooneh_admin_packages');
-            if (localSaved) {
-                const parsed = JSON.parse(localSaved);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    adminPackagesList = parsed;
-                    updatePackagesCountBadges();
-                }
-            }
-        } catch (e) {}
         try {
             let res = await api('/api/admin/packages?_=' + Date.now());
             if (!res || !res.ok) {
@@ -11202,7 +11300,7 @@
             }
             if (res && res.ok) {
                 const data = await res.json();
-                if (data && Array.isArray(data.packages) && data.packages.length > 0) {
+                if (data && Array.isArray(data.packages)) {
                     adminPackagesList = data.packages;
                     try {
                         localStorage.setItem('rafooneh_admin_packages', JSON.stringify(adminPackagesList));
@@ -11210,7 +11308,16 @@
                 }
             }
         } catch (e) {
-            console.warn('Could not fetch packages from server, using cached list:', e);
+            console.warn('Could not fetch packages from server, using cached list if available:', e);
+            try {
+                const localSaved = localStorage.getItem('rafooneh_admin_packages');
+                if (localSaved) {
+                    const parsed = JSON.parse(localSaved);
+                    if (Array.isArray(parsed)) {
+                        adminPackagesList = parsed;
+                    }
+                }
+            } catch (err) {}
         }
         updatePackagesCountBadges();
         renderAdminPackagesTable();
@@ -11635,7 +11742,7 @@
                             <label style="font-size:0.8rem; color:#334155; font-weight:bold; display:block; margin-bottom:4px;">دامنه اعمال:</label>
                             <select id="batchMultiplierScope" class="form-control" style="font-size:0.88rem;">
                                 <option value="all">کلیه محصولات انبار</option>
-                                <option value="domestic">فقط برندهای رافونه و داخلی</option>
+                                <option value="domestic">فقط محصولات برند رافونه</option>
                                 <option value="foreign">فقط کالاهای خارجی</option>
                             </select>
                         </div>

@@ -4139,7 +4139,7 @@
                             <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
                                 <span class="product-code-badge">کد: ${p.id}</span>
                                 <span style="font-size:0.7rem; padding:2px 8px; border-radius:12px; font-weight:700; ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? 'background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;' : 'background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;'}">
-                                    ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند داخلی')}
+                                    ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند رافونه')}
                                 </span>
                             </div>
                             <div class="product-title" onclick="openProductDetailModal('${p.id}')">${p.name}</div>
@@ -4203,7 +4203,7 @@
             currentDetailProductId = productId;
 
             document.getElementById('detailModalImg').src = p.image;
-            document.getElementById('detailModalCode').innerText = `کد کالا: ${p.id} | برند: ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند داخلی')}`;
+            document.getElementById('detailModalCode').innerText = `کد کالا: ${p.id} | برند: ${p.brand === 'foreign' || (p.brandName && p.brandName.includes('خارجی')) ? (p.brandName || 'خارجی / وارداتی') : (p.brandName || 'برند رافونه')}`;
             document.getElementById('detailModalCategory').innerText = p.categoryName || (p.brand === 'foreign' ? 'کالاهای خارجی' : 'شوینده و بهداشتی');
             document.getElementById('detailModalTitle').innerText = p.name;
             document.getElementById('detailModalDesc').innerText = p.description || 'توضیحات و مشخصات کامل برای این محصول ثبت نشده است.';

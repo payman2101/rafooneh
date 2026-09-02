@@ -182,14 +182,14 @@ function determineBrand(name, rawBrand = '') {
     if (b.includes('خارج') || b.includes('وارد') || bLower.includes('foreign') || bLower.includes('import')) {
       return { id: 'foreign', name: 'کالاهای خارجی' };
     }
-    return { id: 'domestic', name: 'برند داخلی' };
+    return { id: 'rafooneh', name: 'برند رافونه' };
   }
 
   const n = String(name || '').toLowerCase();
   if (n.includes('خارجی') || n.includes('وارداتی') || n.includes('فینیش') || n.includes('پریمیوم') || n.includes('آلمانی') || n.includes('ترک') || n.includes('امپریال') || n.includes('فرانسوی') || n.includes('ایتالیایی')) {
     return { id: 'foreign', name: 'کالاهای خارجی' };
   }
-  return { id: 'domestic', name: 'برند داخلی' };
+  return { id: 'rafooneh', name: 'برند رافونه' };
 }
 
 const categoryDefaultImages = {
