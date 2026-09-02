@@ -4050,7 +4050,16 @@
                 const buttons = container.querySelectorAll('.category-btn');
                 buttons.forEach(btn => {
                     const cat = btn.getAttribute('data-cat') || 'all';
-                    const label = categoryLabels[cat] || 'سایر';
+                    if (cat === 'packages') {
+                        const pkgCount = (typeof packagesList !== 'undefined' && Array.isArray(packagesList)) ? packagesList.length : 0;
+                        btn.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> پکیج‌های ویژه ${pkgCount > 0 ? `<span class="cat-count-badge">(${pkgCount.toLocaleString('fa-IR')} پکیج)</span>` : ''}`;
+                        return;
+                    }
+                    const label = categoryLabels[cat];
+                    if (!label) {
+                        btn.style.display = 'none';
+                        return;
+                    }
                     const count = counts[cat] || 0;
                     btn.innerHTML = `${label} <span class="cat-count-badge">(${count.toLocaleString('fa-IR')} کالا)</span>`;
                 });
@@ -5241,8 +5250,7 @@
                 'sanitary': 'جرم‌گیر و سرویس',
                 'laundry': 'شوینده لباس',
                 'cellulosic': 'سلولزی و کیسه',
-                'imported': 'محصولات خارجی',
-                'other': 'سایر اقلام'
+                'imported': 'محصولات خارجی'
             };
             return catMap[cat] || 'شوینده و بهداشتی';
         }

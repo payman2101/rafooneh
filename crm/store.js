@@ -1251,8 +1251,7 @@ export async function updateProduct(id, updates) {
     cleaners: 'پاک‌کننده و اسپری',
     sanitary: 'جرم‌گیر و ضدعفونی',
     cellulosic: 'سلولزی و مصرفی',
-    imported: 'محصولات خارجی',
-    other: 'سایر شوینده‌ها'
+    imported: 'محصولات خارجی'
   };
 
   const category = brand === 'foreign' ? 'imported' : (updates.category || list[idx].category || 'cleaners');

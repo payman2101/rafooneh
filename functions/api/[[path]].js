@@ -2446,8 +2446,7 @@ export async function onRequest(context) {
         cleaners: 'پاک‌کننده و اسپری',
         sanitary: 'جرم‌گیر و ضدعفونی',
         cellulosic: 'سلولزی و مصرفی',
-        imported: 'محصولات خارجی',
-        other: 'سایر شوینده‌ها'
+        imported: 'محصولات خارجی'
       };
       const brand = body.brand || existing.brand || 'rafooneh';
       const brandName = brand === 'foreign' ? 'محصولات خارجی' : 'برند رافونه';
