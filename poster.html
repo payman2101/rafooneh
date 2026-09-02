@@ -437,7 +437,7 @@
 
     <!-- Ready-to-use Marketing Message Section -->
     <div class="message-section">
-        <h2><i class="fa-solid fa-comments"></i> متن پیام آماده جهت ارسال در واتساپ و تلگرام</h2>
+        <h2><i class="fa-solid fa-comments"></i> ۱. متن پیام اعلام افتتاح و سفارش آنلاین</h2>
         <div class="message-box" id="promoMessageText">✨ *فروشگاه آنلاین پخش بهداشتی و شوینده پیمان افتتاح شد!* ✨
 
 🔹 خرید مستقیم و بی‌واسطه انواع شوینده و محصولات بهداشتی با قیمت درب کارخانه
@@ -452,14 +452,46 @@
 در خدمت شما عزیزان هستیم! 💚🌸</div>
 
         <div class="message-actions">
-            <button class="btn btn-accent" onclick="copyPromoText()">
-                <i class="fa-solid fa-copy"></i> کپی کردن متن پیام
+            <button class="btn btn-accent" onclick="copyPromoText('promoMessageText')">
+                <i class="fa-solid fa-copy"></i> کپی کردن متن
             </button>
-            <button class="btn btn-whatsapp" onclick="shareToWhatsApp('direct')">
-                <i class="fa-brands fa-whatsapp"></i> ارسال مستقیم به واتساپ
+            <button class="btn btn-whatsapp" onclick="shareToWhatsApp('promoMessageText')">
+                <i class="fa-brands fa-whatsapp"></i> ارسال در واتساپ
             </button>
-            <button class="btn btn-telegram" onclick="shareToTelegram()">
-                <i class="fa-brands fa-telegram"></i> ارسال مستقیم به تلگرام
+            <button class="btn btn-telegram" onclick="shareToTelegram('promoMessageText')">
+                <i class="fa-brands fa-telegram"></i> ارسال در تلگرام
+            </button>
+        </div>
+    </div>
+
+    <!-- Membership Benefits Message Section -->
+    <div class="message-section">
+        <h2><i class="fa-solid fa-user-plus" style="color: #0284c7;"></i> ۲. متن دعوت به عضویت و مزایای حساب کاربری</h2>
+        <div class="message-box" id="memberBenefitText">🌟 *چرا در فروشگاه پخش بهداشتی پیمان عضو شویم؟* 🌟
+
+همراهان گرامی، با عضویت رایگان (تنها با شماره موبایل) در سایت پخش بهداشتی پیمان، از مزایای ویژه زیر بهره‌مند شوید:
+
+🎁 *تخفیف ویژه و اشانتیون سفارش اول*: هدیه ویژه برای اولین خرید شما
+⚡ *ثبت سفارش فوری در ۳۰ ثانیه*: بدون نیاز به تایپ مجدد آدرس و اطلاعات در خریدهای بعدی
+📦 *پیگیری لحظه‌ای وضعیت سفارش*: مشاهده مرحله به مرحله آماده‌سازی و ارسال بسته
+🏷️ *دسترسی به تخفیف‌های طلایی و قیمت‌های عمده*: ویژه اعضای باشگاه مشتریان
+🧾 *مشاهده سوابق و فاکتورهای رسمی*: دسترسی همیشگی به ریز خریدها
+📱 *نصب آسان اپلیکیشن اختصاصی (PWA)*: دسترسی سریع از صفحه اصلی گوشی شما بدون نیاز به دانلود
+
+🔗 *همین حالا در کمتر از ۱ دقیقه عضو شوید:*
+🌐 [SHOP_URL]
+
+✨ *پخش بهداشتی پیمان؛ کیفیت عالی، قیمت مناسب، تحویل فوری* 💚</div>
+
+        <div class="message-actions">
+            <button class="btn btn-accent" onclick="copyPromoText('memberBenefitText')">
+                <i class="fa-solid fa-copy"></i> کپی کردن متن دعوت به عضویت
+            </button>
+            <button class="btn btn-whatsapp" onclick="shareToWhatsApp('memberBenefitText')">
+                <i class="fa-brands fa-whatsapp"></i> ارسال در واتساپ
+            </button>
+            <button class="btn btn-telegram" onclick="shareToTelegram('memberBenefitText')">
+                <i class="fa-brands fa-telegram"></i> ارسال در تلگرام
             </button>
         </div>
     </div>
@@ -475,10 +507,12 @@
 
     // Replace placeholder with actual site URL
     document.addEventListener('DOMContentLoaded', () => {
-        const promoBox = document.getElementById('promoMessageText');
-        if (promoBox) {
-            promoBox.innerText = promoBox.innerText.replace('[SHOP_URL]', currentOrigin);
-        }
+        ['promoMessageText', 'memberBenefitText'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerText = el.innerText.replace(/\[SHOP_URL\]/g, currentOrigin);
+            }
+        });
 
         // Generate QR Codes
         try {
@@ -514,8 +548,9 @@
         }, 3000);
     }
 
-    function copyPromoText() {
-        const text = document.getElementById('promoMessageText').innerText;
+    function copyPromoText(elementId = 'promoMessageText') {
+        const el = document.getElementById(elementId);
+        const text = el ? el.innerText : '';
         navigator.clipboard.writeText(text).then(() => {
             showToast('متن پیام با موفقیت در کلیپ‌بورد کپی شد!');
         }).catch(() => {
@@ -530,14 +565,16 @@
         });
     }
 
-    function shareToWhatsApp() {
-        const text = encodeURIComponent(document.getElementById('promoMessageText').innerText);
+    function shareToWhatsApp(elementId = 'promoMessageText') {
+        const el = document.getElementById(elementId);
+        const text = encodeURIComponent(el ? el.innerText : '');
         window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
     }
 
-    function shareToTelegram() {
+    function shareToTelegram(elementId = 'promoMessageText') {
         const url = encodeURIComponent(currentOrigin);
-        const text = encodeURIComponent(document.getElementById('promoMessageText').innerText);
+        const el = document.getElementById(elementId);
+        const text = encodeURIComponent(el ? el.innerText : '');
         window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
     }
 
