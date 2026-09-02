@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>پوستر و کیت تبلیغاتی | پخش بهداشتی پیمان</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #00897b;
+            --primary-dark: #00695c;
+            --primary-light: #e0f2f1;
+            --accent: #ff9800;
+            --accent-dark: #f57c00;
+            --whatsapp: #25D366;
+            --telegram: #229ED9;
+            --bg: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 10px 30px rgba(0,0,0,0.07);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 24px 16px 60px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 28px;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 137, 123, 0.25);
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header p {
+            font-size: 0.95rem;
+            opacity: 0.92;
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-light {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-light:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .btn-whatsapp {
+            background: var(--whatsapp);
+            color: white;
+        }
+        .btn-whatsapp:hover {
+            background: #1eb956;
+        }
+
+        .btn-telegram {
+            background: var(--telegram);
+            color: white;
+        }
+        .btn-telegram:hover {
+            background: #1b8ec3;
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-accent:hover {
+            background: var(--accent-dark);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-dark);
+            border: 1.5px solid var(--primary);
+        }
+        .btn-outline:hover {
+            background: var(--primary-light);
+        }
+
+        /* Grid */
+        .poster-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 36px;
+        }
+
+        @media (max-width: 840px) {
+            .poster-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .poster-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .poster-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .poster-card-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        /* Poster Canvas Container */
+        .poster-preview-box {
+            position: relative;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .poster-img-wrapper {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .poster-img-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+        }
+
+        .poster-overlay-footer {
+            background: linear-gradient(180deg, rgba(0, 105, 92, 0.95), rgba(0, 77, 64, 1));
+            color: white;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .poster-overlay-info {
+            flex: 1;
+        }
+
+        .poster-brand-name {
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .poster-tagline {
+            font-size: 0.8rem;
+            color: #b2dfdb;
+            line-height: 1.4;
+        }
+
+        .poster-overlay-qr {
+            background: white;
+            padding: 6px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .poster-overlay-qr img, .poster-overlay-qr canvas {
+            display: block;
+            width: 54px;
+            height: 54px;
+        }
+
+        .poster-footer-bar {
+            background: #ff9800;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        /* Message Box Section */
+        .message-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+
+        .message-section h2 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message-box {
+            background: #f8fafc;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 14px;
+            padding: 18px;
+            font-size: 0.95rem;
+            line-height: 1.9;
+            color: #334155;
+            white-space: pre-wrap;
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            opacity: 0;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast i {
+            color: #4ade80;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1><i class="fa-solid fa-bullhorn"></i> پوستر و کیت تبلیغاتی پخش بهداشتی پیمان</h1>
+        <p>پوسترها و متن‌های آماده جهت اشتراک‌گذاری در استوری اینستاگرام، وضعیت و گروه‌های واتساپ و کانال‌های تلگرام با دسترسی سریع مشتریان به فروشگاه آنلاین</p>
+        <div class="actions-bar">
+            <a href="/" class="btn btn-light"><i class="fa-solid fa-store"></i> ورود به فروشگاه</a>
+            <a href="/admin.html" class="btn btn-light"><i class="fa-solid fa-chart-line"></i> پنل مدیریت (CRM)</a>
+        </div>
+    </header>
+
+    <!-- Poster Grid -->
+    <div class="poster-grid">
+        <!-- Vertical Poster (Story & WhatsApp Status) -->
+        <div class="poster-card">
+            <div class="poster-card-header">
+                <div class="poster-card-title">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <span>پوستر عمودی (استوری و وضعیت واتساپ)</span>
+                </div>
+                <span class="badge">مناسب Story و Status</span>
+            </div>
+
+            <div id="verticalPosterCanvas" class="poster-preview-box">
+                <div class="poster-img-wrapper">
+                    <img src="/images/promo-poster-vertical.jpg" alt="پوستر تبلیغاتی پخش بهداشتی پیمان" id="verticalImg">
+                </div>
+                <div class="poster-overlay-footer">
+                    <div class="poster-overlay-info">
+                        <div class="poster-brand-name">پخش بهداشتی و شوینده پیمان</div>
+                        <div class="poster-tagline">
+                            <i class="fa-solid fa-check-circle" style="color:#4ade80;"></i> تحویل فوری درب منزل | خرید با قیمت عمده<br>
+                            <i class="fa-solid fa-globe" style="color:#38bdf8;"></i> سفارش آنلاین و مشاهده قیمت‌ها
+                        </div>
+                    </div>
+                    <div class="poster-overlay-qr" id="verticalQrCode" title="اسکن جهت ورود سریع به فروشگاه"></div>
+                </div>
+                <div class="poster-footer-bar">
+                    <span><i class="fa-brands fa-whatsapp"></i> سفارش واتساپ</span>
+                    <span>•</span>
+                    <span><i class="fa-solid fa-truck-fast"></i> ارسال سریع</span>
+                    <span>•</span>
+                    <span><i class="fa-solid fa-shield-check"></i> تضمین اصالت کالا</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-accent" style="flex:1;" onclick="downloadPoster('verticalPosterCanvas', 'پوستر_پخش_بهداشتی_پیمان_عمودی.png')">
+                    <i class="fa-solid fa-download"></i> دانلود پوستر با کیفیت بالا
+                </button>
+                <button class="btn btn-whatsapp" onclick="shareToWhatsApp('story')">
+                    <i class="fa-brands fa-whatsapp"></i> ارسال در واتساپ
+                </button>
+            </div>
+        </div>
+
+        <!-- Square Banner (Telegram & Instagram Feed) -->
+        <div class="poster-card">
+            <div class="poster-card-header">
+                <div class="poster-card-title">
+                    <i class="fa-solid fa-square"></i>
+                    <span>بنر مربعی (پست تلگرام و اینستاگرام)</span>
+                </div>
+                <span class="badge">مناسب کانال تلگرام و پست</span>
+            </div>
+
+            <div id="squarePosterCanvas" class="poster-preview-box">
+                <div class="poster-img-wrapper">
+                    <img src="/images/promo-banner-square.jpg" alt="بنر تبلیغاتی پخش بهداشتی پیمان" id="squareImg">
+                </div>
+                <div class="poster-overlay-footer">
+                    <div class="poster-overlay-info">
+                        <div class="poster-brand-name">پخش مستقیم شوینده و بهداشتی پیمان</div>
+                        <div class="poster-tagline">
+                            <i class="fa-solid fa-sparkles" style="color:#facc15;"></i> تمامی محصولات رافونه و برندهای معتبر<br>
+                            <i class="fa-solid fa-box-open" style="color:#38bdf8;"></i> بسته‌های اقتصادی و تخفیف ویژه افتتاحیه
+                        </div>
+                    </div>
+                    <div class="poster-overlay-qr" id="squareQrCode" title="اسکن جهت ورود سریع به فروشگاه"></div>
+                </div>
+                <div class="poster-footer-bar">
+                    <span><i class="fa-solid fa-basket-shopping"></i> سفارش آسان و بی‌واسطه درب منزل</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-accent" style="flex:1;" onclick="downloadPoster('squarePosterCanvas', 'بنر_پخش_بهداشتی_پیمان_مربعی.png')">
+                    <i class="fa-solid fa-download"></i> دانلود بنر با کیفیت بالا
+                </button>
+                <button class="btn btn-telegram" onclick="shareToTelegram()">
+                    <i class="fa-brands fa-telegram"></i> ارسال در تلگرام
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ready-to-use Marketing Message Section -->
+    <div class="message-section">
+        <h2><i class="fa-solid fa-comments"></i> متن پیام آماده جهت ارسال در واتساپ و تلگرام</h2>
+        <div class="message-box" id="promoMessageText">✨ *فروشگاه آنلاین پخش بهداشتی و شوینده پیمان افتتاح شد!* ✨
+
+🔹 خرید مستقیم و بی‌واسطه انواع شوینده و محصولات بهداشتی با قیمت درب کارخانه
+🔹 تنوع کامل محصولات باکیفیت رافونه و برترین برندهای روز
+🔹 *تحویل سریع و راحت درب منزل*
+🔹 بسته‌های اقتصادی تخفیف‌دار و هدایای ویژه مشتریان
+
+🛒 *جهت مشاهده قیمت‌ها و ثبت سریع سفارش آنلاین روی لینک زیر بزنید:*
+🌐 [SHOP_URL]
+
+📞 *پشتیبانی و سفارش تلفنی / واتساپ:*
+در خدمت شما عزیزان هستیم! 💚🌸</div>
+
+        <div class="message-actions">
+            <button class="btn btn-accent" onclick="copyPromoText()">
+                <i class="fa-solid fa-copy"></i> کپی کردن متن پیام
+            </button>
+            <button class="btn btn-whatsapp" onclick="shareToWhatsApp('direct')">
+                <i class="fa-brands fa-whatsapp"></i> ارسال مستقیم به واتساپ
+            </button>
+            <button class="btn btn-telegram" onclick="shareToTelegram()">
+                <i class="fa-brands fa-telegram"></i> ارسال مستقیم به تلگرام
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastMsg">متن با موفقیت کپی شد!</span>
+</div>
+
+<script>
+    const currentOrigin = window.location.origin;
+
+    // Replace placeholder with actual site URL
+    document.addEventListener('DOMContentLoaded', () => {
+        const promoBox = document.getElementById('promoMessageText');
+        if (promoBox) {
+            promoBox.innerText = promoBox.innerText.replace('[SHOP_URL]', currentOrigin);
+        }
+
+        // Generate QR Codes
+        try {
+            new QRCode(document.getElementById("verticalQrCode"), {
+                text: currentOrigin,
+                width: 54,
+                height: 54,
+                colorDark: "#004d40",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+
+            new QRCode(document.getElementById("squareQrCode"), {
+                text: currentOrigin,
+                width: 54,
+                height: 54,
+                colorDark: "#004d40",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        } catch (e) {
+            console.error("QR Code generation error:", e);
+        }
+    });
+
+    function showToast(text) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+        toastMsg.innerText = text;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    function copyPromoText() {
+        const text = document.getElementById('promoMessageText').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('متن پیام با موفقیت در کلیپ‌بورد کپی شد!');
+        }).catch(() => {
+            // fallback
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('متن پیام کپی شد!');
+        });
+    }
+
+    function shareToWhatsApp() {
+        const text = encodeURIComponent(document.getElementById('promoMessageText').innerText);
+        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    }
+
+    function shareToTelegram() {
+        const url = encodeURIComponent(currentOrigin);
+        const text = encodeURIComponent(document.getElementById('promoMessageText').innerText);
+        window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
+    }
+
+    function downloadPoster(elementId, filename) {
+        showToast('در حال آماده‌سازی و دانلود پوستر با کیفیت بالا...');
+        const element = document.getElementById(elementId);
+        
+        html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff'
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('پوستر با موفقیت دانلود شد!');
+        }).catch(err => {
+            console.error('Error generating poster:', err);
+            showToast('خطا در دانلود پوستر. لطفا تصویر را مستقیماً ذخیره کنید.');
+        });
+    }
+</script>
+
+</body>
+</html>
