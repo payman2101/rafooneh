@@ -4142,11 +4142,22 @@
 
             if (searchQuery) {
                 filtered = filtered.filter(p => 
-                    String(p.id).includes(searchQuery) || 
+                    String(p.id || '').includes(searchQuery) || 
+                    String(p.code || '').includes(searchQuery) ||
                     p.name.toLowerCase().includes(searchQuery) ||
                     (p.categoryName && p.categoryName.toLowerCase().includes(searchQuery))
                 );
             }
+
+            // Sort products by code ascending (from low to high)
+            filtered.sort((a, b) => {
+                const codeA = Number(a.code || a.id || 0);
+                const codeB = Number(b.code || b.id || 0);
+                if (!isNaN(codeA) && !isNaN(codeB) && codeA !== 0 && codeB !== 0) {
+                    return codeA - codeB;
+                }
+                return String(a.code || a.id || '').localeCompare(String(b.code || b.id || ''), undefined, { numeric: true });
+            });
 
             if (filtered.length === 0) {
                 grid.innerHTML = `
