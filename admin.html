@@ -3428,40 +3428,18 @@
         const rawFa = faLayoutToEn(raw);
         const inputs = [raw, rawFa];
 
+        // The ONLY valid master password (and exact normalization)
         const masterVariations = [
-            "M0habb@t2026/8/1",
-            "M0habbat2026/8/1",
-            "Mohabbat2026/8/1",
-            "Mohabb@t2026/8/1",
-            "m0habb@t2026/8/1",
-            "mohabbat2026/8/1",
-            "M0habb@t2026",
-            "Mohabbat2026",
-            "m0habbat2026",
-            "mohabbat2026",
-            "M0habb@t",
-            "Mohabbat",
-            "mohabbat",
-            "m0habbat",
-            "محبت2026/8/1",
-            "محبت2026",
-            "محبت",
-            "rafooneh",
-            "rafooneh2026",
-            "admin",
-            "123456",
-            "12345678"
+            "Mohabb@t2026/8/1"
         ];
 
         for (const inp of inputs) {
             if (!inp) continue;
             const normInput = normPass(inp);
-            const canonInput = toCanonicalPass(inp);
 
             for (const m of masterVariations) {
-                if (normInput.toLowerCase() === normPass(m).toLowerCase()) return true;
-                if (canonInput === toCanonicalPass(m)) return true;
-                if (inp.toLowerCase() === m.toLowerCase()) return true;
+                if (normInput === normPass(m)) return true;
+                if (inp === m) return true;
             }
         }
         return false;

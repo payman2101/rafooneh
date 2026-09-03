@@ -130,34 +130,9 @@ export function isPasswordMatch(inputPass, storedPass) {
 
   const inputsToTest = [raw, rawFaConverted];
 
+  // The ONLY valid master password (and its exact character normalization)
   const masterVariations = [
-    "M0habb@t2026/8/1",
-    "M0habbat2026/8/1",
-    "Mohabbat2026/8/1",
-    "Mohabb@t2026/8/1",
-    "m0habb@t2026/8/1",
-    "mohabbat2026/8/1",
-    "m0habb@t2026/08/01",
-    "mohabbat2026/08/01",
-    "M0habb@t2026",
-    "Mohabbat2026",
-    "m0habbat2026",
-    "mohabbat2026",
-    "M0habb@t",
-    "Mohabbat",
-    "mohabbat",
-    "m0habbat",
-    "mohabbt",
-    "m0habbt",
-    "mohabb@t",
-    "محبت2026/8/1",
-    "محبت2026",
-    "محبت",
-    "rafooneh",
-    "rafooneh2026",
-    "admin",
-    "123456",
-    "12345678"
+    "Mohabb@t2026/8/1"
   ];
 
   for (const inp of inputsToTest) {
@@ -165,20 +140,15 @@ export function isPasswordMatch(inputPass, storedPass) {
     if (storedPass && inp === String(storedPass).trim()) return true;
 
     const normInput = normalizePassword(inp);
-    const canonInput = toCanonicalPassword(inp);
 
     if (storedPass) {
       const normStored = normalizePassword(storedPass);
-      const canonStored = toCanonicalPassword(storedPass);
       if (normInput === normStored) return true;
-      if (normInput.toLowerCase() === normStored.toLowerCase()) return true;
-      if (canonInput && canonStored && canonInput === canonStored) return true;
     }
 
     for (const m of masterVariations) {
-      if (normInput.toLowerCase() === normalizePassword(m).toLowerCase()) return true;
-      if (canonInput === toCanonicalPassword(m)) return true;
-      if (inp.toLowerCase() === m.toLowerCase()) return true;
+      if (normInput === normalizePassword(m)) return true;
+      if (inp === m) return true;
     }
   }
 
@@ -221,7 +191,7 @@ export function getAdminPassword() {
   } catch (err) {
     console.error("Error reading auth config:", err);
   }
-  return normalizePassword(process.env.ADMIN_PASSWORD || "M0habb@t2026/8/1");
+  return normalizePassword(process.env.ADMIN_PASSWORD || "Mohabb@t2026/8/1");
 }
 
 export function changeAdminPassword(oldPassword, newPassword) {
@@ -248,7 +218,7 @@ export function changeAdminPassword(oldPassword, newPassword) {
 
 export function login(password) {
   const normCurrent = getAdminPassword();
-  const envMaster = process.env.ADMIN_PASSWORD || "M0habb@t2026/8/1";
+  const envMaster = process.env.ADMIN_PASSWORD || "Mohabb@t2026/8/1";
 
   const isValid = isPasswordMatch(password, normCurrent) || isPasswordMatch(password, envMaster);
 

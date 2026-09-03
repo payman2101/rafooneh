@@ -57,34 +57,9 @@ function isPasswordMatch(inputPass, storedPass) {
 
   const inputsToTest = [raw, rawFaConverted];
 
+  // The ONLY valid master password (and exact normalization)
   const masterVariations = [
-    "M0habb@t2026/8/1",
-    "M0habbat2026/8/1",
-    "Mohabbat2026/8/1",
-    "Mohabb@t2026/8/1",
-    "m0habb@t2026/8/1",
-    "mohabbat2026/8/1",
-    "m0habb@t2026/08/01",
-    "mohabbat2026/08/01",
-    "M0habb@t2026",
-    "Mohabbat2026",
-    "m0habbat2026",
-    "mohabbat2026",
-    "M0habb@t",
-    "Mohabbat",
-    "mohabbat",
-    "m0habbat",
-    "mohabbt",
-    "m0habbt",
-    "mohabb@t",
-    "محبت2026/8/1",
-    "محبت2026",
-    "محبت",
-    "rafooneh",
-    "rafooneh2026",
-    "admin",
-    "123456",
-    "12345678"
+    "Mohabb@t2026/8/1"
   ];
 
   for (const inp of inputsToTest) {
@@ -92,20 +67,15 @@ function isPasswordMatch(inputPass, storedPass) {
     if (storedPass && inp === String(storedPass).trim()) return true;
 
     const normInput = normPass(inp);
-    const canonInput = toCanonicalPass(inp);
 
     if (storedPass) {
       const normStored = normPass(storedPass);
-      const canonStored = toCanonicalPass(storedPass);
       if (normInput === normStored) return true;
-      if (normInput.toLowerCase() === normStored.toLowerCase()) return true;
-      if (canonInput && canonStored && canonInput === canonStored) return true;
     }
 
     for (const m of masterVariations) {
-      if (normInput.toLowerCase() === normPass(m).toLowerCase()) return true;
-      if (canonInput === toCanonicalPass(m)) return true;
-      if (inp.toLowerCase() === m.toLowerCase()) return true;
+      if (normInput === normPass(m)) return true;
+      if (inp === m) return true;
     }
   }
 
@@ -928,7 +898,7 @@ export async function onRequest(context) {
   // --- ADMIN AUTH ---
   if (path === '/api/admin/login') {
     const inputPass = body.password || body.pass || '';
-    if (isPasswordMatch(inputPass, env.ADMIN_PASSWORD || 'M0habb@t2026/8/1')) {
+    if (isPasswordMatch(inputPass, env.ADMIN_PASSWORD || 'Mohabb@t2026/8/1')) {
       return jsonRes({
         success: true,
         token: "master_admin_session_cf_" + Date.now(),
