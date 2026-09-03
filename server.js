@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import fileUpload from 'express-fileupload';
 import fs from 'fs';
 import path from 'path';
@@ -139,6 +140,7 @@ app.get(['/admin', '/admin.html'], (req, res, next) => {
   next();
 });
 
+app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(fileUpload());
@@ -152,12 +154,42 @@ app.use(async (req, res, next) => {
   await ensureFirestoreLoaded().catch(() => {});
   next();
 });
+
+// Technical SEO: robots.txt
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /api/
+Sitemap: https://paymancare.ir/sitemap.xml
+`);
+});
+
+// Technical SEO: sitemap.xml
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml');
+  const now = new Date().toISOString().split('T')[0];
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://paymancare.ir/</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`);
+});
+
 app.use(express.static(appDir, {
+  maxAge: '1y',
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html') || filePath.endsWith('sw.js') || filePath.endsWith('manifest.json')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+    } else if (/\.(webp|jpg|jpeg|png|svg|ico|woff2|woff|ttf|css|js)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
   }
 }));
