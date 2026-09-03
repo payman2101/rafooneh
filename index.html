@@ -2834,6 +2834,42 @@
             }
         }
 
+        /* Storefront Packages Horizontal Slider for Mobile */
+        .packages-slider-track {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .packages-slider-track {
+                display: flex !important;
+                overflow-x: auto !important;
+                scroll-snap-type: x mandatory !important;
+                -webkit-overflow-scrolling: touch !important;
+                gap: 12px !important;
+                padding-bottom: 6px !important;
+                scrollbar-width: thin;
+                scrollbar-color: #f472b6 #fdf2f8;
+            }
+            .packages-slider-track::-webkit-scrollbar {
+                height: 4px;
+            }
+            .packages-slider-track::-webkit-scrollbar-track {
+                background: #fdf2f8;
+                border-radius: 4px;
+            }
+            .packages-slider-track::-webkit-scrollbar-thumb {
+                background: #f472b6;
+                border-radius: 4px;
+            }
+            .package-slide-card {
+                flex: 0 0 270px !important;
+                width: 270px !important;
+                scroll-snap-align: start !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -8075,7 +8111,7 @@
                     </span>
                 </div>
 
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+                <div class="packages-slider-track">
                     ${storefrontPackagesList.map(pkg => {
                         const original = Number(pkg.originalPrice) || 0;
                         const price = Number(pkg.packagePrice) || 0;
@@ -8084,7 +8120,7 @@
                         const items = Array.isArray(pkg.items) ? pkg.items : [];
 
                         return `
-                            <div style="background:#ffffff; border:1px solid #fbcfe8; border-radius:16px; padding:14px 16px; display:flex; flex-direction:column; justify-content:space-between; transition:transform .2s; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                            <div class="package-slide-card" style="background:#ffffff; border:1px solid #fbcfe8; border-radius:16px; padding:14px 16px; display:flex; flex-direction:column; justify-content:space-between; transition:transform .2s; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
                                 <div>
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                                         <span style="background:${pkg.badgeColor || '#059669'}; color:#fff; padding:2px 10px; border-radius:12px; font-size:0.7rem; font-weight:bold;">
@@ -8092,22 +8128,22 @@
                                         </span>
                                         ${discountPct > 0 ? `<span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:8px; font-size:0.7rem; font-weight:800;">${discountPct}٪ تخفیف</span>` : ''}
                                     </div>
-                                    <h4 style="margin:0 0 4px 0; font-size:0.95rem; font-weight:bold; color:#0f172a;">${pkg.title}</h4>
-                                    ${pkg.subtitle ? `<p style="margin:0 0 8px 0; font-size:0.75rem; color:#64748b; line-height:1.4;">${pkg.subtitle}</p>` : ''}
+                                    <h4 style="margin:0 0 4px 0; font-size:0.95rem; font-weight:bold; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pkg.title}">${pkg.title}</h4>
+                                    ${pkg.subtitle ? `<p style="margin:0 0 8px 0; font-size:0.75rem; color:#64748b; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${pkg.subtitle}</p>` : ''}
 
                                     <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:10px; padding:8px 10px; margin-bottom:10px; font-size:0.75rem;">
                                         <div style="color:#475569; font-weight:bold; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
                                             <span>محتوای پکیج (${items.length} قلم):</span>
                                         </div>
                                         <ul style="margin:0; padding-right:16px; color:#334155; display:flex; flex-direction:column; gap:3px;">
-                                            ${items.slice(0, 3).map(it => `<li>${Number(it.qty) || 1}× ${escapeHtml(it.name)}</li>`).join('')}
-                                            ${items.length > 3 ? `<li style="color:#64748b; list-style-type:none; margin-top:2px;">+ ${items.length - 3} قلم دیگر...</li>` : ''}
+                                            ${items.slice(0, 2).map(it => `<li style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${Number(it.qty) || 1}× ${escapeHtml(it.name)}</li>`).join('')}
+                                            ${items.length > 2 ? `<li style="color:#64748b; list-style-type:none; margin-top:2px; font-size:0.72rem;">+ ${items.length - 2} قلم دیگر...</li>` : ''}
                                         </ul>
                                     </div>
 
                                     ${pkg.bonusItem ? `
-                                        <div style="background:#fdf2f8; border:1px dashed #fbcfe8; border-radius:8px; padding:4px 8px; font-size:0.72rem; color:#be185d; font-weight:bold; margin-bottom:10px; display:flex; align-items:center; gap:5px;">
-                                            <i class="fa-solid fa-gift"></i> هدیه پکیج: ${pkg.bonusItem}
+                                        <div style="background:#fdf2f8; border:1px dashed #fbcfe8; border-radius:8px; padding:4px 8px; font-size:0.72rem; color:#be185d; font-weight:bold; margin-bottom:10px; display:flex; align-items:center; gap:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                            <i class="fa-solid fa-gift"></i> هدیه: ${pkg.bonusItem}
                                         </div>
                                     ` : ''}
                                 </div>
@@ -8116,12 +8152,12 @@
                                     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px;">
                                         <div>
                                             ${original > price ? `<div style="font-size:0.75rem; color:#94a3b8; text-decoration:line-through;">${original.toLocaleString('fa-IR')} ت</div>` : ''}
-                                            <div style="font-size:1.1rem; font-weight:900; color:#db2777;">${price.toLocaleString('fa-IR')} <span style="font-size:0.75rem; color:#64748b; font-weight:normal;">تومان</span></div>
+                                            <div style="font-size:1.05rem; font-weight:900; color:#db2777;">${price.toLocaleString('fa-IR')} <span style="font-size:0.72rem; color:#64748b; font-weight:normal;">تومان</span></div>
                                         </div>
                                     </div>
 
-                                    <button type="button" onclick="addStorefrontPackageToCart('${pkg.id}')" style="width:100%; background:linear-gradient(135deg, #db2777, #be185d); color:#ffffff; border:none; padding:9px 12px; border-radius:12px; font-size:0.85rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 3px 10px rgba(219,39,119,0.25);">
-                                        <i class="fa-solid fa-cart-plus"></i> افزودن کل پکیج به سبد
+                                    <button type="button" onclick="addStorefrontPackageToCart('${pkg.id}')" style="width:100%; background:linear-gradient(135deg, #db2777, #be185d); color:#ffffff; border:none; padding:8px 12px; border-radius:12px; font-size:0.82rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(219,39,119,0.25);">
+                                        <i class="fa-solid fa-cart-plus"></i> افزودن پکیج به سبد
                                     </button>
                                 </div>
                             </div>
