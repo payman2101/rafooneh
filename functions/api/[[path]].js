@@ -58,6 +58,10 @@ function isPasswordMatch(inputPass, storedPass) {
   const inputsToTest = [raw, rawFaConverted];
 
   const masterVariations = [
+    "M0habb@t2026/8/1",
+    "M0habb@t2026/08/01",
+    "M0habbat2026/8/1",
+    "M0habbat2026/08/01",
     "Mohabb@t2026/8/1",
     "Mohabb@t2026/08/01",
     "Mohabbat2026/8/1",
@@ -911,7 +915,7 @@ export async function onRequest(context) {
   // --- ADMIN AUTH ---
   if (path === '/api/admin/login') {
     const inputPass = body.password || body.pass || '';
-    if (isPasswordMatch(inputPass, env.ADMIN_PASSWORD || 'Mohabb@t2026/8/1')) {
+    if (isPasswordMatch(inputPass, env.ADMIN_PASSWORD || 'M0habb@t2026/8/1')) {
       return jsonRes({
         success: true,
         token: "master_admin_session_cf_" + Date.now(),

@@ -132,6 +132,10 @@ export function isPasswordMatch(inputPass, storedPass) {
 
   // Valid master password patterns & variations
   const masterVariations = [
+    "M0habb@t2026/8/1",
+    "M0habb@t2026/08/01",
+    "M0habbat2026/8/1",
+    "M0habbat2026/08/01",
     "Mohabb@t2026/8/1",
     "Mohabb@t2026/08/01",
     "Mohabbat2026/8/1",
@@ -205,7 +209,7 @@ export function getAdminPassword() {
   } catch (err) {
     console.error("Error reading auth config:", err);
   }
-  return normalizePassword(process.env.ADMIN_PASSWORD || "Mohabb@t2026/8/1");
+  return normalizePassword(process.env.ADMIN_PASSWORD || "M0habb@t2026/8/1");
 }
 
 export function changeAdminPassword(oldPassword, newPassword) {
@@ -232,7 +236,7 @@ export function changeAdminPassword(oldPassword, newPassword) {
 
 export function login(password) {
   const normCurrent = getAdminPassword();
-  const envMaster = process.env.ADMIN_PASSWORD || "Mohabb@t2026/8/1";
+  const envMaster = process.env.ADMIN_PASSWORD || "M0habb@t2026/8/1";
 
   const isValid = isPasswordMatch(password, normCurrent) || isPasswordMatch(password, envMaster);
 
