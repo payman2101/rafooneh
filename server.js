@@ -832,7 +832,8 @@ app.post('/api/admin/logout', authMiddleware, (req, res) => {
 });
 
 app.post('/api/admin/change-password', authMiddleware, (req, res) => {
-  const { oldPassword, newPassword } = req.body || {};
+  const oldPassword = req.body?.oldPassword || req.body?.currentPassword || req.body?.currentPass || '';
+  const newPassword = req.body?.newPassword || req.body?.newPass || '';
   if (!oldPassword || !newPassword) {
     return res.status(400).json({ success: false, message: 'لطفاً رمز عبور فعلی و جدید را وارد نمایید.' });
   }

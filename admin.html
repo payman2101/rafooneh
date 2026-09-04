@@ -5235,51 +5235,95 @@
 
     function openChangePasswordModal() {
         const modal = document.getElementById('changePasswordModal');
-        if (modal) modal.style.display = 'flex';
+        if (modal) {
+            modal.style.display = 'flex';
+            const oldInp = document.getElementById('oldPasswordInput');
+            const newInp = document.getElementById('newPasswordInput');
+            const confInp = document.getElementById('confirmPasswordInput');
+            const statusEl = document.getElementById('changePasswordStatus');
+            if (oldInp) oldInp.value = '';
+            if (newInp) newInp.value = '';
+            if (confInp) confInp.value = '';
+            if (statusEl) {
+                statusEl.style.display = 'none';
+                statusEl.innerHTML = '';
+            }
+            setTimeout(() => { if (oldInp) oldInp.focus(); }, 100);
+        }
     }
 
     function closeChangePasswordModal() {
         const modal = document.getElementById('changePasswordModal');
         if (modal) modal.style.display = 'none';
-        const errEl = document.getElementById('changePasswordError');
-        const succEl = document.getElementById('changePasswordSuccess');
-        if (errEl) { errEl.style.display = 'none'; errEl.innerText = ''; }
-        if (succEl) { succEl.style.display = 'none'; succEl.innerText = ''; }
+        const statusEl = document.getElementById('changePasswordStatus');
+        if (statusEl) {
+            statusEl.style.display = 'none';
+            statusEl.innerHTML = '';
+        }
     }
 
     async function handleChangePasswordSubmit(e) {
-        e.preventDefault();
-        const oldPass = document.getElementById('oldPassword')?.value || '';
-        const newPass = document.getElementById('newPassword')?.value || '';
-        const confirmPass = document.getElementById('confirmNewPassword')?.value || '';
-        const errEl = document.getElementById('changePasswordError');
-        const succEl = document.getElementById('changePasswordSuccess');
-        if (errEl) { errEl.style.display = 'none'; errEl.innerText = ''; }
-        if (succEl) { succEl.style.display = 'none'; succEl.innerText = ''; }
+        if (e && e.preventDefault) e.preventDefault();
+        const oldInp = document.getElementById('oldPasswordInput');
+        const newInp = document.getElementById('newPasswordInput');
+        const confInp = document.getElementById('confirmPasswordInput');
+        const statusEl = document.getElementById('changePasswordStatus');
+        const btnSubmit = document.getElementById('btnSubmitChangePassword');
 
-        if (newPass !== confirmPass) {
-            if (errEl) { errEl.innerText = 'تکرار کلمه عبور جدید مطابقت ندارد.'; errEl.style.display = 'block'; }
+        const oldPass = oldInp ? oldInp.value.trim() : '';
+        const newPass = newInp ? newInp.value.trim() : '';
+        const confirmPass = confInp ? confInp.value.trim() : '';
+
+        const showStatus = (msg, isSuccess = false) => {
+            if (!statusEl) return;
+            statusEl.style.display = 'block';
+            statusEl.style.backgroundColor = isSuccess ? '#dcfce7' : '#fee2e2';
+            statusEl.style.color = isSuccess ? '#166534' : '#991b1b';
+            statusEl.style.border = isSuccess ? '1px solid #86efac' : '1px solid #fca5a5';
+            statusEl.innerHTML = (isSuccess ? '<i class="fa-solid fa-circle-check"></i> ' : '<i class="fa-solid fa-circle-exclamation"></i> ') + msg;
+        };
+
+        if (!oldPass) {
+            showStatus('لطفاً رمز عبور فعلی را وارد نمایید.');
             return;
         }
-        if (newPass.length < 4) {
-            if (errEl) { errEl.innerText = 'کلمه عبور جدید باید حداقل ۴ کاراکتر باشد.'; errEl.style.display = 'block'; }
+        if (!newPass || newPass.length < 6) {
+            showStatus('رمز عبور جدید باید حداقل ۶ کاراکتر باشد.');
             return;
+        }
+        if (newPass !== confirmPass) {
+            showStatus('تکرار رمز عبور جدید با رمز وارد شده مطابقت ندارد.');
+            return;
+        }
+
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ذخیره...';
         }
 
         try {
             const res = await api('/api/admin/change-password', {
                 method: 'POST',
-                body: JSON.stringify({ currentPassword: oldPass, newPassword: newPass })
+                body: JSON.stringify({ oldPassword: oldPass, newPassword: newPass, currentPassword: oldPass })
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.success) {
-                if (succEl) { succEl.innerText = 'کلمه عبور با موفقیت تغییر یافت.'; succEl.style.display = 'block'; }
+                showStatus(data.message || 'رمز عبور با موفقیت تغییر یافت.', true);
+                if (oldInp) oldInp.value = '';
+                if (newInp) newInp.value = '';
+                if (confInp) confInp.value = '';
                 setTimeout(() => { closeChangePasswordModal(); }, 1500);
             } else {
-                if (errEl) { errEl.innerText = data.message || 'خطا در تغییر کلمه عبور.'; errEl.style.display = 'block'; }
+                showStatus(data.message || 'خطا در تغییر رمز عبور.');
             }
         } catch (err) {
-            if (errEl) { errEl.innerText = 'خطا در ارتباط با سرور.'; errEl.style.display = 'block'; }
+            console.error('Change password error:', err);
+            showStatus('خطا در ارتباط با سرور.');
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> ذخیره رمز عبور جدید';
+            }
         }
     }
 
