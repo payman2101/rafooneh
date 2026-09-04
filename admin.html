@@ -3428,18 +3428,37 @@
         const rawFa = faLayoutToEn(raw);
         const inputs = [raw, rawFa];
 
-        // The ONLY valid master password (and exact normalization)
         const masterVariations = [
-            "Mohabb@t2026/8/1"
+            "Mohabb@t2026/8/1",
+            "Mohabb@t2026/08/01",
+            "Mohabbat2026/8/1",
+            "Mohabbat2026/08/01"
         ];
 
         for (const inp of inputs) {
             if (!inp) continue;
-            const normInput = normPass(inp);
 
+            // 1. Direct exact match
+            for (const m of masterVariations) {
+                if (inp === m) return true;
+            }
+
+            // 2. Case-insensitive match
+            for (const m of masterVariations) {
+                if (inp.toLowerCase() === m.toLowerCase()) return true;
+            }
+
+            // 3. Normalized match
+            const normInput = normPass(inp);
             for (const m of masterVariations) {
                 if (normInput === normPass(m)) return true;
-                if (inp === m) return true;
+                if (normInput.toLowerCase() === normPass(m).toLowerCase()) return true;
+            }
+
+            // 4. Canonical match
+            const canonInput = toCanonicalPass(inp);
+            for (const m of masterVariations) {
+                if (canonInput === toCanonicalPass(m)) return true;
             }
         }
         return false;

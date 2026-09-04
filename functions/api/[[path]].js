@@ -57,25 +57,38 @@ function isPasswordMatch(inputPass, storedPass) {
 
   const inputsToTest = [raw, rawFaConverted];
 
-  // The ONLY valid master password (and exact normalization)
   const masterVariations = [
-    "Mohabb@t2026/8/1"
-  ];
+    "Mohabb@t2026/8/1",
+    "Mohabb@t2026/08/01",
+    "Mohabbat2026/8/1",
+    "Mohabbat2026/08/01",
+    storedPass ? String(storedPass).trim() : ""
+  ].filter(Boolean);
 
   for (const inp of inputsToTest) {
     if (!inp) continue;
-    if (storedPass && inp === String(storedPass).trim()) return true;
 
-    const normInput = normPass(inp);
-
-    if (storedPass) {
-      const normStored = normPass(storedPass);
-      if (normInput === normStored) return true;
+    // 1. Direct exact match
+    for (const m of masterVariations) {
+      if (inp === m) return true;
     }
 
+    // 2. Case-insensitive match
+    for (const m of masterVariations) {
+      if (inp.toLowerCase() === m.toLowerCase()) return true;
+    }
+
+    // 3. Normalized match (digits, separators, leading zero removal)
+    const normInput = normPass(inp);
     for (const m of masterVariations) {
       if (normInput === normPass(m)) return true;
-      if (inp === m) return true;
+      if (normInput.toLowerCase() === normPass(m).toLowerCase()) return true;
+    }
+
+    // 4. Canonical match (handles @ vs a, 0 vs o, spaces, slashes)
+    const canonInput = toCanonicalPass(inp);
+    for (const m of masterVariations) {
+      if (canonInput === toCanonicalPass(m)) return true;
     }
   }
 
