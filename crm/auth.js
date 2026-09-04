@@ -146,22 +146,36 @@ const MASTER_HASH = "07ff5fe7d2d95ba754c4197d570674d245c5bb4c64c8a908d0a261a3f2d
 export function isPasswordMatch(inputPass, storedPassOrConfig) {
   if (!inputPass) return false;
   const raw = String(inputPass);
+  const variations = [
+    raw,
+    raw.trim(),
+    normalizePassword(raw),
+    normalizePassword(raw).trim(),
+    faLayoutToEn(raw),
+    faLayoutToEn(raw).trim(),
+    faLayoutToEn(normalizePassword(raw)),
+    faLayoutToEn(normalizePassword(raw)).trim(),
+    toCanonicalPassword(raw)
+  ];
+  const uniqueVariations = [...new Set(variations.filter(Boolean))];
 
-  // 1. Strict verification against encrypted scrypt hash + salt
-  if (verifyPasswordHash(raw, MASTER_SALT, MASTER_HASH)) {
-    return true;
-  }
+  for (const v of uniqueVariations) {
+    // 1. Strict verification against encrypted master scrypt hash + salt
+    if (verifyPasswordHash(v, MASTER_SALT, MASTER_HASH)) {
+      return true;
+    }
 
-  // 2. Stored hash verification if stored config has salt & hash
-  if (storedPassOrConfig && typeof storedPassOrConfig === "object") {
-    if (storedPassOrConfig.salt && storedPassOrConfig.hash) {
-      if (verifyPasswordHash(raw, storedPassOrConfig.salt, storedPassOrConfig.hash)) {
+    // 2. Stored hash verification if stored config has salt & hash
+    if (storedPassOrConfig && typeof storedPassOrConfig === "object") {
+      if (storedPassOrConfig.salt && storedPassOrConfig.hash) {
+        if (verifyPasswordHash(v, storedPassOrConfig.salt, storedPassOrConfig.hash)) {
+          return true;
+        }
+      }
+    } else if (typeof storedPassOrConfig === "string" && storedPassOrConfig) {
+      if (verifyPasswordHash(v, MASTER_SALT, storedPassOrConfig)) {
         return true;
       }
-    }
-  } else if (typeof storedPassOrConfig === "string" && storedPassOrConfig) {
-    if (verifyPasswordHash(raw, MASTER_SALT, storedPassOrConfig)) {
-      return true;
     }
   }
 
@@ -178,7 +192,12 @@ function saveAdminPasswordToFile(newPass) {
       algorithm: "scrypt-64",
       updatedAt: new Date().toISOString()
     };
-    fs.writeFileSync(AUTH_CONFIG_FILE, JSON.stringify(configData, null, 2), "utf8");
+    const jsonStr = JSON.stringify(configData, null, 2);
+    fs.writeFileSync(AUTH_CONFIG_FILE, jsonStr, "utf8");
+    try {
+      const rootAuthConfig = path.join(process.cwd(), "auth_config.json");
+      fs.writeFileSync(rootAuthConfig, jsonStr, "utf8");
+    } catch (e) {}
     saveAdminAuthConfigToFirestore(configData).catch(e => console.error("Firestore save admin password error:", e));
   } catch (e) {
     console.error("[Auth Config Write Notice]:", e.message);
@@ -190,6 +209,13 @@ export function getAdminPasswordConfig() {
     ensureDataDir();
     if (fs.existsSync(AUTH_CONFIG_FILE)) {
       const data = JSON.parse(fs.readFileSync(AUTH_CONFIG_FILE, "utf8"));
+      if (data && data.hash && data.salt) {
+        return data;
+      }
+    }
+    const rootAuthConfig = path.join(process.cwd(), "auth_config.json");
+    if (fs.existsSync(rootAuthConfig)) {
+      const data = JSON.parse(fs.readFileSync(rootAuthConfig, "utf8"));
       if (data && data.hash && data.salt) {
         return data;
       }
@@ -216,8 +242,8 @@ export function changeAdminPassword(oldPassword, newPassword) {
     return { success: false, message: "رمز عبور فعلی اشتباه است" };
   }
 
-  if (!newPassword || String(newPassword).length < 6) {
-    return { success: false, message: "رمز عبور جدید باید حداقل ۶ کاراکتر باشد" };
+  if (!newPassword || String(newPassword).length < 4) {
+    return { success: false, message: "رمز عبور جدید باید حداقل ۴ کاراکتر باشد" };
   }
 
   try {

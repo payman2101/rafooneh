@@ -50,6 +50,18 @@ function toCanonicalPass(p) {
     .replace(/\s+/g, "");
 }
 
+const faToEnMap = {
+  "ض": "q", "ص": "w", "ث": "e", "ق": "r", "ف": "t", "غ": "y", "ع": "u", "ه": "i", "خ": "o", "ح": "p", "ج": "[", "چ": "]",
+  "ش": "a", "س": "s", "ی": "d", "ب": "f", "ل": "g", "ا": "h", "ت": "j", "ن": "k", "م": "l", "ک": ";", "گ": "'",
+  "ظ": "z", "ط": "x", "ز": "c", "ر": "v", "ذ": "b", "د": "n", "پ": "m", "و": ",",
+  "ؤ": "a", "ئ": "m", "ي": "d", "إ": "f", "أ": "g", "آ": "h", "ة": "j", "ژ": "c", "’": "m", "ء": "n"
+};
+
+function faLayoutToEn(str) {
+  if (!str) return "";
+  return String(str).split("").map(ch => faToEnMap[ch] || ch).join("");
+}
+
 const MASTER_PASSWORD_SHA256 = "b5cda713df129e5fdc6f07ac621a4986645bff7e997e4fa24db32091dfcfbe7d";
 
 async function computeSha256(str) {
@@ -63,11 +75,76 @@ async function computeSha256(str) {
   }
 }
 
-async function isPasswordMatchAsync(inputPass, envAdminPassword) {
+let memoryAuthConfig = null;
+
+async function getAuthConfigFromPg(env) {
+  if (memoryAuthConfig && memoryAuthConfig.hash) return memoryAuthConfig;
+  try {
+    const supabase = getSupabaseClient(env);
+    if (supabase) {
+      const { data, error } = await supabase.from('settings').select('*').eq('key', 'auth_config').limit(1);
+      if (!error && data && data.length > 0) {
+        const val = typeof data[0].value === 'string' ? JSON.parse(data[0].value) : data[0].value;
+        if (val && val.hash) {
+          memoryAuthConfig = val;
+          return val;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error fetching auth config from Pg:', e);
+  }
+  return memoryAuthConfig;
+}
+
+async function saveAuthConfigToPg(env, config) {
+  memoryAuthConfig = config;
+  try {
+    const supabase = getSupabaseClient(env);
+    if (supabase) {
+      const sPayload = {
+        key: 'auth_config',
+        value: JSON.stringify(config),
+        updated_at: config.updatedAt || new Date().toISOString()
+      };
+      await supabase.from('settings').upsert(sPayload, { onConflict: 'key' });
+    }
+  } catch (e) {
+    console.error('Error saving auth config to Pg:', e);
+  }
+}
+
+async function isPasswordMatchAsync(inputPass, envAdminPassword, env) {
   if (!inputPass) return false;
-  const hash = await computeSha256(String(inputPass));
-  if (hash === MASTER_PASSWORD_SHA256) return true;
-  if (envAdminPassword && String(inputPass) === String(envAdminPassword)) return true;
+  const raw = String(inputPass);
+  const variations = [
+    raw,
+    raw.trim(),
+    normPass(raw),
+    normPass(raw).trim(),
+    faLayoutToEn(raw),
+    faLayoutToEn(raw).trim(),
+    faLayoutToEn(normPass(raw)),
+    faLayoutToEn(normPass(raw)).trim(),
+    toCanonicalPass(raw)
+  ];
+  const uniqueVariations = [...new Set(variations.filter(Boolean))];
+
+  const authConfig = env ? await getAuthConfigFromPg(env) : memoryAuthConfig;
+
+  for (const v of uniqueVariations) {
+    const hash = await computeSha256(v);
+    if (hash === MASTER_PASSWORD_SHA256) return true;
+    if (envAdminPassword && (v === String(envAdminPassword) || hash === await computeSha256(String(envAdminPassword)))) return true;
+    if (authConfig && authConfig.hash) {
+      if (authConfig.salt) {
+        const saltedHash = await computeSha256(v + authConfig.salt);
+        if (saltedHash === authConfig.hash || hash === authConfig.hash) return true;
+      } else if (hash === authConfig.hash) {
+        return true;
+      }
+    }
+  }
   return false;
 }
 
@@ -887,7 +964,7 @@ export async function onRequest(context) {
   // --- ADMIN AUTH ---
   if (path === '/api/admin/login') {
     const inputPass = body.password || body.pass || '';
-    const isValid = await isPasswordMatchAsync(inputPass, env.ADMIN_PASSWORD);
+    const isValid = await isPasswordMatchAsync(inputPass, env.ADMIN_PASSWORD, env);
     if (isValid) {
       return jsonRes({
         success: true,
@@ -904,7 +981,33 @@ export async function onRequest(context) {
   }
 
   if (path === '/api/admin/change-password') {
-    return jsonRes({ success: true, message: 'رمز عبور با موفقیت تغییر یافت' });
+    const oldPassword = body.oldPassword || body.currentPassword || body.currentPass || '';
+    const newPassword = body.newPassword || body.newPass || '';
+
+    if (!oldPassword || !newPassword) {
+      return jsonRes({ success: false, message: 'لطفاً رمز عبور فعلی و جدید را وارد نمایید.' }, 400);
+    }
+
+    const isOldValid = await isPasswordMatchAsync(oldPassword, env.ADMIN_PASSWORD, env);
+    if (!isOldValid) {
+      return jsonRes({ success: false, message: 'رمز عبور فعلی اشتباه است' }, 400);
+    }
+
+    if (String(newPassword).length < 4) {
+      return jsonRes({ success: false, message: 'رمز عبور جدید باید حداقل ۴ کاراکتر باشد' }, 400);
+    }
+
+    const salt = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, "0")).join("");
+    const hash = await computeSha256(String(newPassword) + salt);
+    const newConfig = {
+      salt,
+      hash,
+      algorithm: "sha256-salted",
+      updatedAt: new Date().toISOString()
+    };
+
+    await saveAuthConfigToPg(env, newConfig);
+    return jsonRes({ success: true, message: 'رمز عبور ادمین با موفقیت تغییر یافت' });
   }
 
   // --- STATUS ENDPOINT ---

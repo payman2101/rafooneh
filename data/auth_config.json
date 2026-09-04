@@ -1,6 +1,6 @@
 {
-  "salt": "e42fee0f9241bba778b45bf0ccf2162e",
-  "hash": "07ff5fe7d2d95ba754c4197d570674d245c5bb4c64c8a908d0a261a3f2dd100b7bb0eb44c76c142a9ed21122ce23cce2e23dc8881afe003455dfa43cec9b6f75",
+  "salt": "d28aeb1d1d68ef5016d44e8a4aabfcd5",
+  "hash": "3bdc6e9cfdd8efae674bf89e65c58d97439f4d7dfc1304649a08cbb63d59561db487fc1b75c70491ea617ff64b4413e994e1d4a56cdb578b246a5262c95a33bb",
   "algorithm": "scrypt-64",
-  "updatedAt": "2026-09-04T12:05:00.000Z"
+  "updatedAt": "2026-09-04T12:41:06.333Z"
 }

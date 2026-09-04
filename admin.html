@@ -3101,21 +3101,36 @@
                 <label style="font-weight: bold; font-size: 0.85rem; color: #334155; margin-bottom: 6px; display: block;">
                     <i class="fa-solid fa-lock"></i> رمز عبور فعلی:
                 </label>
-                <input type="password" id="oldPasswordInput" class="form-control" placeholder="رمز عبور فعلی را وارد کنید" required style="width: 100%;">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="oldPasswordInput" class="form-control" placeholder="رمز عبور فعلی را وارد کنید" required style="width: 100%; padding-left: 38px;">
+                    <button type="button" onclick="togglePasswordVisibility('oldPasswordInput', this)" style="position: absolute; left: 8px; border: none; background: transparent; cursor: pointer; color: #64748b; padding: 4px 8px;">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 14px;">
                 <label style="font-weight: bold; font-size: 0.85rem; color: #334155; margin-bottom: 6px; display: block;">
                     <i class="fa-solid fa-key"></i> رمز عبور جدید:
                 </label>
-                <input type="password" id="newPasswordInput" class="form-control" placeholder="حداقل ۴ کاراکتر" minlength="4" required style="width: 100%;">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="newPasswordInput" class="form-control" placeholder="حداقل ۴ کاراکتر" minlength="4" required style="width: 100%; padding-left: 38px;">
+                    <button type="button" onclick="togglePasswordVisibility('newPasswordInput', this)" style="position: absolute; left: 8px; border: none; background: transparent; cursor: pointer; color: #64748b; padding: 4px 8px;">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 18px;">
                 <label style="font-weight: bold; font-size: 0.85rem; color: #334155; margin-bottom: 6px; display: block;">
                     <i class="fa-solid fa-shield-halved"></i> تکرار رمز عبور جدید:
                 </label>
-                <input type="password" id="confirmPasswordInput" class="form-control" placeholder="تکرار رمز عبور جدید" minlength="4" required style="width: 100%;">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="confirmPasswordInput" class="form-control" placeholder="تکرار رمز عبور جدید" minlength="4" required style="width: 100%; padding-left: 38px;">
+                    <button type="button" onclick="togglePasswordVisibility('confirmPasswordInput', this)" style="position: absolute; left: 8px; border: none; background: transparent; cursor: pointer; color: #64748b; padding: 4px 8px;">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
             </div>
 
             <div id="changePasswordStatus" style="display: none; margin-bottom: 14px; padding: 10px; border-radius: 8px; font-size: 0.85rem;"></div>
@@ -3451,7 +3466,7 @@
             await new Promise(r => setTimeout(r, 200));
             res = await fetch(path, { ...options, headers });
         }
-        if (res && res.status === 401 && path !== '/api/admin/login' && !token.startsWith('master_admin_session_')) {
+        if (res && res.status === 401 && path !== '/api/admin/login' && path !== '/api/admin/change-password' && !token.startsWith('master_admin_session_')) {
             handleLogout();
             return res;
         }
@@ -5287,8 +5302,8 @@
             showStatus('لطفاً رمز عبور فعلی را وارد نمایید.');
             return;
         }
-        if (!newPass || newPass.length < 6) {
-            showStatus('رمز عبور جدید باید حداقل ۶ کاراکتر باشد.');
+        if (!newPass || newPass.length < 4) {
+            showStatus('رمز عبور جدید باید حداقل ۴ کاراکتر باشد.');
             return;
         }
         if (newPass !== confirmPass) {
