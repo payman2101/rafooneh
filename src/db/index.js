@@ -13,10 +13,16 @@ function fixPgUrl(urlStr) {
   return urlStr;
 }
 
-const DEFAULT_SUPABASE_URL = 'postgres://postgres.agyerjkhtsqmdtcgamgq:M0habb%40t2026%2F8%2F1@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
+const DEFAULT_SUPABASE_URL = process.env.DATABASE_URL || '';
 
 function getPoolConfig() {
   const rawUrl = process.env.DATABASE_URL || DEFAULT_SUPABASE_URL;
+  if (!rawUrl) {
+    return {
+      connectionString: 'postgresql://postgres:postgres@127.0.0.1:5432/postgres',
+      ssl: false,
+    };
+  }
   const connStr = fixPgUrl(rawUrl);
   const isLocal = connStr.includes('localhost') || connStr.includes('127.0.0.1');
   return {

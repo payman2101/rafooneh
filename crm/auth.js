@@ -14,7 +14,7 @@ const AUTH_CONFIG_FILE = path.join(DATA_DIR, "auth_config.json");
 const SESSIONS_FILE = path.join(DATA_DIR, "sessions.json");
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days session lifetime
-const JWT_SECRET = "M0habb@t2026_fixed_rafooneh_jwt_secret_key_v1";
+const JWT_SECRET = process.env.JWT_SECRET || "rafooneh_fixed_jwt_secret_token_auth_v1";
 
 function generateStatelessToken() {
   const payload = {
@@ -139,26 +139,20 @@ export function verifyPasswordHash(inputPass, storedSalt, storedHash) {
   }
 }
 
-// Master password encrypted hash & salt
+// Master password encrypted hash & salt (Zero plaintext in code)
 const MASTER_SALT = "e42fee0f9241bba778b45bf0ccf2162e";
 const MASTER_HASH = "07ff5fe7d2d95ba754c4197d570674d245c5bb4c64c8a908d0a261a3f2dd100b7bb0eb44c76c142a9ed21122ce23cce2e23dc8881afe003455dfa43cec9b6f75";
-const MASTER_PASSWORD_EXACT = "M0habb@t2026/8/1";
 
 export function isPasswordMatch(inputPass, storedPassOrConfig) {
   if (!inputPass) return false;
   const raw = String(inputPass);
 
-  // 1. Strict exact check with encrypted master scrypt hash
+  // 1. Strict verification against encrypted scrypt hash + salt
   if (verifyPasswordHash(raw, MASTER_SALT, MASTER_HASH)) {
     return true;
   }
 
-  // 2. Exact match check
-  if (raw === MASTER_PASSWORD_EXACT) {
-    return true;
-  }
-
-  // 3. Stored hash verification if stored config has salt & hash
+  // 2. Stored hash verification if stored config has salt & hash
   if (storedPassOrConfig && typeof storedPassOrConfig === "object") {
     if (storedPassOrConfig.salt && storedPassOrConfig.hash) {
       if (verifyPasswordHash(raw, storedPassOrConfig.salt, storedPassOrConfig.hash)) {
@@ -166,7 +160,7 @@ export function isPasswordMatch(inputPass, storedPassOrConfig) {
       }
     }
   } else if (typeof storedPassOrConfig === "string" && storedPassOrConfig) {
-    if (raw === storedPassOrConfig) {
+    if (verifyPasswordHash(raw, MASTER_SALT, storedPassOrConfig)) {
       return true;
     }
   }
@@ -211,7 +205,7 @@ export function getAdminPasswordConfig() {
 }
 
 export function getAdminPassword() {
-  return MASTER_PASSWORD_EXACT;
+  return "";
 }
 
 export function changeAdminPassword(oldPassword, newPassword) {

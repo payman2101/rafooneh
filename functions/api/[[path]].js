@@ -50,9 +50,25 @@ function toCanonicalPass(p) {
     .replace(/\s+/g, "");
 }
 
-function isPasswordMatch(inputPass, storedPass) {
+const MASTER_PASSWORD_SHA256 = "b5cda713df129e5fdc6f07ac621a4986645bff7e997e4fa24db32091dfcfbe7d";
+
+async function computeSha256(str) {
+  try {
+    const enc = new TextEncoder();
+    const buf = enc.encode(str);
+    const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  } catch (e) {
+    return "";
+  }
+}
+
+async function isPasswordMatchAsync(inputPass, envAdminPassword) {
   if (!inputPass) return false;
-  return String(inputPass) === "M0habb@t2026/8/1";
+  const hash = await computeSha256(String(inputPass));
+  if (hash === MASTER_PASSWORD_SHA256) return true;
+  if (envAdminPassword && String(inputPass) === String(envAdminPassword)) return true;
+  return false;
 }
 
 const STATUS_LABELS = {
@@ -871,7 +887,8 @@ export async function onRequest(context) {
   // --- ADMIN AUTH ---
   if (path === '/api/admin/login') {
     const inputPass = body.password || body.pass || '';
-    if (isPasswordMatch(inputPass, env.ADMIN_PASSWORD || 'M0habb@t2026/8/1')) {
+    const isValid = await isPasswordMatchAsync(inputPass, env.ADMIN_PASSWORD);
+    if (isValid) {
       return jsonRes({
         success: true,
         token: "master_admin_session_cf_" + Date.now(),

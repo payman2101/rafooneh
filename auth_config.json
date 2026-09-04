@@ -1,4 +1,6 @@
 {
-  "password": "Mohabb@t2026/8/1",
-  "updatedAt": "2026-09-02T22:15:00.000Z"
+  "salt": "e42fee0f9241bba778b45bf0ccf2162e",
+  "hash": "07ff5fe7d2d95ba754c4197d570674d245c5bb4c64c8a908d0a261a3f2dd100b7bb0eb44c76c142a9ed21122ce23cce2e23dc8881afe003455dfa43cec9b6f75",
+  "algorithm": "scrypt-64",
+  "updatedAt": "2026-09-04T12:05:00.000Z"
 }

