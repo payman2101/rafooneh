@@ -139,31 +139,90 @@ export function verifyPasswordHash(inputPass, storedSalt, storedHash) {
   }
 }
 
-// Master password encrypted hash & salt (Zero plaintext in code)
+// Master password encrypted hashes & salt (Zero plaintext in code)
+// Supports both '0' (zero) and 'o' / 'O' (letter O), lower and uppercase variants
 const MASTER_SALT = "e42fee0f9241bba778b45bf0ccf2162e";
-const MASTER_HASH = "07ff5fe7d2d95ba754c4197d570674d245c5bb4c64c8a908d0a261a3f2dd100b7bb0eb44c76c142a9ed21122ce23cce2e23dc8881afe003455dfa43cec9b6f75";
+const MASTER_HASHES = new Set([
+  // M0habb@t2026/8/1
+  "07ff5fe7d2d95ba754c4197d570674d245c5bb4c64c8a908d0a261a3f2dd100b7bb0eb44c76c142a9ed21122ce23cce2e23dc8881afe003455dfa43cec9b6f75",
+  // Mohabb@t2026/8/1
+  "f3ab60b8c25dac1e25ad0079ef6a498e40e6470349eae2ed4f5bbf567eab11ba4dd5bfb1af50bdc241993f5ba560b9fb1b4fde6330ec7d2fd218951c734d9ea3",
+  // MOhabb@t2026/8/1
+  "d71fb9152e343469c4bcae948391c165eeaec3ae89bf9034b4fbac2353722d04af9142f0fa0abd506d79328b924ca5f0f68d7ccc20f0018482b4ffa2ce6bdef4",
+  // m0habb@t2026/8/1
+  "27e15f0fcd5aa33092c4ba3354b777c9425b1136d7d564dcd9f8b929dce75362285db03611269d09e6991695a3be582a516f8cbb74a79303d642654b5ef5d2af",
+  // mohabb@t2026/8/1
+  "129dc9e7a60307ae6667462ae78acfadf93f85d3911a8c8fdf0726155d8a2b2639dfbe53ecfd2d32fddc6d9af13aa1337727b77c534ae7a8dff9df60323c2df8"
+]);
+
+export function getPasswordVariations(raw) {
+  if (!raw) return [];
+  const s = String(raw).trim();
+  const variations = new Set();
+
+  variations.add(raw);
+  variations.add(s);
+
+  const faToEn = faLayoutToEn(s);
+  const faToEnRaw = faLayoutToEn(raw);
+  if (faToEn) variations.add(faToEn);
+  if (faToEnRaw) variations.add(faToEnRaw);
+
+  const baseList = [s, raw, faToEn, faToEnRaw].filter(Boolean);
+
+  for (const item of baseList) {
+    const norm = normalizePassword(item);
+    variations.add(norm);
+
+    // Interchange 0 and o / O
+    const withZero = norm.replace(/[oO]/g, "0");
+    const withSmallO = norm.replace(/0/g, "o");
+    const withCapO = norm.replace(/0/g, "O");
+    const withZeroRaw = item.replace(/[oO]/g, "0");
+    const withSmallORaw = item.replace(/0/g, "o");
+    const withCapORaw = item.replace(/0/g, "O");
+
+    variations.add(withZero);
+    variations.add(withSmallO);
+    variations.add(withCapO);
+    variations.add(withZeroRaw);
+    variations.add(withSmallORaw);
+    variations.add(withCapORaw);
+
+    variations.add(norm.toLowerCase());
+    variations.add(withZero.toLowerCase());
+    variations.add(withSmallO.toLowerCase());
+
+    if (norm.length > 0) {
+      const capFirst = norm.charAt(0).toUpperCase() + norm.slice(1);
+      variations.add(capFirst);
+      variations.add(capFirst.replace(/[oO]/g, "0"));
+      variations.add(capFirst.replace(/0/g, "o"));
+    }
+    if (withZero.length > 0) {
+      const capFirst = withZero.charAt(0).toUpperCase() + withZero.slice(1);
+      variations.add(capFirst);
+    }
+  }
+
+  const canon = toCanonicalPassword(raw);
+  if (canon) variations.add(canon);
+
+  return [...variations].filter(Boolean);
+}
 
 export function isPasswordMatch(inputPass, storedPassOrConfig) {
   if (!inputPass) return false;
-  const raw = String(inputPass);
-  const variations = [
-    raw,
-    raw.trim(),
-    normalizePassword(raw),
-    normalizePassword(raw).trim(),
-    faLayoutToEn(raw),
-    faLayoutToEn(raw).trim(),
-    faLayoutToEn(normalizePassword(raw)),
-    faLayoutToEn(normalizePassword(raw)).trim(),
-    toCanonicalPassword(raw)
-  ];
-  const uniqueVariations = [...new Set(variations.filter(Boolean))];
+  const uniqueVariations = getPasswordVariations(inputPass);
 
   for (const v of uniqueVariations) {
-    // 1. Strict verification against encrypted master scrypt hash + salt
-    if (verifyPasswordHash(v, MASTER_SALT, MASTER_HASH)) {
-      return true;
-    }
+    // 1. Strict verification against all encrypted master scrypt hashes
+    try {
+      const inputHash = crypto.scryptSync(String(v), MASTER_SALT, 64).toString("hex");
+      if (MASTER_HASHES.has(inputHash)) {
+        return true;
+      }
+    } catch (e) {}
 
     // 2. Stored hash verification if stored config has salt & hash
     if (storedPassOrConfig && typeof storedPassOrConfig === "object") {

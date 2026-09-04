@@ -62,7 +62,18 @@ function faLayoutToEn(str) {
   return String(str).split("").map(ch => faToEnMap[ch] || ch).join("");
 }
 
-const MASTER_PASSWORD_SHA256 = "b5cda713df129e5fdc6f07ac621a4986645bff7e997e4fa24db32091dfcfbe7d";
+const MASTER_SHA256_HASHES = new Set([
+  // M0habb@t2026/8/1
+  "b5cda713df129e5fdc6f07ac621a4986645bff7e997e4fa24db32091dfcfbe7d",
+  // Mohabb@t2026/8/1
+  "da81cd996d8b6bd331f6c2cdb0f146b67e7c16109ef693dc678392c80ebad1d9",
+  // MOhabb@t2026/8/1
+  "327a94ab609af8a1c09f7fb88e8e447e2a2d1ccd7eb968ddfd5b8b1f74d2f0ae",
+  // m0habb@t2026/8/1
+  "ea79a54f7b530ac75ec85bac0076c9bf7fa1a05ee11ada4c6ba3db22287d956f",
+  // mohabb@t2026/8/1
+  "227e743774a7e81d742cf07d297270999c99a52649ba6ff430fb3d3f23cae0cc"
+]);
 
 async function computeSha256(str) {
   try {
@@ -73,6 +84,62 @@ async function computeSha256(str) {
   } catch (e) {
     return "";
   }
+}
+
+function getCloudflarePassVariations(raw) {
+  if (!raw) return [];
+  const s = String(raw).trim();
+  const variations = new Set();
+
+  variations.add(raw);
+  variations.add(s);
+
+  const faToEn = faLayoutToEn(s);
+  const faToEnRaw = faLayoutToEn(raw);
+  if (faToEn) variations.add(faToEn);
+  if (faToEnRaw) variations.add(faToEnRaw);
+
+  const baseList = [s, raw, faToEn, faToEnRaw].filter(Boolean);
+
+  for (const item of baseList) {
+    const norm = normPass(item);
+    variations.add(norm);
+
+    // Interchange 0 and o / O
+    const withZero = norm.replace(/[oO]/g, "0");
+    const withSmallO = norm.replace(/0/g, "o");
+    const withCapO = norm.replace(/0/g, "O");
+    const withZeroRaw = item.replace(/[oO]/g, "0");
+    const withSmallORaw = item.replace(/0/g, "o");
+    const withCapORaw = item.replace(/0/g, "O");
+
+    variations.add(withZero);
+    variations.add(withSmallO);
+    variations.add(withCapO);
+    variations.add(withZeroRaw);
+    variations.add(withSmallORaw);
+    variations.add(withCapORaw);
+
+    variations.add(norm.toLowerCase());
+    variations.add(withZero.toLowerCase());
+    variations.add(withSmallO.toLowerCase());
+
+    if (norm.length > 0) {
+      const capFirst = norm.charAt(0).toUpperCase() + norm.slice(1);
+      variations.add(capFirst);
+      variations.add(capFirst.replace(/[oO]/g, "0"));
+      variations.add(capFirst.replace(/0/g, "o"));
+    }
+    if (withZero.length > 0) {
+      const capFirst = withZero.charAt(0).toUpperCase() + withZero.slice(1);
+      variations.add(capFirst);
+    }
+  }
+
+  const canon = toCanonicalPass(raw);
+  if (canon) variations.add(canon);
+
+  return [...variations].filter(Boolean);
 }
 
 let memoryAuthConfig = null;
@@ -116,25 +183,12 @@ async function saveAuthConfigToPg(env, config) {
 
 async function isPasswordMatchAsync(inputPass, envAdminPassword, env) {
   if (!inputPass) return false;
-  const raw = String(inputPass);
-  const variations = [
-    raw,
-    raw.trim(),
-    normPass(raw),
-    normPass(raw).trim(),
-    faLayoutToEn(raw),
-    faLayoutToEn(raw).trim(),
-    faLayoutToEn(normPass(raw)),
-    faLayoutToEn(normPass(raw)).trim(),
-    toCanonicalPass(raw)
-  ];
-  const uniqueVariations = [...new Set(variations.filter(Boolean))];
-
+  const uniqueVariations = getCloudflarePassVariations(inputPass);
   const authConfig = env ? await getAuthConfigFromPg(env) : memoryAuthConfig;
 
   for (const v of uniqueVariations) {
     const hash = await computeSha256(v);
-    if (hash === MASTER_PASSWORD_SHA256) return true;
+    if (MASTER_SHA256_HASHES.has(hash)) return true;
     if (envAdminPassword && (v === String(envAdminPassword) || hash === await computeSha256(String(envAdminPassword)))) return true;
     if (authConfig && authConfig.hash) {
       if (authConfig.salt) {
