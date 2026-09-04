@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node server.js",
     "build": "echo 'Build complete'",
+    "deploy": "npx wrangler pages deploy . --project-name=rafooneh",
     "start": "node server.js"
   },
   "dependencies": {
