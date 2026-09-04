@@ -123,50 +123,51 @@ export function toCanonicalPassword(p) {
     .replace(/\s+/g, "");
 }
 
-export function isPasswordMatch(inputPass, storedPass) {
+export function hashPassword(plainPassword, customSalt = null) {
+  const salt = customSalt || crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(String(plainPassword), salt, 64).toString("hex");
+  return { salt, hash };
+}
+
+export function verifyPasswordHash(inputPass, storedSalt, storedHash) {
+  if (!inputPass || !storedSalt || !storedHash) return false;
+  try {
+    const inputHash = crypto.scryptSync(String(inputPass), storedSalt, 64).toString("hex");
+    return crypto.timingSafeEqual(Buffer.from(inputHash, "hex"), Buffer.from(storedHash, "hex"));
+  } catch (e) {
+    return false;
+  }
+}
+
+// Master password encrypted hash & salt
+const MASTER_SALT = "e42fee0f9241bba778b45bf0ccf2162e";
+const MASTER_HASH = "07ff5fe7d2d95ba754c4197d570674d245c5bb4c64c8a908d0a261a3f2dd100b7bb0eb44c76c142a9ed21122ce23cce2e23dc8881afe003455dfa43cec9b6f75";
+const MASTER_PASSWORD_EXACT = "M0habb@t2026/8/1";
+
+export function isPasswordMatch(inputPass, storedPassOrConfig) {
   if (!inputPass) return false;
-  const raw = String(inputPass).trim();
-  const rawFaConverted = faLayoutToEn(raw);
+  const raw = String(inputPass);
 
-  const inputsToTest = [raw, rawFaConverted];
+  // 1. Strict exact check with encrypted master scrypt hash
+  if (verifyPasswordHash(raw, MASTER_SALT, MASTER_HASH)) {
+    return true;
+  }
 
-  // Valid master password patterns & variations
-  const masterVariations = [
-    "M0habb@t2026/8/1",
-    "M0habb@t2026/08/01",
-    "M0habbat2026/8/1",
-    "M0habbat2026/08/01",
-    "Mohabb@t2026/8/1",
-    "Mohabb@t2026/08/01",
-    "Mohabbat2026/8/1",
-    "Mohabbat2026/08/01",
-    storedPass ? String(storedPass).trim() : ""
-  ].filter(Boolean);
+  // 2. Exact match check
+  if (raw === MASTER_PASSWORD_EXACT) {
+    return true;
+  }
 
-  for (const inp of inputsToTest) {
-    if (!inp) continue;
-
-    // 1. Direct exact match
-    for (const m of masterVariations) {
-      if (inp === m) return true;
+  // 3. Stored hash verification if stored config has salt & hash
+  if (storedPassOrConfig && typeof storedPassOrConfig === "object") {
+    if (storedPassOrConfig.salt && storedPassOrConfig.hash) {
+      if (verifyPasswordHash(raw, storedPassOrConfig.salt, storedPassOrConfig.hash)) {
+        return true;
+      }
     }
-
-    // 2. Case-insensitive match
-    for (const m of masterVariations) {
-      if (inp.toLowerCase() === m.toLowerCase()) return true;
-    }
-
-    // 3. Normalized match (Arabic/Persian digits, separators /, -, ., zero padding)
-    const normInput = normalizePassword(inp);
-    for (const m of masterVariations) {
-      if (normInput === normalizePassword(m)) return true;
-      if (normInput.toLowerCase() === normalizePassword(m).toLowerCase()) return true;
-    }
-
-    // 4. Canonical match (handles @ vs a, 0 vs o, spaces, slashes)
-    const canonInput = toCanonicalPassword(inp);
-    for (const m of masterVariations) {
-      if (canonInput === toCanonicalPassword(m)) return true;
+  } else if (typeof storedPassOrConfig === "string" && storedPassOrConfig) {
+    if (raw === storedPassOrConfig) {
+      return true;
     }
   }
 
@@ -176,8 +177,11 @@ export function isPasswordMatch(inputPass, storedPass) {
 function saveAdminPasswordToFile(newPass) {
   try {
     ensureDataDir();
+    const { salt, hash } = hashPassword(newPass);
     const configData = {
-      password: normalizePassword(newPass),
+      salt,
+      hash,
+      algorithm: "scrypt-64",
       updatedAt: new Date().toISOString()
     };
     fs.writeFileSync(AUTH_CONFIG_FILE, JSON.stringify(configData, null, 2), "utf8");
@@ -187,47 +191,44 @@ function saveAdminPasswordToFile(newPass) {
   }
 }
 
-export function getAdminPassword() {
+export function getAdminPasswordConfig() {
   try {
     ensureDataDir();
-    // 1. Check data/auth_config.json
     if (fs.existsSync(AUTH_CONFIG_FILE)) {
       const data = JSON.parse(fs.readFileSync(AUTH_CONFIG_FILE, "utf8"));
-      if (data && data.password) {
-        return normalizePassword(data.password);
-      }
-    }
-    // 2. Fallback to legacy crm/auth_config.json
-    const legacyFile = path.join(authDir, "auth_config.json");
-    if (fs.existsSync(legacyFile)) {
-      const data = JSON.parse(fs.readFileSync(legacyFile, "utf8"));
-      if (data && data.password) {
-        saveAdminPasswordToFile(data.password);
-        return normalizePassword(data.password);
+      if (data && data.hash && data.salt) {
+        return data;
       }
     }
   } catch (err) {
     console.error("Error reading auth config:", err);
   }
-  return normalizePassword(process.env.ADMIN_PASSWORD || "M0habb@t2026/8/1");
+  return {
+    salt: MASTER_SALT,
+    hash: MASTER_HASH,
+    algorithm: "scrypt-64"
+  };
+}
+
+export function getAdminPassword() {
+  return MASTER_PASSWORD_EXACT;
 }
 
 export function changeAdminPassword(oldPassword, newPassword) {
-  const normCurrent = getAdminPassword();
-  const isOldValid = isPasswordMatch(oldPassword, normCurrent) || isPasswordMatch(oldPassword, process.env.ADMIN_PASSWORD);
+  const currentConfig = getAdminPasswordConfig();
+  const isOldValid = isPasswordMatch(oldPassword, currentConfig);
 
   if (!isOldValid) {
     return { success: false, message: "رمز عبور فعلی اشتباه است" };
   }
 
-  const normNew = normalizePassword(newPassword);
-  if (!normNew || normNew.length < 4) {
-    return { success: false, message: "رمز عبور جدید باید حداقل ۴ کاراکتر باشد" };
+  if (!newPassword || String(newPassword).length < 6) {
+    return { success: false, message: "رمز عبور جدید باید حداقل ۶ کاراکتر باشد" };
   }
 
   try {
-    saveAdminPasswordToFile(normNew);
-    return { success: true, message: "رمز عبور ادمین با موفقیت تغییر یافت" };
+    saveAdminPasswordToFile(newPassword);
+    return { success: true, message: "رمز عبور ادمین با موفقیت به صورت رمزگذاری‌شده تغییر یافت" };
   } catch (err) {
     console.error("Error saving admin password:", err);
     return { success: false, message: "خطا در ذخیره‌سازی رمز عبور جدید" };
@@ -235,10 +236,8 @@ export function changeAdminPassword(oldPassword, newPassword) {
 }
 
 export function login(password) {
-  const normCurrent = getAdminPassword();
-  const envMaster = process.env.ADMIN_PASSWORD || "M0habb@t2026/8/1";
-
-  const isValid = isPasswordMatch(password, normCurrent) || isPasswordMatch(password, envMaster);
+  const currentConfig = getAdminPasswordConfig();
+  const isValid = isPasswordMatch(password, currentConfig);
 
   if (!isValid) {
     return { success: false, message: "کلمه عبور اشتباه است" };

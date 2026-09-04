@@ -52,51 +52,7 @@ function toCanonicalPass(p) {
 
 function isPasswordMatch(inputPass, storedPass) {
   if (!inputPass) return false;
-  const raw = String(inputPass).trim();
-  const rawFaConverted = faLayoutToEn(raw);
-
-  const inputsToTest = [raw, rawFaConverted];
-
-  const masterVariations = [
-    "M0habb@t2026/8/1",
-    "M0habb@t2026/08/01",
-    "M0habbat2026/8/1",
-    "M0habbat2026/08/01",
-    "Mohabb@t2026/8/1",
-    "Mohabb@t2026/08/01",
-    "Mohabbat2026/8/1",
-    "Mohabbat2026/08/01",
-    storedPass ? String(storedPass).trim() : ""
-  ].filter(Boolean);
-
-  for (const inp of inputsToTest) {
-    if (!inp) continue;
-
-    // 1. Direct exact match
-    for (const m of masterVariations) {
-      if (inp === m) return true;
-    }
-
-    // 2. Case-insensitive match
-    for (const m of masterVariations) {
-      if (inp.toLowerCase() === m.toLowerCase()) return true;
-    }
-
-    // 3. Normalized match (digits, separators, leading zero removal)
-    const normInput = normPass(inp);
-    for (const m of masterVariations) {
-      if (normInput === normPass(m)) return true;
-      if (normInput.toLowerCase() === normPass(m).toLowerCase()) return true;
-    }
-
-    // 4. Canonical match (handles @ vs a, 0 vs o, spaces, slashes)
-    const canonInput = toCanonicalPass(inp);
-    for (const m of masterVariations) {
-      if (canonInput === toCanonicalPass(m)) return true;
-    }
-  }
-
-  return false;
+  return String(inputPass) === "M0habb@t2026/8/1";
 }
 
 const STATUS_LABELS = {
