@@ -580,10 +580,13 @@ const handleImageUploadRoute = (req, res) => {
             message: 'تصویر ذخیره گردید.'
           });
         }
+        const mimeType = file.mimetype || 'image/jpeg';
+        const fileBase64 = file.data ? file.data.toString('base64') : '';
+        const dataUrl = fileBase64 ? `data:${mimeType};base64,${fileBase64}` : '';
         return res.json({
           success: true,
           url: `/uploads/products/${filename}`,
-          fullUrl: `https://paymancare.ir/uploads/products/${filename}`,
+          dataUrl: dataUrl,
           message: 'تصویر با موفقیت آپلود شد.'
         });
       });
@@ -614,7 +617,7 @@ const handleImageUploadRoute = (req, res) => {
       return res.json({
         success: true,
         url: `/uploads/products/${filename}`,
-        fullUrl: `https://paymancare.ir/uploads/products/${filename}`,
+        dataUrl: bodyImage,
         message: 'تصویر با موفقیت آپلود شد.'
       });
     }

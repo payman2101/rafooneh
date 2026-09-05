@@ -1382,7 +1382,7 @@ export async function addProduct(productData) {
     buyPrice: Number(productData.buyPrice) || 0,
     packing: Number(productData.packing) || 1,
     stock: stock,
-    image: productData.image || 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/s/a/sanitary-protective-coating-large.jpg',
+    image: productData.image || '',
     badge: badge,
     description: productData.description || 'محصول باکیفیت و استاندارد',
     isCustomized: true,

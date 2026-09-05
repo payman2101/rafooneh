@@ -233,6 +233,7 @@ function getAllStatuses() {
 // In-Memory Fallback Caches for Cloudflare Edge Instance
 const memoryOrders = [];
 const memoryCustomers = [];
+let memoryProducts = Array.isArray(defaultProducts) ? defaultProducts.map(p => ({ ...p })) : [];
 const memoryCompanyPayments = [];
 const memoryPurchases = [];
 const memoryTransactions = new Map();
@@ -347,33 +348,47 @@ function mapFromDbSchema(row) {
 async function getAllProductsFromPg(env) {
   try {
     const supabase = getSupabaseClient(env);
-    const { data, error } = await supabase.from('products').select('*');
-    if (error) return null;
-    return data || [];
-  } catch (err) {
-    return null;
-  }
+    if (supabase) {
+      const { data, error } = await supabase.from('products').select('*');
+      if (!error && Array.isArray(data) && data.length > 0) return data;
+    }
+  } catch (err) {}
+  return memoryProducts;
 }
 
 async function saveProductToPg(env, product) {
+  if (!product || (!product.id && !product.code)) return false;
+  const pid = String(product.id || product.code);
+  const idx = memoryProducts.findIndex(p => String(p.id) === pid || String(p.code) === pid);
+  if (idx !== -1) {
+    memoryProducts[idx] = { ...memoryProducts[idx], ...product };
+  } else {
+    memoryProducts.unshift({ ...product });
+  }
+
   try {
     const supabase = getSupabaseClient(env);
-    const dbPayload = mapToDbSchema(product);
-    const { error } = await supabase.from('products').upsert(dbPayload, { onConflict: 'id' });
-    return !error;
-  } catch (err) {
-    return false;
-  }
+    if (supabase) {
+      const dbPayload = mapToDbSchema(product);
+      await supabase.from('products').upsert(dbPayload, { onConflict: 'id' });
+    }
+  } catch (err) {}
+  return true;
 }
 
 async function deleteProductFromPg(env, id) {
+  const pid = String(id);
+  const idx = memoryProducts.findIndex(p => String(p.id) === pid || String(p.code) === pid);
+  if (idx !== -1) {
+    memoryProducts.splice(idx, 1);
+  }
   try {
     const supabase = getSupabaseClient(env);
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    return !error;
-  } catch (err) {
-    return false;
-  }
+    if (supabase) {
+      await supabase.from('products').delete().eq('id', pid);
+    }
+  } catch (err) {}
+  return true;
 }
 
 // Orders DB Helpers
@@ -1023,8 +1038,10 @@ export async function onRequest(context) {
             const buf = await value.arrayBuffer();
             const bytes = new Uint8Array(buf);
             let binary = '';
-            for (let i = 0; i < bytes.byteLength; i++) {
-              binary += String.fromCharCode(bytes[i]);
+            const len = bytes.byteLength;
+            const chunkSize = 0x8000;
+            for (let i = 0; i < len; i += chunkSize) {
+              binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunkSize, len)));
             }
             const b64 = btoa(binary);
             body[key] = `data:${value.type || 'image/jpeg'};base64,${b64}`;
@@ -2447,9 +2464,9 @@ export async function onRequest(context) {
 
     // --- UPLOAD IMAGE ENDPOINT ---
   if (path === '/api/upload-image' || path === '/api/admin/upload-image' || path === '/api/upload') {
-    const imgUrl = body.image || body.file || body.imageFile || body.url || body.imageData || '';
+    const imgUrl = body.image || body.file || body.imageFile || body.url || body.imageData || body.dataUrl || '';
     if (imgUrl) {
-      return jsonRes({ success: true, url: imgUrl, message: 'تصویر با موفقیت آپلود شد.' });
+      return jsonRes({ success: true, url: imgUrl, dataUrl: imgUrl, message: 'تصویر با موفقیت آپلود شد.' });
     }
     return jsonRes({ success: false, message: 'فایل یا داده تصویری ارسال نشده است.' }, 400);
   }

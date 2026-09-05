@@ -2955,16 +2955,19 @@
             <div class="form-group">
                 <label for="newProdImage">تصویر محصول</label>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <img id="newProdImagePreview" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23f1f5f9'/%3E%3C/svg%3E" alt="پیش‌نمایش" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#f8fafc;" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';">
+                    <img id="newProdImagePreview" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23f1f5f9'/%3E%3C/svg%3E" alt="پیش‌نمایش" style="width:55px; height:55px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#f8fafc;" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';">
                     <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
                         <div style="display:flex; gap:8px;">
-                            <input type="text" id="newProdImage" class="form-control" placeholder="https://..." oninput="updateNewImagePreview(this.value)">
-                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('newProdImageFile').click()" style="white-space:nowrap;">
-                                <i class="fa-solid fa-cloud-arrow-up"></i> آپلود فایل
+                            <input type="text" id="newProdImage" class="form-control" placeholder="انتخاب عکس از کامپیوتر یا لینک مستقیم..." oninput="updateNewImagePreview(this.value)">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('newProdImageFile').click()" style="white-space:nowrap; background:#0284c7; color:#fff; border-color:#0284c7;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> آپلود از کامپیوتر
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearProductImage('newProdImage', 'newProdImagePreview', 'newProdUploadStatus')" title="پاک کردن عکس" style="white-space:nowrap; background:#f1f5f9; color:#64748b; border-color:#cbd5e1;">
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
                             <input type="file" id="newProdImageFile" accept="image/*" style="display:none;" onchange="handleProductFileUpload(this, 'newProdImage', 'newProdImagePreview', 'newProdUploadStatus')">
                         </div>
-                        <span id="newProdUploadStatus" style="font-size:0.75rem; color:var(--muted);">امکان انتخاب فایل عکس از کامپیوتر/موبایل یا وارد کردن لینک مستقیم.</span>
+                        <span id="newProdUploadStatus" style="font-size:0.75rem; color:var(--muted);">امکان انتخاب مستقیم فایل عکس از کامپیوتر شخصی، تبلت یا موبایل.</span>
                     </div>
                 </div>
             </div>
@@ -3057,16 +3060,19 @@
             <div class="form-group">
                 <label for="editProdImage">تصویر محصول</label>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <img id="editProdImagePreview" src="" alt="پیش‌نمایش" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#f8fafc;" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';">
+                    <img id="editProdImagePreview" src="" alt="پیش‌نمایش" style="width:55px; height:55px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#f8fafc;" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';">
                     <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
                         <div style="display:flex; gap:8px;">
-                            <input type="text" id="editProdImage" class="form-control" placeholder="https://..." oninput="updateEditImagePreview(this.value)">
-                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editProdImageFile').click()" style="white-space:nowrap;">
-                                <i class="fa-solid fa-cloud-arrow-up"></i> آپلود فایل
+                            <input type="text" id="editProdImage" class="form-control" placeholder="انتخاب عکس از کامپیوتر یا لینک مستقیم..." oninput="updateEditImagePreview(this.value)">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('editProdImageFile').click()" style="white-space:nowrap; background:#0284c7; color:#fff; border-color:#0284c7;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> آپلود از کامپیوتر
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearProductImage('editProdImage', 'editProdImagePreview', 'editProdUploadStatus')" title="پاک کردن عکس" style="white-space:nowrap; background:#f1f5f9; color:#64748b; border-color:#cbd5e1;">
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
                             <input type="file" id="editProdImageFile" accept="image/*" style="display:none;" onchange="handleProductFileUpload(this, 'editProdImage', 'editProdImagePreview', 'editProdUploadStatus')">
                         </div>
-                        <span id="editProdUploadStatus" style="font-size:0.75rem; color:var(--muted);">امکان انتخاب فایل عکس از کامپیوتر/موبایل یا وارد کردن لینک مستقیم.</span>
+                        <span id="editProdUploadStatus" style="font-size:0.75rem; color:var(--muted);">امکان انتخاب مستقیم فایل عکس از کامپیوتر شخصی، تبلت یا موبایل.</span>
                     </div>
                 </div>
             </div>
@@ -5026,33 +5032,15 @@
 
         try {
             let copiedToClipboard = false;
+            const imgRes = await generateInvoiceImageFileFromAdmin(order, elementId);
 
             // 1. Try modern navigator.clipboard.write with ClipboardItem
-            if (navigator.clipboard && typeof window.ClipboardItem !== 'undefined') {
+            if (navigator.clipboard && typeof window.ClipboardItem !== 'undefined' && imgRes && imgRes.blob) {
                 try {
                     if (window.focus) window.focus();
-
-                    // Modern Safari/Chrome 98+: passing Promise retains user gesture
-                    let item = null;
-                    try {
-                        const blobPromise = new Promise(async (resolve, reject) => {
-                            try {
-                                const res = await generateInvoiceImageFileFromAdmin(order, elementId);
-                                resolve(res.blob);
-                            } catch (e) {
-                                reject(e);
-                            }
-                        });
-                        item = new ClipboardItem({ 'image/png': blobPromise });
-                    } catch (promiseErr) {
-                        const imgRes = await generateInvoiceImageFileFromAdmin(order, elementId);
-                        item = new ClipboardItem({ 'image/png': imgRes.blob });
-                    }
-
-                    if (item) {
-                        await navigator.clipboard.write([item]);
-                        copiedToClipboard = true;
-                    }
+                    const item = new ClipboardItem({ 'image/png': imgRes.blob });
+                    await navigator.clipboard.write([item]);
+                    copiedToClipboard = true;
                 } catch (clipErr) {
                     console.warn('Direct image clipboard write notice:', clipErr);
                 }
@@ -5068,8 +5056,8 @@
                 return;
             }
 
-            // 3. Fallback: Generate image for download, Web Share, and link/text copying
-            const imgResult = await generateInvoiceImageFileFromAdmin(order, elementId);
+            // 3. Fallback: Auto-download PNG image and copy text
+            const imgResult = imgRes;
             if (imgResult && imgResult.blob) {
                 // Try Web Share with file if available (mobile browsers)
                 if (navigator.canShare && navigator.canShare({ files: [imgResult.file] })) {
@@ -6227,8 +6215,22 @@
         if (img) img.src = url || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';
     }
 
+    function clearProductImage(urlInputId, previewImgId, statusElemId) {
+        const urlInput = document.getElementById(urlInputId);
+        if (urlInput) urlInput.value = '';
+        const preview = document.getElementById(previewImgId);
+        if (preview) {
+            preview.src = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';
+        }
+        const statusElem = document.getElementById(statusElemId);
+        if (statusElem) {
+            statusElem.style.color = 'var(--muted)';
+            statusElem.innerText = 'تصویر کالا پاک شد. جهت اعمال، دکمه ذخیره تغییرات را بزنید.';
+        }
+    }
+
     // Robust client-side image optimizer (resizes images from personal PC to safe dimensions and web-friendly size)
-    function optimizeImageFile(file, maxWidth = 1000, maxHeight = 1000, quality = 0.85) {
+    function optimizeImageFile(file, maxWidth = 800, maxHeight = 800, quality = 0.82) {
         return new Promise((resolve, reject) => {
             if (!file) return reject(new Error('فایلی انتخاب نشده است'));
             if (file.type === 'image/svg+xml') {
@@ -6287,11 +6289,11 @@
         const statusElem = document.getElementById(statusElemId);
         if (statusElem) {
             statusElem.style.color = '#0284c7';
-            statusElem.innerText = 'در حال خواندن و بهینه‌سازی عکس از کامپیوتر...';
+            statusElem.innerText = 'در حال خواندن و بهینه‌سازی عکس از کامپیوتر شخصی...';
         }
 
         try {
-            const optimized = await optimizeImageFile(file, 1000, 1000, 0.85);
+            const optimized = await optimizeImageFile(file, 800, 800, 0.82);
 
             // Instant responsive preview
             const preview = document.getElementById(previewImgId);
@@ -6302,38 +6304,33 @@
 
             if (statusElem) {
                 statusElem.style.color = '#0284c7';
-                statusElem.innerText = 'در حال ذخیره فایل در سرور...';
+                statusElem.innerText = 'در حال همگام‌سازی با سرور...';
             }
 
             let finalUrl = optimized.dataUrl;
             try {
-                const formData = new FormData();
-                formData.append('image', optimized.blob, optimized.file.name);
                 const token = localStorage.getItem('adminToken');
                 const res = await fetch('/api/upload-image', {
                     method: 'POST',
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    },
+                    body: JSON.stringify({ image: optimized.dataUrl, filename: file.name })
                 });
-                const data = await res.json();
-                if (data.success && data.url) {
-                    finalUrl = data.url;
-                    if (urlInput) urlInput.value = finalUrl;
-                    if (preview) preview.src = finalUrl;
-                    if (statusElem) {
-                        statusElem.style.color = '#16a34a';
-                        statusElem.innerText = '✓ عکس با موفقیت آپلود و روی سرور ذخیره شد';
-                    }
-                } else {
-                    throw new Error(data.message || 'خطا در آپلود');
+                const data = await res.json().catch(() => ({}));
+                if (data && data.success && data.dataUrl) {
+                    finalUrl = data.dataUrl;
                 }
             } catch (serverErr) {
-                console.warn('Server upload notice, using local image data:', serverErr);
-                if (urlInput) urlInput.value = finalUrl;
-                if (statusElem) {
-                    statusElem.style.color = '#16a34a';
-                    statusElem.innerText = '✓ تصویر با موفقیت آماده ثبت در مشخصات کالا گردید';
-                }
+                console.warn('Server upload notice, using client dataUrl:', serverErr);
+            }
+
+            if (urlInput) urlInput.value = finalUrl;
+            if (preview) preview.src = finalUrl;
+            if (statusElem) {
+                statusElem.style.color = '#16a34a';
+                statusElem.innerText = '✓ عکس با موفقیت از کامپیوتر شخصی انتخاب و آماده ثبت شد';
             }
         } catch (err) {
             console.error('Image processing failed:', err);
@@ -6361,25 +6358,26 @@
             const file = fileInput.files && fileInput.files[0];
             if (!file) return;
             try {
-                if (typeof showToast === 'function') showToast(`در حال خواندن و بهینه‌سازی عکس برای کالای ${productId}...`, 'info');
-                const optimized = await optimizeImageFile(file, 1000, 1000, 0.85);
+                if (typeof showToast === 'function') showToast(`در حال پردازش و آپلود عکس از کامپیوتر برای کالای ${productId}...`, 'info');
+                const optimized = await optimizeImageFile(file, 800, 800, 0.82);
 
                 const rowImg = document.getElementById(`tableProdImg-${productId}`);
                 if (rowImg) rowImg.src = optimized.dataUrl;
 
                 let finalUrl = optimized.dataUrl;
                 try {
-                    const formData = new FormData();
-                    formData.append('image', optimized.blob, optimized.file.name);
                     const token = localStorage.getItem('adminToken');
                     const res = await fetch('/api/upload-image', {
                         method: 'POST',
-                        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                        body: formData
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                        },
+                        body: JSON.stringify({ image: optimized.dataUrl, filename: file.name })
                     });
-                    const data = await res.json();
-                    if (data.success && data.url) {
-                        finalUrl = data.url;
+                    const data = await res.json().catch(() => ({}));
+                    if (data && data.success && data.dataUrl) {
+                        finalUrl = data.dataUrl;
                     }
                 } catch (netErr) {
                     console.warn('Server upload notice, using optimized local dataUrl:', netErr);
@@ -6398,7 +6396,7 @@
                 });
 
                 if (typeof showToast === 'function') {
-                    showToast(`✅ عکس کالای ${productId} با موفقیت از کامپیوتر آپلود و ذخیره شد.`, 'success');
+                    showToast(`✅ عکس کالای ${productId} با موفقیت از کامپیوتر شخصی آپلود و ذخیره شد.`, 'success');
                 }
             } catch (err) {
                 console.error('Quick image upload error:', err);
