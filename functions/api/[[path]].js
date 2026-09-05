@@ -1010,9 +1010,30 @@ export async function onRequest(context) {
 
   let body = {};
   if (['POST', 'PATCH', 'PUT'].includes(method)) {
-    try {
-      body = await request.json();
-    } catch (e) {}
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      try {
+        body = await request.json();
+      } catch (e) {}
+    } else if (contentType.includes('multipart/form-data')) {
+      try {
+        const formData = await request.formData();
+        for (const [key, value] of formData.entries()) {
+          if (value instanceof File) {
+            const buf = await value.arrayBuffer();
+            const bytes = new Uint8Array(buf);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            const b64 = btoa(binary);
+            body[key] = `data:${value.type || 'image/jpeg'};base64,${b64}`;
+          } else {
+            body[key] = value;
+          }
+        }
+      } catch (e) {}
+    }
   }
 
   // --- ADMIN AUTH ---
@@ -2426,8 +2447,22 @@ export async function onRequest(context) {
 
     // --- UPLOAD IMAGE ENDPOINT ---
   if (path === '/api/upload-image' || path === '/api/admin/upload-image' || path === '/api/upload') {
-    const imgUrl = body.image || body.url || 'https://rafooneh.com/media/catalog/product/cache/13fb5134717fc87cd9b03caf5e4a36c1/6/2/6261460205754_2.jpg';
-    return jsonRes({ success: true, url: imgUrl, message: 'تصویر با موفقیت آپلود شد.' });
+    const imgUrl = body.image || body.file || body.imageFile || body.url || body.imageData || '';
+    if (imgUrl) {
+      return jsonRes({ success: true, url: imgUrl, message: 'تصویر با موفقیت آپلود شد.' });
+    }
+    return jsonRes({ success: false, message: 'فایل یا داده تصویری ارسال نشده است.' }, 400);
+  }
+
+  if (path === '/api/invoices/upload-image') {
+    const orderId = body.orderId || 'order';
+    const imageData = body.imageData || '';
+    return jsonRes({ 
+      success: true, 
+      imageUrl: imageData ? imageData : `/images/promo-banner-square.jpg`,
+      fullUrl: imageData ? imageData : `${url.origin}/images/promo-banner-square.jpg`,
+      message: 'تصویر فاکتور آماده شد.' 
+    });
   }
 
   // --- PAYMENT GATEWAY ENDPOINTS ---

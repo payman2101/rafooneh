@@ -1,5 +1,88 @@
 [
   {
+    "id": "PUR-1788424520442",
+    "refNumber": "1405-236",
+    "supplierName": "رافونه",
+    "purchaseDate": "2026-09-03T11:38",
+    "totalAmount": 11832900,
+    "totalItemsCount": 84,
+    "notes": "",
+    "items": [
+      {
+        "productId": "1041",
+        "id": "1041",
+        "name": "اسیدی سرویس بهداشتی",
+        "qty": 12,
+        "buyPrice": 85420,
+        "consumerPrice": 113424,
+        "multiplier": "0.753104",
+        "rowTotal": 1025040
+      },
+      {
+        "productId": "1051",
+        "id": "1051",
+        "name": "اسپری شیرآلات و سینک ظرفشویی 800",
+        "qty": 12,
+        "buyPrice": 164101,
+        "consumerPrice": 217899,
+        "multiplier": "0.753104",
+        "rowTotal": 1969212
+      },
+      {
+        "productId": "1064",
+        "id": "1064",
+        "name": "سفیدکننده 1 لیتری",
+        "qty": 12,
+        "buyPrice": 63832,
+        "consumerPrice": 84759,
+        "multiplier": "0.753104",
+        "rowTotal": 765984
+      },
+      {
+        "productId": "1065",
+        "id": "1065",
+        "name": "سفیدکننده 2 لیتری",
+        "qty": 12,
+        "buyPrice": 102137,
+        "consumerPrice": 135621,
+        "multiplier": "0.753104",
+        "rowTotal": 1225644
+      },
+      {
+        "productId": "1066",
+        "id": "1066",
+        "name": "سفیدکننده 4 لیتری",
+        "qty": 12,
+        "buyPrice": 165973,
+        "consumerPrice": 220385,
+        "multiplier": "0.753104",
+        "rowTotal": 1991676
+      },
+      {
+        "productId": "1068",
+        "id": "1068",
+        "name": "پاک کننده سنگ و سرامیک 1000 گرمی",
+        "qty": 12,
+        "buyPrice": 202742,
+        "consumerPrice": 269208,
+        "multiplier": "0.753104",
+        "rowTotal": 2432904
+      },
+      {
+        "productId": "1072",
+        "id": "1072",
+        "name": "اسپری گاز شیشه ای",
+        "qty": 12,
+        "buyPrice": 201870,
+        "consumerPrice": 268050,
+        "multiplier": "0.753104",
+        "rowTotal": 2422440
+      }
+    ],
+    "createdAt": "2026-09-03T08:35:20.442Z",
+    "updatedAt": "2026-09-03T08:38:14.703Z"
+  },
+  {
     "id": "PUR-1788003291953-280",
     "refNumber": "12345",
     "supplierName": "تست تامین‌کننده",

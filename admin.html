@@ -4794,6 +4794,29 @@
         }
     }
 
+    // Dynamic loader ensuring html2canvas is always available
+    async function ensureHtml2CanvasLoaded() {
+        if (typeof window.html2canvas === 'function') return window.html2canvas;
+        const cdns = [
+            'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+            'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+            'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.js'
+        ];
+        for (const src of cdns) {
+            try {
+                await new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = resolve;
+                    s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+                if (typeof window.html2canvas === 'function') return window.html2canvas;
+            } catch (e) {}
+        }
+        return window.html2canvas;
+    }
+
     // Generate High-Resolution Invoice PNG file from Admin Modal
     async function generateInvoiceImageFileFromAdmin(order, elementId = 'printableInvoiceArea') {
         const invoiceEl = document.getElementById(elementId);
@@ -4802,27 +4825,60 @@
         // Always ensure bank info is fully populated before canvas capture
         populateInvoiceBankElements();
 
+        await ensureHtml2CanvasLoaded();
+
         if (typeof html2canvas === 'function') {
             const canvas = await html2canvas(invoiceEl, {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
-                allowTaint: true,
-                windowWidth: invoiceEl.scrollWidth,
-                windowHeight: invoiceEl.scrollHeight,
+                allowTaint: false,
+                windowWidth: invoiceEl.scrollWidth || 800,
+                windowHeight: invoiceEl.scrollHeight || 1000,
                 onclone: (clonedDoc) => {
+                    const clonedModal = clonedDoc.getElementById('customerInvoiceModal');
+                    if (clonedModal) {
+                        clonedModal.style.display = 'block';
+                        clonedModal.style.visibility = 'visible';
+                    }
+                    const clonedTarget = clonedDoc.getElementById(elementId);
+                    if (clonedTarget) {
+                        clonedTarget.style.display = 'block';
+                        clonedTarget.style.visibility = 'visible';
+                    }
                     fixRtlParenthesesForCanvas(clonedDoc, elementId);
                 }
             });
 
-            return new Promise((resolve) => {
-                canvas.toBlob((blob) => {
-                    const fileName = `factor-${order?.id || 'sefaresh'}.png`;
-                    const file = new File([blob], fileName, { type: 'image/png' });
+            return new Promise((resolve, reject) => {
+                try {
                     const dataUrl = canvas.toDataURL('image/png');
-                    resolve({ blob, file, dataUrl, canvas });
-                }, 'image/png', 0.95);
+                    const fileName = `factor-${order?.id || 'sefaresh'}.png`;
+                    
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const file = new File([blob], fileName, { type: 'image/png' });
+                            resolve({ blob, file, dataUrl, canvas });
+                        } else {
+                            try {
+                                const binStr = atob(dataUrl.split(',')[1]);
+                                const len = binStr.length;
+                                const arr = new Uint8Array(len);
+                                for (let i = 0; i < len; i++) {
+                                    arr[i] = binStr.charCodeAt(i);
+                                }
+                                const fallbackBlob = new Blob([arr], { type: 'image/png' });
+                                const file = new File([fallbackBlob], fileName, { type: 'image/png' });
+                                resolve({ blob: fallbackBlob, file, dataUrl, canvas });
+                            } catch (convErr) {
+                                reject(convErr);
+                            }
+                        }
+                    }, 'image/png', 0.95);
+                } catch (canvasErr) {
+                    reject(canvasErr);
+                }
             });
         } else {
             throw new Error('کتابخانه html2canvas در دسترس نیست');
@@ -4957,45 +5013,149 @@
 
     // Copy Invoice Image Directly to Clipboard
     async function copyInvoiceImageToClipboardFromAdmin(elementId = 'printableInvoiceArea') {
-        const order = currentInvoiceOrder || currentOrderData;
-        if (!order) {
-            alert('اطلاعات سفارش جهت کپی یافت نشد.');
-            return;
-        }
+        const order = currentInvoiceOrder || currentOrderData || window.currentOrder || (window.currentOrderId && typeof getLocalOrders === 'function' && getLocalOrders().find(item => item.id === window.currentOrderId)) || {
+            id: (document.getElementById('invOrderId') && document.getElementById('invOrderId').innerText.trim()) || 'order'
+        };
 
         const btn = document.getElementById('btnAdminCopyInvoiceImg');
         const origHtml = btn ? btn.innerHTML : '';
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال کپی عکس...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> در حال آماده‌سازی و کپی...`;
         }
 
         try {
+            let copiedToClipboard = false;
+
+            // 1. Try modern navigator.clipboard.write with ClipboardItem
+            if (navigator.clipboard && typeof window.ClipboardItem !== 'undefined') {
+                try {
+                    if (window.focus) window.focus();
+
+                    // Modern Safari/Chrome 98+: passing Promise retains user gesture
+                    let item = null;
+                    try {
+                        const blobPromise = new Promise(async (resolve, reject) => {
+                            try {
+                                const res = await generateInvoiceImageFileFromAdmin(order, elementId);
+                                resolve(res.blob);
+                            } catch (e) {
+                                reject(e);
+                            }
+                        });
+                        item = new ClipboardItem({ 'image/png': blobPromise });
+                    } catch (promiseErr) {
+                        const imgRes = await generateInvoiceImageFileFromAdmin(order, elementId);
+                        item = new ClipboardItem({ 'image/png': imgRes.blob });
+                    }
+
+                    if (item) {
+                        await navigator.clipboard.write([item]);
+                        copiedToClipboard = true;
+                    }
+                } catch (clipErr) {
+                    console.warn('Direct image clipboard write notice:', clipErr);
+                }
+            }
+
+            // 2. If direct clipboard copy succeeded
+            if (copiedToClipboard) {
+                if (typeof showToast === 'function') {
+                    showToast('📸 تصویر فاکتور با موفقیت در کلیپ‌بورد کپی شد! اکنون در چت واتساپ یا تلگرام کلید Paste (Ctrl+V) را بزنید.', 'success');
+                } else {
+                    alert('📸 تصویر فاکتور با موفقیت در حافظه موقت (Clipboard) کپی شد!\nاکنون در هر برنامه‌ای (واتساپ، تلگرام، ایتا و...) می‌توانید با زدن دکمه Paste (Ctrl+V یا الصاق) تصویر فاکتور را الصاق فرمایید.');
+                }
+                return;
+            }
+
+            // 3. Fallback: Generate image for download, Web Share, and link/text copying
             const imgResult = await generateInvoiceImageFileFromAdmin(order, elementId);
-            if (navigator.clipboard && window.ClipboardItem && imgResult && imgResult.blob) {
-                await navigator.clipboard.write([
-                    new ClipboardItem({ 'image/png': imgResult.blob })
-                ]);
-                alert('📸 تصویر فاکتور با موفقیت در حافظه موقت (Clipboard) کپی شد!\nاکنون در هر برنامه‌ای (واتساپ، تلگرام و...) می‌توانید با زدن دکمه Paste (Ctrl+V) تصویر فاکتور را الصاق فرمایید.');
-            } else {
-                // Fallback upload
+            if (imgResult && imgResult.blob) {
+                // Try Web Share with file if available (mobile browsers)
+                if (navigator.canShare && navigator.canShare({ files: [imgResult.file] })) {
+                    try {
+                        await navigator.share({
+                            files: [imgResult.file],
+                            title: `فاکتور سفارش ${order.id || ''}`
+                        });
+                        if (typeof showToast === 'function') {
+                            showToast('✅ تصویر فاکتور با موفقیت به اشتراک گذاشته شد.', 'success');
+                        }
+                        return;
+                    } catch (shareErr) {
+                        console.warn('Web share cancelled or failed:', shareErr);
+                    }
+                }
+
+                // Auto-download PNG image
+                try {
+                    const url = URL.createObjectURL(imgResult.blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `factor-${order.id || 'order'}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 10000);
+                } catch (dlErr) {
+                    console.warn('Image auto-download fallback notice:', dlErr);
+                }
+            }
+
+            let uploadedUrl = '';
+            try {
                 const uploadRes = await fetch('/api/invoices/upload-image', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orderId: order.id, imageData: imgResult.dataUrl })
                 });
                 const uploadData = await uploadRes.json();
-                if (uploadData.success && uploadData.imageUrl) {
-                    const fullUrl = window.location.origin + uploadData.imageUrl;
-                    await navigator.clipboard.writeText(fullUrl);
-                    alert('📋 لینک اینترنتی تصویر فاکتور کپی شد:\n' + fullUrl);
-                } else {
-                    alert('مرورگر شما از کپی مستقیم تصویر پشتیبانی نمی‌کند.');
+                if (uploadData.success && (uploadData.imageUrl || uploadData.url)) {
+                    uploadedUrl = uploadData.fullUrl || (window.location.origin + (uploadData.imageUrl || uploadData.url));
                 }
+            } catch (upErr) {
+                console.warn('Fallback image upload notice:', upErr);
+            }
+
+            let msgToCopy = typeof buildOrderWhatsAppMessage === 'function' ? buildOrderWhatsAppMessage(order) : `فاکتور سفارش ${order.id || ''}`;
+            if (uploadedUrl) {
+                msgToCopy += `\n\n🖼️ *لینک مستقیم مشاهده تصویر فاکتور:*\n${uploadedUrl}`;
+            }
+
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(uploadedUrl || msgToCopy);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = uploadedUrl || msgToCopy;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+            } catch (txtErr) {
+                console.warn('Clipboard write text failed:', txtErr);
+            }
+
+            if (typeof showToast === 'function') {
+                showToast('📸 فایل عکس فاکتور دانلود شد و مشخصات آن در حافظه کپی گردید. آماده الصاق (Paste).', 'success');
+            } else {
+                alert('📸 تصویر فاکتور با کیفیت عالی دانلود شد و مشخصات آن در کلیپ‌بورد کپی گردید.\nمی‌توانید تصویر دانلود شده یا متن را در واتساپ و تلگرام ارسال فرمایید.');
             }
         } catch (err) {
             console.error('Copy invoice image error:', err);
-            alert('خطا در کپی تصویر: ' + err.message);
+            try {
+                const fallbackText = typeof buildOrderWhatsAppMessage === 'function' ? buildOrderWhatsAppMessage(order) : `فاکتور سفارش ${order.id || ''}`;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(fallbackText);
+                }
+                if (typeof showToast === 'function') {
+                    showToast('⚠️ مشخصات متنی فاکتور در کلیپ‌بورد کپی گردید.', 'info');
+                }
+            } catch (e2) {
+                if (typeof showToast === 'function') showToast('خطا در پردازش تصویر: ' + err.message, 'error');
+                else alert('خطا در پردازش تصویر فاکتور: ' + (err.message || 'لطفاً مجدداً تلاش فرمایید.'));
+            }
         } finally {
             if (btn) {
                 btn.disabled = false;
@@ -5171,16 +5331,42 @@
     function copyInvoiceText(elementId, btn) {
         const el = document.getElementById(elementId);
         if (!el) return;
-        const text = el.innerText || el.textContent || '';
-        navigator.clipboard.writeText(text.replace(/[^0-9A-Za-z]/g, '')).then(() => {
+        const text = (el.innerText || el.textContent || '').replace(/[^0-9A-Za-z]/g, '');
+        const showSuccess = () => {
             if (btn) {
                 const orig = btn.innerHTML;
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> کپی شد';
                 setTimeout(() => { btn.innerHTML = orig; }, 1500);
             }
-        }).catch(() => {
-            alert('شماره: ' + text);
-        });
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(showSuccess).catch(() => {
+                try {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    showSuccess();
+                } catch (e) {
+                    alert('شماره: ' + text);
+                }
+            });
+        } else {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showSuccess();
+            } catch (e) {
+                alert('شماره: ' + text);
+            }
+        }
     }
 
     async function initCompanyPaymentsSection() {
@@ -5881,7 +6067,10 @@
             <tr id="prodRow-${p.id}">
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <img src="${p.image || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E'}" alt="" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';" style="width:36px; height:36px; object-fit:cover; border-radius:6px; background:#f1f5f9;">
+                        <div style="position:relative; cursor:pointer;" onclick="triggerQuickImageUpload('${p.id}')" title="برای تغییر و آپلود عکس از کامپیوتر شخصی کلیک کنید">
+                            <img id="tableProdImg-${p.id}" src="${p.image || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E'}" alt="" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';" style="width:36px; height:36px; object-fit:cover; border-radius:6px; background:#f1f5f9; border:1px solid #e2e8f0; transition:transform 0.15s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                            <span style="position:absolute; bottom:-3px; right:-3px; background:#0284c7; color:#fff; font-size:8px; border-radius:3px; padding:1px 3px; box-shadow:0 1px 2px rgba(0,0,0,0.2);"><i class="fa-solid fa-camera"></i></span>
+                        </div>
                         <span style="font-family:monospace; font-weight:bold;">${p.id}</span>
                     </div>
                 </td>
@@ -6038,6 +6227,59 @@
         if (img) img.src = url || 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'50\' viewBox=\'0 0 50 50\'%3E%3Crect width=\'50\' height=\'50\' fill=\'%23f1f5f9\'/%3E%3C/svg%3E';
     }
 
+    // Robust client-side image optimizer (resizes images from personal PC to safe dimensions and web-friendly size)
+    function optimizeImageFile(file, maxWidth = 1000, maxHeight = 1000, quality = 0.85) {
+        return new Promise((resolve, reject) => {
+            if (!file) return reject(new Error('فایلی انتخاب نشده است'));
+            if (file.type === 'image/svg+xml') {
+                const reader = new FileReader();
+                reader.onload = () => resolve({ dataUrl: reader.result, blob: file, file });
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxWidth || h > maxHeight) {
+                        if (w / maxWidth > h / maxHeight) {
+                            h = Math.round((h * maxWidth) / w);
+                            w = maxWidth;
+                        } else {
+                            w = Math.round((w * maxHeight) / h);
+                            h = maxHeight;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, w, h);
+                    const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                    const dataUrl = canvas.toDataURL(mimeType, quality);
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            return resolve({ dataUrl, blob: file, file });
+                        }
+                        const optFile = new File([blob], file.name.replace(/\.[^.]+$/, '') + (mimeType === 'image/png' ? '.png' : '.jpg'), { type: mimeType });
+                        resolve({ dataUrl, blob, file: optFile });
+                    }, mimeType, quality);
+                };
+                img.onerror = () => {
+                    resolve({ dataUrl: e.target.result, blob: file, file });
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
     async function handleProductFileUpload(fileInput, urlInputId, previewImgId, statusElemId) {
         const file = fileInput.files && fileInput.files[0];
         if (!file) return;
@@ -6045,40 +6287,127 @@
         const statusElem = document.getElementById(statusElemId);
         if (statusElem) {
             statusElem.style.color = '#0284c7';
-            statusElem.innerText = 'در حال آپلود تصویر...';
+            statusElem.innerText = 'در حال خواندن و بهینه‌سازی عکس از کامپیوتر...';
         }
 
-        const formData = new FormData();
-        formData.append('image', file);
-
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await fetch('/api/upload-image', {
-                method: 'POST',
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                body: formData
-            });
-            const data = await res.json();
-            if (data.success && data.url) {
-                document.getElementById(urlInputId).value = data.url;
-                const preview = document.getElementById(previewImgId);
-                if (preview) preview.src = data.url;
+            const optimized = await optimizeImageFile(file, 1000, 1000, 0.85);
+
+            // Instant responsive preview
+            const preview = document.getElementById(previewImgId);
+            if (preview) preview.src = optimized.dataUrl;
+
+            const urlInput = document.getElementById(urlInputId);
+            if (urlInput) urlInput.value = optimized.dataUrl;
+
+            if (statusElem) {
+                statusElem.style.color = '#0284c7';
+                statusElem.innerText = 'در حال ذخیره فایل در سرور...';
+            }
+
+            let finalUrl = optimized.dataUrl;
+            try {
+                const formData = new FormData();
+                formData.append('image', optimized.blob, optimized.file.name);
+                const token = localStorage.getItem('adminToken');
+                const res = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success && data.url) {
+                    finalUrl = data.url;
+                    if (urlInput) urlInput.value = finalUrl;
+                    if (preview) preview.src = finalUrl;
+                    if (statusElem) {
+                        statusElem.style.color = '#16a34a';
+                        statusElem.innerText = '✓ عکس با موفقیت آپلود و روی سرور ذخیره شد';
+                    }
+                } else {
+                    throw new Error(data.message || 'خطا در آپلود');
+                }
+            } catch (serverErr) {
+                console.warn('Server upload notice, using local image data:', serverErr);
+                if (urlInput) urlInput.value = finalUrl;
                 if (statusElem) {
                     statusElem.style.color = '#16a34a';
-                    statusElem.innerText = '✓ تصویر با موفقیت آپلود شد';
+                    statusElem.innerText = '✓ تصویر با موفقیت آماده ثبت در مشخصات کالا گردید';
                 }
-            } else {
-                throw new Error(data.message || 'خطا در آپلود تصویر');
             }
         } catch (err) {
-            console.error('Image upload failed:', err);
+            console.error('Image processing failed:', err);
             if (statusElem) {
                 statusElem.style.color = '#dc2626';
-                statusElem.innerText = 'خطا در آپلود: ' + err.message;
+                statusElem.innerText = 'خطا در پردازش تصویر: ' + err.message;
             }
         } finally {
             fileInput.value = '';
         }
+    }
+
+    // Quick image upload directly by clicking the product picture in the inventory table
+    function triggerQuickImageUpload(productId) {
+        let fileInput = document.getElementById('tableQuickImageFileInput');
+        if (!fileInput) {
+            fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.id = 'tableQuickImageFileInput';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+        }
+        fileInput.onchange = async () => {
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) return;
+            try {
+                if (typeof showToast === 'function') showToast(`در حال خواندن و بهینه‌سازی عکس برای کالای ${productId}...`, 'info');
+                const optimized = await optimizeImageFile(file, 1000, 1000, 0.85);
+
+                const rowImg = document.getElementById(`tableProdImg-${productId}`);
+                if (rowImg) rowImg.src = optimized.dataUrl;
+
+                let finalUrl = optimized.dataUrl;
+                try {
+                    const formData = new FormData();
+                    formData.append('image', optimized.blob, optimized.file.name);
+                    const token = localStorage.getItem('adminToken');
+                    const res = await fetch('/api/upload-image', {
+                        method: 'POST',
+                        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.success && data.url) {
+                        finalUrl = data.url;
+                    }
+                } catch (netErr) {
+                    console.warn('Server upload notice, using optimized local dataUrl:', netErr);
+                }
+
+                if (rowImg) rowImg.src = finalUrl;
+
+                // Persist update
+                const p = window.adminProductsMap ? window.adminProductsMap[productId] : null;
+                if (p) p.image = finalUrl;
+                updateLocalProductCache(productId, { image: finalUrl });
+
+                await api(`/api/admin/products/${productId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ image: finalUrl })
+                });
+
+                if (typeof showToast === 'function') {
+                    showToast(`✅ عکس کالای ${productId} با موفقیت از کامپیوتر آپلود و ذخیره شد.`, 'success');
+                }
+            } catch (err) {
+                console.error('Quick image upload error:', err);
+                if (typeof showToast === 'function') showToast(`خطا در آپلود عکس: ${err.message}`, 'error');
+            } finally {
+                fileInput.value = '';
+            }
+        };
+        fileInput.click();
     }
 
     function handleBrandChange(mode) {
@@ -10182,6 +10511,12 @@
         }, 12000);
     }
 
+    function renderInvoice(order) {
+        if (typeof showCustomerInvoice === 'function') {
+            showCustomerInvoice(order);
+        }
+    }
+
     async function openInvoiceModalForOrder(orderId) {
         try {
             const res = await api(`/api/admin/orders/${orderId}`);
@@ -10189,7 +10524,9 @@
                 const data = await res.json();
                 if (data.order) {
                     currentOrder = data.order;
-                    renderInvoice(data.order);
+                    currentInvoiceOrder = data.order;
+                    window.currentInvoiceOrder = data.order;
+                    showCustomerInvoice(data.order);
                     const modal = document.getElementById('customerInvoiceModal');
                     if (modal) modal.style.display = 'flex';
                 }

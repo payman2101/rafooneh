@@ -389,6 +389,9 @@
                 <button class="btn btn-accent" style="flex:1;" onclick="downloadPoster('verticalPosterCanvas', 'پوستر_پخش_بهداشتی_پیمان_عمودی.png')">
                     <i class="fa-solid fa-download"></i> دانلود پوستر با کیفیت بالا
                 </button>
+                <button class="btn btn-outline" onclick="copyPosterImageToClipboard('verticalPosterCanvas')">
+                    <i class="fa-solid fa-copy"></i> کپی عکس در کلیپ‌بورد
+                </button>
                 <button class="btn btn-whatsapp" onclick="shareToWhatsApp('story')">
                     <i class="fa-brands fa-whatsapp"></i> ارسال در واتساپ
                 </button>
@@ -427,6 +430,9 @@
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button class="btn btn-accent" style="flex:1;" onclick="downloadPoster('squarePosterCanvas', 'بنر_پخش_بهداشتی_پیمان_مربعی.png')">
                     <i class="fa-solid fa-download"></i> دانلود بنر با کیفیت بالا
+                </button>
+                <button class="btn btn-outline" onclick="copyPosterImageToClipboard('squarePosterCanvas')">
+                    <i class="fa-solid fa-copy"></i> کپی عکس در کلیپ‌بورد
                 </button>
                 <button class="btn btn-telegram" onclick="shareToTelegram()">
                     <i class="fa-brands fa-telegram"></i> ارسال در تلگرام
@@ -581,22 +587,75 @@
     function downloadPoster(elementId, filename) {
         showToast('در حال آماده‌سازی و دانلود پوستر با کیفیت بالا...');
         const element = document.getElementById(elementId);
-        
+        if (!element) return;
+
         html2canvas(element, {
             scale: 2,
             useCORS: true,
-            allowTaint: true,
+            allowTaint: false,
             backgroundColor: '#ffffff'
         }).then(canvas => {
+            const dataUrl = canvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.download = filename;
-            link.href = canvas.toDataURL('image/png');
+            link.href = dataUrl;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
             showToast('پوستر با موفقیت دانلود شد!');
         }).catch(err => {
             console.error('Error generating poster:', err);
-            showToast('خطا در دانلود پوستر. لطفا تصویر را مستقیماً ذخیره کنید.');
+            showToast('خطا در دانلود پوستر.');
         });
+    }
+
+    async function copyPosterImageToClipboard(elementId) {
+        showToast('در حال تبدیل تصویر پوستر جهت کپی...');
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: false,
+                backgroundColor: '#ffffff'
+            });
+
+            const dataUrl = canvas.toDataURL('image/png');
+            let copied = false;
+
+            if (navigator.clipboard && typeof window.ClipboardItem !== 'undefined') {
+                try {
+                    if (window.focus) window.focus();
+                    const blob = await new Promise(res => canvas.toBlob(res, 'image/png', 0.95));
+                    if (blob) {
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': blob })
+                        ]);
+                        copied = true;
+                    }
+                } catch (clipErr) {
+                    console.warn('ClipboardItem error for poster:', clipErr);
+                }
+            }
+
+            if (copied) {
+                showToast('📸 تصویر پوستر در کلیپ‌بورد کپی شد! اکنون می‌توانید در پیام‌رسان‌ها الصاق (Ctrl+V) فرمایید.');
+            } else {
+                // Fallback download
+                const link = document.createElement('a');
+                link.download = 'poster.png';
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('📸 تصویر با کیفیت پوستر دانلود شد.');
+            }
+        } catch (err) {
+            console.error('Copy poster image error:', err);
+            showToast('خطا در کپی تصویر پوستر: ' + err.message);
+        }
     }
 </script>
 

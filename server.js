@@ -150,6 +150,16 @@ if (!fs.existsSync(invoicesDir)) {
   fs.mkdirSync(invoicesDir, { recursive: true });
 }
 app.use('/invoices', express.static(invoicesDir));
+
+const uploadsDir = path.join(appDir, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+const productUploadsDir = path.join(uploadsDir, 'products');
+if (!fs.existsSync(productUploadsDir)) {
+  fs.mkdirSync(productUploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
 app.use(async (req, res, next) => {
   await ensureFirestoreLoaded().catch(() => {});
   next();
@@ -533,20 +543,14 @@ app.post('/api/upload-excel', (req, res) => {
   }
 });
 
-// API: Upload product image file
+// API: Upload product image file (supports multipart form file & JSON base64 data)
 const handleImageUploadRoute = (req, res) => {
   try {
-    const file = req.files && (req.files.image || req.files.file);
-    if (!file) {
+    const file = req.files && (req.files.image || req.files.file || req.files.imageFile);
+    const bodyImage = (req.body && (req.body.image || req.body.imageData || req.body.dataUrl)) || '';
+
+    if (!file && !bodyImage) {
       return res.status(400).json({ success: false, message: 'فایل تصویری ارسال نشده است.' });
-    }
-
-    const mimeType = file.mimetype || 'image/jpeg';
-    const base64Data = file.data ? file.data.toString('base64') : '';
-    let imageUrl = '';
-
-    if (base64Data) {
-      imageUrl = `data:${mimeType};base64,${base64Data}`;
     }
 
     const uploadsDir = path.join(appDir, 'uploads', 'products');
@@ -554,25 +558,69 @@ const handleImageUploadRoute = (req, res) => {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const ext = path.extname(file.name) || '.jpg';
-    const cleanExt = ext.match(/^\.[a-zA-Z0-9]+$/) ? ext : '.jpg';
-    const filename = `prod_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${cleanExt}`;
-    const savePath = path.join(uploadsDir, filename);
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 7);
 
-    file.mv(savePath, (err) => {
-      if (err) {
-        console.error('Image save error (disk):', err);
-      }
-    });
+    // Case 1: Uploaded via multipart FormData
+    if (file) {
+      const ext = path.extname(file.name || 'image.jpg').toLowerCase() || '.jpg';
+      const cleanExt = ext.match(/^\.[a-zA-Z0-9]+$/) ? ext : '.jpg';
+      const filename = `prod_${timestamp}_${randomStr}${cleanExt}`;
+      const savePath = path.join(uploadsDir, filename);
 
-    if (!imageUrl) {
-      imageUrl = `/uploads/products/${filename}`;
+      file.mv(savePath, (err) => {
+        if (err) {
+          console.error('Image save error (disk):', err);
+          // Fallback to base64 if disk write fails
+          const mimeType = file.mimetype || 'image/jpeg';
+          const base64 = file.data ? file.data.toString('base64') : '';
+          return res.json({
+            success: true,
+            url: `data:${mimeType};base64,${base64}`,
+            message: 'تصویر ذخیره گردید.'
+          });
+        }
+        return res.json({
+          success: true,
+          url: `/uploads/products/${filename}`,
+          fullUrl: `https://paymancare.ir/uploads/products/${filename}`,
+          message: 'تصویر با موفقیت آپلود شد.'
+        });
+      });
+      return;
     }
 
-    res.json({ success: true, url: imageUrl, message: 'تصویر با موفقیت آپلود شد.' });
+    // Case 2: Base64 data string from client-side optimized canvas/file reader
+    if (bodyImage) {
+      const matches = bodyImage.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      let ext = '.jpg';
+      let buffer;
+
+      if (matches && matches.length === 3) {
+        const mime = matches[1];
+        if (mime.includes('png')) ext = '.png';
+        else if (mime.includes('webp')) ext = '.webp';
+        else if (mime.includes('svg')) ext = '.svg';
+        buffer = Buffer.from(matches[2], 'base64');
+      } else {
+        buffer = Buffer.from(bodyImage.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+      }
+
+      const filename = `prod_${timestamp}_${randomStr}${ext}`;
+      const savePath = path.join(uploadsDir, filename);
+
+      fs.writeFileSync(savePath, buffer);
+
+      return res.json({
+        success: true,
+        url: `/uploads/products/${filename}`,
+        fullUrl: `https://paymancare.ir/uploads/products/${filename}`,
+        message: 'تصویر با موفقیت آپلود شد.'
+      });
+    }
   } catch (err) {
     console.error('Image upload endpoint error:', err);
-    res.status(500).json({ success: false, message: 'خطای سرور در آپلود تصویر' });
+    res.status(500).json({ success: false, message: 'خطای سرور در آپلود تصویر: ' + err.message });
   }
 };
 
